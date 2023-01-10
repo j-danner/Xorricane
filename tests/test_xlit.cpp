@@ -191,11 +191,10 @@ TEST_CASE("eval xlit", "[xlit][xsys]"){
     
     l = xlit(vec<var_t>({1,3}));
     CHECK(l.to_str() == "x1+x3");
-    CHECK(l.eval(sol) == false);
-    CHECK(l.plus_one().eval(sol) == true);
-    CHECK(l.eval(sol3) == false);
-    CHECK(l.plus_one().eval(sol3) == true);
-    
+    CHECK(l.eval(sol) == true);
+    CHECK(l.plus_one().eval(sol) == false);
+    CHECK(l.eval(sol3) == true);
+    CHECK(l.plus_one().eval(sol3) == false);
     
     l = xlit(vec<var_t>({1,6}));
     CHECK(l.to_str() == "x1+x6");
