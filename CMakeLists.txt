@@ -1,0 +1,91 @@
+cmake_minimum_required(VERSION 3.12)
+
+# set the project name
+project(xnf_cdcl_solver VERSION 0.1)
+
+# specify the C++ standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(CMAKE_BUILD_TYPE)
+else()
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+# options
+option(VERBOSITY "compile with verbosity outputs" ON)
+if(VERBOSITY OR CMAKE_BUILD_TYPE STREQUAL "Debug") 
+    add_definitions(-DVERBOSITY)
+endif()
+
+#static linking to libstdc++ and libgcc in case of Release build; otherwise give warnings!
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare -static-libgcc -static-libstdc++" )# -ftree-vectorizer-verbose=5 -Weffc++")
+#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -static-libgcc -static-libstdc++")
+
+
+# add subdirectories
+add_subdirectory(src)
+
+# add the executable
+add_executable(xnf_cdcl_solver src/main.cpp src/argparse/argparse.hpp)
+
+#find openmp package
+find_package(OpenMP REQUIRED)
+
+
+# link libs to xnf_cdcl_solver
+target_link_libraries(xnf_cdcl_solver PUBLIC ${EXTRA_LIBS} PRIVATE xlit OpenMP::OpenMP_CXX)
+target_include_directories(
+    xnf_cdcl_solver PUBLIC
+    "${PROJECT_BINARY_DIR}"
+    ${EXTRA_INCLUDES}
+    )
+
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+if(COMPILER_SUPPORTS_MARCH_NATIVE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native")
+endif()
+
+# set up unit tests with Catch2 - if found
+find_package(Catch2 3 QUIET)
+if(Catch2_FOUND)
+    message("Catch2 was found!")
+    set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED ON)
+    include(CTest)
+    include(Catch)
+    # These tests can use the Catch2-provided main
+    add_executable(testing tests/test_xlit.cpp tests/test_xcls_watch.cpp tests/test_xsys.cpp tests/test_solve.cpp tests/test_sres.cpp)
+    target_link_libraries(testing PRIVATE xlit Catch2::Catch2WithMain)
+    catch_discover_tests(testing)
+    enable_testing()
+else()
+    message("Catch 2 not found!")
+endif()
+
+# set up micro-benchmarks with google-bench
+find_package(benchmark QUIET)
+if(benchmark_FOUND)
+    message("benchmark lib found!")
+    add_executable(bench tests/benchmark.cpp)
+    target_link_libraries(bench PRIVATE benchmark::benchmark xlit)
+else()
+    message("benchmark lib not found!")
+endif()
+
+get_filename_component(BENCH_FILES "../benchmarks" ABSOLUTE CACHE)
+add_definitions(-DBENCH_FILES="${BENCH_FILES}")
+
+
+
+#add compile definitions to forward compile information to program
+add_compile_definitions(__CMAKE_CXX_COMPILER_ID="${CMAKE_CXX_COMPILER_ID}")
+add_compile_definitions(__CMAKE_CXX_COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}")
+add_compile_definitions(__CMAKE_CXX_STANDARD="${CMAKE_CXX_STANDARD}")
+string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+add_compile_definitions(__CMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
+
+add_compile_definitions(__PROJECT_NAME="${PROJECT_NAME}")
+add_compile_definitions(__PROJECT_VERSION="${PROJECT_VERSION}")
+
