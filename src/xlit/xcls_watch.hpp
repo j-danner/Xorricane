@@ -9,7 +9,7 @@
 #include <ranges>
 
 
-using lit_watch = xlit::iterator;
+using lit_watch = var_t;
 using watch_list_it = std::list<var_t>::const_iterator;
 
 
@@ -44,7 +44,7 @@ class xcls_watch {
     watch_list_it wl_it[2];
     
     /**
-     * @brief literal watches; iterators in xlits[0] and xlits[1] respectively
+     * @brief literal watches; offset into idxs-sets of xlits[0] and xlits[1]
      */
     lit_watch ws[2];
 
@@ -62,24 +62,36 @@ class xcls_watch {
         xlit_dl_count0[j] = {0,0};
       }
       //init ws
-      ws[0] = xlits[0].begin();
-      ws[1] = xlits[1].begin();
+      ws[0] = 0;
+      ws[1] = 0;
     }
 
+    const var_t& ptr_(const cls_size_t& i, const var_t val) const {
+      assert(i==0 || i==1);
+      assert(0<=val && val<xlits[i].get_idxs_().size());
+      //return xlits[i].get_idxs_().at(val);
+      return xlits[i].get_idxs_()[val];
+    }
+    
+    const var_t& ptr_ws(const cls_size_t& i) const {
+      return ptr_(i,ws[i]);
+    }
+    
+
     /**
-     * @brief update ws[i] to new_w and updates watch_list accordingly 
+     * @brief update ws[i] to new_w and updates watch_list accordingly
      * 
      * @param i 0 or 1
      * @param new_w new literal-watch to replace ws[i] -- MUST be distinct!
      * @param watch_list current watch_list to be updated
      */
-    void change_lit_watch(const cls_size_t& i, lit_watch new_w, vec< std::list<var_t> >& watch_list) {
+    void change_lit_watch(const cls_size_t& i, const lit_watch new_w, vec< std::list<var_t> >& watch_list) {
+      assert(i==0 || i==1);
       assert(ws[i] != new_w); //only update if anything has changed!
-      assert(*ws[i] != *new_w);
       //add to new watchlist
-      watch_list[ *new_w ].push_back( *wl_it[i] );
+      watch_list[ ptr_(i,new_w) ].push_back( *wl_it[i] );
       //rm from current watchlist
-      watch_list[ *ws[i] ].erase( wl_it[i] );
+      watch_list[ ptr_(i,ws[i]) ].erase( wl_it[i] );
       //update ws[i] -- this should be the only direct assignment of ws[i] (!)
       ws[i] = new_w;
     };
@@ -89,11 +101,12 @@ class xcls_watch {
      * 
      * @param i idx of literal-watch to advance
      * @param alpha current bool3-alpha
+     * @param alpha_dl dl of alpha-assignments
      * @return upd_ret SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise
      */
-    upd_ret advance_lw(const cls_size_t& i, const vec<bool3>& alpha, const vec<var_t>& dl_count, const var_t& dl, vec< std::list<var_t> >& watch_list) {
+    upd_ret advance_lw(const cls_size_t& i, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count, const var_t& dl, vec< std::list<var_t> >& watch_list) {
       assert(i == (cls_size_t)0 || i == (cls_size_t)1);
-      assert(alpha[ *ws[i] ] != bool3::None);
+      assert(alpha[ ptr_(i,ws[i]) ] != bool3::None);
       
       //TODO shorter & cleaner impl with c++20 ranges?
       //vec<std::ranges::subrange<lit_watch, xlit::iterator, std::ranges::subrange_kind::sized>> tmp{ std::ranges::subrange(ws[i], xlits[i].end()), std::ranges::subrange(xlits[i].begin(), ws[i]) };
@@ -101,10 +114,9 @@ class xcls_watch {
 
       //advance iterator as long as there is another unassigned idx to point to
       auto new_w = ws[i];
-      //++new_w; //TODO rm line?!
-      while( (new_w != xlits[i].end()) && (alpha[*new_w] != bool3::None) ) ++new_w;
-      if(new_w == xlits[i].end()) /*wrap around end if necessary */ new_w = xlits[i].begin();
-      while( (new_w != ws[i]) && (alpha[*new_w] != bool3::None) ) ++new_w;
+      while( (new_w < xlits[i].size()) && (alpha[ ptr_(i,new_w) ] != bool3::None) ) ++new_w;
+      if(new_w == xlits[i].size()) /*wrap around end if necessary */ new_w = 0;
+      while( (new_w != ws[i]) && (alpha[ptr_(i,new_w)] != bool3::None) ) ++new_w;
       //advancing done; now new_w points to ws[i] or at an unassigned idx
 
       //if new_w != ws[i] then a new unassigned idx was found
@@ -128,30 +140,36 @@ class xcls_watch {
         //skip xlits which evaluate to 1 in current search tree
         if(dl_count[ xlit_dl_count1[new_i].first ] == xlit_dl_count1[new_i].second) continue;
 
-        //find first unassigned lit
-        new_w = std::find_if(xlits[new_i].begin(), xlits[new_i].end(), [&alpha](const var_t& i){ return alpha[i]==bool3::None; });
-        //if such idx exists, abort search!
-        if(new_w != xlits[new_i].end()) break;
+        //find lit that was assigned at highest dl (req for proper backtracking!) -- or find unassigned lit!
+        new_w = 0;
+        var_t max_w = 0;
+        while( new_w<xlits[new_i].size() && alpha[ ptr_(new_i,new_w) ]!=bool3::None) {
+          if(alpha_dl[ ptr_(new_i,new_w) ] > alpha_dl[ ptr_(new_i,max_w) ]) max_w = new_w;
+          ++new_w;
+        }
+        //if new_w is not xlits[new_i].size(), then there is an unassigned literal, i.e., 
+        if(new_w != xlits[new_i].size()) break;
+        new_w = max_w;
+        var_t dl_sat = alpha_dl[ ptr_(new_i,new_w) ];
         //otherwise eval and see whether it is satisfied
         if( xlits[new_i].eval(alpha) ) {
           //new xlit to be watched found (which luckily already renders xcls satisfied!) --> change watched xlit and return SAT
-          xlits[i].swap(xlits[new_i]); //ensures that ws[i] are not invalidated! -- but not too relevant, as ws[i] is updated afterwards anyways...
-          new_w = xlits[i].begin();
+          xlits[i].swap(xlits[new_i]); //ensures that not iterators into xlits are invalidated
+          new_w = 0;
           change_lit_watch(i, new_w, watch_list);
           std::swap(xlit_dl_count0[i], xlit_dl_count0[new_i]);
           std::swap(xlit_dl_count1[i], xlit_dl_count1[new_i]);
-          xlit_dl_count0[i] = {dl, dl_count[dl]};
+          xlit_dl_count0[i] = {dl_sat, dl_count[dl_sat]};
           assert( !is_active(dl_count) );
           return upd_ret::SAT;
         }
         //now xlits[new_i] evaluates to 1 --> choose different new_i
-        xlit_dl_count1[new_i] = {dl, dl_count[dl]};
+        xlit_dl_count1[new_i] = {dl_sat, dl_count[dl_sat]};
       }
 
       if(new_i != xlits.size()) {
         //new xlit to watch found! --> swap xlit[new_i] into correct position!
-        std::swap(xlits[i], xlits[new_i]); //invalidates ws[i] -- but no worries, this is fixed next!
-        new_w = xlits[i].begin();
+        xlits[i].swap(xlits[new_i]); //ensures that no iterators into xlits are invalidated
         change_lit_watch(i, new_w, watch_list);
         std::swap(xlit_dl_count0[i], xlit_dl_count0[new_i]);
         std::swap(xlit_dl_count1[i], xlit_dl_count1[new_i]);
@@ -160,8 +178,7 @@ class xcls_watch {
       } else {
         //we have new_i == xlits.size(), i.e., no xlit to be watched found! --> all other xlits eval to 1 (!) --> learn unit!
         //swap xlits s.t. xlits[0] is unit; ws[i] can be left untouched!
-        //std::swap(xlits[1-i], xlits[0]); //invalidates iterators!!
-        xlits[1-i].swap(xlits[0]);
+        xlits[1-i].swap(xlits[0]); //ensures that not iterators into xlits are invalidated
         std::swap(ws[1-i], ws[0]);
         std::swap(wl_it[1-i], wl_it[0]);
         std::swap(xlit_dl_count0[1-i], xlit_dl_count0[0]);
@@ -178,37 +195,49 @@ class xcls_watch {
       assert(!l2.is_one() && !l2.is_zero());
       init();
     };
-
+    
     xcls_watch(const xcls& cl) noexcept {
       assert(cl.deg()>=2);
       xlits.reserve( cl.deg() ); 
-      for(auto lit : cl.get_ass_VS().get_xlits()) { xlits.emplace_back( lit.add_one().get_idxs() ); }
+      for(auto lit : cl.get_ass_VS().get_xlits()) { xlits.emplace_back( lit.add_one() ); }
       init();
     };
 
     //TODO implement using move-ctor -- simply move literals and add one?!
     xcls_watch(xcls&& cl) noexcept {
+      if(cl.deg()<2) {
+        std::cout << "!";
+      }
       assert(cl.deg()>=2);
       xlits.reserve( cl.deg() ); 
-      for(auto lit : cl.get_ass_VS().get_xlits()) { xlits.emplace_back( lit.add_one().get_idxs() ); }
+      for(auto lit : cl.get_ass_VS().get_xlits()) { xlits.emplace_back( lit.add_one() ); }
       init();
     };
 
     xcls_watch(const xcls_watch& o) noexcept : xlits(o.xlits), xlit_dl_count1(o.xlit_dl_count1), xlit_dl_count0(o.xlit_dl_count0) { 
       ws[0] = o.ws[0]; ws[1] = o.ws[1]; wl_it[0] = o.wl_it[0]; wl_it[1] = o.wl_it[1];
     };
+    
+    xcls_watch(const xsys& lits) noexcept {
+      assert(lits.dim()>=2);
+      xlits = lits.get_xlits();
+      std::for_each(xlits.begin(), xlits.end(), [](xlit& l){ l.add_one(); });
+      init();
+    };
+
 
     /**
      * @brief updates xcls_watch and watch_list according to the new assigned literal lit, dl_count, dl and alpha.
      * 
      * @param new_lit literal that was newly assigned
      * @param alpha current bool3-assignment
+     * @param alpha_dl dl of alpha-assignments
      * @param dl_count current dl_count
      * @param dl current dl
      * @param watch_list current watch_list
      * @return upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
      */
-    upd_ret update(const var_t& new_lit, const vec<bool3>& alpha, const vec<var_t>& dl_count, const var_t& dl, vec< std::list<var_t> >& watch_list) {
+    upd_ret update(const var_t& new_lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count, const var_t& dl, vec< std::list<var_t> >& watch_list) {
       //check if clause needs any processing
       if(!is_active(dl_count) ) {
         assert(is_sat(dl_count) || is_unit(dl_count));
@@ -216,18 +245,18 @@ class xcls_watch {
       }
 
       //at least one of { *ws[0], *ws[1] } must be new_lit by construction (update should only be called on watch_list elements...)
-      assert( *ws[0] == new_lit || *ws[1] == new_lit );
+      assert( ptr_ws(0) == new_lit || ptr_ws(1) == new_lit );
       //update one of them, then call itself recursively!
-      const auto i = *(ws[0]) == new_lit ? 0 : 1;
-      assert( *(ws[i]) == new_lit );
+      const auto i = ptr_ws(0) == new_lit ? 0 : 1;
+      assert( ptr_ws(i) == new_lit );
       
-      upd_ret upd = advance_lw(i, alpha, dl_count, dl, watch_list);
+      upd_ret upd = advance_lw(i, alpha, alpha_dl, dl_count, dl, watch_list);
       //note watch-lists are already updated! --> only need to deal with 
       //assert correct return value!
       if(upd == upd_ret::NONE) {
         assert( is_none(alpha) );
         //update ws[1] if necessary! (also updates upd)
-        if(*ws[1-i]==new_lit) upd = advance_lw(1-i, alpha, dl_count, dl, watch_list);
+        if(ptr_ws(1-i)==new_lit) upd = advance_lw(1-i, alpha, alpha_dl, dl_count, dl, watch_list);
         assert( (upd!=upd_ret::NONE) == is_none(alpha) );
       } else if(upd == upd_ret::SAT) {
         assert( is_sat(dl_count) );
@@ -243,12 +272,13 @@ class xcls_watch {
      * @brief updates xcls_watch and watch_list according to current alpha, updates watch_list (and requires dl_count and dl)
      * 
      * @param alpha current bool3-assignment
+     * @param alpha_dl dl of alpha-assignments
      * @param dl_count current dl_count
      * @param dl current dl
      * @param watch_list current watch_list
      * @return upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
      */
-    upd_ret update(const vec<bool3>& alpha, const vec<var_t>& dl_count, const var_t& dl, vec< std::list<var_t> >& watch_list) {
+    upd_ret update(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count, const var_t& dl, vec< std::list<var_t> >& watch_list) {
       //check if clause needs any processing
       if( !is_active(dl_count) ) {
         assert(is_sat(dl_count) || is_unit(dl_count));
@@ -256,7 +286,7 @@ class xcls_watch {
       }
 
       //check if -- and which ws need to be updated
-      if(alpha[ *(ws[0]) ] == bool3::None && alpha[ *(ws[1]) ] == bool3::None) {
+      if(alpha[ ptr_ws(0) ] == bool3::None && alpha[ ptr_ws(1) ] == bool3::None) {
         //nothing needs to be updated!
         if(is_none(alpha)) return upd_ret::NONE; //TODO these next two cases should never occur, or??
         else if(is_sat(dl_count)) return upd_ret::SAT;
@@ -264,16 +294,16 @@ class xcls_watch {
         assert(false);
       }
       //at least one of { *ws[0], *ws[1] } can be advanced!
-      assert( alpha[*ws[0]] != bool3::None || alpha[*ws[1]] != bool3::None );
-      const auto i = alpha[*(ws[0])] != bool3::None ? 0 : 1;
+      assert( alpha[ptr_ws(0)] != bool3::None || alpha[ptr_ws(1)] != bool3::None );
+      const auto i = alpha[ptr_ws(0)] != bool3::None ? 0 : 1;
       
-      upd_ret upd = advance_lw(i, alpha, dl_count, dl, watch_list);
+      upd_ret upd = advance_lw(i, alpha, alpha_dl, dl_count, dl, watch_list);
       //note watch-lists are already updated! --> only need to deal with 
       //assert correct return value!
       if(upd == upd_ret::NONE) {
         assert( is_none(alpha) );
         //update ws[1] if necessary! (also updates upd)
-        if(alpha[*ws[1-i]]!=bool3::None) upd = advance_lw(1-i, alpha, dl_count, dl, watch_list);
+        if(alpha[ptr_ws(1-i)]!=bool3::None) upd = advance_lw(1-i, alpha, alpha_dl, dl_count, dl, watch_list);
         assert( (upd==upd_ret::NONE) == is_none(alpha) );
       } else if(upd == upd_ret::SAT) {
         assert( is_sat(dl_count) );
@@ -290,8 +320,8 @@ class xcls_watch {
     
     xcls to_xcls() const { return xcls( xlits ); };
 
-    const lit_watch get_lw0() const { return ws[0]; };
-    const lit_watch get_lw1() const { return ws[1]; };
+    const lit_watch& get_wl0() const { return ptr_ws(0); };
+    const lit_watch& get_wl1() const { return ptr_ws(1); };
 
     void set_wl_it0(watch_list_it wli) { wl_it[0] = wli; };
     void set_wl_it1(watch_list_it wli) { wl_it[1] = wli; };
@@ -339,7 +369,7 @@ class xcls_watch {
      * @return true iff xcls is satisfied under current alpha
      */
     bool is_none(const vec<bool3>& alpha) const { 
-      return alpha[ *ws[0] ] == bool3::None && alpha[ *ws[1] ] == bool3::None;
+      return alpha[ ptr_ws(0) ] == bool3::None && alpha[ ptr_ws(1) ] == bool3::None;
     }
 
     /**
@@ -349,7 +379,7 @@ class xcls_watch {
      * @return true if and only if ind is watched by xcls
      */
     bool watches(const var_t& ind) const {
-      return (*ws[0] == ind) || (*ws[1] == ind);
+      return (ptr_ws(0) == ind) || (ptr_ws(1) == ind);
     }
 
     
@@ -435,8 +465,8 @@ class xcls_watch {
       assert( xlit_dl_count0.size() == xlits.size() );
       assert( xlit_dl_count1.size() == xlits.size() );
       //sanity check to see whether ws[i] is actually contained in xlits[i]
-      assert( std::find( xlits[0].begin(), xlits[0].end(), *ws[0]) != xlits[0].end() );
-      assert( std::find( xlits[1].begin(), xlits[1].end(), *ws[1]) != xlits[1].end() );
+      assert( std::find( xlits[0].begin(), xlits[0].end(), ptr_ws(0)) != xlits[0].end() );
+      assert( std::find( xlits[1].begin(), xlits[1].end(), ptr_ws(1)) != xlits[1].end() );
 
       return true;
     };

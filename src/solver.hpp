@@ -1,7 +1,6 @@
 #pragma once
 
 //STILL BUGGY -DO NOT USE-
-//#define USE_LT_IDXS
 
 #include <stack>
 #include <math.h>
@@ -177,10 +176,10 @@ class solver
       xclss.emplace_back( std::move(cls) );
       // update watch_lists and init iterators of watch_lits!
       const var_t i = xclss.size()-1;
-      watch_list[ *(xclss.back().get_lw0()) ].emplace_back(i);
-      xclss.back().set_wl_it0( std::next( watch_list[ *(xclss.back().get_lw0()) ].end(), -1) ); //add iterator to last el in watch_list
-      watch_list[ *(xclss.back().get_lw1()) ].emplace_back(i);
-      xclss.back().set_wl_it1( std::next( watch_list[ *(xclss.back().get_lw1()) ].end(), -1) ); //add iterator to last el in watch_list
+      watch_list[ (xclss.back().get_wl0()) ].emplace_back(i);
+      xclss.back().set_wl_it0( std::next( watch_list[ (xclss.back().get_wl0()) ].end(), -1) ); //add iterator to last el in watch_list
+      watch_list[ (xclss.back().get_wl1()) ].emplace_back(i);
+      xclss.back().set_wl_it1( std::next( watch_list[ (xclss.back().get_wl1()) ].end(), -1) ); //add iterator to last el in watch_list
       assert(assert_data_structs());
     }
 

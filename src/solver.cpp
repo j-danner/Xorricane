@@ -239,9 +239,9 @@ std::pair<var_t, xcls> solver::analyze_exp() {
         assert(!is_subspace(learnt_cls.get_ass_VS(), Ls.back()));
         if(reason.back() > xclss.size()) { pop_trail(); Ls.pop_back(); break; }
         
-        const auto tmp_cls = xcls_watch( learnt_cls.update(Ls_dl.back()).get_ass_VS() );
-        VERB(70, "   * conflict clause on prev dl is "+tmp_cls.to_str(assignments));
-        if( tmp_cls.is_unit(dl_count) || tmp_cls.is_sat(dl_count) /*|| tmp_cls.is_unsat()*/ ) {
+        const auto tmp_cls = xcls( learnt_cls.update(Ls_dl.back()) );
+        VERB(70, "   * conflict clause on prev dl is "+tmp_cls.to_str());
+        if( tmp_cls.is_unit() || tmp_cls.is_zero() ) {
             VERB(50, "   * 1UIP! ");
             break; 
         }
@@ -540,6 +540,7 @@ void solver::add_learnt_cls(xcls&& cls) {
     assert(assert_data_structs());
     //assert(cls.deg()>1); //IF THIS FAILS ADD PROPER HANDLING FOR LIN-CLAUSES! (add to xsys directly!)
     if(cls.deg()==1) {
+        assert(dl == 0);
         add_new_xlit( cls.get_unit() );
     }
     //now cls has at least two xlits, i.e., we can construct xcls_watch!
@@ -548,11 +549,9 @@ void solver::add_learnt_cls(xcls&& cls) {
     const var_t i = xclss.size();
     // add cls to xclss (and update watch_lists)
     init_and_add_xcls_watch( std::move(cls) );
-    assert(assert_data_structs());
     xclss[i].set_unit(assignments, dl_count, dl);
-    assert(assert_data_structs());
     VERB(65, "c new xclss "+xclss.back().to_str(assignments));
-    xclss[i].update(alpha, dl_count, dl, watch_list);
+    xclss[i].update(alpha, assignments_dl, dl_count, dl, watch_list);
     assert( xclss.back().is_unit(dl_count) );
 
     // perform steps as in GCP case UNIT
@@ -595,7 +594,7 @@ void solver::GCP(stats &s) {
             //is_active can only be used AFTER update! -- instead of is_active check if update has been performed by checking if upd_lt is watched
             assert(xclss[i].watches(upd_lt));
             if(!xclss[i].is_active(dl_count)) continue;
-            const auto ret = xclss[i].update(alpha, dl_count, dl, watch_list);
+            const auto ret = xclss[i].update(alpha, assignments_dl, dl_count, dl, watch_list);
             switch (ret) {
             case upd_ret::SAT:
                 assert(xclss[i].is_sat(dl_count));
@@ -806,28 +805,7 @@ bool solver::assert_data_structs() const noexcept
     // check data structs of xclss
     for (var_t i = 0; i < xclss.size(); i++) {
         assert(xclss[i].assert_data_struct());
-#ifdef USE_LT_IDXS
-        if (is_consistent && xclss[i].is_active()) {
-            VERB(-1, to_str());
-            for (cls_size_t j = 0; j < xclss[i].size(); j++) {
-                assert(std::find(lt_idxs[xclss[i].LT(j)].begin(), lt_idxs[xclss[i].LT(j)].end(), std::pair<var_t, cls_size_t>{i, j}) != lt_idxs[xclss[i].LT(j)].end());
-            }
-        }
-#endif
     }
-#ifdef USE_LT_IDXS
-    // check that lt_idxs is correct
-    for (var_t lt = 0; lt < lt_idxs.size(); lt++) {
-        for ([[maybe_unused]] const auto &[i, j] : lt_idxs[lt]) {
-            if(!xclss[i].is_active()) continue;
-            // check that cls have correct LTs
-            //assert(xclss[i].LT(j) == lt); //BEWARE ORDER MIGHT CHANGE IN xclss[i]!
-            const auto lts = xclss[i].get_LTs();
-            assert( std::find( lts.begin(), lts.end(), lt ) != lts.end() );
-            // check that cls are still activated! -- might not be true, e.g. if updating first xcls literal leads to SAT, clause is rem, but other lits are still referenced in lt_idxs! ...BUT GCP skips updates of those!
-        }
-    }
-#endif
     // check that assignments are backed by xsys_stack
 #ifndef NDEBUG
     xsys total = xsys();
