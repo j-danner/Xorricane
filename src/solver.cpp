@@ -102,9 +102,8 @@ void solver::backtrack(const var_t& lvl) {
     //backtrack state
     while ((var_t)state_stack.size() > dl + 2) state_stack.pop_back();
     active_cls = state_stack.back().active_cls; //TODO why not correct?!
-    //assert(active_cls == std::count_if(xclss.begin(), xclss.end(), [](const xcls_watch &xcls_w) { return xcls_w.is_active(); }));
-    active_cls = std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); });
-    //TODO fix active_cls counting!
+    assert(active_cls == std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); }));
+    //active_cls = std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); });
     assignments_xsys = state_stack.back().L;
 
     // revert assignments and alpha, and reset trail and reasons
@@ -965,19 +964,13 @@ bool solver::assert_data_structs() const noexcept {
         assert(xclss[i].assert_data_struct());
         //only check advanced conditions if gcp_queue is empty!
         if(gcp_queue.empty()) assert(xclss[i].assert_data_struct(alpha,dl_count));
-        //ensure that xcls point to correct positions in watch_lists
-        //assert( *xclss[i].get_wl_it0() == i);
-        //assert( *xclss[i].get_wl_it1() == i);
     }
     //check watch-lists
     auto it = watch_list.begin();
     var_t idx = 0;
     while(it != watch_list.end()) {
-        for([[maybe_unused]] auto i : *it) {
-            assert( xclss[i].watches( idx ) );
-        }
-        ++it;
-        ++idx;
+        for([[maybe_unused]] auto i : *it) { assert( xclss[i].watches( idx ) ); }
+        ++it; ++idx;
     }
 
 
