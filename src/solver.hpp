@@ -23,11 +23,16 @@ struct state_repr {
   var_t active_cls;
 
   /**
-   * @brief current non-constant assignments
+   * @brief current (non)-constant assignments
    */
   xsys L;
+
+  /**
+   * @brief current trail length
+   */
+  var_t trail_length;
   
-  state_repr(const var_t _active_cls, const xsys& _L) : active_cls(_active_cls), L(_L) {};
+  state_repr(const var_t _active_cls, const xsys& _L, const var_t& _trail_length) : active_cls(_active_cls), L(_L), trail_length(_trail_length) {};
 };
 
 class solver
@@ -92,11 +97,21 @@ class solver
      * @brief current assignments of vars; assignments[i] contains xlit with LT i
      */
     vec< xlit > assignments;
+
+    /**
+     * @brief current assignments -- stored as xsys
+     */
+    xsys assignments_xsys;
     
     /**
      * @brief current assignments of vars; assignments[i] contains xlit with LT i
      */
     vec< bool3 > alpha;
+
+    /**
+     * @brief dl of chosen/implied alpha assignments; i was true/false-decided at dl alpha_dl[i]
+     */
+    vec<var_t> alpha_dl;
 
     /**
      * @brief dl of chosen assignments; i was assigned at dl assignments_dl[i]
@@ -109,7 +124,7 @@ class solver
     vec<var_t> reason;
 
     /**
-     * @brief trail of assignments/unit-propagations
+     * @brief trail of decisions/unit-propagations
      */
     vec<var_t> trail;
 
@@ -128,7 +143,21 @@ class solver
 
     void add_learnt_cls(xcls&& cls);
 
-    bool pop_trail();
+    inline bool pop_trail() noexcept {
+      if (trail.empty()) return false;
+      //check if assignments or only alpha needs to be cleared!
+      if(alpha_dl[trail.back()] <= assignments_dl[trail.back()]) {
+        //clear assignments_dl
+        assignments[trail.back()] = xlit();
+        assignments_dl[trail.back()] = 0;
+      }
+      alpha[trail.back()] = bool3::None;
+      alpha_dl[trail.back()] = 0;
+      trail.pop_back();
+      reason.pop_back();
+      return true;
+    }
+
 
     typedef std::pair<xsys,xsys> (solver::*dec_heu_t)() const;
     typedef std::pair<var_t,xcls> (solver::*ca_t)();
@@ -139,7 +168,7 @@ class solver
     void bump_score(const xlit& lit);
     void decay_score();
 
-    inline void add_new_xsys(const xsys& L) {
+    inline void add_new_guess(const xsys& L) {
      #ifndef NDEBUG
       xsys_stack.back().push_back(L);
      #endif
@@ -153,23 +182,69 @@ class solver
         //update alpha
         alpha[lt] = assignments[lt].as_bool3();
         //put into gcp_queue if necessary!
-        if(alpha[lt] != bool3::None) gcp_queue.emplace(lt);
+        if(alpha[lt] != bool3::None) {
+          gcp_queue.emplace(lt);
+          alpha_dl[lt] = dl;
+        }
       };
       is_consistent &= L.is_consistent();
+      assignments_xsys += L;
+
+      //search for new uniquely determined inds!
+      //TODO needs to be optimized! (only update relevant parts!!)
+      for(const auto& [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
+          if(assignments_xsys.get_xlits(idx).as_bool3() != alpha[lt]) {
+            alpha[lt] = assignments_xsys.get_xlits(idx).as_bool3();
+            alpha_dl[lt] = dl;
+            gcp_queue.emplace(lt);
+            trail.emplace_back(lt);
+            reason.emplace_back(-1); //TODO what is the reason clause?!
+          }
+      }
+      is_consistent = assignments_xsys.is_consistent();
     };
 
-    void add_new_xlit(const xlit& lit) {
+    /**
+     * @brief adds new xlit to data structure if deduced at current dl; also reduces with current assignments to find new true/false assignments
+     * 
+     * @param lit literal to be added
+     * @param rs idx of reason clause
+     */
+    void add_new_xlit(const xlit& lit, const var_t& rs) {
+     #ifndef NDEBUG
+      xsys_stack.back().back() += lit;
+     #endif
       const var_t lt = lit.LT();
+      // add to trail
+      trail.emplace_back(lt);
+      reason.emplace_back(rs);
       //update assignments
       assignments[lt] = lit;
       assignments_dl[lt] = dl;
       if(lit.is_one()) is_consistent = false;
-      alpha[lt] = assignments[lt].as_bool3();
       //put into gcp_queue if necessary!
-      if(alpha[lt] != bool3::None) gcp_queue.emplace(lt);
+      if(assignments[lt].as_bool3() != bool3::None) {
+        alpha[lt] = assignments[lt].as_bool3();
+        alpha_dl[lt] = dl;
+        gcp_queue.emplace(lt);
+      }
+      //update assignments_xsys
+      assignments_xsys += assignments[lt];
+      is_consistent = assignments_xsys.is_consistent();
 
-      //TODO search for new uniquely determined inds!
+      if(lt == 0) return;
 
+      //search for new uniquely determined inds! (only if lit != 1)
+      //TODO needs to be optimized! (only update relevant parts!!)
+      for(const auto& [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
+          if(assignments_xsys.get_xlits(idx).as_bool3() != alpha[lt]) {
+            alpha[lt] = assignments_xsys.get_xlits(idx).as_bool3();
+            alpha_dl[lt] = dl;
+            gcp_queue.emplace(lt);
+            trail.emplace_back(lt);
+            reason.emplace_back(rs); //TODO what is the reason clause?!
+          }
+      }
     };
 
     void init_and_add_xcls_watch(xcls&& cls) {
@@ -177,9 +252,7 @@ class solver
       // update watch_lists and init iterators of watch_lits!
       const var_t i = xclss.size()-1;
       watch_list[ (xclss.back().get_wl0()) ].emplace_back(i);
-      xclss.back().set_wl_it0( std::next( watch_list[ (xclss.back().get_wl0()) ].end(), -1) ); //add iterator to last el in watch_list
       watch_list[ (xclss.back().get_wl1()) ].emplace_back(i);
-      xclss.back().set_wl_it1( std::next( watch_list[ (xclss.back().get_wl1()) ].end(), -1) ); //add iterator to last el in watch_list
       assert(assert_data_structs());
     }
 
@@ -218,7 +291,7 @@ class solver
     /**
      * @brief backtracks to dl
      */
-    void backtrack();
+    void backtrack(const var_t& lvl);
 
 
     //decision heuristics
@@ -238,6 +311,9 @@ class solver
     //solve-main
     void dpll_solve(stats& s);
     stats dpll_solve() { stats s; dpll_solve(s); return s; };
+    
+    void cdcl_solve(stats& s);
+    stats cdcl_solve() { stats s; cdcl_solve(s); return s; };
 
     var_t get_dl() const noexcept { return dl; };
     

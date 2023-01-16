@@ -52,7 +52,7 @@ class xlit
         inline bool is_one() const { return p1 && (idxs.empty()); };
         inline bool is_zero() const { return !p1 && idxs.empty(); };
 
-        inline bool3 as_bool3() const { return (size() != 1) ? bool3::None : (has_constant() ? bool3::True : bool3::False); };
+        inline bool3 as_bool3() const { return (size()!=1 && !is_one()) ? bool3::None : (has_constant() ? bool3::True : bool3::False); };
 
         inline bool has_constant() const { return p1; };
 
