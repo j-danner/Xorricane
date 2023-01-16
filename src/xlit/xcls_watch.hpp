@@ -211,14 +211,13 @@ class xcls_watch {
       init();
     };
 
-    //TODO implement using move-ctor -- simply move literals and add one?!
     xcls_watch(xcls&& cl) noexcept {
       if(cl.deg()<2) {
         std::cout << "!";
       }
       assert(cl.deg()>=2);
       xlits.reserve( cl.deg() ); 
-      for(auto lit : cl.get_ass_VS().get_xlits()) { xlits.emplace_back( lit.add_one() ); }
+      for(auto lit : cl.get_ass_VS().get_xlits()) { xlits.emplace_back( std::move(lit.add_one()) ); }
       init();
     };
 
@@ -364,7 +363,6 @@ class xcls_watch {
      */
     bool is_unit(const vec<var_t>& dl_count) const { 
       return (dl_count[ xlit_dl_count1[0].first ] == xlit_dl_count1[0].second); // || (dl_count[ xlit_dl_count1[1].first ] == xlit_dl_count1[1].second);
-      //TODO or based on *lw_it[1] being assigned?
     }
     
     bool is_inactive(const vec<var_t>& dl_count) const { 

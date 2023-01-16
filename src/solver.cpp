@@ -58,10 +58,8 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     assignments_xsys = xsys();
     for(const auto& lit : _L) add_new_xlit(lit,-1);
 
-    // if(opt.dh == msp || opt.dh == mt) { //TODO only update scores if used!
     // init activity_score, size of watch_list
     activity_score = vec<unsigned int>(opt.num_vars + 1, 1);
-    // TODO run in parallel?! (or at least integreate in above construction of Vxlit?!)
     for (var_t i = 0; i < opt.num_vars+1; i++) {
         activity_score[i] += watch_list[i].size();
     }
@@ -101,7 +99,7 @@ void solver::backtrack(const var_t& lvl) {
 
     //backtrack state
     while ((var_t)state_stack.size() > dl + 2) state_stack.pop_back();
-    active_cls = state_stack.back().active_cls; //TODO why not correct?!
+    active_cls = state_stack.back().active_cls;
     assert(active_cls == std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); }));
     //active_cls = std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); });
     assignments_xsys = state_stack.back().L;
@@ -603,7 +601,6 @@ void solver::add_learnt_cls(xcls&& cls) {
 vec<xlit> xlits;
 
 //perform full GCP -- does not stop if conflict is found -- otherwise assert_data_struct will fail!
-//TODO stop as soon as conflict is found!
 void solver::GCP(stats &s) {
     VERB(90, "GCP start");
     while(!gcp_queue.empty() && is_consistent) {

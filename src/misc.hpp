@@ -63,8 +63,6 @@ struct options {
 
     int timeout = 0;
 
-    //TODO selected heuristics!
-
     //default settings
     options() : num_vars(0), num_cls(0) {};
     options(var_t n_vars) : num_vars(n_vars), num_cls(0) {};

@@ -162,13 +162,11 @@ bool xsys::eval(const vec<bool>& sol) const {
 
 void xsys::solve(vec<bool>& sol_) const {
     if(xlits.size()==0) return;
-    //TODO can be done in parallel!!
     for (const auto &lt_row_idx : pivot_poly_idx) {
         const var_t lt = lt_row_idx.first;
         const int row_idx = lt_row_idx.second;
         //update sol_[lt]: if sol_ is a zero of the xlit do nothing, otherwise flip it
         sol_[lt-1] = xlits[row_idx].eval(sol_) ? sol_[lt-1] : !sol_[lt-1];
-        //sol_[lt] = !sol_[lt] ^ xlits[row_idx].eval(sol_);
     };
 };
 

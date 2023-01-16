@@ -141,7 +141,7 @@ void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
     //set number of omp jobs!
     omp_set_num_threads(opts.jobs > omp_get_max_threads() ? omp_get_max_threads() : opts.jobs);
 
-    //time comp, start //TODO should we also measure argparse time?
+    //time comp, start
     s.begin = std::chrono::steady_clock::now();
 
     //std::cout << to_str( xnf ) << std::endl;
