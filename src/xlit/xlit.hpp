@@ -37,6 +37,7 @@ class xlit
         };
         xlit(const vec< var_t >& idxs_, const bool p1_, const bool b) noexcept : p1(p1_), idxs(idxs_) { if(!b){ init(); } };
         xlit(vec< var_t >&& idxs_, const bool p1_, const bool b) noexcept : p1(p1_), idxs(std::move(idxs_)) { if(!b){ init(); } };
+        xlit(var_t& idx, const bool p1_) noexcept : p1(p1_), idxs({idx}) {};
 
         ~xlit() = default;
 

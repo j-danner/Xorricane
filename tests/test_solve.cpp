@@ -27,16 +27,16 @@ TEST_CASE( "solving test instances" , "[solver]" ) {
         CHECK( s.sat == false ); //UNSAT
     }
     
-    SECTION( "test4.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test4.xnf");
+    SECTION( "test18.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test18.xnf");
         auto slvr = solver(clss);
-        CHECK( slvr.to_str() == "x1 x2+1; x2 x3+1; x3 x4+1; x3+x5 x6; x4 x5+x6+1; x5+x6 x1+1; x6+1 x7+1; x7 x3+x5+1;" );
-        //CHECK( slvr.to_str() == "x1 x2+1; x1+1 x5+x6; x2 x3+1; x3 x4+1; x3+x5 x6; x3+x5+1 x7; x4 x5+x6+1; x6+1 x7+1;" );
-        
-        stats s = slvr.dpll_solve();
-        CHECK( s.sat == false ); //UNSAT!
-    }
+        slvr.get_opts()->verb = 90;
 
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
     SECTION( "test5.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test5.xnf");
         auto slvr = solver(clss);
@@ -177,13 +177,14 @@ TEST_CASE( "solving test instances" , "[solver]" ) {
         CHECK( check_sol(clss.cls, s.sol) );
     }
     
-    SECTION( "test18.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test18.xnf");
+    SECTION( "test4.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test4.xnf");
         auto slvr = solver(clss);
-
+        CHECK( slvr.to_str() == "x1 x2+1; x2 x3+1; x3 x4+1; x3+x5 x6; x4 x5+x6+1; x5+x6 x1+1; x6+1 x7+1; x7 x3+x5+1;" );
+        //CHECK( slvr.to_str() == "x1 x2+1; x1+1 x5+x6; x2 x3+1; x3 x4+1; x3+x5 x6; x3+x5+1 x7; x4 x5+x6+1; x6+1 x7+1;" );
+        
         stats s = slvr.dpll_solve();
-        CHECK( s.sat == true ); //SAT!
-        CHECK( check_sol(clss.cls, s.sol) );
+        CHECK( s.sat == false ); //UNSAT!
     }
     
     SECTION( "test19.xnf" ) {
@@ -195,8 +196,76 @@ TEST_CASE( "solving test instances" , "[solver]" ) {
         CHECK( check_sol(clss.cls, s.sol) );
     }
     
+    SECTION( "test20.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test20.xnf");
+        auto slvr = solver(clss);
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+
+    SECTION( "test21.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test21.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+
+    SECTION( "test22.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test22.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+
+    SECTION( "test23.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test23.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test24.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test24.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test25.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test25.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
     SECTION( "rand-3-6.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf");
+        auto slvr = solver(clss);
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "../../benchmarks/instances/2xnfs/cdcl/tmpzw1cx_np.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/tmpzw1cx_np.xnf");
         auto slvr = solver(clss);
 
         stats s = slvr.dpll_solve();

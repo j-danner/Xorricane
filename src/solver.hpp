@@ -43,13 +43,6 @@ class solver
      */
     vec< xcls_watch > xclss;
 
-   #ifndef NDEBUG
-    /**
-     * @brief stack of lists of xsyses for backtracking
-     */
-    std::deque< std::list<xsys> > xsys_stack;
-   #endif
-
     /**
      * @brief watch_list; watch_list[i] contains all idxs j s.t. xclss[j] watches indet i
      */
@@ -74,7 +67,7 @@ class solver
     /**
      * @brief stack of state repr -- used for backtracking (and for dl-wise update of learnt-clauses)
      */
-    std::list<state_repr> state_stack;
+    vec<state_repr> state_stack;
     
     /**
      * @brief 'activity' of each variable; used for decision heuristic
@@ -107,6 +100,11 @@ class solver
      * @brief current assignments of vars; assignments[i] contains xlit with LT i
      */
     vec< bool3 > alpha;
+    
+    /**
+     * @brief phase of last assignment - phase saving
+     */
+    vec< bool3 > last_phase;
 
     /**
      * @brief dl of chosen/implied alpha assignments; i was true/false-decided at dl alpha_dl[i]
@@ -126,7 +124,7 @@ class solver
     /**
      * @brief trail of decisions/unit-propagations
      */
-    vec<var_t> trail;
+    std::list<var_t> trail;
 
     /**
      * @brief queue of lits that were assigned but not yet propagated
@@ -151,6 +149,7 @@ class solver
         assignments[trail.back()] = xlit();
         assignments_dl[trail.back()] = 0;
       }
+      last_phase[trail.back()] = alpha[trail.back()];
       alpha[trail.back()] = bool3::None;
       alpha_dl[trail.back()] = 0;
       trail.pop_back();
@@ -168,12 +167,29 @@ class solver
     void bump_score(const xlit& lit);
     void decay_score();
 
+    void find_implied_alpha(const var_t rs) {
+      //TODO needs to be optimized! (only update relevant parts!!)
+      for(const auto& [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
+        if(assignments_xsys.get_xlits(idx).as_bool3() != alpha[lt]) {
+          if(assignments[lt].is_zero()) {
+            assignments[lt] = assignments_xsys.get_xlits(idx);
+            assignments_dl[lt] = dl;
+          }
+          alpha[lt] = assignments_xsys.get_xlits(idx).as_bool3();
+          alpha_dl[lt] = dl;
+          gcp_queue.emplace(lt);
+          trail.emplace_back(lt);
+          reason.emplace_back(rs); //TODO what is the reason clause?!
+          VERB(65, "new ALPHA " + assignments_xsys.get_xlits(idx).to_str() + (rs!=-1 ? " implied " : " with reason clause " + xclss[rs].to_str()) );
+        }
+      }
+    }
+
     inline void add_new_guess(const xsys& L) {
-     #ifndef NDEBUG
-      xsys_stack.back().push_back(L);
-     #endif
       //update assignments
       for(const auto& [lt,idx] : L.get_pivot_poly_idx()) {
+        assert(assignments[lt].is_zero()); //ensure that guess is actually new!
+        //TODO should we allow to guess variables for which we already have information?
         assignments[lt] = L.get_xlits(idx);
         assignments_dl[lt] = dl;
         trail.emplace_back( lt );
@@ -187,41 +203,66 @@ class solver
           alpha_dl[lt] = dl;
         }
       };
-      is_consistent &= L.is_consistent();
       assignments_xsys += L;
+      is_consistent = assignments_xsys.is_consistent();
 
       //search for new uniquely determined inds!
-      //TODO needs to be optimized! (only update relevant parts!!)
-      for(const auto& [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
-          if(assignments_xsys.get_xlits(idx).as_bool3() != alpha[lt]) {
-            alpha[lt] = assignments_xsys.get_xlits(idx).as_bool3();
-            alpha_dl[lt] = dl;
-            gcp_queue.emplace(lt);
-            trail.emplace_back(lt);
-            reason.emplace_back(-1); //TODO what is the reason clause?!
-          }
-      }
+      find_implied_alpha(-1);
       is_consistent = assignments_xsys.is_consistent();
     };
+
+    /**
+     * @brief decrease active_cls by one -- starting at dl lvl
+     * 
+     * @param lvl dl in which cls got inactive
+     */
+    void decr_active_cls(const var_t& lvl) {
+      //update curr val
+      --active_cls;
+      //update vals in state_stack
+      for(var_t j = lvl+1; j<state_stack.size(); ++j) --state_stack[j].active_cls;
+    }
+    
+    /**
+     * @brief decrease active_cls by one -- starting at dl lvl
+     * 
+     * @param lvl dl in which cls got inactive
+     */
+    void incr_active_cls(const var_t& lvl) {
+      //update curr val
+      ++active_cls;
+      //update vals in state_stack
+      for(var_t j = lvl+1; j<state_stack.size(); ++j) ++state_stack[j].active_cls;
+    }
 
     /**
      * @brief adds new xlit to data structure if deduced at current dl; also reduces with current assignments to find new true/false assignments
      * 
      * @param lit literal to be added
      * @param rs idx of reason clause
+     * 
+     * @return bool true iff xlit was actually new at current dl!
      */
-    void add_new_xlit(const xlit& lit, const var_t& rs) {
-     #ifndef NDEBUG
-      xsys_stack.back().back() += lit;
-     #endif
-      const var_t lt = lit.LT();
-      // add to trail
+    bool add_new_xlit(const xlit& lit, const var_t& rs, const var_t& lvl) {
+      if(dl>1 && lvl == 1) {
+        VERB(100,"");
+      }
+
+      //add lit to state_stack
+      for(var_t j = lvl+1; j<state_stack.size(); ++j) state_stack[j].L += lit;
+      
+      xlit lit_dl = assignments_xsys.reduce(lit);
+      if(lit_dl.is_zero()) return false;
+      VERB(65, "c " + std::to_string(lvl) + ": new UNIT " + lit.to_str() + " ~> " + lit_dl.to_str() + " with reason clause " + xclss[rs].to_str() );
+
+      const var_t lt = lit_dl.LT();
+      // add to trail //TODO add in propoer position in trail!
       trail.emplace_back(lt);
       reason.emplace_back(rs);
       //update assignments
-      assignments[lt] = lit;
+      assignments[lt] = lit_dl;
       assignments_dl[lt] = dl;
-      if(lit.is_one()) is_consistent = false;
+      if(lit_dl.is_one()) is_consistent = false;
       //put into gcp_queue if necessary!
       if(assignments[lt].as_bool3() != bool3::None) {
         alpha[lt] = assignments[lt].as_bool3();
@@ -232,19 +273,13 @@ class solver
       assignments_xsys += assignments[lt];
       is_consistent = assignments_xsys.is_consistent();
 
-      if(lt == 0) return;
+      if(lit_dl.LT() == 0) return true;
 
       //search for new uniquely determined inds! (only if lit != 1)
-      //TODO needs to be optimized! (only update relevant parts!!)
-      for(const auto& [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
-          if(assignments_xsys.get_xlits(idx).as_bool3() != alpha[lt]) {
-            alpha[lt] = assignments_xsys.get_xlits(idx).as_bool3();
-            alpha_dl[lt] = dl;
-            gcp_queue.emplace(lt);
-            trail.emplace_back(lt);
-            reason.emplace_back(rs); //TODO what is the reason clause?!
-          }
-      }
+      find_implied_alpha(rs);
+
+      //return true!
+      return true;
     };
 
     void init_and_add_xcls_watch(xcls&& cls) {
@@ -275,11 +310,7 @@ class solver
     solver(parsed_xnf& p_xnf) noexcept : solver(p_xnf.cls, options(p_xnf.num_vars, p_xnf.num_cls), 0) {};
 
     //copy ctor
-    solver(const solver& o) noexcept : xclss(o.xclss), opt(o.opt), dl(o.dl), active_cls(o.active_cls), activity_score(o.activity_score) {
-     #ifndef NDEBUG
-      xsys_stack = o.xsys_stack;
-     #endif
-    };
+    solver(const solver& o) noexcept : xclss(o.xclss), opt(o.opt), dl(o.dl), active_cls(o.active_cls), activity_score(o.activity_score) {};
 
     ~solver() = default;
     
