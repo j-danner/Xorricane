@@ -41,44 +41,59 @@ int main(int argc, char const *argv[])
     //fname
     program.add_argument("fname")
         .help("path to 2xnf-instance");
+
     //dec_heu
     program.add_argument("-dh","--decision-heuristic")
-        .help("decision heuristic; 'vsids', 'flt', 'lex', 'unused3'")
+        .help("decision heuristic; 'vsids', 'lwl' -- longest watch_list, 'lex' -- lexicographically first, 'swl'")
         .default_value(std::string("vsids"))
         .action([](const std::string& value) {
-            static const vec<std::string> choices = { "vsids", "flt", "lex", "unused3" };
+            static const vec<std::string> choices = { "vsids", "lwl", "lex", "swl" };
             if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
                 return value;
             }
             //arg invalid!
             throw std::runtime_error("invalid argument passed for parameter -dh");
         });
+    
+    //phase_opt
+    program.add_argument("-po","--phase-options")
+        .help("phase options; 'save', 'save_inv', 'rand'")
+        .default_value(std::string("save"))
+        .action([](const std::string& value) {
+            static const vec<std::string> choices = { "save", "save_inv", "rand" };
+            if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
+                return value;
+            }
+            //arg invalid!
+            throw std::runtime_error("invalid argument passed for parameter -po");
+        });
+
 
     //fls opts
-    program.add_argument("-fls","--failed-lit-search")
-        .help("failed literal search; 'no' to deactivate, 'trivial' to only search for trivial, and 'full' to search for all failed literals.")
-        .default_value(std::string("no"))
-        .action([](const std::string& value) {
-            static const vec<std::string> choices = { "no", "trivial", "full" };
-            if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
-                return value;
-            }
-            //arg invalid!
-            throw std::runtime_error("invalid argument passed for parameter -fls");
-        });
+    //program.add_argument("-fls","--failed-lit-search")
+    //    .help("failed literal search; 'no' to deactivate, 'trivial' to only search for trivial, and 'full' to search for all failed literals.")
+    //    .default_value(std::string("no"))
+    //    .action([](const std::string& value) {
+    //        static const vec<std::string> choices = { "no", "trivial", "full" };
+    //        if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
+    //            return value;
+    //        }
+    //        //arg invalid!
+    //        throw std::runtime_error("invalid argument passed for parameter -fls");
+    //    });
     
     //upd opts
-    program.add_argument("-upd","--update-alg")
-        .help("algorithm to use for update-graph function, 'ts' for alg in two steps (1. update all xlits, 2. merge verts); 'hf' for hash-fight based update; 'par' for parallel version.")
-        .default_value(std::string("ts"))
-        .action([](const std::string& value) {
-            static const vec<std::string> choices = { "ts", "hf", "par", "hfd" };
-            if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
-                return value;
-            }
-            //arg invalid!
-            throw std::runtime_error("invalid argument passed for parameter -upd");
-        });
+    //program.add_argument("-upd","--update-alg")
+    //    .help("algorithm to use for update-graph function, 'ts' for alg in two steps (1. update all xlits, 2. merge verts); 'hf' for hash-fight based update; 'par' for parallel version.")
+    //    .default_value(std::string("ts"))
+    //    .action([](const std::string& value) {
+    //        static const vec<std::string> choices = { "ts", "hf", "par", "hfd" };
+    //        if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
+    //            return value;
+    //        }
+    //        //arg invalid!
+    //        throw std::runtime_error("invalid argument passed for parameter -upd");
+    //    });
     
     //cdcd opts
     program.add_argument("-ca","--conflict-analysis")
@@ -94,10 +109,10 @@ int main(int argc, char const *argv[])
         });
     
     //jobs
-    program.add_argument("-j","--jobs")
-        .help("parallel jobs (threads) to use (must NOT be larger than actual number of available threads!)")
-        .default_value(1)
-        .scan<'i', int>();
+    //program.add_argument("-j","--jobs")
+    //    .help("parallel jobs (threads) to use (must NOT be larger than actual number of available threads!)")
+    //    .default_value(1)
+    //    .scan<'i', int>();
         
     //verbosity
     #ifdef VERBOSITY
@@ -127,16 +142,23 @@ int main(int argc, char const *argv[])
     auto dh_str = program.get<std::string>("-dh");
     dec_heu dh = (dec_heu)1;
     if(dh_str=="vsids") dh = (dec_heu)0;
-    else if(dh_str=="flt") dh = (dec_heu)1;
+    else if(dh_str=="lwl") dh = (dec_heu)1;
     else if(dh_str=="lex") dh = (dec_heu)2;
-    else if(dh_str=="unused3") dh = (dec_heu)3;
+    else if(dh_str=="swl") dh = (dec_heu)3;
+    
+    auto po_str = program.get<std::string>("-po");
+    phase_opt po = (phase_opt)1;
+    if(po_str=="rand") po = (phase_opt)0;
+    else if(po_str=="save") po = (phase_opt)1;
+    else if(po_str=="save_inv") po = (phase_opt)2;
     
     auto ca_str = program.get<std::string>("-ca");
     ca_alg ca = (ca_alg)1;
     if(ca_str=="no") ca = (ca_alg)0;
     else if(ca_str=="1uip") ca = (ca_alg)1;
 
-    auto jobs = program.get<int>("-j");
+    //auto jobs = program.get<int>("-j");
+    auto jobs = 1;
     
     #ifdef VERBOSITY
         int verb = program.get<int>("-vb");
@@ -151,7 +173,7 @@ int main(int argc, char const *argv[])
         parsed_xnf p_xnf = parse_file( fname );
 
         //set upt options
-        options opts( p_xnf.num_vars, p_xnf.num_cls, dh, ca, jobs, verb, time_out );
+        options opts( p_xnf.num_vars, p_xnf.num_cls, dh, po, ca, jobs, verb, time_out );
 
         stats s = solve(p_xnf.cls, opts);
         s.begin = begin;

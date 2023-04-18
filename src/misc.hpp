@@ -29,6 +29,7 @@
 typedef uint16_t var_t;
 //typedef uint_fast16_t var_t;
 
+//type for cls length
 typedef unsigned char cls_size_t;
 
 //select vector impl to use
@@ -42,7 +43,8 @@ using vec = std::vector<T>;
 
 enum class bool3 { False, True, None };
 
-enum class dec_heu { vsids, flt, lex, unused3};
+enum class dec_heu { vsids, lwl, lex, swl };
+enum class phase_opt { rand, save, save_inv };
 enum class ca_alg { no, fuip };
 
 /**
@@ -54,6 +56,7 @@ struct options {
     var_t num_cls = 0;
 
     dec_heu dh = dec_heu::vsids;
+    phase_opt po = phase_opt::save;
 
     ca_alg ca = ca_alg::fuip;
     
@@ -67,7 +70,7 @@ struct options {
     options() : num_vars(0), num_cls(0) {};
     options(var_t n_vars) : num_vars(n_vars), num_cls(0) {};
     options(var_t n_vars, var_t n_cls) : num_vars(n_vars), num_cls(n_cls) {};
-    options(var_t n_vars, var_t n_cls, dec_heu dh_, ca_alg ca_, int jobs_, int verb_, int timeout_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
+    options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
 };
 
 

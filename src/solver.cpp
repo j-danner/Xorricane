@@ -130,7 +130,7 @@ void solver::backtrack(const var_t& lvl) {
 };
 
 // decision heuristics
-std::pair<xsys, xsys> solver::dh_first_vert() const {
+std::pair<xsys, xsys> solver::dh_vsids_UNFINISHED() const {
     return dh_lex_LT();
     var_t i = 0;
     while (!xclss[i].is_active(dl_count))
@@ -155,15 +155,38 @@ std::pair<xsys, xsys> solver::dh_first_vert() const {
     //return std::pair<xsys, xsys>(xsys(guess.plus_one()), xsys(guess));
 };
 
-std::pair<xsys, xsys> solver::dh_first_LT() const {
-    return dh_lex_LT();
-    var_t i = 0;
-    while (!xclss[i].is_active(dl_count))
-        i++;
-    xlit fc = xlit( vec<var_t>({xclss[i].get_first().LT()}) );
-    fc.reduce(assignments);
-    //return std::pair<xsys, xsys>(xsys(fc.plus_one()), xsys(fc));
-    return std::pair<xsys, xsys>(xsys(fc), xsys(fc.plus_one()));
+std::pair<xsys, xsys> solver::dh_shortest_wl() const {
+    //find unassigned variable that has the longest watch_list
+    var_t lt_max = 0;
+    size_t size_max = assignments.size();
+    var_t idx = 0;
+    for(auto it=watch_list.begin(); it!=watch_list.end(); ++it) {
+        if(assignments[idx].is_zero() && (it->size() < size_max)) {
+            lt_max = idx; size_max = it->size();
+        }
+        ++idx;
+    }
+    assert(lt_max!=0 && lt_max < (var_t)assignments.size());
+
+    xlit xi = xlit( lt_max, last_phase[lt_max]==bool3::True);
+    return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
+}
+
+std::pair<xsys, xsys> solver::dh_longest_wl() const {
+    //find unassigned variable that has the longest watch_list
+    var_t lt_max = 0;
+    size_t size_max = 0;
+    var_t idx = 0;
+    for(auto it=watch_list.begin(); it!=watch_list.end(); ++it) {
+        if(assignments[idx].is_zero() && (it->size() > size_max)) {
+            lt_max = idx; size_max = it->size();
+        }
+        ++idx;
+    }
+    assert(lt_max!=0 && lt_max < (var_t)assignments.size());
+
+    xlit xi = xlit( lt_max, last_phase[lt_max]==bool3::True);
+    return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
 }
 
 std::pair<xsys, xsys> solver::dh_lex_LT() const {
@@ -171,7 +194,7 @@ std::pair<xsys, xsys> solver::dh_lex_LT() const {
     while(!assignments[i].is_zero()) ++i;
     assert(i<assignments.size());
     //xlit xi = xlit( std::move( vec<var_t>({i}) ), (last_phase[i]==bool3::True), true );
-    xlit xi = xlit( i, last_phase[i]!=bool3::True);
+    xlit xi = xlit( i, last_phase[i]==bool3::True);
     //xlit xi = xlit( (last_phase[i]==bool3::True) ? vec<var_t>({0,i}) : vec<var_t>({i}) );
     //xlit xi = xlit( vec<var_t>({i}) );
     return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
@@ -698,19 +721,16 @@ void solver::dpll_solve(stats &s) {
     dec_heu_t decH;
     switch (opt.dh) {
     case dec_heu::vsids:
-        decH = &solver::dh_first_vert;
+        decH = &solver::dh_vsids_UNFINISHED;
         break;
-    case dec_heu::flt:
-        decH = &solver::dh_first_LT;
+    case dec_heu::lwl:
+        decH = &solver::dh_longest_wl;
         break;
     case dec_heu::lex:
         decH = &solver::dh_lex_LT;
         break;
-    case dec_heu::unused3:
-        decH = &solver::dh_first_vert;
-        break;
-    default:
-        decH = &solver::dh_first_vert;
+    case dec_heu::swl:
+        decH = &solver::dh_vsids_UNFINISHED;
         break;
     }
     
@@ -810,19 +830,16 @@ void solver::cdcl_solve(stats &s) {
     dec_heu_t decH;
     switch (opt.dh) {
     case dec_heu::vsids:
-        decH = &solver::dh_first_vert;
+        decH = &solver::dh_vsids_UNFINISHED;
         break;
-    case dec_heu::flt:
-        decH = &solver::dh_first_LT;
+    case dec_heu::lwl:
+        decH = &solver::dh_longest_wl;
         break;
     case dec_heu::lex:
         decH = &solver::dh_lex_LT;
         break;
-    case dec_heu::unused3:
-        decH = &solver::dh_first_vert;
-        break;
-    default:
-        decH = &solver::dh_first_vert;
+    case dec_heu::swl:
+        decH = &solver::dh_shortest_wl;
         break;
     }
     
@@ -835,9 +852,8 @@ void solver::cdcl_solve(stats &s) {
         analyze = &solver::analyze_dpll;
         //analyze = &solver::analyze_exp;
         break;
-    default:
-        analyze = &solver::analyze_dpll;
-        //analyze = &solver::analyze_exp;
+    default: //should never be executed
+        assert(false);
         break;
     }
 

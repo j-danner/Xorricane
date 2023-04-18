@@ -141,6 +141,22 @@ class solver
 
     void add_learnt_cls(xcls&& cls);
 
+    //saves the phase of the trail.back() in last_phase according to selected phase_option
+    inline void save_phase() {
+      switch (opt.po) {
+      case phase_opt::rand:
+        //last_phase[trail.back()] = (bool)(rand() > (RAND_MAX/2)) ?  bool3::True : bool3::False;
+        last_phase[trail.back()] = alpha[trail.back()];
+        break;
+      case phase_opt::save:
+        last_phase[trail.back()] = alpha[trail.back()];
+        break;
+      case phase_opt::save_inv:
+        last_phase[trail.back()] = alpha[trail.back()] == bool3::True ? bool3::False : bool3::True;
+        break;
+      }
+    }
+
     inline bool pop_trail() noexcept {
       if (trail.empty()) return false;
       //check if assignments or only alpha needs to be cleared!
@@ -149,7 +165,8 @@ class solver
         assignments[trail.back()] = xlit();
         assignments_dl[trail.back()] = 0;
       }
-      last_phase[trail.back()] = alpha[trail.back()];
+      //store last_phase
+      save_phase(); //originally: last_phase[trail.back()] = alpha[trail.back()];
       alpha[trail.back()] = bool3::None;
       alpha_dl[trail.back()] = 0;
       trail.pop_back();
@@ -329,11 +346,18 @@ class solver
     /*
      * @brief branch on first vertex (i.e. vert at first position in L)
      */
-    std::pair< xsys, xsys > dh_first_vert() const;
+    std::pair< xsys, xsys > dh_vsids_UNFINISHED() const;
+
     /*
-     * @brief branch on LT of first vertex (i.e. vert at first position in L)
+     * @brief branch on ind that has the shortest watch_list
      */
-    std::pair< xsys, xsys > dh_first_LT() const;
+    std::pair< xsys, xsys > dh_shortest_wl() const;
+
+    /*
+     * @brief branch on ind that has the longest watch_list
+     */
+    std::pair< xsys, xsys > dh_longest_wl() const;
+
     /*
      * @brief branch on x[i] where i smallest ind not yet guessed!
      */

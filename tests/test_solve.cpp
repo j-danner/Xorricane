@@ -300,62 +300,62 @@ TEST_CASE( "solving with different options" , "[impl-graph][graph][parser][solve
     var_t num_cls = clss.num_cls;
 
     SECTION( "dh:vsids-fls:no-upd:ts" ) {
-        options opts(num_vars, num_cls, dec_heu::vsids, ca_alg::fuip, 1, 0, 0);
+        options opts(num_vars, num_cls, dec_heu::vsids, phase_opt::save, ca_alg::fuip, 1, 0, 0);
         stats s = solve(xnf, opts);
         CHECK( s.sat == true ); //SAT
         CHECK( check_sol(clss.cls, s.sol) );
     }
 
     SECTION( "dh:vsids-fls:full-upd:ts" ) {
-        options opts(num_vars, num_cls, dec_heu::vsids, ca_alg::fuip, 1, 0, 0);
+        options opts(num_vars, num_cls, dec_heu::vsids, phase_opt::save, ca_alg::fuip, 1, 0, 0);
         stats s = solve(xnf, opts);
         CHECK( s.sat == true ); //SAT
         CHECK( check_sol(clss.cls, s.sol) );
     }
     
     SECTION( "dh:vsids-fls:full-upd:hf" ) {
-        options opts(num_vars, num_cls, dec_heu::vsids, ca_alg::fuip, 1, 0, 0);
+        options opts(num_vars, num_cls, dec_heu::vsids, phase_opt::save, ca_alg::fuip, 1, 0, 0);
         stats s = solve(xnf, opts);
         CHECK( s.sat == true ); //SAT
         CHECK( check_sol(clss.cls, s.sol) );
     }
     
     SECTION( "dh:vsids-fls:trivial-upd:hf" ) {
-        options opts(num_vars, num_cls, dec_heu::vsids, ca_alg::fuip, 1, 0, 0);
+        options opts(num_vars, num_cls, dec_heu::vsids, phase_opt::save, ca_alg::fuip, 1, 0, 0);
         stats s = solve(xnf, opts);
         CHECK( s.sat == true ); //SAT
         CHECK( check_sol(clss.cls, s.sol) );
     }
     
     SECTION( "dh:vsids-fls:trivial-upd:hfd" ) {
-        options opts(num_vars, num_cls, dec_heu::flt, ca_alg::fuip, 1, 0, 0);
+        options opts(num_vars, num_cls, dec_heu::lwl, phase_opt::save, ca_alg::fuip, 1, 0, 0);
         stats s = solve(xnf, opts);
         CHECK( s.sat == true ); //SAT
         CHECK( check_sol(clss.cls, s.sol) );
     }
     
     SECTION( "dh:vsids-fls:trivial-upd:hf -- 4 jobs" ) {
-        options opts(num_vars, num_cls, dec_heu::vsids, ca_alg::fuip, 4, 0, 0);
+        options opts(num_vars, num_cls, dec_heu::vsids, phase_opt::save, ca_alg::fuip, 4, 0, 0);
         stats s = solve(xnf, opts);
         CHECK( s.sat == true ); //SAT
         CHECK( check_sol(clss.cls, s.sol) );
     }
     
     SECTION( "dh:vsids-fls:trivial-upd:par -- 4 jobs" ) {
-        options opts(num_vars, num_cls, dec_heu::vsids, ca_alg::fuip, 4, 0, 0);
+        options opts(num_vars, num_cls, dec_heu::vsids, phase_opt::save, ca_alg::fuip, 4, 0, 0);
         stats s = solve(xnf, opts);
         CHECK( s.sat == true ); //SAT
         CHECK( check_sol(clss.cls, s.sol) );
     }
     
     SECTION( "dh:vsids-fls:trivial-upd:hf -- terminate within timeout" ) {
-        options opts(num_vars, num_cls, dec_heu::vsids, ca_alg::fuip, 1, 0, 0);
+        options opts(num_vars, num_cls, dec_heu::vsids, phase_opt::save, ca_alg::fuip, 1, 0, 0);
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         stats s = solve(xnf, opts);
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         float time_no_time_out = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
 
-        options opts2(num_vars, num_cls, dec_heu::vsids, ca_alg::fuip, 1, 0, time_no_time_out+3);
+        options opts2(num_vars, num_cls, dec_heu::vsids, phase_opt::save, ca_alg::fuip, 1, 0, time_no_time_out+3);
         begin = std::chrono::steady_clock::now();
         stats s2 = solve(xnf, opts2);
         end = std::chrono::steady_clock::now();
@@ -378,7 +378,7 @@ TEST_CASE("solving with different options -- timeout", "[impl-graph][graph][pars
     auto num_vars = clss.num_vars;
     auto num_cls = clss.num_cls;
 
-    options opts(num_vars, num_cls, dec_heu::vsids, ca_alg::fuip, 1, 0, 1);
+    options opts(num_vars, num_cls, dec_heu::vsids, phase_opt::save, ca_alg::fuip, 1, 0, 1);
     stats s = solve(xnf, opts);
 
     CHECK( s.finished == false );
