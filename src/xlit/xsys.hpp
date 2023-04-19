@@ -39,7 +39,7 @@ class xsys
      * @brief reduces a given xlit by the linsys
      * 
      * @param l given xlit
-     * @return xlit LT-reduced with the xlits in the linsys
+     * @return xlit reduced with the xlits in the linsys
      */
     xlit reduce(const xlit& l) const;
 
