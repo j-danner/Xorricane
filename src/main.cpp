@@ -17,17 +17,8 @@ int main(int argc, char const *argv[])
         out << "c compilation date:  " << __DATE__ << " at " << __TIME__ << std::endl;
         out << "c compiler:          " << __CMAKE_CXX_COMPILER_ID << " " << __CMAKE_CXX_COMPILER_VERSION << " using C++" << __CMAKE_CXX_STANDARD << std::endl;
         out << "c compilation flags:" << __CMAKE_CXX_FLAGS << std::endl;
-      #ifdef USE_LAZY_XL_W
-        out << "c using lazy xlit-watch" << std::endl;
-      #endif
-      #ifdef USE_PQ_XL_W
-        out << "c using priority-queue based xlit-watch" << std::endl;
-      #endif
-      #ifdef USE_INCR_XL_W
-        out << "c using incremental copy-based xlit-watch" << std::endl;
-      #endif
-      #ifdef USE_TRIV_XL_W
-        out << "c using copy-based xlit-watch" << std::endl;
+      #ifdef USING_JEMALLOC
+        out << "c using jemalloc for memory allocation" << std::endl;
       #endif
         std::cout << out.str();
         std::exit(0);
