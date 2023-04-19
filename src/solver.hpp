@@ -197,7 +197,7 @@ class solver
           gcp_queue.emplace(lt);
           trail.emplace_back(lt);
           reason.emplace_back(rs); //TODO what is the reason clause?!
-          VERB(65, "new ALPHA " + assignments_xsys.get_xlits(idx).to_str() + (rs!=-1 ? " implied " : " with reason clause " + xclss[rs].to_str()) );
+          VERB(65, "new ALPHA " + assignments_xsys.get_xlits(idx).to_str() + ( (0<=rs && rs<xclss.size()) ? " with reason clause " + xclss[rs].to_str() : "") );
         }
       }
     }
