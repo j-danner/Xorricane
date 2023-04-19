@@ -155,6 +155,18 @@ xsys& xsys::operator +=(const xsys& other) {
 };
 
 
+void xsys::add_reduced_lit(const xlit& l) {
+    //assert that l is indeed reduced
+    assert( reduce(l) == l );
+    for(auto& r : xlits) {
+        if(r[l.LT()]) r += l;
+    }
+    //append l to xlits
+    xlits.push_back( l );
+    //add to pivot_poly_idx
+    pivot_poly_idx.insert( {xlits.back().LT(), xlits.size()-1} );
+};
+
 bool xsys::eval(const vec<bool>& sol) const {
     return std::all_of(xlits.begin(), xlits.end(), [&sol](xlit l) { return l.eval(sol); } );
 };

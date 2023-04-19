@@ -109,4 +109,11 @@ class xsys
 	  xsys operator+(const xsys &other) const;
     //in-place operation (!)
     xsys& operator +=(const xsys& other);	
+
+    /**
+     * @brief add a reduced literal to this xsys
+     * 
+     * @param l literal to be added
+     */
+    void add_reduced_lit(const xlit& l);
 };

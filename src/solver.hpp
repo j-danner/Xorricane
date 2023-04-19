@@ -269,17 +269,18 @@ class solver
       for(var_t j = lvl+1; j<state_stack.size(); ++j) state_stack[j].L += lit;
       
       xlit lit_dl = assignments_xsys.reduce(lit);
+      //xlit lit_dl(lit); lit_dl.reduce(assignments);
       if(lit_dl.is_zero()) return false;
-      VERB(65, "c " + std::to_string(lvl) + ": new UNIT " + lit.to_str() + " ~> " + lit_dl.to_str() + " with reason clause " + xclss[rs].to_str() );
+      VERB(65, "c " + std::to_string(lvl) + ": new UNIT " + lit.to_str() + " ~> " + lit_dl.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
 
       const var_t lt = lit_dl.LT();
       // add to trail //TODO add in propoer position in trail!
       trail.emplace_back(lt);
       reason.emplace_back(rs);
       //update assignments
-      assignments[lt] = lit_dl;
+      assignments[lt] = std::move(lit_dl);
       assignments_dl[lt] = dl;
-      if(lit_dl.is_one()) is_consistent = false;
+      if(assignments[lt].is_one()) is_consistent = false;
       //put into gcp_queue if necessary!
       if(assignments[lt].as_bool3() != bool3::None) {
         alpha[lt] = assignments[lt].as_bool3();
@@ -287,10 +288,11 @@ class solver
         gcp_queue.emplace(lt);
       }
       //update assignments_xsys
-      assignments_xsys += assignments[lt];
+      //assignments_xsys += assignments[lt]; //TODO implement func to add an already reduced lit to xsys
+      assignments_xsys.add_reduced_lit(assignments[lt]);
       is_consistent = assignments_xsys.is_consistent();
 
-      if(lit_dl.LT() == 0) return true;
+      if(lt == 0) return true;
 
       //search for new uniquely determined inds! (only if lit != 1)
       find_implied_alpha(rs);
