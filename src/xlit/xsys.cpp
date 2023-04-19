@@ -36,7 +36,6 @@ void xsys::rref() {
 };
 
 xlit xsys::reduce(const xlit& l) const {
-    //TODO optimize by reducing given row -- without need to create copy of row!
     xlit l_(l);
     for (const auto &lt_row_idx : pivot_poly_idx) {
         const var_t lt = lt_row_idx.first;
