@@ -23,6 +23,12 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare -static-libgcc -static-libstdc++" )# -ftree-vectorizer-verbose=5 -Weffc++")
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -static-libgcc -static-libstdc++")
 
+#find tcmalloc for linking
+find_package(PkgConfig REQUIRED)
+pkg_check_modules (JEMALLOC jemalloc)
+
+pkg_search_module(JEMALLOC REQUIRED jemalloc)
+include_directories(${JEMALLOC_INCLUDE_DIRS})
 
 # add subdirectories
 add_subdirectory(src)
@@ -35,7 +41,7 @@ find_package(OpenMP REQUIRED)
 
 
 # link libs to xnf_cdcl_solver
-target_link_libraries(xnf_cdcl_solver PUBLIC ${EXTRA_LIBS} PRIVATE xlit OpenMP::OpenMP_CXX)
+target_link_libraries(xnf_cdcl_solver PUBLIC ${EXTRA_LIBS} ${JEMALLOC_LIBRARIES} PRIVATE xlit OpenMP::OpenMP_CXX)
 target_include_directories(
     xnf_cdcl_solver PUBLIC
     "${PROJECT_BINARY_DIR}"
@@ -57,7 +63,7 @@ if(Catch2_FOUND)
     include(Catch)
     # These tests can use the Catch2-provided main
     add_executable(testing tests/test_xlit.cpp tests/test_xcls_watch.cpp tests/test_xsys.cpp tests/test_solve.cpp tests/test_sres.cpp)
-    target_link_libraries(testing PRIVATE xlit Catch2::Catch2WithMain)
+    target_link_libraries(testing PUBLIC ${JEMALLOC_LIBRARIES} PRIVATE xlit Catch2::Catch2WithMain)
     catch_discover_tests(testing)
     enable_testing()
 else()
@@ -69,7 +75,7 @@ find_package(benchmark QUIET)
 if(benchmark_FOUND)
     message("benchmark lib found!")
     add_executable(bench tests/benchmark.cpp)
-    target_link_libraries(bench PRIVATE benchmark::benchmark xlit)
+    target_link_libraries(bench PUBLIC ${JEMALLOC_LIBRARIES} PRIVATE benchmark::benchmark xlit)
 else()
     message("benchmark lib not found!")
 endif()
