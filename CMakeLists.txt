@@ -24,10 +24,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -static-libgcc -static-libstdc++")
 
 #find jemalloc for linking
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(JEMALLOC jemalloc)
-pkg_search_module(JEMALLOC REQUIRED jemalloc)
+find_package(PkgConfig REQUIRED QUIET)
+pkg_check_modules(JEMALLOC QUIET jemalloc)
 if(JEMALLOC_FOUND)
+    pkg_search_module(JEMALLOC REQUIRED jemalloc)
     message("jemalloc found!")
     include_directories(${JEMALLOC_INCLUDE_DIRS})
     set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBRARIES})
@@ -43,9 +43,8 @@ find_package(OpenMP REQUIRED QUIET)
 # add subdirectories
 add_subdirectory(src)
 
-# add the executable
+# add the main executable
 add_executable(xnf_cdcl_solver src/main.cpp src/argparse/argparse.hpp)
-
 
 # link libs to xnf_cdcl_solver
 target_link_libraries(xnf_cdcl_solver PUBLIC ${EXTRA_LIBS} PRIVATE xlit OpenMP::OpenMP_CXX)
@@ -60,7 +59,7 @@ endif()
 # set up unit tests with Catch2 - if found
 find_package(Catch2 3 QUIET)
 if(Catch2_FOUND)
-    message("Catch2 was found!")
+    message("Catch2 found!")
     set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED ON)
     include(CTest)
     include(Catch)
