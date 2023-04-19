@@ -25,25 +25,26 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare
 
 #find jemalloc for linking
 find_package(PkgConfig REQUIRED)
-pkg_check_modules (JEMALLOC jemalloc)
+pkg_check_modules(JEMALLOC jemalloc)
 pkg_search_module(JEMALLOC REQUIRED jemalloc)
-include_directories(${JEMALLOC_INCLUDE_DIRS})
-if(JEMALLOC_INCLUDE_DIRS)
+if(JEMALLOC_FOUND)
     message("jemalloc found!")
+    include_directories(${JEMALLOC_INCLUDE_DIRS})
     set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBRARIES})
-    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${JEMALLOC_INCLUDE_DIRS})
+    #set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${JEMALLOC_INCLUDE_DIRS})
 else()
     message("jemalloc not found! (optional)")
 endif()
+
+#find openmp package
+find_package(OpenMP REQUIRED QUIET)
+
 
 # add subdirectories
 add_subdirectory(src)
 
 # add the executable
 add_executable(xnf_cdcl_solver src/main.cpp src/argparse/argparse.hpp)
-
-#find openmp package
-find_package(OpenMP REQUIRED)
 
 
 # link libs to xnf_cdcl_solver
