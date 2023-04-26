@@ -96,10 +96,10 @@ class xcls_watch {
       auto new_w = ws[i];
       while( (new_w < xlits[i].size()) && (alpha[ ptr_(i,new_w) ] != bool3::None) ) ++new_w;
       if(new_w == xlits[i].size()) /*wrap around end if necessary */ new_w = 0;
-      while( (new_w != ws[i]) && (alpha[ptr_(i,new_w)] != bool3::None) ) ++new_w;
+      while(  (alpha[ptr_(i,new_w)] != bool3::None) && (new_w != ws[i]) ) ++new_w;
       //advancing done; now new_w points to ws[i] or at an unassigned idx -- or again to ws[i] (!)
 
-      //ensure that ws[0] and ws[1] point to different inds:;
+      //ensure that ws[0] and ws[1] point to different inds:
       if( ptr_(i,new_w) == ptr_ws(1-i) ) {
         //update xlits[i] as xlits[i]+xlits[1-i]+1; i.e., rewrite clause s.t. xlits[i] does not even contain ptr_ws(1-i)
         xlits[i] += xlits[1-i]; xlits[i].add_one();
@@ -136,13 +136,6 @@ class xcls_watch {
       }
       //now xlits[i] evaluates to 1 under alpha, i.e., we need to find a different xlit to watch
       xlit_dl_count1[i] = {alpha_dl[ptr_(i,new_w)], dl_count[alpha_dl[ptr_(i,new_w)]]};
-      //TODO:
-      //set xlits_dl_count1 at lowest possible level, BUT then we also need to do the propagation of the corr unit on this lvl!
-      //i.e., we need to modify the trail at this dl! --> we need iterators into the trail at the end of every dl and integrate
-      //the changes there! (also requires to modify active_cls count of previous dl!)
-      //if(alpha_dl[ptr_ws(i)] != dl) {
-      //  assert(true);
-      //}
 
       //note that xlits[0] and xlits[1] are always the xlits that are watched, i.e., start search from xlits[2] (!)
       cls_size_t new_i = 2;
@@ -424,7 +417,7 @@ class xcls_watch {
 
     
     /**
-     * @brief returns the unit if is_unit is true (i.e. returns the first xlit)
+     * @brief returns the unit if is_unit is true (i.e. returns the second xlit)
      * 
      * @return xlit unit that this clause was reduced to
      */
