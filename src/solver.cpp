@@ -161,7 +161,8 @@ std::pair<xsys, xsys> solver::dh_shortest_wl() const {
     size_t size_max = assignments.size();
     var_t idx = 0;
     for(auto it=watch_list.begin(); it!=watch_list.end(); ++it) {
-        if(assignments[idx].is_zero() && (it->size() < size_max)) {
+        //if(assignments[idx].is_zero() && (it->size() < size_max)) {
+        if(alpha[idx] == bool3::None && (it->size() < size_max)) {
             lt_max = idx; size_max = it->size();
         }
         ++idx;
@@ -178,7 +179,7 @@ std::pair<xsys, xsys> solver::dh_longest_wl() const {
     size_t size_max = 0;
     var_t idx = 0;
     for(auto it=watch_list.begin(); it!=watch_list.end(); ++it) {
-        if(assignments[idx].is_zero() && (it->size() > size_max)) {
+        if(alpha[idx] == bool3::None && (it->size() > size_max)) {
             lt_max = idx; size_max = it->size();
         }
         ++idx;
@@ -669,7 +670,7 @@ void solver::GCP(stats &s) {
                 assert(xclss[i].to_xcls().reduce(assignments).is_zero()); //in particular it must be zero when reduced with assignments!
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(xclss[i].get_inactive_lvl(dl_count));
-                continue;
+                break;
             case upd_ret::UNIT: //includes UNSAT case (i.e. get_unit() reduces with assignments to 1 !)
                 assert(xclss[i].is_unit(dl_count));
                 assert(xclss[i].is_inactive(dl_count));
@@ -679,23 +680,22 @@ void solver::GCP(stats &s) {
                 decr_active_cls(xclss[i].get_inactive_lvl(dl_count));
                 // NEW LIN-EQS
                 new_unit = std::move(xclss[i].get_unit());
-                // add to assignments, and to 
+                // add to assignments
                 if( add_new_xlit(new_unit, i, xclss[i].get_inactive_lvl(dl_count)) ) {
                     assert(xclss[i].to_xcls().reduce(assignments).is_zero()); //in particular it must now be zero w.r.t. assignments (since new_unit has already been added!)
                     ++s.new_px_upd;
-                    bump_score(new_unit);
+                    bump_score(new_unit); //TODO should we bump on propagation?! probably not!
                 }
                 if (!is_consistent) { VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); break; }
-                continue;
+                break;
             case upd_ret::NONE:
                 //assert(xclss[i].is_none(alpha));
                 assert(xclss[i].is_none(dl_count));
                 assert(xclss[i].is_active(dl_count));
                 //assert(xclss[i].is_active(alpha));
                 //update watch-list!
-                continue;
+                break;
             }
-            break;
         }
     }
     VERB(90, to_str());
@@ -718,7 +718,7 @@ void solver::dpll_solve(stats &s) {
     dl_count[dl]++;
 
     // set update/fls/decH funcs
-    dec_heu_t decH;
+    dec_heu_t decH = &solver::dh_lex_LT;
     switch (opt.dh) {
     case dec_heu::vsids:
         decH = &solver::dh_vsids_UNFINISHED;
@@ -731,6 +731,9 @@ void solver::dpll_solve(stats &s) {
         break;
     case dec_heu::swl:
         decH = &solver::dh_vsids_UNFINISHED;
+        break;
+    default:
+        assert(false);
         break;
     }
     
@@ -827,7 +830,7 @@ void solver::cdcl_solve(stats &s) {
     dl_count[dl]++;
 
     // set update/fls/decH funcs
-    dec_heu_t decH;
+    dec_heu_t decH = &solver::dh_lex_LT;
     switch (opt.dh) {
     case dec_heu::vsids:
         decH = &solver::dh_vsids_UNFINISHED;
@@ -840,6 +843,9 @@ void solver::cdcl_solve(stats &s) {
         break;
     case dec_heu::swl:
         decH = &solver::dh_shortest_wl;
+        break;
+    default:
+        assert(false);
         break;
     }
     
