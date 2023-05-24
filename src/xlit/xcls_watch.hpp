@@ -307,7 +307,7 @@ class xcls_watch {
   public:
     xcls_watch() {};
     
-    xcls_watch(const xlit& l1, const xlit& l2) noexcept : xlits(vec< xlit >({l1.get_idxs(), l2.get_idxs()})) {
+    xcls_watch(const xlit& l1, const xlit& l2) noexcept : xlits(vec< xlit >({l1.get_idxs_(), l2.get_idxs_()})) {
       assert(!l1.is_one() && !l1.is_zero());
       assert(!l2.is_one() && !l2.is_zero());
       init();
@@ -336,7 +336,7 @@ class xcls_watch {
     
     xcls_watch(const xsys& lits) noexcept {
       assert(lits.dim()>=2);
-      xlits = lits.get_xlits();
+      xlits = vec<xlit>(lits.get_xlits().begin(), lits.get_xlits().end());
       std::for_each(xlits.begin(), xlits.end(), [](xlit& l){ l.add_one(); });
       init();
     };
