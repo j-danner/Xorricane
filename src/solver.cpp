@@ -157,19 +157,16 @@ std::pair<xsys, xsys> solver::dh_vsids_UNFINISHED() const {
 
 std::pair<xsys, xsys> solver::dh_shortest_wl() const {
     //find unassigned variable that has the longest watch_list
-    var_t lt_max = 0;
-    size_t size_max = assignments.size();
-    var_t idx = 0;
-    for(auto it=watch_list.begin(); it!=watch_list.end(); ++it) {
-        //if(assignments[idx].is_zero() && (it->size() < size_max)) {
-        if(alpha[idx] == bool3::None && (it->size() < size_max)) {
-            lt_max = idx; size_max = it->size();
+    var_t lt_min = 0;
+    size_t size_min = assignments.size();
+    for(size_t idx=0; idx<watch_list.size(); ++idx) {
+        if(assignments[idx].is_zero() && (watch_list[idx].size() < size_min)) {
+            lt_min = idx; size_min = watch_list[idx].size();
         }
-        ++idx;
     }
-    assert(lt_max!=0 && lt_max < (var_t)assignments.size());
+    assert(lt_min!=0 && lt_min < (var_t)assignments.size());
 
-    xlit xi = xlit( lt_max, last_phase[lt_max]==bool3::True);
+    xlit xi = xlit( lt_min, last_phase[lt_min]==bool3::True);
     return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
 }
 
@@ -177,12 +174,10 @@ std::pair<xsys, xsys> solver::dh_longest_wl() const {
     //find unassigned variable that has the longest watch_list
     var_t lt_max = 0;
     size_t size_max = 0;
-    var_t idx = 0;
-    for(auto it=watch_list.begin(); it!=watch_list.end(); ++it) {
-        if(alpha[idx] == bool3::None && (it->size() > size_max)) {
-            lt_max = idx; size_max = it->size();
+    for(size_t idx=0; idx<watch_list.size(); ++idx) {
+        if(assignments[idx].is_zero() && (watch_list[idx].size() > size_max)) {
+            lt_max = idx; size_max = watch_list[idx].size();
         }
-        ++idx;
     }
     assert(lt_max!=0 && lt_max < (var_t)assignments.size());
 
