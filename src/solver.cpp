@@ -681,7 +681,10 @@ void solver::GCP(stats &s) {
                     ++s.new_px_upd;
                     bump_score(new_unit); //TODO should we bump on propagation?! probably not!
                 }
-                if (!is_consistent) { VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); break; }
+                if (!is_consistent) { 
+                    VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
+                    return; //quit propagation immediately at conflict!
+                    }
                 break;
             case upd_ret::NONE:
                 //assert(xclss[i].is_none(alpha));
