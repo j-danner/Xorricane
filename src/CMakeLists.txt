@@ -10,10 +10,12 @@ add_library(
     #xlit
     xlit/xlit.hpp
     xlit/xlit.cpp
-    xlit/xcls_watch.hpp
-    xlit/xcls_watch.cpp
+    xlit/xlit_watch.hpp
+    xlit/xlit_watch.cpp
     xlit/xcls.hpp
     xlit/xcls.cpp
+    xlit/xcls_watch.hpp
+    xlit/xcls_watch.cpp
     #xsys
     xlit/xsys.hpp
     xlit/xsys.cpp 

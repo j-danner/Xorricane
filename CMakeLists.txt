@@ -65,7 +65,7 @@ if(Catch2_FOUND)
     include(CTest)
     include(Catch)
     # These tests can use the Catch2-provided main
-    add_executable(testing tests/test_xlit.cpp tests/test_xcls_watch.cpp tests/test_xsys.cpp tests/test_solve.cpp tests/test_sres.cpp)
+    add_executable(testing tests/test_xlit.cpp tests/test_xlit_watch.cpp tests/test_xcls_watch.cpp tests/test_xsys.cpp tests/test_solve.cpp tests/test_sres.cpp)
     target_link_libraries(testing PUBLIC ${EXTRA_LIBS} PRIVATE xlit Catch2::Catch2WithMain)
     target_include_directories(testing PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
     catch_discover_tests(testing)

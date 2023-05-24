@@ -1,4 +1,4 @@
-//file to test implementation of xlit
+//file to test implementation of xcls_watch
 #include "../src/xlit/xcls_watch.hpp"
 
 #include <catch2/catch_all.hpp>

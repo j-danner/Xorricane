@@ -22,6 +22,7 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     alpha_dl = vec<var_t>(opt_.num_vars + 1, 0);
     assignments = vec<xlit>(opt_.num_vars + 1, xlit());
     assignments_dl = vec<var_t>(opt_.num_vars + 1, 0);
+    equiv_lits = vec<var_t>(opt_.num_vars+1, 0);
     dl_count = vec<var_t>(opt_.num_vars+1, 1); 
     trail = std::list<var_t>();
     last_phase = vec<bool3>(opt_.num_vars + 1, bool3::None);
@@ -662,7 +663,7 @@ void solver::GCP(stats &s) {
                 ++it;
             }
             switch (ret) {
-            case upd_ret::SAT:
+            case xcls_upd_ret::SAT:
                 assert(xclss[i].is_sat(dl_count));
                 assert(xclss[i].is_inactive(dl_count));
                 //assert(xclss[i].is_inactive(alpha));
@@ -670,7 +671,7 @@ void solver::GCP(stats &s) {
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(xclss[i].get_inactive_lvl(dl_count));
                 break;
-            case upd_ret::UNIT: //includes UNSAT case (i.e. get_unit() reduces with assignments to 1 !)
+            case xcls_upd_ret::UNIT: //includes UNSAT case (i.e. get_unit() reduces with assignments to 1 !)
                 assert(xclss[i].is_unit(dl_count));
                 assert(xclss[i].is_inactive(dl_count));
                 assert(xclss[i].to_xcls().reduce(assignments).is_unit() || xclss[i].to_xcls().reduce(assignments).is_zero());
@@ -690,7 +691,7 @@ void solver::GCP(stats &s) {
                     return; //quit propagation immediately at conflict!
                     }
                 break;
-            case upd_ret::NONE:
+            case xcls_upd_ret::NONE:
                 //assert(xclss[i].is_none(alpha));
                 assert(xclss[i].is_none(dl_count));
                 assert(xclss[i].is_active(dl_count));
@@ -963,63 +964,63 @@ std::string solver::to_str() const noexcept {
 #ifdef NDEBUG
     bool solver::assert_data_structs() const noexcept { return true; };
 #else
-bool solver::assert_data_structs() const noexcept {
-    //sanity check on assignments_dl
-    for([[maybe_unused]] const auto lvl : assignments_dl) assert( lvl <= dl);
-    for([[maybe_unused]] const auto lvl : alpha_dl) assert( lvl <= dl);
+    bool solver::assert_data_structs() const noexcept {
+        //sanity check on assignments_dl
+        for([[maybe_unused]] const auto lvl : assignments_dl) assert( lvl <= dl);
+        for([[maybe_unused]] const auto lvl : alpha_dl) assert( lvl <= dl);
 
-    // check data structs of xclss
-    for (var_t i = 0; i < xclss.size(); i++) {
-        assert(xclss[i].assert_data_struct());
-        //only check advanced conditions if gcp_queue is empty!
-        if(gcp_queue.empty()) assert(xclss[i].assert_data_struct(alpha,dl_count));
-    }
-    //check watch-lists
-    auto it = watch_list.begin();
-    var_t idx = 0;
-    while(it != watch_list.end()) {
-        for([[maybe_unused]] auto i : *it) { assert( xclss[i].watches( idx ) ); }
-        ++it; ++idx;
-    }
+        // check data structs of xclss
+        for (var_t i = 0; i < xclss.size(); i++) {
+            assert(xclss[i].assert_data_struct());
+            //only check advanced conditions if gcp_queue is empty!
+            if(gcp_queue.empty()) assert(xclss[i].assert_data_struct(alpha,dl_count));
+        }
+        //check watch-lists
+        auto it = watch_list.begin();
+        var_t idx = 0;
+        while(it != watch_list.end()) {
+            for([[maybe_unused]] auto i : *it) { assert( xclss[i].watches( idx ) ); }
+            ++it; ++idx;
+        }
 
-    // check that assignments_xsys and assignments agree!
-    if(assignments_xsys != xsys(assignments) ) {
-        VERB(100, "assignments_xsys: " + assignments_xsys.to_str());
-        VERB(100, "xsys(assignments): " + xsys(assignments).to_str());
+        // check that assignments_xsys and assignments agree!
+        if(assignments_xsys != xsys(assignments) ) {
+            VERB(100, "assignments_xsys: " + assignments_xsys.to_str());
+            VERB(100, "xsys(assignments): " + xsys(assignments).to_str());
             xsys tmp = xsys(assignments);
+        };
+        assert(assignments_xsys == xsys(assignments) );
+
+
+        // check that assignments in alpha are backed by assignment_xsys
+        if(is_consistent) {
+            for([[maybe_unused]] const auto& [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
+                assert(assignments_xsys.get_xlits(idx).as_bool3() == alpha[lt]);
+            }
+        }
+
+        // check solution! (for rand-10-20.xnf) -- may help in debugging!
+        /*
+        if (opt.num_vars == 10) {
+            vec<bool> sol = {false, false, true, false, false, false, false, true, false, true};
+            std::cout << "NO SOL for xclss idxs ";
+            for (var_t i = 0; i < xclss.size(); ++i) {
+                if (!xclss[i].eval(sol)) {
+                    std::cout << std::to_string(i) << " ";
+                }
+            }
+            std::cout << std::endl;
+            std::cout << "NO SOL for assignment idxs ";
+            for (var_t i = 0; i < assignments.size(); ++i) {
+                if (!assignments[i].eval(sol)) {
+                    std::cout << std::to_string(i) << " ";
+                }
+            }
+            std::cout << std::endl;
+        }
+        */
+        return true;
     };
-    assert(assignments_xsys == xsys(assignments) );
-
-
-    // check that assignments in alpha are backed by assignment_xsys
-    if(is_consistent) {
-        for([[maybe_unused]] const auto& [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
-            assert(assignments_xsys.get_xlits(idx).as_bool3() == alpha[lt]);
-        }
-    }
-    
-    // check solution! (for rand-10-20.xnf) -- may help in debugging!
-    /*
-    if (opt.num_vars == 10) {
-        vec<bool> sol = {false, false, true, false, false, false, false, true, false, true};
-        std::cout << "NO SOL for xclss idxs ";
-        for (var_t i = 0; i < xclss.size(); ++i) {
-            if (!xclss[i].eval(sol)) {
-                std::cout << std::to_string(i) << " ";
-            }
-        }
-        std::cout << std::endl;
-        std::cout << "NO SOL for assignment idxs ";
-        for (var_t i = 0; i < assignments.size(); ++i) {
-            if (!assignments[i].eval(sol)) {
-                std::cout << std::to_string(i) << " ";
-            }
-        }
-        std::cout << std::endl;
-    }
-    */
-    return true;
-};
 #endif
 
 

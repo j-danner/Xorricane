@@ -12,9 +12,10 @@
 #include "solve.hpp"
 #include "misc.hpp"
 #include "xlit/xlit.hpp"
+#include "xlit/xlit_watch.hpp"
 #include "xlit/xsys.hpp"
-#include "xlit/xcls_watch.hpp"
 #include "xlit/xcls.hpp"
+#include "xlit/xcls_watch.hpp"
 
 struct state_repr {
   /**
@@ -42,11 +43,21 @@ class solver
      * @brief xor-clause watchers
      */
     vec< xcls_watch > xclss;
+    
+    /**
+     * @brief xlit watchers, i.e., unit xor-clause watchers
+     */
+    vec< xlit_watch > xlits;
 
     /**
-     * @brief watch_list; watch_list[i] contains all idxs j s.t. xclss[j] watches indet i
+     * @brief watch_list[i] contains all idxs j s.t. xclss[j] watches indet i
      */
     vec< std::list<var_t> > watch_list;
+    
+    /**
+     * @brief watch_list[i] contains all idxs j s.t. xlits[j] watches indet i
+     */
+    vec< std::list<var_t> > L_watch_list;
 
     /**
      * @brief options for heuristics of dpll-solver (and more)
@@ -62,7 +73,11 @@ class solver
      * @brief number of active clauses
      */
     var_t active_cls;
-    
+
+    /**
+     * @brief number of active unit xcls
+     */
+    var_t active_lits;
 
     /**
      * @brief stack of state repr -- used for backtracking (and for dl-wise update of learnt-clauses)
@@ -115,6 +130,11 @@ class solver
      * @brief dl of chosen assignments; i was assigned at dl assignments_dl[i]
      */
     vec<var_t> assignments_dl;
+
+    /**
+     * @brief if equiv_lits[i] is non-zero, i is congruent to equiv_lits[i] or equiv_lits[i]+1 (can be checked using assignments[i]!)
+     */
+    vec<var_t> equiv_lits;
 
     /**
      * @brief idx of reason clause of propagated units
@@ -283,6 +303,9 @@ class solver
         alpha[lt] = assignments[lt].as_bool3();
         alpha_dl[lt] = dl;
         gcp_queue.emplace(lt);
+      } else if (assignments[lt].is_equiv()) {
+        equiv_lits[lt] = assignments[lt].get_idxs_()[1];
+        VERB(65, "c " + std::to_string(lvl) + ": new EQUIV " + assignments[lt].to_str() )
       }
       //update assignments_xsys
       //assignments_xsys += assignments[lt]; //TODO implement func to add an already reduced lit to xsys

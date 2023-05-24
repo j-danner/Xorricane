@@ -12,7 +12,7 @@ using lit_watch = var_t;
 /**
  * @brief return type for update of xcls_watch
  */
-enum class upd_ret { SAT, UNIT, NONE };
+enum class xcls_upd_ret { SAT, UNIT, NONE };
 
 //watch xcls
 class xcls_watch {
@@ -67,7 +67,6 @@ class xcls_watch {
     const var_t& ptr_ws(const cls_size_t& i) const {
       return ptr_(i,ws[i]);
     }
-    
 
     /**
      * @brief advances ws[i] if alpha[ *ws[i] ] not bool3::None, i.e., *ws[i] is assigned a truth value
@@ -75,9 +74,9 @@ class xcls_watch {
      * @param i idx of literal-watch to advance
      * @param alpha current bool3-alpha
      * @param alpha_dl dl of alpha-assignments
-     * @return pair<var_t,upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
+     * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
      */
-    std::pair<var_t,upd_ret> advance_lw(const cls_size_t& i, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
+    std::pair<var_t,xcls_upd_ret> advance_lw(const cls_size_t& i, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
       assert(i == (cls_size_t)0 || i == (cls_size_t)1);
       assert(alpha[ ptr_(i,ws[i]) ] != bool3::None);
       
@@ -111,7 +110,7 @@ class xcls_watch {
       //note: alpha[ ptr_ws(i,new_w) ] is None if and only if xlits[i] cannot be evaluated and a new literal to be watched was found!
       if(alpha[ ptr_(i,new_w) ]==bool3::None) {
         ws[i] = new_w;
-        return {ptr_ws(i), upd_ret::NONE};
+        return {ptr_ws(i), xcls_upd_ret::NONE};
       }
       //now no unassigned idx was found and the value of xlits[i] can be computed:
       if( xlits[i].eval(alpha) ) { //xlits[i] evaluates to 0
@@ -125,7 +124,7 @@ class xcls_watch {
         std::swap(xlit_dl_count0[0], xlit_dl_count0[i]);
         std::swap(xlit_dl_count1[0], xlit_dl_count1[i]);
         assert( !is_active(dl_count) ); //clause is not active any longer!
-        return {ptr_ws(0), upd_ret::SAT};
+        return {ptr_ws(0), xcls_upd_ret::SAT};
       }
       //now xlits[i] evaluates to 1 under alpha, i.e., we need to find a different xlit to watch
       xlit_dl_count1[i] = {alpha_dl[ptr_(i,new_w)], dl_count[alpha_dl[ptr_(i,new_w)]]};
@@ -163,7 +162,7 @@ class xcls_watch {
           std::swap(xlit_dl_count0[0], xlit_dl_count0[i]);
           std::swap(xlit_dl_count1[0], xlit_dl_count1[i]);
           assert( !is_active(dl_count) );
-          return {ptr_ws(0), upd_ret::SAT};
+          return {ptr_ws(0), xcls_upd_ret::SAT};
         }
         //now xlits[new_i] evaluates to 1 --> choose different new_i
         xlit_dl_count1[new_i] = {dl_sat, dl_count[dl_sat]};
@@ -177,7 +176,7 @@ class xcls_watch {
         std::swap(xlit_dl_count1[i], xlit_dl_count1[new_i]);
         assert( is_active(dl_count) );
         assert(false);
-        return {ptr_ws(i), upd_ret::NONE};
+        return {ptr_ws(i), xcls_upd_ret::NONE};
       } else {
         //we have new_i == xlits.size(), i.e., no xlit to be watched found! --> all other xlits eval to 1 (!) --> learn unit!
         ws[i] = new_w;
@@ -186,7 +185,7 @@ class xcls_watch {
         std::swap(ws[1-i], ws[1]);
         std::swap(xlit_dl_count0[1-i], xlit_dl_count0[1]);
         std::swap(xlit_dl_count1[1-i], xlit_dl_count1[1]);
-        return {ptr_ws(0), upd_ret::UNIT};
+        return {ptr_ws(0), xcls_upd_ret::UNIT};
       }
     };
 
@@ -196,9 +195,9 @@ class xcls_watch {
      * @param alpha current bool3-alpha
      * @param alpha_dl dl of alpha-assignments
      * @param dl_count current dl_count
-     * @return pair<var_t,upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
+     * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
      */
-    std::pair<var_t,upd_ret> advance(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
+    std::pair<var_t,xcls_upd_ret> advance(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
       assert(alpha[ ptr_ws(0) ] != bool3::None);
        
       //TODO shorter & cleaner impl with c++20 ranges?
@@ -231,7 +230,7 @@ class xcls_watch {
       //note: alpha[ ptr_ws(i,new_w) ] is None if and only if xlits[0] does not evaluate to a constant and a new literal to be watched was found!
       if(alpha[ ptr_(0,new_w) ]==bool3::None) {
         ws[0] = new_w;
-        return {ptr_ws(0), upd_ret::NONE};
+        return {ptr_ws(0), xcls_upd_ret::NONE};
       }
       //now no unassigned idx was found and the value of xlits[0] can be computed:
       if( xlits[0].eval(alpha) ) { //xlits[i] evaluates to 0
@@ -240,7 +239,7 @@ class xcls_watch {
         //xlit_dl_count0[0] = {dl, dl_count[dl]}; where dl is the decision level at which ptr_ws(0) was assigned!
         xlit_dl_count0[0] = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
         assert( !is_active(dl_count) ); //clause is no longer active!
-        return {ptr_ws(0), upd_ret::SAT};
+        return {ptr_ws(0), xcls_upd_ret::SAT};
       }
       //now xlits[0] evaluates to 1 under alpha, i.e., we check whether a different xlit should be watched.
       xlit_dl_count1[0] = {alpha_dl[ptr_(0,new_w)], dl_count[alpha_dl[ptr_(0,new_w)]]};
@@ -268,7 +267,7 @@ class xcls_watch {
           std::swap(xlit_dl_count0[0], xlit_dl_count0[new_i]);
           std::swap(xlit_dl_count1[0], xlit_dl_count1[new_i]);
           assert( !is_active(dl_count) );
-          return {ptr_ws(0), upd_ret::NONE};
+          return {ptr_ws(0), xcls_upd_ret::NONE};
         } else {
           //xlits[new_i] evaluates to a constant; this is only useful if xlits[new_i].eval(alpha) is SAT
           new_w = max_w; //if SAT we need to watch the ind assigned with highest dl
@@ -282,7 +281,7 @@ class xcls_watch {
             std::swap(xlit_dl_count1[0], xlit_dl_count1[new_i]);
             xlit_dl_count0[0] = {dl_assigned, dl_count[dl_assigned]};
             assert( !is_active(dl_count) );
-            return {ptr_ws(0), upd_ret::SAT};
+            return {ptr_ws(0), xcls_upd_ret::SAT};
           }
           //now xlits[new_i] evaluates to 1 --> choose different new_i
           xlit_dl_count1[new_i] = {dl_assigned, dl_count[dl_assigned]};
@@ -291,7 +290,7 @@ class xcls_watch {
       //if the above did not yet return, then all xlits (except xlits[1]) evaluate to 1 under alpha, i.e., we learn a unit clause!
       //moreover, no watch literals need to be updated! (ws[0] is already at highest dl and xlits[0] evaluates to 1!)
       assert( !is_active(dl_count) );
-      return {ptr_ws(0), upd_ret::UNIT};
+      return {ptr_ws(0), xcls_upd_ret::UNIT};
     };
 
     /**
@@ -350,13 +349,13 @@ class xcls_watch {
      * @param alpha_dl dl of alpha-assignments
      * @param dl_count current dl_count
      * @param dl current dl
-     * @return var_t,upd_ret upd_ret is SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t is the new-watched literal (or the same if unchanged!)
+     * @return var_t,xcls_upd_ret upd_ret is SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t is the new-watched literal (or the same if unchanged!)
      */
-    std::pair<var_t,upd_ret> update(const var_t& new_lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
+    std::pair<var_t,xcls_upd_ret> update(const var_t& new_lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
       //check if clause needs any processing
       if(!is_active(dl_count) ) {
         assert(is_sat(dl_count) || is_unit(dl_count));
-        return {new_lit, upd_ret::SAT}; //NOTE here it might also be a UNIT, but it did not become one by this update!
+        return {new_lit, xcls_upd_ret::SAT}; //NOTE here it might also be a UNIT, but it did not become one by this update!
       }
       //exactly one of { ptr_ws(0), ptr_ws(1) } must be new_lit
       assert( (ptr_ws(0) == new_lit) ^ (ptr_ws(1) == new_lit) );
@@ -371,14 +370,14 @@ class xcls_watch {
       assert(assert_data_struct());
 
       //assert correct return value!
-      if(upd == upd_ret::NONE) {
+      if(upd == xcls_upd_ret::NONE) {
         //assert( is_none(alpha) ); //leads to error: it might be SAT but ONLY after all updates have been performed! (i.e. if xlits[0] AND xlits[1] needs an update!)
         assert( is_none(dl_count) );
         return {new_w, upd};
-      } else if(upd == upd_ret::SAT) {
+      } else if(upd == xcls_upd_ret::SAT) {
         assert( is_sat(dl_count) );
         return {new_w, upd};
-      } else { assert(upd == upd_ret::UNIT);
+      } else { assert(upd == xcls_upd_ret::UNIT);
         assert( is_unit(dl_count) );
         return {new_w, upd};
       }
@@ -392,23 +391,23 @@ class xcls_watch {
      * @param alpha current bool3-assignment
      * @param alpha_dl dl of alpha-assignments
      * @param dl_count current dl_count
-     * @return upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
+     * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
      */
-    std::pair<var_t,upd_ret> update(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
+    std::pair<var_t,xcls_upd_ret> update(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
       assert(false); //TODO fix! use advance() instead of advance_wl()!
       //check if clause needs any processing
-     if( !is_active(dl_count) ) {
+      if( !is_active(dl_count) ) {
         assert(is_sat(dl_count) || is_unit(dl_count));
-        return {0, upd_ret::SAT}; //NOTE here it might also be a UNIT, but it did not become one by this update!
+        return {0, xcls_upd_ret::SAT}; //NOTE here it might also be a UNIT, but it did not become one by this update!
       }
 
       //check if -- and which ws need to be updated
       if(alpha[ ptr_ws(0) ] == bool3::None && alpha[ ptr_ws(1) ] == bool3::None) {
         assert(false);
         //nothing needs to be updated!
-        if(is_none(alpha)) return {0, upd_ret::NONE}; //TODO these next two cases should never occur, or??
-        else if(is_sat(dl_count)) return {0, upd_ret::SAT};
-        else if(is_unit(dl_count)) return {0, upd_ret::UNIT};
+        if(is_none(alpha)) return {0, xcls_upd_ret::NONE}; //TODO these next two cases should never occur, or??
+        else if(is_sat(dl_count)) return {0, xcls_upd_ret::SAT};
+        else if(is_unit(dl_count)) return {0, xcls_upd_ret::UNIT};
         assert(false);
       }
       //exactly one of { *ws[0], *ws[1] } can be advanced!
@@ -418,7 +417,7 @@ class xcls_watch {
       auto [new_w, upd] = advance_lw(i, alpha, alpha_dl, dl_count);
       //note watch-lists are already updated! --> only need to deal with 
       //assert correct return value!
-      if(upd == upd_ret::NONE) {
+      if(upd == xcls_upd_ret::NONE) {
         //assert( is_none(alpha) );
         //update ws[1] if necessary! (also updates upd)
         if(alpha[ptr_ws(1-i)]!=bool3::None) {
@@ -426,10 +425,10 @@ class xcls_watch {
           new_w = tmp.first;
           upd = tmp.second;
         }
-        assert( (upd==upd_ret::NONE) == is_none(alpha) );
-      } else if(upd == upd_ret::SAT) {
+        assert( (upd==xcls_upd_ret::NONE) == is_none(alpha) );
+      } else if(upd == xcls_upd_ret::SAT) {
         assert( is_sat(dl_count) );
-      } else { assert(upd == upd_ret::UNIT);
+      } else { assert(upd == xcls_upd_ret::UNIT);
         assert( is_unit(dl_count) );
       };
 
