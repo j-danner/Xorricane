@@ -6,8 +6,6 @@
 #include "xsys.hpp"
 #include <list>
 
-#include <ranges>
-
 
 using lit_watch = var_t;
 
@@ -35,11 +33,6 @@ class xcls_watch {
      */
     vec< std::pair<var_t,int> > xlit_dl_count0;
 
-    ///**
-    // * @brief iterator pointing to index in watch_list (necessary for updating watch-lists in constant time)
-    // */
-    //watch_list_it wl_it[2];
-    
     /**
      * @brief literal watches; offset into idxs-sets of xlits[0] and xlits[1]
      */
@@ -196,6 +189,120 @@ class xcls_watch {
         return {ptr_ws(0), upd_ret::UNIT};
       }
     };
+
+        /**
+     * @brief advances ws[0], requires that alpha[ ptr_ws(0) ] != bool3::None
+     * 
+     * @param alpha current bool3-alpha
+     * @param alpha_dl dl of alpha-assignments
+     * @param dl_count current dl_count
+     * @return pair<var_t,upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
+     */
+    std::pair<var_t,upd_ret> advance(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
+      assert(alpha[ ptr_ws(0) ] != bool3::None);
+       
+      //TODO shorter & cleaner impl with c++20 ranges?
+      //vec<std::ranges::subrange<lit_watch, xlit::iterator, std::ranges::subrange_kind::sized>> tmp{ std::ranges::subrange(ws[i], xlits[i].end()), std::ranges::subrange(xlits[i].begin(), ws[i]) };
+      //auto r = tmp | std::ranges::views::join;
+
+      //advance iterator as long as there is another unassigned idx to point to
+      auto new_w = ws[0];
+      while( (new_w < xlits[0].size()) && (alpha[ ptr_(0,new_w) ] != bool3::None) ) ++new_w;
+      if(new_w == xlits[0].size()) /*wrap around end if necessary */ new_w = 0;
+      while(  (alpha[ptr_(0,new_w)] != bool3::None) && (new_w != ws[0]) ) ++new_w;
+      //advancing done; now new_w points to ws[0] or at an unassigned idx -- or again to ws[0] (!)
+
+      //ensure that ws[0] and ws[1] point to different inds:
+      if( ptr_(0,new_w) == ptr_ws(1) ) {
+        //update xlits[0] as xlits[0]+xlits[1]+1; i.e., rewrite clause s.t. xlits[0] does not even contain ptr_ws(1)
+        xlits[0] += xlits[1]; xlits[0].add_one();
+        //find literal to watch in xlits[0]
+        new_w = 0;
+        var_t max_w = 0;
+        while( new_w<xlits[0].size() && alpha[ ptr_(0,new_w) ] != bool3::None) {
+          if(alpha_dl[ ptr_(0,new_w) ] > alpha_dl[ ptr_(0,max_w) ]) max_w = new_w;
+          ++new_w;
+        }
+        //if new_w is not xlits[new_i].size(), then we found an unassigned literal (at new_w); otherwise set new_w to max_w and thus ensure that xlits[i] is evaluated!
+        if(new_w == xlits[0].size()) {
+          new_w = max_w;
+        }
+      }
+      //note: alpha[ ptr_ws(i,new_w) ] is None if and only if xlits[0] does not evaluate to a constant and a new literal to be watched was found!
+      if(alpha[ ptr_(0,new_w) ]==bool3::None) {
+        ws[0] = new_w;
+        return {ptr_ws(0), upd_ret::NONE};
+      }
+      //now no unassigned idx was found and the value of xlits[0] can be computed:
+      if( xlits[0].eval(alpha) ) { //xlits[i] evaluates to 0
+        //xlits[0] satisfied! --> xclause does not need to be watched any longer!
+        ws[0] = new_w;
+        //xlit_dl_count0[0] = {dl, dl_count[dl]}; where dl is the decision level at which ptr_ws(0) was assigned!
+        xlit_dl_count0[0] = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
+        assert( !is_active(dl_count) ); //clause is no longer active!
+        return {ptr_ws(0), upd_ret::SAT};
+      }
+      //now xlits[0] evaluates to 1 under alpha, i.e., we check whether a different xlit should be watched.
+      xlit_dl_count1[0] = {alpha_dl[ptr_(0,new_w)], dl_count[alpha_dl[ptr_(0,new_w)]]};
+      ws[0] = new_w;
+
+      //note that xlits[0] and xlits[1] are always the xlits that are watched, i.e., start search from xlits[2] (!)
+      cls_size_t new_i = 2;
+      for(; new_i<xlits.size(); ++new_i) {
+        assert(false); //TODO UNTESTED CODE!
+        //skip xlits which evaluate to 1 in current search tree
+        if(dl_count[ xlit_dl_count1[new_i].first ] == xlit_dl_count1[new_i].second) continue;
+
+        //find lit that was assigned at highest dl (req for proper backtracking!) -- or find unassigned lit!
+        new_w = 0;
+        var_t max_w = 0;
+        while( new_w<xlits[new_i].size() && alpha[ ptr_(new_i,new_w) ]!=bool3::None) {
+          if(alpha_dl[ ptr_(new_i,new_w) ] > alpha_dl[ ptr_(new_i,max_w) ]) max_w = new_w;
+          ++new_w;
+        }
+        //if new_w is not xlits[new_i].size(), then there is an unassigned literal, i.e., watches can be updated
+        if(new_w != xlits[new_i].size()) {
+          //new xlit to be watched found (which luckily already renders xcls satisfied!) --> change watched xlit and return SAT
+          xlits[0].swap(xlits[new_i]); //ensures that no iterators are invalidated
+          ws[0] = new_w;
+          std::swap(xlit_dl_count0[0], xlit_dl_count0[new_i]);
+          std::swap(xlit_dl_count1[0], xlit_dl_count1[new_i]);
+          assert( !is_active(dl_count) );
+          return {ptr_ws(0), upd_ret::NONE};
+        } else {
+          //xlits[new_i] evaluates to a constant; this is only useful if xlits[new_i].eval(alpha) is SAT
+          new_w = max_w; //if SAT we need to watch the ind assigned with highest dl
+          const var_t dl_assigned = alpha_dl[ ptr_(new_i,new_w) ];
+          //check whether xlit[new_i] it is satisfied
+          if( xlits[new_i].eval(alpha) ) {
+            //new xlit to be watched found (which luckily already renders xcls satisfied!) --> change watched xlit and return SAT
+            xlits[0].swap(xlits[new_i]); //ensures that no iterators are invalidated
+            ws[0] = new_w;
+            std::swap(xlit_dl_count0[0], xlit_dl_count0[new_i]);
+            std::swap(xlit_dl_count1[0], xlit_dl_count1[new_i]);
+            xlit_dl_count0[0] = {dl_assigned, dl_count[dl_assigned]};
+            assert( !is_active(dl_count) );
+            return {ptr_ws(0), upd_ret::SAT};
+          }
+          //now xlits[new_i] evaluates to 1 --> choose different new_i
+          xlit_dl_count1[new_i] = {dl_assigned, dl_count[dl_assigned]};
+        }
+      }
+      //if the above did not yet return, then all xlits (except xlits[1]) evaluate to 1 under alpha, i.e., we learn a unit clause!
+      //moreover, no watch literals need to be updated! (ws[0] is already at highest dl and xlits[0] evaluates to 1!)
+      assert( !is_active(dl_count) );
+      return {ptr_ws(0), upd_ret::UNIT};
+    };
+
+    /**
+     * @brief swap watched literals
+     */
+    void swap_wl() {
+      std::swap(xlits[0], xlits[1]);
+      std::swap(ws[0],ws[1]);
+      std::swap(xlit_dl_count0[0], xlit_dl_count0[1]);
+      std::swap(xlit_dl_count1[0], xlit_dl_count1[1]);
+    }
     
   public:
     xcls_watch() {};
@@ -251,18 +358,18 @@ class xcls_watch {
         assert(is_sat(dl_count) || is_unit(dl_count));
         return {new_lit, upd_ret::SAT}; //NOTE here it might also be a UNIT, but it did not become one by this update!
       }
-
-      //exactly one of { *ws[0], *ws[1] } must be new_lit
+      //exactly one of { ptr_ws(0), ptr_ws(1) } must be new_lit
       assert( (ptr_ws(0) == new_lit) ^ (ptr_ws(1) == new_lit) );
-      //update one of them, then call itself recursively!
-      const auto i = ptr_ws(0) == new_lit ? 0 : 1;
-      assert( ptr_ws(i) == new_lit );
+      //swap s.t. ptr_ws(0) == new_lit
+      if(ptr_ws(0)!=new_lit) swap_wl();
+      assert( ptr_ws(0) == new_lit );
 
-      const auto [new_w, upd] = advance_lw(i, alpha, alpha_dl, dl_count);
-      assert(is_sat(dl_count) || is_unit(dl_count) || ptr_ws(i)!=new_lit);
+      //advance ws[0]
+      const auto [new_w, upd] = advance(alpha, alpha_dl, dl_count);
+      assert(is_sat(dl_count) || is_unit(dl_count) || ptr_ws(0)!=new_lit);
       assert(watches(new_w));
       assert(assert_data_struct());
-      
+
       //assert correct return value!
       if(upd == upd_ret::NONE) {
         //assert( is_none(alpha) ); //leads to error: it might be SAT but ONLY after all updates have been performed! (i.e. if xlits[0] AND xlits[1] needs an update!)
@@ -274,11 +381,10 @@ class xcls_watch {
       } else { assert(upd == upd_ret::UNIT);
         assert( is_unit(dl_count) );
         return {new_w, upd};
-      };
-
+      }
     };
 
-
+    
     /**
      * @brief updates xcls_watch and watch_list according to current alpha, updates watch_list (and requires dl_count and dl)
      * @note should only be used when new clauses are added!
@@ -289,7 +395,7 @@ class xcls_watch {
      * @return upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
      */
     std::pair<var_t,upd_ret> update(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
-      assert(false); //I guess this function should/is not used!
+      assert(false); //TODO fix! use advance() instead of advance_wl()!
       //check if clause needs any processing
      if( !is_active(dl_count) ) {
         assert(is_sat(dl_count) || is_unit(dl_count));
