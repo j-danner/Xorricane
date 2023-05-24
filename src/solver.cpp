@@ -8,6 +8,10 @@
 #include "solver.hpp"
 
 solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl_) noexcept : opt(opt_), dl(dl_) {
+    #ifndef NDEBUG
+        opt.verb = 100;
+    #endif
+
     // init stacks
     state_stack = vec< state_repr >();
     //init watch_list
@@ -956,6 +960,9 @@ std::string solver::to_str() const noexcept {
     return result;
 }
 
+#ifdef NDEBUG
+    bool solver::assert_data_structs() const noexcept { return true; };
+#else
 bool solver::assert_data_structs() const noexcept {
     //sanity check on assignments_dl
     for([[maybe_unused]] const auto lvl : assignments_dl) assert( lvl <= dl);
@@ -979,6 +986,7 @@ bool solver::assert_data_structs() const noexcept {
     if(assignments_xsys != xsys(assignments) ) {
         VERB(100, "assignments_xsys: " + assignments_xsys.to_str());
         VERB(100, "xsys(assignments): " + xsys(assignments).to_str());
+            xsys tmp = xsys(assignments);
     };
     assert(assignments_xsys == xsys(assignments) );
 
@@ -1012,6 +1020,7 @@ bool solver::assert_data_structs() const noexcept {
     */
     return true;
 };
+#endif
 
 
 void solver::print_assignments(std::string lead) const noexcept {
