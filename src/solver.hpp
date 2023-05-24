@@ -261,13 +261,10 @@ class solver
      * @return bool true iff xlit was actually new at current dl!
      */
     bool add_new_xlit(const xlit& lit, const var_t& rs, const var_t& lvl) {
-      if(dl>1 && lvl == 1) {
-        VERB(100,"");
-      }
-
       //add lit to state_stack
       for(var_t j = lvl+1; j<state_stack.size(); ++j) state_stack[j].L += lit;
       
+      //TODO shouldn't we only reduce with assignments upt to dl lvl?
       xlit lit_dl = assignments_xsys.reduce(lit);
       //xlit lit_dl(lit); lit_dl.reduce(assignments);
       if(lit_dl.is_zero()) return false;

@@ -102,7 +102,7 @@ void solver::backtrack(const var_t& lvl) {
     assert(active_cls == std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); }));
     //active_cls = std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); });
     // revert assignments_xsys
-    assignments_xsys = state_stack.back().L;
+    assignments_xsys = std::move(state_stack.back().L);
     state_stack.pop_back();
 
     //cleanup gcp_queue
