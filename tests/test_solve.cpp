@@ -290,7 +290,7 @@ TEST_CASE( "solving simple instances", "[solver]") {
 
 TEST_CASE( "solving with different options" , "[impl-graph][graph][parser][solve]" ) {
     auto fname = GENERATE("../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf", "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf", "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf", "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf");
-    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf"
+    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf";
     //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf";
     //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf";
     //auto fname = "../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf";

@@ -98,4 +98,14 @@ TEST_CASE( "xsys creation/reduction/addition", "[xsys]" ) {
 
     auto sys3 = sys1+sys2;
     CHECK( sys3.to_str() == "x1+x2 x3+1 x4+1 x5+1 x6" );
+
+
+    sys3 += xsys(xlit(vec<var_t>({0,1,2})));
+    CHECK( sys3.to_str() == "x1+x2 x3 x4 x5 x6 1" );
+    CHECK( sys3.get_pivot_poly_idx().contains(0) );
+    CHECK( sys3.get_pivot_poly_idx().contains(1) );
+    CHECK( sys3.get_pivot_poly_idx().contains(3) );
+    CHECK( sys3.get_pivot_poly_idx().contains(4) );
+    CHECK( sys3.get_pivot_poly_idx().contains(5) );
+    CHECK( sys3.get_pivot_poly_idx().contains(6) );
 }

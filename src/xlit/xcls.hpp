@@ -33,7 +33,7 @@ class xcls {
     xlit get_unit() const { assert(is_unit()); return assVS.get_non_zero_el().add_one(); };
 
     xcls& reduce(const vec<xlit>& assignments) {
-      vec<xlit> lits;
+      std::list<xlit> lits;
       for(const auto& l : assVS.get_xlits() ) {
         xlit l_(l);
         l_.reduce(assignments);

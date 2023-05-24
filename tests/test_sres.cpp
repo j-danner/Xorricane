@@ -192,10 +192,10 @@ TEST_CASE( "simple sres", "[sres]") {
         xcls F = xcls(vec<xlit>({f1, f2, f3}));
         xcls G = xcls(vec<xlit>({g1, g2}));
 
-        CHECK( F.to_str() == "x1+x5 x2 0");
+        CHECK( F.to_str() == "x1+x5+1 x2+1 0");
         CHECK( G.to_str() == "x2+x4 x3+x4+1");
 
-        CHECK( F.get_ass_VS().to_str() == "x1+x5+1 x2+1 1");
+        CHECK( F.get_ass_VS().to_str() == "x1+x5 x2 1");
         CHECK( G.get_ass_VS().to_str() == "x2+x4+1 x3+x4");
 
         xcls r = sres_opt(F,G);

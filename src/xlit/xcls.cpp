@@ -22,8 +22,8 @@ vec<xlit> intersectVS(const xsys& U, const xsys& W) {
     //NOTE assumes that n_vars is less than half of max val (of var_t type)
 
     //if U contains 1 return W and vice versa
-    if(!U.is_consistent()) return W.get_xlits();
-    if(!W.is_consistent()) return U.get_xlits();
+    if(!U.is_consistent()) return W.get_xlits_vec();
+    if(!W.is_consistent()) return U.get_xlits_vec();
     
     //rewrite xlits s.t. they have a continous range of idxs
     vec<var_t> supp = vec<var_t>({0});

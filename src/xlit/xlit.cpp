@@ -37,23 +37,21 @@ bool xlit::reduce(const xsys& sys) {
     bool changed = false;
     if( size() > LOG2(size())*sys.size() ) {
         //complexity to find correct update xlits: O( log( this.size() ) * sys.size() )
-        for (const auto &lt_row_idx : sys.get_pivot_poly_idx()) {
-            const var_t lt      = lt_row_idx.first;
-            const var_t row_idx = lt_row_idx.second;
+        for (const auto &[lt,row] : sys.get_pivot_poly_idx()) {
             if( (*this)[lt] ) {
-                *this += sys.get_xlits( row_idx );
+                *this += *row;
                 changed = true;
             }
         }
     } else {
         //complexity to find correct update xlits: amortized O( this.size() )
-        auto upd_idxs = std::list<var_t>();
-        const auto& pivot_poly_idx = sys.get_pivot_poly_idx();
+        auto upd_idxs = std::list<std::list<xlit>::iterator>();
+        const auto& pivot_poly_its = sys.get_pivot_poly_idx();
         for(const auto& l : idxs) {
-            auto search = pivot_poly_idx.find(l);
-            if( search != pivot_poly_idx.end() ) upd_idxs.push_back( search->second );
+            auto search = pivot_poly_its.find(l);
+            if( search != pivot_poly_its.end() ) upd_idxs.push_back( search->second );
         }
-        for(const auto& row_idx: upd_idxs) *this += sys.get_xlits( row_idx );
+        for(const auto& row: upd_idxs) *this += *row;
         changed = !upd_idxs.empty();
     }
     return changed;
