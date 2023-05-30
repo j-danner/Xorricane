@@ -55,6 +55,7 @@ class xlit
 
         inline bool3 as_bool3() const { return (size()!=1 && !is_one()) ? bool3::None : (has_constant() ? bool3::True : bool3::False); };
         inline bool is_equiv() const { return size()==2; };
+        inline bool is_assigning() const { return size()<=1; };
 
         inline bool has_constant() const { return p1; };
 
@@ -70,6 +71,7 @@ class xlit
         bool reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t lvl);
         
         bool reduce(const vec<xlit>& assignments);
+        xlit reduced(const vec<xlit>& assignments) const { xlit ret(*this); ret.reduce(assignments); return ret; };
         vec<var_t> reducers(const vec<xlit>& assignments) const;
 
         inline vec<var_t> get_idxs() const { vec<var_t> r = idxs; if(p1){ r.insert(r.begin(), 0); } return r; };

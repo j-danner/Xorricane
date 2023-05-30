@@ -8,6 +8,7 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
+#include <string>
 //other
 #include <omp.h>
 
@@ -42,6 +43,9 @@ using vec = std::vector<T>;
 
 
 enum class bool3 { False, True, None };
+inline bool3 to_bool3(const bool b) { return b ? bool3::True : bool3::False; };
+inline bool3 neg(const bool3 b) { return b==bool3::None ? bool3::None : (b==bool3::True ? bool3::False : bool3::True); };
+inline std::string b3_to_str(const bool3 b) { return b==bool3::None ? "None" : (b==bool3::True ? "True" : "False"); };
 
 enum class dec_heu { vsids, lwl, lex, swl };
 enum class phase_opt { rand, save, save_inv };
@@ -91,6 +95,7 @@ class stats {
     unsigned int no_restarts = 0;
     unsigned int no_graph_upd = 0;
     unsigned int no_gcp = 0;
+    unsigned int no_upd = 0;
     unsigned int total_upd_no_v = 0;
     unsigned int total_upd_xsys_size = 0;
     //newly learnt pure-xors via upd
@@ -165,6 +170,8 @@ class stats {
       no_confl = o.no_confl;
       no_vert_upd = o.no_vert_upd;
       no_restarts = o.no_restarts;
+      no_gcp = o.no_gcp;
+      no_upd = o.no_upd;
       begin = o.begin;
       end = o.end;
       cancelled.store( o.cancelled.load() );

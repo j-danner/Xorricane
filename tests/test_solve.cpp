@@ -5,6 +5,16 @@
 #include <catch2/catch_all.hpp>
 
 TEST_CASE( "solving test instances" , "[solver]" ) {
+    SECTION( "test1.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test1.xnf");
+        auto slvr = solver(clss);
+    
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //UNSAT
+        //CHECK( s.sol == vec<bool>({false,false,false}) );
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+
     SECTION( "test2.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test2.xnf");
         auto slvr = solver(clss);

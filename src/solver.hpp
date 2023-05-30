@@ -1,7 +1,5 @@
 #pragma once
 
-//STILL BUGGY -DO NOT USE-
-
 #include <stack>
 #include <math.h>
 #include <map>
@@ -25,6 +23,7 @@ struct state_repr {
 
   /**
    * @brief current (non)-constant assignments
+   * @todo remove!
    */
   xsys L;
 
@@ -43,11 +42,6 @@ class solver
      * @brief xor-clause watchers
      */
     vec< xcls_watch > xclss;
-    
-    /**
-     * @brief xlit watchers, i.e., unit xor-clause watchers
-     */
-    vec< xlit_watch > xlits;
 
     /**
      * @brief watch_list[i] contains all idxs j s.t. xclss[j] watches indet i
@@ -92,7 +86,7 @@ class solver
     unsigned int bump = 1;
     float decay = 0.9;
 
-    bool is_consistent = true;
+    bool is_consistent() const { return alpha[0]!=bool3::True; };
 
     //CDCL vars
     /**
@@ -105,6 +99,11 @@ class solver
      * @brief current assignments of vars; assignments[i] contains xlit with LT i
      */
     vec< xlit > assignments;
+    
+    /**
+     * @brief current assignments of vars; stored as xlit_watches
+     */
+    vec< xlit_watch > assignments_watch;
 
     /**
      * @brief current assignments -- stored as xsys
@@ -137,20 +136,37 @@ class solver
     vec<var_t> equiv_lits;
 
     /**
+     * @brief idx of reason_UNIT clause of propagated units
+     */
+    vec<var_t> reason_UNIT;
+    
+    /**
      * @brief idx of reason clause of propagated units
      */
-    vec<var_t> reason;
+    vec<var_t> reason_ALPHA;
+    //assert(false);
+    // i guess we need to track reason clauses in two ways: reason cls for UNITS AND reason cls for ALPHA..... CDCL needs to know the reason for every ALPHA, and reduce with it, but to know the reason clauses for ALPHA, we need to know the reason clause for the corresponding UNIT; i.e. for every UNITs we need to access the corr reasons, which are then put into the ALPHA-reasons
+    //related: should the trail only manage the ALPHA-assignments?, i.e., which are assignments are we actually learning on?! (i guess only ALPHA-assignments suffice...)
 
     /**
      * @brief trail of decisions/unit-propagations
      */
     std::list<var_t> trail;
 
+    // new assigned lits are processed as follows:
+    // 1. add to upd_queue
+    // 2. next find_implied_alpha call deduces new assigned lits from the unit lits + puts those into gcp_queue
+    // 3. next GCP call propagates the new assigned lits to the clauses and puts them on the trail
+
     /**
-     * @brief queue of lits that were assigned but not yet propagated
-     * @note lits first need to be put into gcp_queue before being added to the trail!
+     * @brief queue of lits that were assigned but not yet propagated to clauses
      */
     std::queue<var_t> gcp_queue;
+    
+    /**
+     * @brief queue of lits that were assigned but not yet propagated to unit xlits
+     */
+    std::queue<var_t> upd_queue;
 
     xcls get_last_reason() const;
 
@@ -184,13 +200,14 @@ class solver
         //clear assignments_dl
         assignments[trail.back()] = xlit();
         assignments_dl[trail.back()] = 0;
+        reason_ALPHA[trail.back()] = 0;
       }
       //store last_phase
       save_phase(); //originally: last_phase[trail.back()] = alpha[trail.back()];
       alpha[trail.back()] = bool3::None;
       alpha_dl[trail.back()] = 0;
+      reason_UNIT[trail.back()] = -1;
       trail.pop_back();
-      reason.pop_back();
       return true;
     }
 
@@ -204,48 +221,106 @@ class solver
     void bump_score(const xlit& lit);
     void decay_score();
 
-    void find_implied_alpha(const var_t rs) {
-      //TODO needs to be optimized! (only update relevant parts!!)
-      for(const auto& [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
-        if(assignments_xsys.get_xlits(idx).as_bool3() != alpha[lt]) {
-          if(assignments[lt].is_zero()) {
-            assignments[lt] = assignments_xsys.get_xlits(idx);
-            assignments_dl[lt] = dl;
+    void find_implied_alpha() {
+      //new code
+      //update w.r.t. all elements in upd_queue
+      while(!upd_queue.empty() && is_consistent()) {
+        const var_t upd_lt = upd_queue.front();
+        gcp_queue.emplace(upd_lt);
+        upd_queue.pop();
+        //update watch_list
+        auto it = L_watch_list[upd_lt].begin();
+        while(it != L_watch_list[upd_lt].end()) {
+          const var_t i = *it;
+          assert(assignments_watch[i].watches(upd_lt));
+          //skip if it is already assigned && it does not contradict alpha[i]
+          //TODO optimize! i.e., offer a function that checks if it is was already assigned the last time it was checked! (use dl_count?!)
+          const auto& [lt,val] = assignments_watch[i].get_assignment(alpha);
+          if(val!=bool3::None && alpha[lt] == val) {
+            ++it;
+            continue;
           }
-          alpha[lt] = assignments_xsys.get_xlits(idx).as_bool3();
-          alpha_dl[lt] = dl;
-          gcp_queue.emplace(lt);
-          trail.emplace_back(lt);
-          reason.emplace_back(rs); //TODO what is the reason clause?!
-          VERB(65, "new ALPHA " + assignments_xsys.get_xlits(idx).to_str() + ( (0<=rs && rs<xclss.size()) ? " with reason clause " + xclss[rs].to_str() : "") );
+          const auto& [new_wl, ret] = assignments_watch[i].update(upd_lt, alpha);
+          //if watched-literal has changed, i.e., new_wl != 0; update watch-list
+          if(new_wl != upd_lt) {
+              //rm *it from current watch-list:
+              it = watch_list[upd_lt].erase(it);
+              //add i to newly watched literal:
+              L_watch_list[new_wl].push_back(i);
+          } else {
+              ++it;
+          }
+          switch (ret) {
+          case xlit_upd_ret::ASSIGNING:
+            {
+              assert( assignments_watch[i].is_assigning(alpha) );
+              assert( assignments_watch[i].to_xlit().reduced(assignments).is_assigning() );
+              // update alpha
+              const auto [lt,val] = assignments_watch[i].get_assignment(alpha);
+              assert(alpha[lt] == bool3::None);
+              trail.emplace_back(lt);
+              alpha[lt] = val;
+              alpha_dl[lt] = assignments_watch[i].get_assigning_lvl(alpha_dl);
+              reason_ALPHA[lt] = reason_UNIT[assignments_watch[i].LT()];
+              upd_queue.emplace(lt);
+              VERB(70, "new ALPHA " + assignments_watch[i].get_assigning_xlit(alpha).to_str() + ( (reason_ALPHA[lt]<xclss.size()) ? " with reason clause " + xclss[reason_ALPHA[lt]].to_str() : "") );
+              if (!is_consistent()) {
+                VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
+                return; //quit propagation immediately at conflict!
+              }
+            }
+            break;
+          case xlit_upd_ret::UNIT:
+              assert(!assignments_watch[i].is_assigning(alpha));
+              break;
+          }
         }
       }
+
+      ////old code
+      ////TODO needs to be optimized! (only update relevant parts!!)
+      //for(const auto& [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
+      //  if(assignments_xsys.get_xlits(idx).as_bool3() != alpha[lt]) {
+      //    if(assignments[lt].is_zero()) {
+      //      assignments[lt] = assignments_xsys.get_xlits(idx);
+      //      assignments_dl[lt] = dl;
+      //    }
+      //    alpha[lt] = assignments_xsys.get_xlits(idx).as_bool3();
+      //    alpha_dl[lt] = dl;
+      //    gcp_queue.emplace(lt);
+      //    trail.emplace_back(lt);
+      //    reason_UNIT.emplace_back(rs); //TODO what is the reason clause?!
+      //    VERB(65, "new ALPHA " + assignments_xsys.get_xlits(idx).to_str() + ( (0<=rs && rs<xclss.size()) ? " with reason_UNIT clause " + xclss[rs].to_str() : "") );
+      //  }
+      //}
     }
 
     inline void add_new_guess(const xsys& L) {
       //update assignments
       for(const auto& [lt,idx] : L.get_pivot_poly_idx()) {
-        assert(assignments[lt].is_zero()); //ensure that guess is actually new!
-        //TODO should we allow to guess variables for which we already have information?
-        assignments[lt] = L.get_xlits(idx);
-        assignments_dl[lt] = dl;
-        trail.emplace_back( lt );
-        //comes from guess
-        reason.emplace_back( -1 );
-        //update alpha
-        alpha[lt] = assignments[lt].as_bool3();
-        //put into gcp_queue if necessary!
-        if(alpha[lt] != bool3::None) {
-          gcp_queue.emplace(lt);
-          alpha_dl[lt] = dl;
-        }
+        add_new_xlit(*idx, -1, dl);
+        //OLD CODE
+        //assert(assignments[lt].is_zero()); //ensure that guess is actually new!
+        ////TODO should we allow to guess variables for which we already have information?
+        //assignments[lt] = L.get_xlits(idx);
+        //assignments_dl[lt] = dl;
+        //trail.emplace_back( lt );
+        ////comes from guess
+        //reason_UNIT.emplace_back( -1 );
+        ////update alpha
+        //alpha[lt] = assignments[lt].as_bool3();
+        ////put into gcp_queue if necessary!
+        //if(alpha[lt] != bool3::None) {
+        //  gcp_queue.emplace(lt);
+        //  alpha_dl[lt] = dl;
+        //}
       };
       assignments_xsys += L;
-      is_consistent = assignments_xsys.is_consistent();
+      //is_consistent = assignments_xsys.is_consistent();
 
       //search for new uniquely determined inds!
-      find_implied_alpha(-1);
-      is_consistent = assignments_xsys.is_consistent();
+      find_implied_alpha();
+      //is_consistent = assignments_xsys.is_consistent();
     };
 
     /**
@@ -276,49 +351,98 @@ class solver
      * @brief adds new xlit to data structure if deduced at current dl; also reduces with current assignments to find new true/false assignments
      * 
      * @param lit literal to be added
-     * @param rs idx of reason clause
+     * @param rs idx of reason_UNIT clause
+     * @param lvl dl in which lit is deduced
      * 
      * @return bool true iff xlit was actually new at current dl!
      */
     bool add_new_xlit(const xlit& lit, const var_t& rs, const var_t& lvl) {
-      //add lit to state_stack
-      for(var_t j = lvl+1; j<state_stack.size(); ++j) state_stack[j].L += lit;
-      
-      //TODO shouldn't we only reduce with assignments upt to dl lvl?
-      xlit lit_dl = assignments_xsys.reduce(lit);
-      //xlit lit_dl(lit); lit_dl.reduce(assignments);
-      if(lit_dl.is_zero()) return false;
-      VERB(65, "c " + std::to_string(lvl) + ": new UNIT " + lit.to_str() + " ~> " + lit_dl.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
+      //new code
+      //store lit in 
+      xlit lit_reduced(lit);
+      lit_reduced.reduce(assignments, assignments_dl, lvl); //reduce with assignments AND alpha...
+      if(lit_reduced.is_zero()) return false; 
 
-      const var_t lt = lit_dl.LT();
+      VERB(65, "c " + std::to_string(lvl) + " : new UNIT " + lit.to_str() + " ~> " + lit_reduced.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
+      
+      const var_t lt = lit_reduced.LT();
       // add to trail //TODO add in propoer position in trail!
       trail.emplace_back(lt);
-      reason.emplace_back(rs);
-      //update assignments
-      assignments[lt] = std::move(lit_dl);
-      assignments_dl[lt] = dl;
-      if(assignments[lt].is_one()) is_consistent = false;
-      //put into gcp_queue if necessary!
-      if(assignments[lt].as_bool3() != bool3::None) {
-        alpha[lt] = assignments[lt].as_bool3();
-        alpha_dl[lt] = dl;
-        gcp_queue.emplace(lt);
-      } else if (assignments[lt].is_equiv()) {
-        equiv_lits[lt] = assignments[lt].get_idxs_()[1];
-        VERB(65, "c " + std::to_string(lvl) + ": new EQUIV " + assignments[lt].to_str() )
+      reason_UNIT[lt] = rs;
+      // update assignments
+
+        //rm this later
+        assignments[lt] = lit_reduced;
+        assignments_xsys.add_reduced_lit(assignments[lt]);
+        //end rm this later
+
+      assignments_watch[lt] = std::move( xlit_watch(std::move(lit_reduced), alpha, alpha_dl, lvl) );
+      // add to L_watch_list's -- if there is anything to watch
+      if(assignments_watch[lt].size()>0) {
+        L_watch_list[ assignments_watch[lt].get_wl0() ].emplace_back( lt );
+        if(assignments_watch[lt].get_wl0() != assignments_watch[lt].get_wl1()) L_watch_list[ assignments_watch[lt].get_wl1() ].emplace_back( lt );
       }
-      //update assignments_xsys
-      //assignments_xsys += assignments[lt]; //TODO implement func to add an already reduced lit to xsys
-      assignments_xsys.add_reduced_lit(assignments[lt]);
-      is_consistent = assignments_xsys.is_consistent();
 
-      if(lt == 0) return true;
-
-      //search for new uniquely determined inds! (only if lit != 1)
-      find_implied_alpha(rs);
-
-      //return true!
+      assignments_dl[lt] = dl;
+      //if assignments_watch[lt] is already assigned, update alpha!
+      const auto [lt2,val] = assignments_watch[lt].get_assignment(alpha);
+      if(val!=bool3::None) {
+        alpha[lt2] = val;
+        alpha_dl[lt2] = assignments_watch[lt].get_assigning_lvl(alpha_dl);
+        reason_ALPHA[lt2] = rs;
+        if (lt2==0) { assert(!is_consistent()); return true; };
+        upd_queue.emplace(lt2);
+        //propagate new assignment!
+        find_implied_alpha();
+      }
+      //else if (assignments_watch[lt].is_equiv()) { //TODO update to check is_equiv for xlit_watches!!
+      //  equiv_lits[lt] = assignments[lt].get_idxs_()[1];
+      //  VERB(65, "c " + std::to_string(lvl) + ": new EQUIV " + assignments[lt].to_str() )
+      //  //TODO currently unused information!
+      //}
+      
       return true;
+
+      //old code
+
+      //add lit to state_stack
+      //for(var_t j = lvl+1; j<state_stack.size(); ++j) state_stack[j].L += lit;
+      
+      ////TODO shouldn't we only reduce with assignments upt to dl lvl?
+      //xlit lit_dl = assignments_xsys.reduce(lit);
+      ////xlit lit_dl(lit); lit_dl.reduce(assignments);
+      //if(lit_dl.is_zero()) return false;
+      //VERB(65, "c " + std::to_string(lvl) + " : new UNIT " + lit.to_str() + " ~> " + lit_dl.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason_UNIT clause " + xclss[rs].to_str() : "") );
+
+      //const var_t lt = lit_dl.LT();
+      //// add to trail //TODO add in propoer position in trail!
+      //trail.emplace_back(lt);
+      //reason_UNIT.emplace_back(rs);
+      ////update assignments
+      //assignments[lt] = std::move(lit_dl);
+      //assignments_dl[lt] = dl;
+      ////if(assignments[lt].is_one()) is_consistent = false;
+      ////put into gcp_queue if necessary!
+      //if(assignments[lt].as_bool3() != bool3::None) {
+      //  alpha[lt] = assignments[lt].as_bool3();
+      //  alpha_dl[lt] = dl;
+      //  gcp_queue.emplace(lt);
+      //} else if (assignments[lt].is_equiv()) {
+      //  equiv_lits[lt] = assignments[lt].get_idxs_()[1];
+      //  VERB(65, "c " + std::to_string(lvl) + ": new EQUIV " + assignments[lt].to_str() )
+      //}
+      ////update assignments_xsys
+      ////assignments_xsys += assignments[lt]; //TODO implement func to add an already reduced lit to xsys
+      //assignments_xsys.add_reduced_lit(assignments[lt]);
+      //is_consistent = assignments_xsys.is_consistent();
+
+      //if(lt == 0) return true;
+
+      ////search for new uniquely determined inds! (only if lit != 1)
+      //find_implied_alpha(rs);
+
+      ////return true!
+      //return true;
     };
 
     void init_and_add_xcls_watch(xcls&& cls) {
