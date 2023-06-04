@@ -206,9 +206,17 @@ class xcls_watch {
 
       //advance iterator as long as there is another unassigned idx to point to
       auto new_w = ws[0];
-      while( (new_w < xlits[0].size()) && (alpha[ ptr_(0,new_w) ] != bool3::None) ) ++new_w;
+      var_t max_w = new_w;
+      while( (new_w < xlits[0].size()) && (alpha[ ptr_(0,new_w) ] != bool3::None) ) {
+        if(alpha_dl[ ptr_(0,new_w) ] > alpha_dl[ ptr_(0,max_w) ]) max_w = new_w;
+        ++new_w;
+      }
       if(new_w == xlits[0].size()) /*wrap around end if necessary */ new_w = 0;
-      while(  (alpha[ptr_(0,new_w)] != bool3::None) && (new_w != ws[0]) ) ++new_w;
+      while( (alpha[ptr_(0,new_w)] != bool3::None) && (new_w != ws[0]) ) {
+        if(alpha_dl[ ptr_(0,new_w) ] > alpha_dl[ ptr_(0,max_w) ]) max_w = new_w;
+        ++new_w;
+      }
+      new_w = alpha[ ptr_(0,new_w) ] == bool3::None ? new_w : max_w;
       //advancing done; now new_w points to ws[0] or at an unassigned idx -- or again to ws[0] (!)
 
       //ensure that ws[0] and ws[1] point to different inds:

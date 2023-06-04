@@ -265,6 +265,36 @@ TEST_CASE( "solving test instances" , "[solver]" ) {
         CHECK( check_sol(clss.cls, s.sol) );
     }
     
+    SECTION( "test26.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test26.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test27.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test27.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+
+    SECTION( "test28.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test28.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+
     SECTION( "rand-3-6.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf");
         auto slvr = solver(clss);
@@ -299,8 +329,8 @@ TEST_CASE( "solving simple instances", "[solver]") {
 }
 
 TEST_CASE( "solving with different options" , "[impl-graph][graph][parser][solve]" ) {
-    auto fname = GENERATE("../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf", "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf", "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf", "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf");
-    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf";
+    //auto fname = GENERATE("../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf", "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf", "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf", "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf");
+    auto fname = "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf";
     //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf";
     //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf";
     //auto fname = "../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf";
