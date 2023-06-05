@@ -13,11 +13,9 @@
 #include "omp.h"
 
 //implementation inspired by the one of 3BA by Jan Horacek
-
 #define DIFF diff_[omp_get_thread_num()]
 
-// this suppress creating the new objects again and again
-// (each thread has their own diff-vec)
+// this suppresses creating the new objects again and again (each thread has their own diff-vec)
 vec< vec<var_t> > diff_( omp_get_max_threads() );
 
 
@@ -126,6 +124,13 @@ std::string xlit::to_full_str(var_t num_vars) const{
     std::rotate(str.begin(), str.begin()+1, str.end());
 
     return str;
+};
+
+
+xlit xlit::shared_part(const xlit& other) const {
+  DIFF.clear(); // DIFF is declared global and static, this saves creating new DIFFs for each calling
+  std::set_intersection(std::execution::par, idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
+  return std::move( xlit(DIFF, p1^other.p1, true) ); //call ctor that does NOT sort DIFF
 };
 
 //overloaded operators

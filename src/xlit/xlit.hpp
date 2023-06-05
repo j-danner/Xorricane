@@ -54,6 +54,7 @@ class xlit
 
         inline bool is_one() const { return p1 && (idxs.empty()); };
         inline bool is_zero() const { return !p1 && idxs.empty(); };
+        inline bool is_constant() const { return idxs.empty(); };
 
         inline bool3 as_bool3() const { return (size()!=1 && !is_one()) ? bool3::None : (has_constant() ? bool3::True : bool3::False); };
         inline bool is_equiv() const { return size()==2; };
@@ -96,6 +97,8 @@ class xlit
         inline xlit& operator =(const xlit&& other) noexcept { idxs = std::move(other.idxs); p1 = std::move(other.p1); return *this; };
 
         void swap(xlit& other) noexcept { std::swap(idxs, other.idxs); std::swap(p1, other.p1); };
+
+        xlit shared_part(const xlit& other) const;
 
         inline bool operator ==(const xlit& other) const { return (p1==other.p1) && (idxs==other.idxs); };
         bool operator <(const xlit& other) const;

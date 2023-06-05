@@ -24,6 +24,11 @@ class xcls_watch {
     //TODO would it be better to store xlits NOT as objects of class xlit, but as UNSORTED vecs of var_t's ??
 
     /**
+     * @brief shared part of xlits[0] and xlits[1]
+     */
+    xlit shared_part;
+
+    /**
      * @brief xlit_dl_counts_1[i] tells in which dl and at what count xlit[i] was last evaluated to be 1 ({0,0} default)
      */
     vec< std::pair<var_t,int> > xlit_dl_count1;
@@ -37,7 +42,7 @@ class xcls_watch {
      * @brief literal watches; offset into idxs-sets of xlits[0] and xlits[1]
      */
     lit_watch ws[2];
-
+    
     /**
      * @brief initializes xlit_dl_count0, xlit_dl_count1, and ws[0], ws[1]
      * @note assumes that xlits are already set; wl_it must still be initiated!
@@ -51,6 +56,15 @@ class xcls_watch {
         xlit_dl_count1[j] = {0,0};
         xlit_dl_count0[j] = {0,0};
       }
+
+      //init shared
+      shared_part = xlits[0].shared_part(xlits[1]);
+      //rm shared part from xlits[0] and xlits[1]
+      xlits[0] += shared_part;
+      xlits[1] += shared_part;
+
+      //ensure that xlits[0] and xlits[1] are non-empty
+      
       //init ws
       ws[0] = 0;
       ws[1] = 0;
@@ -219,44 +233,39 @@ class xcls_watch {
       new_w = alpha[ ptr_(0,new_w) ] == bool3::None ? new_w : max_w;
       //advancing done; now new_w points to ws[0] or at an unassigned idx -- or again to ws[0] (!)
 
-      //ensure that ws[0] and ws[1] point to different inds:
-      if( ptr_(0,new_w) == ptr_ws(1) ) {
-        //update xlits[0] as xlits[0]+xlits[1]+1; i.e., rewrite clause s.t. xlits[0] does not even contain ptr_ws(1)
-        xlits[0] += xlits[1]; xlits[0].add_one();
-        //find literal to watch in xlits[0]
-        new_w = 0;
-        var_t max_w = 0;
-        while( new_w<xlits[0].size() && alpha[ ptr_(0,new_w) ] != bool3::None) {
-          if(alpha_dl[ ptr_(0,new_w) ] > alpha_dl[ ptr_(0,max_w) ]) max_w = new_w;
-          ++new_w;
-        }
-        //if new_w is not xlits[new_i].size(), then we found an unassigned literal (at new_w); otherwise set new_w to max_w and thus ensure that xlits[i] is evaluated!
-        if(new_w == xlits[0].size()) {
-          new_w = max_w;
-        }
-      }
-      //note: alpha[ ptr_ws(i,new_w) ] is None if and only if xlits[0] does not evaluate to a constant and a new literal to be watched was found!
-      if(alpha[ ptr_(0,new_w) ]==bool3::None) {
+      if(new_w!=ws[0]) {
+        assert(alpha[ ptr_(0,new_w) ] == bool3::None);
         ws[0] = new_w;
         return {ptr_ws(0), xcls_upd_ret::NONE};
       }
-      //now no unassigned idx was found and the value of xlits[0] can be computed:
-      if( xlits[0].eval(alpha) ) { //xlits[i] evaluates to 0
-        //xlits[0] satisfied! --> xclause does not need to be watched any longer!
+      //now xlits[0] is constant under alpha! ...i.e. check shared part
+      new_w = 0;
+      while( (new_w < shared_part.size()) && (alpha[ shared_part.get_idxs_()[new_w] ] != bool3::None) ) ++new_w;
+      if(new_w != shared_part.size()) {
+        //lit in shared_part can be watched!
+        //rewrite xlits[1]:
+        xlits[0].swap(shared_part);
+        xlits[1].add_one();
         ws[0] = new_w;
-        //xlit_dl_count0[0] = {dl, dl_count[dl]}; where dl is the decision level at which ptr_ws(0) was assigned!
+        return {ptr_ws(0), xcls_upd_ret::NONE};
+      }
+
+      //now shared_part can also be evaluated --> xlits[0]+shared_part can be evaluated!
+      if( true ^ xlits[0].eval(alpha) ^ shared_part.eval(alpha) ) { //xlits[i]+shared_part evaluates to 0
+        //xlits[0]+shared_part satisfied! --> xclause does not need to be watched any longer!
+        //do not change watches!
         xlit_dl_count0[0] = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
         assert( !is_active(dl_count) ); //clause is no longer active!
         return {ptr_ws(0), xcls_upd_ret::SAT};
       }
-      //now xlits[0] evaluates to 1 under alpha, i.e., we check whether a different xlit should be watched.
-      xlit_dl_count1[0] = {alpha_dl[ptr_(0,new_w)], dl_count[alpha_dl[ptr_(0,new_w)]]};
-      ws[0] = new_w;
+      //now xlits[0]+shared_part evaluates to 1 under alpha, i.e., we check whether a different xlit can be watched.
+      xlit_dl_count1[0] = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
 
       //note that xlits[0] and xlits[1] are always the xlits that are watched, i.e., start search from xlits[2] (!)
       cls_size_t new_i = 2;
       for(; new_i<xlits.size(); ++new_i) {
-        assert(false); //TODO UNTESTED CODE!
+        assert(false); //TODO CODE NEEDS UPDATE!
+
         //skip xlits which evaluate to 1 in current search tree
         if(dl_count[ xlit_dl_count1[new_i].first ] == xlit_dl_count1[new_i].second) continue;
 
@@ -347,6 +356,28 @@ class xcls_watch {
       std::for_each(xlits.begin(), xlits.end(), [](xlit& l){ l.add_one(); });
       init();
     };
+
+    /**
+     * @brief evals the 0-th watched literal at alpha
+     * 
+     * @param alpha current bool3-assignments
+     * 
+     * @return true iff alpha( xlits[0]+shared_part ) = 0
+     */
+    bool eval0(const vec<bool3>& alpha) const {
+      return true ^ xlits[0].eval(alpha) ^ shared_part.eval(alpha);
+    }
+    
+    /**
+     * @brief evals the 1-th watched literal at alpha
+     * 
+     * @param alpha current bool3-assignments
+     * 
+     * @return true iff alpha( xlits[1]+shared_part ) = 0
+     */
+    bool eval1(const vec<bool3>& alpha) const {
+      return true ^ xlits[1].eval(alpha) ^ shared_part.eval(alpha);
+    }
 
 
     /**
@@ -448,7 +479,7 @@ class xcls_watch {
     std::string to_str(const vec<xlit>& assignments) const { return to_xcls().reduce(assignments).to_str(); };
     std::string to_str() const { return to_xcls().to_str(); };
     
-    xcls to_xcls() const { return xcls( xlits ); };
+    xcls to_xcls() const { vec<xlit> xlits_cpy(xlits.begin(), xlits.end()); xlits_cpy[0]+=shared_part; xlits_cpy[1]+=shared_part; return xcls( xlits_cpy ); };
 
     const lit_watch& get_wl0() const { return ptr_ws(0); };
     const lit_watch& get_wl1() const { return ptr_ws(1); };
@@ -534,8 +565,9 @@ class xcls_watch {
      * 
      * @return xlit unit that this clause was reduced to
      */
-    xlit get_unit() const { return xlits[1]; };
+    xlit get_unit() const { return xlits[1]+shared_part; };
 
+#ifndef NDEBUG
     /**
      * @brief given that xcls is a unit under given assignments, returns this (reduced) unit
      * 
@@ -548,6 +580,7 @@ class xcls_watch {
       unit.reduce(assignments);
       return unit;
     }
+#endif
 
     /**
      * @brief Get the dl at which the clause got inactive (i.e. unit or sat)
@@ -581,8 +614,11 @@ class xcls_watch {
      * @param assignments current assignments under which the clause is a unit!
      * @param dl_count current dl_count of solver
      * @param dl current dl
+     * 
      */
     void set_unit(const vec<xlit>& assignments, const vec<var_t>& dl_count, const var_t& dl) {
+      //TODO untested! and should be updated
+      assert(false);
       assert(is_unit(assignments));
       //find first xlit in cls that does NOT reduce to 1
       var_t i = 0;
@@ -631,6 +667,8 @@ class xcls_watch {
 
       assert( ptr_ws(0) != ptr_ws(1) );
 
+      assert( !xlits[0].is_constant() && !xlits[1].is_constant() );
+
       return true;
     };
 
@@ -645,7 +683,7 @@ class xcls_watch {
       //}
 
       assert( is_unit(dl_count) || is_sat(dl_count) || alpha[ ptr_ws(0) ]==bool3::None );
-      if( !is_unit(dl_count) && alpha[ ptr_ws(0) ] != bool3::None ) assert( xlits[0].eval(alpha) || ( !xlits[0].eval(alpha) && !xlits[1].eval(alpha) ) );
+      if( !is_unit(dl_count) && alpha[ ptr_ws(0) ] != bool3::None ) assert( eval0(alpha) || ( !eval0(alpha) && !eval1(alpha) ) );
       //if( alpha[ ptr_ws(1) ] != bool3::None ) assert( !xlits[1].eval(alpha) );
   
       return true;
