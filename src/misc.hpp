@@ -46,6 +46,8 @@ enum class bool3 { False, True, None };
 inline bool3 to_bool3(const bool b) { return b ? bool3::True : bool3::False; };
 inline bool3 neg(const bool3 b) { return b==bool3::None ? bool3::None : (b==bool3::True ? bool3::False : bool3::True); };
 inline std::string b3_to_str(const bool3 b) { return b==bool3::None ? "None" : (b==bool3::True ? "True" : "False"); };
+inline bool b3_to_bool(const bool3 b) { assert(b!=bool3::None); return b==bool3::True ? true : false; };
+
 
 enum class dec_heu { vsids, lwl, lex, swl };
 enum class phase_opt { rand, save, save_inv };

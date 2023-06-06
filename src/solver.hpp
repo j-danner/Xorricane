@@ -20,12 +20,15 @@
 #define GCP_QUEUE gcp_queues.back()
 #define ASSIGNMENT_WATCH assignment_watches.back()
 
+//#define EXACT_UNIT_TRACKING
+
 struct state_repr {
   /**
    * @brief number of active clauses
    */
   var_t active_cls;
 
+#ifdef EXACT_UNIT_TRACKING
   /**
    * @brief current (non)-constant assignments
    * @todo remove!
@@ -33,6 +36,10 @@ struct state_repr {
   xsys L;
 
   state_repr(const var_t _active_cls, const xsys& _L) : active_cls(_active_cls), L(_L) {};
+#else
+  state_repr(const var_t _active_cls) : active_cls(_active_cls) {};
+#endif
+
 };
 
 class solver
@@ -86,7 +93,12 @@ class solver
     unsigned int bump = 1;
     float decay = 0.9;
 
-    bool is_consistent() const { return alpha[0]!=bool3::True; };
+    /**
+     * @brief checks 
+     * 
+     * @return true if current state is at conflict
+     */
+    bool no_conflict() const { return alpha[0]!=bool3::True; };
 
     //CDCL vars
     /**
@@ -95,10 +107,12 @@ class solver
      */
     vec<var_t> dl_count;
 
+#ifdef EXACT_UNIT_TRACKING
     /**
      * @brief current assignments of vars; assignments[i] contains xlit with LT i
      */
     vec< xlit > assignments;
+#endif
     
     /**
      * @brief current assignments of vars; stored as xlit_watches
@@ -107,9 +121,16 @@ class solver
     vec< vec< xlit_watch > > assignments_watches;
 
     /**
+     * @brief assignments_list[lt] contains all assignments with leading term lt
+     */
+    vec< vec< std::array<var_t,4> > > assignments_list;
+
+#ifdef EXACT_UNIT_TRACKING
+    /**
      * @brief current assignments -- stored as xsys
      */
     xsys assignments_xsys;
+#endif
     
     /**
      * @brief current assignments of vars; assignments[i] contains xlit with LT i
@@ -126,21 +147,19 @@ class solver
      */
     vec<var_t> alpha_dl;
 
+
+#ifdef EXACT_UNIT_TRACKING
     /**
      * @brief dl of chosen assignments; i was assigned at dl assignments_dl[i]
      */
     vec<var_t> assignments_dl;
+#endif
 
     /**
      * @brief if equiv_lits[i] is non-zero, i is congruent to equiv_lits[i] or equiv_lits[i]+1 (can be checked using assignments[i]!)
      */
     vec<var_t> equiv_lits;
 
-    /**
-     * @brief idx of reason_UNIT clause of propagated units
-     */
-    vec<var_t> reason_UNIT;
-    
     /**
      * @brief idx of reason clause of propagated units
      */
@@ -188,17 +207,18 @@ class solver
     inline bool pop_trail() noexcept {
       if (TRAIL.empty()) return false;
       //check if assignments or only alpha needs to be cleared!
+#ifdef EXACT_UNIT_TRACKING
       if(alpha_dl[TRAIL.back()] <= assignments_dl[TRAIL.back()]) {
         //clear assignments_dl
         assignments[TRAIL.back()] = xlit();
         assignments_dl[TRAIL.back()] = 0;
         reason_ALPHA[TRAIL.back()] = 0;
       }
+#endif
       //store last_phase
       save_phase();
       alpha[TRAIL.back()] = bool3::None;
       alpha_dl[TRAIL.back()] = 0;
-      reason_UNIT[TRAIL.back()] = -1;
       TRAIL.pop_back();
       return true;
     }
@@ -272,9 +292,14 @@ class solver
       //new code
       //store lit in 
       xlit lit_reduced(lit);
-      lit_reduced.reduce(assignments, assignments_dl, lvl); //reduce with assignments AND alpha...
+      lit_reduced.reduce(alpha); //reduce with alpha assignments -- the least we should do!
+      //TODO optimize non-debuging code!
+#ifdef EXACT_UNIT_TRACKING
+      if( !lit_reduced.is_assigning() ) lit_reduced.reduce(assignments, assignments_dl, lvl); //reduce with assignments AND alpha...
+#endif
       if(lit_reduced.is_zero()) return false; 
       if(lvl < dl) {
+        assert(false); //due to arc-consistency, we should never add a literal on a previous dl!
         VERB(100, "adding UNIT on previous level!");
       }
       VERB(65, "c " + std::to_string(lvl) + " : new UNIT " + lit.to_str() + " ~> " + lit_reduced.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
@@ -285,29 +310,32 @@ class solver
       //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
       // add to trail //TODO add in propoer position in trail!
       trails[lvl].emplace_back(lt);
-      reason_UNIT[lt] = rs;
-      // update assignments
 
-        //rm this later
+#ifdef EXACT_UNIT_TRACKING
+      // update assignments
+      if(assignments[lt].is_zero()) {
         assignments[lt] = lit_reduced;
-        //assignments_xsys.add_reduced_lit(assignments[lt]); //might fail if lvl < dl (!)
-        //add lit_reduced to assignments_xsys
-        assert((var_t)state_stack.size() >= dl);
-        for(auto i = lvl+1; i < (var_t) state_stack.size(); ++i) {
-          state_stack[i].L += xsys(lit_reduced);
-        }
-        assignments_xsys += xsys(lit_reduced);
-        //end rm this later
+        assignments_dl[lt] = lvl;
+      }
+      //assignments_xsys.add_reduced_lit(assignments[lt]); //might fail if lvl < dl (!)
+      //add lit_reduced to assignments_xsys
+      assert((var_t)state_stack.size() >= dl);
+      for(auto i = lvl+1; i < (var_t) state_stack.size(); ++i) {
+        state_stack[i].L += xsys(lit_reduced);
+      }
+      assignments_xsys += xsys(lit_reduced);
+#endif
+
       //assert( assignments_watch.back().to_xlit().is_zero() );
-      assignments_watches[lvl].emplace_back( std::move(lit_reduced), alpha, alpha_dl, lvl, dl_count );
+      assignments_watches[lvl].emplace_back( std::move(lit_reduced), alpha, alpha_dl, lvl, dl_count, rs );
       assert( assignments_watches[lvl].back().is_active(dl_count) );
       // add to L_watch_list's -- if there is anything to watch
       if(assignments_watches[lvl].back().size()>0) {
         L_watch_list[ assignments_watches[lvl].back().get_wl0() ].emplace_back( std::array<var_t,4>({lvl, (var_t) (assignments_watches[lvl].size()-1), lvl, dl_count[lvl]}) );
         if(assignments_watches[lvl].back().get_wl0() != assignments_watches[lvl].back().get_wl1()) L_watch_list[ assignments_watches[lvl].back().get_wl1() ].emplace_back( std::array<var_t,4>({lvl, (var_t) (assignments_watches[lvl].size()-1), lvl, dl_count[lvl]}) );
       }
+      assignments_list[lt].emplace_back( std::array<var_t,4>({lvl, (var_t) (assignments_watches[lvl].size()-1), lvl, dl_count[lvl]}) );
 
-      assignments_dl[lt] = lvl;
       //if assignments_watch.back() is already assigned, update alpha!
       const auto [lt2,val] = assignments_watches[lvl].back().get_assignment(alpha);
       if(val!=bool3::None) {
@@ -317,15 +345,17 @@ class solver
           //maybe add upd_queue for every dl?
           //merge upd_queue and gcp_queue and integrate find_implied_alpha() into GCP() ?
         }
+        assert( alpha[lt2]==val || alpha[lt2]==bool3::None );
         alpha[lt2] = val;
         alpha_dl[lt2] = assignments_watches[lvl].back().get_assigning_lvl(alpha_dl);
         reason_ALPHA[lt2] = rs;
         VERB(70, "c "+ std::to_string(alpha_dl[lt2]) + " : new ALPHA " + assignments_watches[lvl].back().get_assigning_xlit(alpha).to_str() + " from UNIT " + assignments_watches[lvl].back().to_str() + ( (reason_ALPHA[lt2]<xclss.size()) ? " with reason clause " + xclss[reason_ALPHA[lt2]].to_str() : "") );
-        if (lt2==0) { assert(!is_consistent()); return true; };
+        if (lt2==0) { assert(!no_conflict()); return true; };
         GCP_QUEUE.emplace(lt2); //ensure it is propagated now!
         if(alpha_dl[lt2] < dl) {
           gcp_queues[lvl].emplace(lt2); //ensure it is propagated after backtracking!
         }
+#ifdef EXACT_UNIT_TRACKING
         if(lt!=lt2) {
           //update assignments
           assert( assignments[lt2].is_zero() || assignments_dl[lt2] == alpha_dl[lt2] );
@@ -334,6 +364,7 @@ class solver
           assignments[lt2] = assignments_watches[lvl].back().get_assigning_xlit(alpha);
           assignments_dl[lt2] = alpha_dl[lt2];
         }
+#endif
       }
       //else if (assignments_watch.back().is_equiv()) { //TODO update to check is_equiv for xlit_watches!!
       //  equiv_lits[lt] = assignments[lt].get_idxs_()[1];
@@ -342,48 +373,17 @@ class solver
       //}
       
       return true;
-
-      //old code
-
-      //add lit to state_stack
-      //for(var_t j = lvl+1; j<state_stack.size(); ++j) state_stack[j].L += lit;
-      
-      ////TODO shouldn't we only reduce with assignments upt to dl lvl?
-      //xlit lit_dl = assignments_xsys.reduce(lit);
-      ////xlit lit_dl(lit); lit_dl.reduce(assignments);
-      //if(lit_dl.is_zero()) return false;
-      //VERB(65, "c " + std::to_string(lvl) + " : new UNIT " + lit.to_str() + " ~> " + lit_dl.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason_UNIT clause " + xclss[rs].to_str() : "") );
-
-      //const var_t lt = lit_dl.LT();
-      //// add to trail //TODO add in propoer position in trail!
-      //trail.emplace_back(lt);
-      //reason_UNIT.emplace_back(rs);
-      ////update assignments
-      //assignments[lt] = std::move(lit_dl);
-      //assignments_dl[lt] = dl;
-      ////if(assignments[lt].is_one()) is_consistent = false;
-      ////put into gcp_queue if necessary!
-      //if(assignments[lt].as_bool3() != bool3::None) {
-      //  alpha[lt] = assignments[lt].as_bool3();
-      //  alpha_dl[lt] = dl;
-      //  gcp_queue.emplace(lt);
-      //} else if (assignments[lt].is_equiv()) {
-      //  equiv_lits[lt] = assignments[lt].get_idxs_()[1];
-      //  VERB(65, "c " + std::to_string(lvl) + ": new EQUIV " + assignments[lt].to_str() )
-      //}
-      ////update assignments_xsys
-      ////assignments_xsys += assignments[lt]; //TODO implement func to add an already reduced lit to xsys
-      //assignments_xsys.add_reduced_lit(assignments[lt]);
-      //is_consistent = assignments_xsys.is_consistent();
-
-      //if(lt == 0) return true;
-
-      ////search for new uniquely determined inds! (only if lit != 1)
-      //find_implied_alpha(rs);
-
-      ////return true!
-      //return true;
     };
+
+    /**
+     * @brief triangulates watched linerals; i.e. updates them w.r.t. previous linearls and brings them in non-reduced row-echelon form
+     */
+    void triangulate() {
+      VERB(65, "c triangulate start" )
+      //assert(false);
+      VERB(65, "c triangulate end" )
+      //TODO
+    }
 
     void init_and_add_xcls_watch(xcls&& cls) {
       xclss.emplace_back( std::move(cls) );

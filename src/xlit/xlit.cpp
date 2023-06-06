@@ -55,6 +55,21 @@ bool xlit::reduce(const xsys& sys) {
     return changed;
 };
 
+bool xlit::reduce(const vec<bool3>& alpha) {
+    bool ret = false;
+    auto it = idxs.begin();
+    while(it != idxs.end()) {
+        if( alpha[*it] != bool3::None ) {
+            ret = true;
+            p1 ^= b3_to_bool(alpha[*it]);
+            it = idxs.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    return ret;
+};
+
 bool xlit::reduce(const vec<xlit>& assignments) {
     bool ret = false;
     var_t offset = 0;

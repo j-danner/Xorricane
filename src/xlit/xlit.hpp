@@ -72,7 +72,7 @@ class xlit
 
         bool reduce(const xsys& sys);
         bool reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t lvl);
-        
+        bool reduce(const vec<bool3>& alpha);
         bool reduce(const vec<xlit>& assignments);
         xlit reduced(const vec<xlit>& assignments) const { xlit ret(*this); ret.reduce(assignments); return ret; };
         vec<var_t> reducers(const vec<xlit>& assignments) const;

@@ -476,7 +476,7 @@ class xcls_watch {
       return {new_w, upd};
     };
 
-    std::string to_str(const vec<xlit>& assignments) const { return to_xcls().reduce(assignments).to_str(); };
+    std::string to_str(const vec<xlit>& assignments) const { return to_xcls().reduced(assignments).to_str(); };
     std::string to_str() const { return to_xcls().to_str(); };
     
     xcls to_xcls() const { vec<xlit> xlits_cpy(xlits.begin(), xlits.end()); xlits_cpy[0]+=shared_part; xlits_cpy[1]+=shared_part; return xcls( xlits_cpy ); };
@@ -575,7 +575,7 @@ class xcls_watch {
      * @return xlit unit
      */
     xlit get_unit(const vec<xlit>& assignments) const {
-      const xcls cls = to_xcls().reduce(assignments);
+      const xcls cls = to_xcls().reduced(assignments);
       xlit unit = cls.get_unit();
       unit.reduce(assignments);
       return unit;
@@ -604,7 +604,7 @@ class xcls_watch {
      * @return true iff xcls is a unit under assignments
      */
     bool is_unit(const vec<xlit>& assignments) const {
-      xcls cls = to_xcls().reduce(assignments);
+      xcls cls = to_xcls().reduced(assignments);
       return cls.is_unit();
     }
 
@@ -656,7 +656,7 @@ class xcls_watch {
 
     const vec<xlit>& get_xlits() const { return xlits; };
     
-    xlit get_first() const { return xlits[0]; };
+    xlit get_first() const { return xlits[0]+shared_part; };
     
     bool assert_data_struct() const {
       assert( xlit_dl_count0.size() == xlits.size() );

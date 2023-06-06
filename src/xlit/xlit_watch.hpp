@@ -26,6 +26,11 @@ class xlit_watch : public xlit
      */
     std::pair<var_t,var_t> dl_c = {0,0};
 
+    /**
+     * @brief index of reason clause
+     */
+    var_t reason_cls_idx;
+
     void init(const vec<bool3>& alpha, const vec<var_t>& alpha_dl) {
       assert(!xlit::is_zero());
       if(idxs.size()<2) return;
@@ -71,8 +76,8 @@ class xlit_watch : public xlit
 
   public:
     xlit_watch() {};
-    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count) : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}) { init(alpha, alpha_dl); };
-    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count) : xlit(lit), dl_c({lvl, dl_count[lvl]}) { init(alpha, alpha_dl); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) : xlit(lit), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); }
 
     ~xlit_watch() = default;
 
@@ -166,7 +171,8 @@ class xlit_watch : public xlit
      * @return <ind,val> xlit is assigning iff val!=bool3::None; in that case we have x(ind) = val
      */
     std::tuple<var_t,bool3> get_assignment(const vec<bool3>& alpha) const {
-      return {get_assigning_ind(), get_assigning_val(alpha)};
+      if(alpha[get_assigning_ind()]==bool3::None || alpha[get_assigning_ind()]==get_assigning_val(alpha)) return {get_assigning_ind(), get_assigning_val(alpha)};
+      return {0, bool3::True};
     }
 
     
@@ -181,6 +187,12 @@ class xlit_watch : public xlit
     var_t get_assigning_lvl(const vec<var_t>& alpha_dl) const {
       return idxs.size()==0 ? dl_c.first : std::max( alpha_dl[idxs[ws[0]]], dl_c.first );
     };
+
+    /**
+     * @brief returns the reason clause index
+     * @return var_t reason clause index
+     */
+    var_t get_reason() const { return reason_cls_idx; }
 
     /**
      * @brief updates xlit_watch according to the new assigned literal new_lit, dl_count, dl and alpha.
