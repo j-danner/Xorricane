@@ -98,7 +98,7 @@ class solver
      * 
      * @return true if current state is at conflict
      */
-    bool no_conflict() const { return alpha[0]!=bool3::True; };
+    inline bool no_conflict() const { return alpha[0]!=bool3::True; };
 
     //CDCL vars
     /**
@@ -260,7 +260,7 @@ class solver
      * 
      * @param lvl dl in which cls got inactive
      */
-    void decr_active_cls(const var_t& lvl) {
+    inline void decr_active_cls(const var_t& lvl) {
       //update curr val
       --active_cls;
       //update vals in state_stack
@@ -272,7 +272,7 @@ class solver
      * 
      * @param lvl dl in which cls got inactive
      */
-    void incr_active_cls(const var_t& lvl) {
+    inline void incr_active_cls(const var_t& lvl) {
       //update curr val
       ++active_cls;
       //update vals in state_stack
@@ -288,7 +288,7 @@ class solver
      * 
      * @return bool true iff xlit was actually new at current dl!
      */
-    bool add_new_xlit(const xlit& lit, const var_t& rs, const var_t& lvl) {
+    inline bool add_new_xlit(const xlit& lit, const var_t& rs, const var_t& lvl) {
       //new code
       //store lit in 
       xlit lit_reduced(lit);
@@ -378,14 +378,52 @@ class solver
     /**
      * @brief triangulates watched linerals; i.e. updates them w.r.t. previous linearls and brings them in non-reduced row-echelon form
      */
-    void triangulate() {
+    inline void triangulate() {
       VERB(65, "c triangulate start" )
-      //assert(false);
+      //TODO -- code should be optimized!
+
+      /*
+       * reduce all watched linerals, and update assignments_list AND L_watch_list
+       */
+
+      vec< vec< std::array<var_t,4> > > assignments_list_new(assignments_list);
+      vec<var_t> assignments_list_index(assignments_list.size(),0);
+
+      //empty watch-lists
+      L_watch_list.clear();
+      L_watch_list.resize(opt.num_vars+1);
+
+      for(var_t lvl = 0; lvl <= dl; ++lvl) {
+        for(const auto& lt : trails[lvl]) {
+          const auto& [_, i, dl_, dl_c] = assignments_list[lvl][assignments_list_index[lt]];
+          ++assignments_list_index[lt];
+          assert( _ == lvl && dl_ == lvl );
+          if(dl_count[dl_] != dl_c) continue;
+
+          //reduce with previous assignments, then update L_watch_list
+          xlit& lit = assignments_watches[lvl][i];
+          //reduce
+          while( !assignments_list_new[lit.LT()].empty() ) {
+            const auto& [lvl2, i2, dl2, dl_c2] = assignments_list_new[lit.LT()].back();
+            assert( dl_count[dl2] == dl_c2 );
+            lit += assignments_watches[lvl2][i2];
+          }
+          if(lit.is_zero()) continue;
+          //re-initialize lit
+          assignments_watches[lvl][i].init(alpha, alpha_dl);
+          //add to L_watch_list and assignments_list_new
+          assignments_list_new[lit.LT()].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
+          L_watch_list[ assignments_watches[lvl].back().get_wl0() ].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
+          if(assignments_watches[lvl].back().get_wl0() != assignments_watches[lvl].back().get_wl1()) L_watch_list[ assignments_watches[lvl].back().get_wl1() ].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
+        }
+      }
+      //replace assignments_list by assignments_list_new
+      assignments_list = std::move(assignments_list_new);
+
       VERB(65, "c triangulate end" )
-      //TODO
     }
 
-    void init_and_add_xcls_watch(xcls&& cls) {
+    inline void init_and_add_xcls_watch(xcls&& cls) {
       xclss.emplace_back( std::move(cls) );
       // update watch_lists and init iterators of watch_lits!
       const var_t i = xclss.size()-1;
