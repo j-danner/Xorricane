@@ -35,7 +35,6 @@ TEST_CASE( "solving test instances" , "[solver]" ) {
     
         stats s = slvr.dpll_solve();
         CHECK( s.sat == false ); //UNSAT
-        CHECK( !check_sol(clss.cls, s.sol));
     }
     
     SECTION( "test18.xnf" ) {

@@ -33,9 +33,9 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     equiv_lits = vec<var_t>(opt_.num_vars+1, 0);
     dl_count = vec<var_t>(opt_.num_vars+1, 1); 
     reason_ALPHA = vec<var_t>(opt_.num_vars + 1, -1);
-    trails = vec< std::list<var_t> >();
+    trails = vec< std::list<trail_elem> >();
     trails.reserve(opt_.num_vars+1);
-    trails.emplace_back( std::list<var_t>() );
+    trails.emplace_back( std::list<trail_elem>() );
     last_phase = vec<bool3>(opt_.num_vars + 1, bool3::None);
 
     //init gcp_queue
@@ -147,7 +147,7 @@ void solver::backtrack(const var_t& lvl) {
         if(assignments_dl[lt] == 0) {
             assignments[lt] = assignments_xsys.get_xlits(idx);
             assignments_dl[lt] = lvl;
-            trails[lvl].emplace_back(lt);
+            trails[lvl].emplace_back(lt, trail_t::UNIT);
             alpha[lt] = assignments[lt].as_bool3();
             if(alpha[lt]!=bool3::None) {
                 alpha_dl[lt] = dl;
@@ -723,7 +723,7 @@ void solver::GCP(stats &s) {
               const auto [lt,val] = assignments_watches[lvl][i].get_assignment(alpha);
               assert(alpha[lt] == bool3::None);
               const var_t ass_lvl = assignments_watches[lvl][i].get_assigning_lvl(alpha_dl); assert(ass_lvl == dl);
-              trails[ass_lvl].emplace_back(lt);
+              trails[ass_lvl].emplace_back( lt, trail_t::IMPLIED_ALPHA );
             #ifdef EXACT_UNIT_TRACKING
               if(assignments[lt].is_zero()) {
                   assignments[lt] = assignments_watches[lvl][i].to_xlit();
@@ -902,7 +902,7 @@ void solver::dpll_solve(stats &s) {
             } else {
                 ++dl;
                 ++dl_count[dl];
-                trails.emplace_back( std::list<var_t>() );
+                trails.emplace_back( std::list<trail_elem>() );
                 gcp_queues.emplace_back( std::queue<var_t>() );
                 assignments_watches.emplace_back( vec<xlit_watch>() );
                 assignments_watches.back().reserve(10); //TODO heuristically guess how many new assignments will get implied
@@ -932,23 +932,16 @@ void solver::dpll_solve(stats &s) {
             assert(assert_data_structs());
         } else {
             //now active_cls == 0 AND no_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
-            //--> triangulate watched linearls and check for consistency!
-            triangulate(); //this might change how is_consistent() is evaluated!
-            //if we are at conflict -> backtrack, otherwise return solution!
-            if(no_conflict()) {
+            xsys L = get_assignments_xsys();
+            if (!L.is_consistent()) {
+                alpha[0] = bool3::True; //enforce backtracking!
+            } else {
               #ifdef EXACT_UNIT_TRACKING
                 // solution can be deduced from assignments!
                 // matrix corr to eqs in assignments is in upper triangular form, i.e., solve from 'back' to 'front'
                 s.sol = vec<bool>(opt.num_vars, false);
                 for (auto l = assignments.rbegin(); l != assignments.rend(); ++l) l->solve(s.sol);
               #else
-                //no more active clauses
-                //check if inconsistent by 
-                vec<xlit> lits; lits.reserve(assignments_watches.size());
-                for(const auto& l_dl : assignments_watches) {
-                    for(const auto& l : l_dl) if(l.is_active(dl_count)) lits.emplace_back( l.to_xlit() );
-                }
-                xsys L( std::move(lits) );
                 s.sol = vec<bool>(opt.num_vars, false);
                 L.solve(s.sol);
               #endif
@@ -1188,7 +1181,7 @@ std::string solver::to_str() const noexcept {
         //check that only assignemnts and alpha's backed by trail are assigned
         std::set<var_t> trail_inds;
         for(const auto& tr : trails) {
-            for(const auto& t: tr) trail_inds.insert( t );
+            for(const auto& t: tr) trail_inds.insert( t.ind );
         }
         var_t idx = 0;
         for(const auto& a : alpha) {
@@ -1248,7 +1241,7 @@ void solver::print_trail(std::string lead) const noexcept {
   for(const auto& t_dl : trails) {
     var_t i = 0;
     for (const auto& t : t_dl) {
-        VERB(80, lead+" " + std::to_string(i) + " " + std::to_string(alpha_dl[t]) + " " + "x" + std::to_string(t) + " " + b3_to_str( alpha[t] ));
+        VERB(80, lead+" " + std::to_string(i) + " " + std::to_string(alpha_dl[t.ind]) + " " + "x" + std::to_string(t.ind) + " " + b3_to_str( alpha[t.ind] ));
         i++;
     }
   }

@@ -42,6 +42,18 @@ struct state_repr {
 
 };
 
+enum class trail_t { NEW_UNIT, IMPLIED_ALPHA };
+
+struct trail_elem {
+  var_t ind;
+  trail_t type;
+
+  trail_elem() : ind(0), type(trail_t::NEW_UNIT) {};
+  trail_elem(const var_t _ind, const trail_t _type) : ind(_ind), type(_type) {};
+  trail_elem(const trail_elem& other) : ind(other.ind), type(other.type) {};
+  trail_elem(trail_elem&& other) : ind(other.ind), type(other.type) {};
+};
+
 class solver
 {
   private:
@@ -172,7 +184,7 @@ class solver
      * @brief trail of decisions/unit-propagations
      * @note trail[lvl] is the trail at level lvl
      */
-    vec< std::list<var_t> > trails;
+    vec< std::list<trail_elem> > trails;
 
     /**
      * @brief queue of lits that were assigned but not yet propagated to clauses
@@ -193,13 +205,13 @@ class solver
       switch (opt.po) {
       case phase_opt::rand:
         //last_phase[trail.back()] = (bool)(rand() > (RAND_MAX/2)) ?  bool3::True : bool3::False;
-        last_phase[TRAIL.back()] = alpha[TRAIL.back()];
+        last_phase[TRAIL.back().ind] = alpha[TRAIL.back().ind];
         break;
       case phase_opt::save:
-        last_phase[TRAIL.back()] = alpha[TRAIL.back()];
+        last_phase[TRAIL.back().ind] = alpha[TRAIL.back().ind];
         break;
       case phase_opt::save_inv:
-        last_phase[TRAIL.back()] = alpha[TRAIL.back()] == bool3::True ? bool3::False : bool3::True;
+        last_phase[TRAIL.back().ind] = alpha[TRAIL.back().ind] == bool3::True ? bool3::False : bool3::True;
         break;
       }
     }
@@ -217,8 +229,8 @@ class solver
 #endif
       //store last_phase
       save_phase();
-      alpha[TRAIL.back()] = bool3::None;
-      alpha_dl[TRAIL.back()] = 0;
+      alpha[TRAIL.back().ind] = bool3::None;
+      alpha_dl[TRAIL.back().ind] = 0;
       TRAIL.pop_back();
       return true;
     }
@@ -309,7 +321,7 @@ class solver
       //we already have UNIT x1+x2+x3 and now get x1; as of now, we add x2+x3, even though x1 would be assigning!
       //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
       // add to trail //TODO add in propoer position in trail!
-      trails[lvl].emplace_back(lt);
+      trails[lvl].emplace_back(lt, trail_t::NEW_UNIT);
 
 #ifdef EXACT_UNIT_TRACKING
       // update assignments
@@ -350,17 +362,20 @@ class solver
         alpha_dl[lt2] = assignments_watches[lvl].back().get_assigning_lvl(alpha_dl);
         reason_ALPHA[lt2] = rs;
         VERB(70, "c "+ std::to_string(alpha_dl[lt2]) + " : new ALPHA " + assignments_watches[lvl].back().get_assigning_xlit(alpha).to_str() + " from UNIT " + assignments_watches[lvl].back().to_str() + ( (reason_ALPHA[lt2]<xclss.size()) ? " with reason clause " + xclss[reason_ALPHA[lt2]].to_str() : "") );
-        if (lt2==0) { assert(!no_conflict()); return true; };
         GCP_QUEUE.emplace(lt2); //ensure it is propagated now!
         if(alpha_dl[lt2] < dl) {
           gcp_queues[lvl].emplace(lt2); //ensure it is propagated after backtracking!
         }
+        if(lt!=lt2) {
+          trails[ alpha_dl[lt2] ].emplace_back( lt2, trail_t::IMPLIED_ALPHA );
+        }
+        if (lt2==0) { assert(!no_conflict()); return true; };
 #ifdef EXACT_UNIT_TRACKING
         if(lt!=lt2) {
           //update assignments
           assert( assignments[lt2].is_zero() || assignments_dl[lt2] == alpha_dl[lt2] );
           //either lt2 has not been assigned yet; or it has been done on this level; i.e., we can just overwrite it! (note: here we have a forcing assignment, i.e., a better assignment...)
-          trails[ alpha_dl[lt2] ].emplace_back( lt2 );
+          //trails[ alpha_dl[lt2] ].emplace_back( lt2, trail_t::IMPLIED_ALPHA );
           assignments[lt2] = assignments_watches[lvl].back().get_assigning_xlit(alpha);
           assignments_dl[lt2] = alpha_dl[lt2];
         }
@@ -378,49 +393,54 @@ class solver
     /**
      * @brief triangulates watched linerals; i.e. updates them w.r.t. previous linearls and brings them in non-reduced row-echelon form
      */
-    inline void triangulate() {
-      VERB(65, "c triangulate start" )
-      //TODO -- code should be optimized!
-
-      /*
-       * reduce all watched linerals, and update assignments_list AND L_watch_list
-       */
-
-      vec< vec< std::array<var_t,4> > > assignments_list_new(assignments_list);
-      vec<var_t> assignments_list_index(assignments_list.size(),0);
-
-      //empty watch-lists
-      L_watch_list.clear();
-      L_watch_list.resize(opt.num_vars+1);
-
-      for(var_t lvl = 0; lvl <= dl; ++lvl) {
-        for(const auto& lt : trails[lvl]) {
-          const auto& [_, i, dl_, dl_c] = assignments_list[lvl][assignments_list_index[lt]];
-          ++assignments_list_index[lt];
-          assert( _ == lvl && dl_ == lvl );
-          if(dl_count[dl_] != dl_c) continue;
-
-          //reduce with previous assignments, then update L_watch_list
-          xlit& lit = assignments_watches[lvl][i];
-          //reduce
-          while( !assignments_list_new[lit.LT()].empty() ) {
-            const auto& [lvl2, i2, dl2, dl_c2] = assignments_list_new[lit.LT()].back();
-            assert( dl_count[dl2] == dl_c2 );
-            lit += assignments_watches[lvl2][i2];
-          }
-          if(lit.is_zero()) continue;
-          //re-initialize lit
-          assignments_watches[lvl][i].init(alpha, alpha_dl);
-          //add to L_watch_list and assignments_list_new
-          assignments_list_new[lit.LT()].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
-          L_watch_list[ assignments_watches[lvl].back().get_wl0() ].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
-          if(assignments_watches[lvl].back().get_wl0() != assignments_watches[lvl].back().get_wl1()) L_watch_list[ assignments_watches[lvl].back().get_wl1() ].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
-        }
+    inline xsys get_assignments_xsys() {
+      vec<xlit> lits; lits.reserve(assignments_watches.size());
+      for(const auto& l_dl : assignments_watches) {
+          for(const auto& l : l_dl) if(l.is_active(dl_count)) lits.emplace_back( l.to_xlit() );
       }
-      //replace assignments_list by assignments_list_new
-      assignments_list = std::move(assignments_list_new);
+      return xsys( std::move(lits) );
 
-      VERB(65, "c triangulate end" )
+      //triangulate code snippet -- NOT WORKING!
+//
+//      //we need to rewrite the current history, i.e., trails, alpha, alpha_dl, reason_ALPHA, assignments, assignments_dl, assignments_list, assignments_watches and L_watch_list -- as if we reduced every new unit directly with the previous units!
+//      
+//      //reduce all watched linerals, and update assignments_list AND L_watch_list
+//      vec< vec< std::array<var_t,4> > > assignments_list_new;
+//      assignments_list_new.resize(opt.num_vars+1);
+//      vec<var_t> assignments_list_index(assignments_list.size(),0);
+//
+//      //empty watch-lists
+//      L_watch_list.clear();
+//      L_watch_list.resize(opt.num_vars+1);
+//
+//      for(var_t lvl = 0; lvl <= dl; ++lvl) {
+//        for(const auto& [lt,__] : trails[lvl]) {
+//          const auto& [_, i, dl_, dl_c] = assignments_list[lt][assignments_list_index[lt]];
+//          ++assignments_list_index[lt];
+//          assert( _ == lvl && dl_ == lvl );
+//          if(dl_count[dl_] != dl_c) continue;
+//
+//          //reduce with previous assignments, then update L_watch_list
+//          xlit& lit = assignments_watches[lvl][i];
+//          //reduce
+//          while( !assignments_list_new[lit.LT()].empty() ) {
+//            const auto& [lvl2, i2, dl2, dl_c2] = assignments_list_new[lit.LT()].back();
+//            assert( dl_count[dl2] == dl_c2 );
+//            lit += assignments_watches[lvl2][i2];
+//          }
+//          if(lit.is_zero()) continue;
+//          //re-initialize lit
+//          assignments_watches[lvl][i].init(alpha, alpha_dl);
+//          //add to L_watch_list and assignments_list_new
+//          assignments_list_new[lit.LT()].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
+//          L_watch_list[ assignments_watches[lvl].back().get_wl0() ].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
+//          if(assignments_watches[lvl].back().get_wl0() != assignments_watches[lvl].back().get_wl1()) L_watch_list[ assignments_watches[lvl].back().get_wl1() ].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
+//        }
+//      }
+//      //replace assignments_list by assignments_list_new
+//      assignments_list = std::move(assignments_list_new);
+//
+//      VERB(65, "c triangulate end" )
     }
 
     inline void init_and_add_xcls_watch(xcls&& cls) {
