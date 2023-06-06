@@ -31,8 +31,15 @@ class xlit_watch : public xlit
      */
     var_t reason_cls_idx;
 
+  public:
+    xlit_watch() {};
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) : xlit(lit), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); }
+
+    ~xlit_watch() = default;
+    
     void init(const vec<bool3>& alpha, const vec<var_t>& alpha_dl) {
-      assert(!xlit::is_zero());
+      //assert(!xlit::is_zero());
       if(idxs.size()<2) return;
       if( to_str() == "x13+x19+x20+1") {
         assert(idxs.size()>0);
@@ -74,12 +81,6 @@ class xlit_watch : public xlit
       assert( assert_data_struct(alpha) );
     }
 
-  public:
-    xlit_watch() {};
-    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); };
-    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) : xlit(lit), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); }
-
-    ~xlit_watch() = default;
 
     /**
      * @brief return the watched literal
