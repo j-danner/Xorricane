@@ -41,9 +41,6 @@ class xlit_watch : public xlit
     void init(const vec<bool3>& alpha, const vec<var_t>& alpha_dl) {
       //assert(!xlit::is_zero());
       if(idxs.size()<2) return;
-      if( to_str() == "x13+x19+x20+1") {
-        assert(idxs.size()>0);
-      }
 
       //track two inds with highest dl (where 'unassigned' has dl = alpha.size()+1, i.e., is prioritized)
       var_t max_w1 = 0, max_dl1 = alpha_dl[idxs[max_w1]]==0 ? alpha.size()+1 : alpha_dl[idxs[max_w1]];
@@ -152,7 +149,7 @@ class xlit_watch : public xlit
      * @return var_t assigning ind
      */
     var_t get_assigning_ind() const {
-      return idxs.size()==0 ?  0 : idxs[ws[1]];
+      return idxs.size()==0 ? 0 : idxs[ws[1]];
     }
 
     /**
@@ -209,10 +206,6 @@ class xlit_watch : public xlit
       //only update if xlit is not assigning! (i.e. idxs[ws[0]] AND idxs[ws[1]] are unassigned)
       //if(is_assigning(alpha)) return {new_lit, xlit_upd_ret::ASSIGNING};
       //todo this leads to bugs when x1 and x2 are in x1+x2+x3+x4 are watched and x1 gets assigned; immediately stops here...
-
-      if(to_str() == "x12+x13+x14+x15+x16+x17+x18+x19" && new_lit==17) {
-        assert( ws[0]!=ws[1] );
-      }
 
       //w.l.o.g. ws[0] needs to be updated -- also ensures that invariants are satisfied after update
       if(new_lit == idxs[ws[1]]) std::swap(ws[0], ws[1]);
