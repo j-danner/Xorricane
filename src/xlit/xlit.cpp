@@ -56,18 +56,34 @@ bool xlit::reduce(const xsys& sys) {
 };
 
 bool xlit::reduce(const vec<bool3>& alpha) {
-    bool ret = false;
-    auto it = idxs.begin();
-    while(it != idxs.end()) {
-        if( alpha[*it] != bool3::None ) {
-            ret = true;
-            p1 ^= b3_to_bool(alpha[*it]);
-            it = idxs.erase(it);
-        } else {
-            ++it;
-        }
-    }
-    return ret;
+    //IMPLEMENATION 1 (swapping)
+    //const auto sz = idxs.size();
+    //DIFF.clear();
+    //std::copy_if(idxs.begin(), idxs.end(), std::back_inserter(DIFF), [&](var_t i){ return alpha[i] == bool3::None; } );
+    //std::for_each(idxs.begin(), idxs.end(), [&](var_t i){ if(alpha[i] != bool3::None) p1 ^= b3_to_bool(alpha[i]); } );
+    //std::swap(idxs, DIFF);
+    //return sz != idxs.size();
+
+    //IMPLEMENATION 2 (in-place)
+    const auto sz = idxs.size();
+    std::for_each(idxs.begin(), idxs.end(), [&](const var_t& i){ if(alpha[i] != bool3::None) p1 ^= b3_to_bool(alpha[i]); } );
+    const auto new_end = std::remove_if(idxs.begin(), idxs.end(), [&](const var_t& i){ return alpha[i] != bool3::None; } );
+    idxs.erase(new_end, idxs.end());
+    return sz != idxs.size();
+
+    //IMPLEMENATION 3 (inefficient)
+    //bool ret = false;
+    //auto it = idxs.begin();
+    //while(it != idxs.end()) {
+    //    if( alpha[*it] != bool3::None ) {
+    //        ret = true;
+    //        p1 ^= b3_to_bool(alpha[*it]);
+    //        it = idxs.erase(it);
+    //    } else {
+    //        ++it;
+    //    }
+    //}
+    //return ret;
 };
 
 bool xlit::reduce(const vec<xlit>& assignments) {
