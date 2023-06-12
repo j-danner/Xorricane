@@ -68,6 +68,14 @@ parsed_xnf parse_file(const std::string &fname) {
                 //line contains clause
                 vec< xlit > cl;
 
+                //check if clause is in XOR-clause notation or XNF-notation!
+                if(words[0] == "x") {
+                    //convert to XNF-notation:
+                    words[0] = std::accumulate( std::next(words.begin(),2), std::prev(words.end()), words[1], [](std::string a, std::string b) { return a + "+" + b; });
+                    words[1] = "0";
+                    words.resize(2);
+                }
+
                 for (size_t i = 0; i < words.size(); i++)
                 {
                     //check if clause is terminated:
