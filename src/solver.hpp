@@ -220,11 +220,11 @@ class solver
       if (TRAIL.empty()) return false;
       //check if assignments or only alpha needs to be cleared!
 #ifdef EXACT_UNIT_TRACKING
-      if(alpha_dl[TRAIL.back()] <= assignments_dl[TRAIL.back()]) {
+      if(alpha_dl[TRAIL.back().ind] <= assignments_dl[TRAIL.back().ind]) {
         //clear assignments_dl
-        assignments[TRAIL.back()] = xlit();
-        assignments_dl[TRAIL.back()] = 0;
-        reason_ALPHA[TRAIL.back()] = 0;
+        assignments[TRAIL.back().ind] = xlit();
+        assignments_dl[TRAIL.back().ind] = 0;
+        reason_ALPHA[TRAIL.back().ind] = 0;
       }
 #endif
       //store last_phase

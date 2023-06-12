@@ -147,7 +147,7 @@ void solver::backtrack(const var_t& lvl) {
         if(assignments_dl[lt] == 0) {
             assignments[lt] = assignments_xsys.get_xlits(idx);
             assignments_dl[lt] = lvl;
-            trails[lvl].emplace_back(lt, trail_t::UNIT);
+            trails[lvl].emplace_back(lt, trail_t::NEW_UNIT);
             alpha[lt] = assignments[lt].as_bool3();
             if(alpha[lt]!=bool3::None) {
                 alpha_dl[lt] = dl;
@@ -281,7 +281,7 @@ std::pair<var_t, xcls> solver::analyze_exp() {
     VERB(70, "   * trail in current dl");
     //go through trail of current dl -- skip over irrelevant parts
     xcls learnt_cls = get_last_reason();
-    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + assignments[TRAIL.back()].to_str());
+    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
     pop_trail();
 
     vec<xlit> lits;
@@ -291,11 +291,11 @@ std::pair<var_t, xcls> solver::analyze_exp() {
     Ls.emplace_back( lits );
     for(const auto& t_dl : trails) {
         for(const auto& t : t_dl) {
-            if(assignments_dl[t]>c_dl) {
-                c_dl = assignments_dl[t];
+            if(assignments_dl[t.ind]>c_dl) {
+                c_dl = assignments_dl[t.ind];
                 Ls_dl.push_back(Ls.back());
             }
-            lits.push_back( assignments[t] );
+            lits.push_back( assignments[t.ind] );
             Ls.emplace_back( lits );
             VERB(100, "   * L("+std::to_string(Ls.size()-2)+")   : " + Ls.back().to_str());
         }
@@ -304,14 +304,14 @@ std::pair<var_t, xcls> solver::analyze_exp() {
     assert(dl == Ls_dl.size());
     Ls.pop_back();
 
-    while(!TRAIL.empty() && assignments_dl[TRAIL.back()] >= dl && (assignments_watches.back().back().get_reason() < xclss.size())) {
+    while(!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl && (assignments_watches.back().back().get_reason() < xclss.size())) {
     //while(!trail.empty() && is_subspace(learnt_cls.get_ass_VS(), Ls.back()) && (assignments_watches.back().back().get_reason() < xclss.size())) {
         assert(assignments_watches.back().back().get_reason() > xclss.size() || xclss[assignments_watches.back().back().get_reason()].is_unit(dl_count));
         while(is_subspace(learnt_cls.get_ass_VS(), Ls.back())) {
             // rm from trail (before computing L)
             pop_trail();
             Ls.pop_back();
-            VERB(70, "   * backtracking on trail! (c_dl = "+std::to_string(assignments_dl[TRAIL.back()])+")");
+            VERB(70, "   * backtracking on trail! (c_dl = "+std::to_string(assignments_dl[TRAIL.back().ind])+")");
         }
         assert(!is_subspace(learnt_cls.get_ass_VS(), Ls.back()));
         if(assignments_watches.back().back().get_reason() > xclss.size()) { pop_trail(); Ls.pop_back(); break; }
@@ -332,7 +332,7 @@ std::pair<var_t, xcls> solver::analyze_exp() {
         VERB(70, "   ' unit u:  " + u.to_str());
         //get reason_UNIT clause
         xcls r_cls = get_last_reason();
-        VERB(70, "   * reason clause " + r_cls.to_str() + " for UNIT " + assignments[TRAIL.back()].to_str());
+        VERB(70, "   * reason clause " + r_cls.to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
         VERB(70, "   '----> gives with current assignments: " + r_cls.update(Ls.back()).to_str());
         assert(u.to_str() == r_cls.update(Ls.back()).to_str());
         pop_trail();
@@ -420,7 +420,7 @@ std::pair<var_t, xcls> solver::analyze_exp() {
         if (learnt_cls.deg() == 1) break;
     }
     // clean-up trail!
-    while (!TRAIL.empty() && assignments_dl[TRAIL.back()] >= dl) {
+    while (!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl) {
         pop_trail();
         Ls.pop_back();
     }
@@ -446,8 +446,8 @@ std::pair<var_t, xcls> solver::analyze_exp() {
     print_assignments("    *");
     print_trail("    *");
 #endif
-    const var_t b_lvl = assignments_dl[TRAIL.back()];
-    if( assignments_dl[TRAIL.back()] < learnt_cls.deg() && b_lvl == dl-1 ) {
+    const var_t b_lvl = assignments_dl[TRAIL.back().ind];
+    if( assignments_dl[TRAIL.back().ind] < learnt_cls.deg() && b_lvl == dl-1 ) {
         VERB(50, "   * negated decisions lead to smaller learnt_cls and the same backtrack-level!");
         //assert(false);
     }
@@ -468,7 +468,7 @@ std::pair<var_t, xcls> solver::analyze() {
     //go through trail of current dl -- skip over irrelevant parts
     std::set<var_t> relevant_lts;
     xcls learnt_cls = get_last_reason();
-    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + assignments[TRAIL.back()].to_str());
+    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
     //go through conflict clause, identify relevant reducers
     for(const xlit& l : learnt_cls.get_ass_VS().get_xlits()) {
         auto reds = l.reducers(assignments);
@@ -478,10 +478,10 @@ std::pair<var_t, xcls> solver::analyze() {
     // rm from trail
     pop_trail();
 
-    while (!TRAIL.empty() && assignments_dl[TRAIL.back()] >= dl) {
+    while (!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl) {
         assert(assignments_watches.back().back().get_reason() > opt.num_vars + 1 || xclss[assignments_watches.back().back().get_reason()].is_unit(dl_count));
-        if (relevant_lts.contains(TRAIL.back())) {
-            relevant_lts.erase(TRAIL.back());
+        if (relevant_lts.contains(TRAIL.back().ind)) {
+            relevant_lts.erase(TRAIL.back().ind);
             // get reason_UNIT clause
             xcls r_cls = get_last_reason();
             // update relevant_lts
@@ -494,7 +494,7 @@ std::pair<var_t, xcls> solver::analyze() {
             // const cls_size_t u_idx = cls.get_unit_idx();
             // std::move( cls.to_xlit(u_idx)+cls.orig_xlit(u_idx) );
         
-            VERB(70, "   * reason clause " + r_cls.to_str() + " for UNIT " + assignments[TRAIL.back()].to_str());
+            VERB(70, "   * reason clause " + r_cls.to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
             learnt_cls = sres_opt(r_cls, learnt_cls);
             // rm from trail
             pop_trail();
@@ -502,7 +502,7 @@ std::pair<var_t, xcls> solver::analyze() {
             VERB(70, "   '----> gives with current assignments: " + learnt_cls.update(assignments).to_str());
         } else {
             // skipping implication, since its irrelevant!
-            VERB(70, " SKIPPING * reason clause " + get_last_reason().to_str() + " for UNIT " + assignments[TRAIL.back()].to_str());
+            VERB(70, " SKIPPING * reason clause " + get_last_reason().to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
             // rm from trail
             pop_trail();
         }
@@ -515,7 +515,7 @@ std::pair<var_t, xcls> solver::analyze() {
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
 
     // clean-up trail!
-    while (!TRAIL.empty() && assignments_dl[TRAIL.back()] >= dl) { pop_trail(); }
+    while (!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl) { pop_trail(); }
 
     VERB(70, "****");
     assert(false);
@@ -537,7 +537,7 @@ std::pair<var_t, xcls> solver::analyze_no_sres() {
     // go through trail of current dl -- skip over irrelevant parts
     std::set<var_t> relevant_lts;
     xcls learnt_cls = get_last_reason();
-    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + assignments[TRAIL.back()].to_str());
+    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
     // go through conflict clause, identify relevant reducers
     for (const xlit &l : learnt_cls.get_ass_VS().get_xlits()) {
         auto reds = l.reducers(assignments);
@@ -547,10 +547,10 @@ std::pair<var_t, xcls> solver::analyze_no_sres() {
     // rm from trail
     pop_trail();
 
-    while (!TRAIL.empty() && assignments_dl[TRAIL.back()] >= dl && assignments_watches.back().back().get_reason() <= xclss.size()) {
+    while (!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl && assignments_watches.back().back().get_reason() <= xclss.size()) {
         assert(xclss[assignments_watches.back().back().get_reason()].is_unit(dl_count));
-        if (relevant_lts.contains(TRAIL.back())) {
-            relevant_lts.erase(TRAIL.back());
+        if (relevant_lts.contains(TRAIL.back().ind)) {
+            relevant_lts.erase(TRAIL.back().ind);
             // get reason_UNIT clause
             xcls r_cls = get_last_reason();
             // update relevant_lts
@@ -559,10 +559,10 @@ std::pair<var_t, xcls> solver::analyze_no_sres() {
                 for (const auto &lt : reds)
                     relevant_lts.insert(lt);
             }
-            VERB(70, "   * reason clause " + r_cls.to_str() + " for UNIT " + assignments[TRAIL.back()].to_str());
+            VERB(70, "   * reason clause " + r_cls.to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
         } else {
             // skipping implication, since its irrelevant!
-            VERB(70, " SKIPPING * reason clause " + get_last_reason().to_str() + " for UNIT " + assignments[TRAIL.back()].to_str());
+            VERB(70, " SKIPPING * reason clause " + get_last_reason().to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
         }
         // rm from trail
         pop_trail();
@@ -591,7 +591,7 @@ std::pair<var_t, xcls> solver::analyze_no_sres() {
     // assert(ass_in_cur_dl==1);
 
     // clean-up trail!
-    while (!TRAIL.empty() && assignments_dl[TRAIL.back()] >= dl) { pop_trail(); }
+    while (!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl) { pop_trail(); }
 
     VERB(70, "****");
     // assert(false);
