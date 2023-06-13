@@ -135,7 +135,7 @@ class solver
     /**
      * @brief assignments_list[lt] contains all assignments with leading term lt
      */
-    vec< vec< std::array<var_t,4> > > assignments_list;
+    vec< std::list< std::array<var_t,4> > > assignments_list;
 
 #ifdef EXACT_UNIT_TRACKING
     /**
