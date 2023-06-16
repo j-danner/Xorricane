@@ -294,6 +294,26 @@ TEST_CASE( "solving test instances" , "[solver]" ) {
         CHECK( s.sat == true ); //SAT!
         CHECK( check_sol(clss.cls, s.sol) );
     }
+    
+    SECTION( "test29.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test29.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test30.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test30.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
 
     SECTION( "rand-3-6.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf");
