@@ -922,7 +922,6 @@ void solver::dpll_solve(stats &s) {
                 dec_stack.emplace( std::move(dec.second) );
             }
 
-            // update graph
             GCP(s);
 
             assert((var_t)state_stack.size() == dl + 1);
@@ -934,7 +933,8 @@ void solver::dpll_solve(stats &s) {
             //now active_cls == 0 AND no_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
             xsys L = get_assignments_xsys();
             if (!L.is_consistent()) {
-                alpha[0] = bool3::True; //enforce backtracking!
+                //alpha[0] = bool3::True; //enforce backtracking!
+                add_new_xlit(xlit(0, false), -1, dl);
             } else {
               #ifdef EXACT_UNIT_TRACKING
                 // solution can be deduced from assignments!
@@ -1006,7 +1006,7 @@ void solver::cdcl_solve(stats &s) {
     // stack for xsys that store alternative dec
     xsys new_xsys = xsys();
 
-    // update graph -- before making decisions!
+    // propagate -- before making decisions!
     GCP(s);
 
     while (active_cls > 0 || !no_conflict()) {
@@ -1061,7 +1061,6 @@ void solver::cdcl_solve(stats &s) {
             add_new_guess(std::move(dec.first));
         }
 
-        // update graph
         GCP(s);
 
         assert((var_t)state_stack.size() == dl + 1);
