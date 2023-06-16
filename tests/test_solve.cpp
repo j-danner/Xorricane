@@ -315,6 +315,16 @@ TEST_CASE( "solving test instances" , "[solver]" ) {
         CHECK( check_sol(clss.cls, s.sol) );
     }
 
+    SECTION( "test31.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test31.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+
     SECTION( "rand-3-6.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf");
         auto slvr = solver(clss);
