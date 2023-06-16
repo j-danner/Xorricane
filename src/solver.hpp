@@ -131,6 +131,8 @@ class solver
      * @note assignments_watches[lvl] contains all units added in dl lvl; used as stack
      */
     vec< vec< xlit_watch > > assignments_watches;
+    //TODO change to vec< std::list< xlit_watch> > assignments_watches; (!)
+    //should allow us to access contents more quickly!
 
     /**
      * @brief assignments_list[lt] contains all assignments with leading term lt
@@ -291,6 +293,7 @@ class solver
       for(var_t j = lvl+1; j<state_stack.size(); ++j) ++state_stack[j].active_cls;
     }
 
+    xlit _reduced_lit;
     /**
      * @brief adds new xlit to data structure if deduced at current dl; also reduces with current assignments to find new true/false assignments
      * 
@@ -303,20 +306,20 @@ class solver
     inline bool add_new_xlit(const xlit& lit, const var_t& rs, const var_t& lvl) {
       //new code
       //store lit in 
-      xlit lit_reduced(lit);
-      lit_reduced.reduce(alpha); //reduce with alpha assignments -- the least we should do!
+      _reduced_lit = lit;
+      _reduced_lit.reduce(alpha); //reduce with alpha assignments -- the least we should do!
       //TODO optimize non-debuging code!
 #ifdef EXACT_UNIT_TRACKING
-      if( !lit_reduced.is_assigning() ) lit_reduced.reduce(assignments, assignments_dl, lvl); //reduce with assignments AND alpha...
+      if( !_reduced_lit.is_assigning() ) _reduced_lit.reduce(assignments, assignments_dl, lvl); //reduce with assignments AND alpha...
 #endif
-      if(lit_reduced.is_zero()) return false; 
+      if(_reduced_lit.is_zero()) return false; 
       if(lvl < dl) {
         assert(false); //due to arc-consistency, we should never add a literal on a previous dl!
         VERB(100, "adding UNIT on previous level!");
       }
-      VERB(65, "c " + std::to_string(lvl) + " : new UNIT " + lit.to_str() + " ~> " + lit_reduced.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
+      VERB(65, "c " + std::to_string(lvl) + " : new UNIT " + lit.to_str() + " ~> " + _reduced_lit.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
       
-      const var_t lt = lit_reduced.LT();
+      const var_t lt = _reduced_lit.LT();
       //TODO should we always reduce?! consider the following:
       //we already have UNIT x1+x2+x3 and now get x1; as of now, we add x2+x3, even though x1 would be assigning!
       //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
@@ -326,20 +329,20 @@ class solver
 #ifdef EXACT_UNIT_TRACKING
       // update assignments
       if(assignments[lt].is_zero()) {
-        assignments[lt] = lit_reduced;
+        assignments[lt] = _reduced_lit;
         assignments_dl[lt] = lvl;
       }
       //assignments_xsys.add_reduced_lit(assignments[lt]); //might fail if lvl < dl (!)
-      //add lit_reduced to assignments_xsys
+      //add _reduced_lit to assignments_xsys
       assert((var_t)state_stack.size() >= dl);
       for(auto i = lvl+1; i < (var_t) state_stack.size(); ++i) {
-        state_stack[i].L += xsys(lit_reduced);
+        state_stack[i].L += xsys(_reduced_lit);
       }
-      assignments_xsys += xsys(lit_reduced);
+      assignments_xsys += xsys(_reduced_lit);
 #endif
 
       //assert( assignments_watch.back().to_xlit().is_zero() );
-      assignments_watches[lvl].emplace_back( std::move(lit_reduced), alpha, alpha_dl, lvl, dl_count, rs );
+      assignments_watches[lvl].emplace_back( std::move(_reduced_lit), alpha, alpha_dl, lvl, dl_count, rs );
       assert( assignments_watches[lvl].back().is_active(dl_count) );
       // add to L_watch_list's -- if there is anything to watch
       if(assignments_watches[lvl].back().size()>0) {
