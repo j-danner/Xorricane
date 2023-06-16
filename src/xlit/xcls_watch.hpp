@@ -75,7 +75,6 @@ class xcls_watch {
     }
 
     const var_t& ptr_(const cls_size_t& i, const var_t val) const {
-      assert(i==0 || i==1);
       assert(0<=val && val<xlits[i].get_idxs_().size());
       //return xlits[i].get_idxs_().at(val);
       return xlits[i].get_idxs_()[val];
@@ -223,17 +222,13 @@ class xcls_watch {
 
       //advance iterator as long as there is another unassigned idx to point to
       auto new_w = ws[0];
-      var_t max_w = new_w;
       while( (new_w < xlits[0].size()) && (alpha[ ptr_(0,new_w) ] != bool3::None) ) {
-        if(alpha_dl[ ptr_(0,new_w) ] > alpha_dl[ ptr_(0,max_w) ]) max_w = new_w;
         ++new_w;
       }
       if(new_w == xlits[0].size()) /*wrap around end if necessary */ new_w = 0;
       while( (alpha[ptr_(0,new_w)] != bool3::None) && (new_w != ws[0]) ) {
-        if(alpha_dl[ ptr_(0,new_w) ] > alpha_dl[ ptr_(0,max_w) ]) max_w = new_w;
         ++new_w;
       }
-      new_w = alpha[ ptr_(0,new_w) ] == bool3::None ? new_w : max_w;
       //advancing done; now new_w points to ws[0] or at an unassigned idx -- or again to ws[0] (!)
 
       if(new_w!=ws[0]) {
@@ -254,7 +249,7 @@ class xcls_watch {
       }
 
       //now shared_part can also be evaluated --> xlits[0]+shared_part can be evaluated!
-      if( true ^ xlits[0].eval(alpha) ^ shared_part.eval(alpha) ) { //xlits[i]+shared_part evaluates to 0
+      if( true ^ xlits[0].eval(alpha) ^ shared_part.eval(alpha) ) { //xlits[0]+shared_part evaluates to 0
         //xlits[0]+shared_part satisfied! --> xclause does not need to be watched any longer!
         //do not change watches!
         xlit_dl_count0[0] = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
@@ -267,7 +262,7 @@ class xcls_watch {
       //note that xlits[0] and xlits[1] are always the xlits that are watched, i.e., start search from xlits[2] (!)
       cls_size_t new_i = 2;
       for(; new_i<xlits.size(); ++new_i) {
-        assert(false); //TODO CODE NEEDS UPDATE!
+        //assert(false); //TODO CODE NEEDS to be tested first!
 
         //skip xlits which evaluate to 1 in current search tree
         if(dl_count[ xlit_dl_count1[new_i].first ] == xlit_dl_count1[new_i].second) continue;
@@ -281,13 +276,35 @@ class xcls_watch {
         }
         //if new_w is not xlits[new_i].size(), then there is an unassigned literal, i.e., watches can be updated
         if(new_w != xlits[new_i].size()) {
-          //new xlit to be watched found (which luckily already renders xcls satisfied!) --> change watched xlit and return SAT
-          xlits[0].swap(xlits[new_i]); //ensures that no iterators are invalidated
-          ws[0] = new_w;
-          std::swap(xlit_dl_count0[0], xlit_dl_count0[new_i]);
-          std::swap(xlit_dl_count1[0], xlit_dl_count1[new_i]);
-          assert( !is_active(dl_count) );
-          return {ptr_ws(0), xcls_upd_ret::NONE};
+          //if new_w is ptr_ws(1), we have to rewrite xlits[new_i]!
+          if(ptr_(new_i,new_w) == ptr_ws(1)) {
+            //add xlits[1] to xlits[new_i] to eliminate shared part in xlits[1]
+            xlits[new_i]+=shared_part;
+            xlits[new_i]+=xlits[1];
+            xlits[new_i].add_one();
+            //repeat with same new_i
+            new_i--;
+            continue;
+          } else {
+            //new xlit to be watched found --> change watched xlit and return SAT
+            const auto wl0 = ptr_(new_i, new_w);
+            const auto wl1 = ptr_ws(1);
+            xlits[0]+=shared_part;
+            xlits[1]+=shared_part;
+            xlits[0].swap(xlits[new_i]); //ensures that no iterators are invalidated
+            //fix dl_count vals
+            std::swap(xlit_dl_count0[0], xlit_dl_count0[new_i]);
+            std::swap(xlit_dl_count1[0], xlit_dl_count1[new_i]);
+            //fix shared_parts && update ws[0] and ws[1] accordingly!
+            shared_part = xlits[0].shared_part(xlits[1]);
+            xlits[0]+=shared_part;
+            xlits[1]+=shared_part;
+            //fix ws[0] AND ws[1]!
+            ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
+            ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
+            assert( is_active(dl_count) );
+            return {ptr_ws(0), xcls_upd_ret::NONE};
+          }
         } else {
           //xlits[new_i] evaluates to a constant; this is only useful if xlits[new_i].eval(alpha) is SAT
           new_w = max_w; //if SAT we need to watch the ind assigned with highest dl
@@ -301,6 +318,7 @@ class xcls_watch {
             std::swap(xlit_dl_count1[0], xlit_dl_count1[new_i]);
             xlit_dl_count0[0] = {dl_assigned, dl_count[dl_assigned]};
             assert( !is_active(dl_count) );
+            assert( is_sat(dl_count) );
             return {ptr_ws(0), xcls_upd_ret::SAT};
           }
           //now xlits[new_i] evaluates to 1 --> choose different new_i
@@ -310,6 +328,7 @@ class xcls_watch {
       //if the above did not yet return, then all xlits (except xlits[1]) evaluate to 1 under alpha, i.e., we learn a unit clause!
       //moreover, no watch literals need to be updated! (ws[0] is already at highest dl and xlits[0] evaluates to 1!)
       assert( !is_active(dl_count) );
+      assert( is_unit(dl_count) );
       return {ptr_ws(0), xcls_upd_ret::UNIT};
     };
 
@@ -317,7 +336,7 @@ class xcls_watch {
      * @brief swap watched literals
      */
     void swap_wl() {
-      std::swap(xlits[0], xlits[1]);
+      xlits[0].swap(xlits[1]);
       std::swap(ws[0],ws[1]);
       std::swap(xlit_dl_count0[0], xlit_dl_count0[1]);
       std::swap(xlit_dl_count1[0], xlit_dl_count1[1]);
@@ -671,6 +690,9 @@ class xcls_watch {
       assert( ptr_ws(0) != ptr_ws(1) );
 
       assert( !xlits[0].is_constant() && !xlits[1].is_constant() );
+
+      //check that xlits[0] and xlits[1] share no inds!
+      assert( xlits[0].shared_part(xlits[1]).is_zero() );
 
       return true;
     };

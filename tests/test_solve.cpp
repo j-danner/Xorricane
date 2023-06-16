@@ -4,7 +4,7 @@
 
 #include <catch2/catch_all.hpp>
 
-TEST_CASE( "solving test instances" , "[solver]" ) {
+TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     SECTION( "test1.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test1.xnf");
         auto slvr = solver(clss);
@@ -344,7 +344,25 @@ TEST_CASE( "solving test instances" , "[solver]" ) {
     }
 }
 
-
+TEST_CASE( "solving xnf test instances" , "[solver]" ) {
+    SECTION( "test1.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test1.xnf");
+        auto slvr = solver(clss);
+    
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //UNSAT
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test2.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test2.xnf");
+        auto slvr = solver(clss);
+    
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //UNSAT
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+}
 
 TEST_CASE( "solving simple instances", "[solver]") {
     auto fname = GENERATE("../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpgvgj2vfs.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmp3bjwevbm.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpxwh016x1.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpe4wzt2ga.xnf", "../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type4-n10-seed0.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpzw1cx_np.xnf" );
