@@ -801,7 +801,6 @@ void solver::GCP(stats &s) {
                     assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero()); //in particular it must now be zero w.r.t. assignments (since new_unit has already been added!)
                   #endif
                     ++s.new_px_upd;
-                    bump_score(new_unit); //TODO should we bump on propagation?! probably not!
                 }
                 if (!no_conflict()) { 
                     VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
@@ -893,9 +892,9 @@ void solver::dpll_solve(stats &s) {
                 add_new_guess( dec_stack.top() ); //add as 'guess', i.e., trail and reason stacks are ill-managed here, but that is irrelevant since we do not use those in the dpll-type solver!
                 VERB(100, to_str());
                 // decay + bump scores of conflict clause!
-                bump_score( dec_stack.top() );
+                //bump_score( dec_stack.top() );
                 dec_stack.pop();
-                decay_score();
+                //decay_score();
               #ifdef EXACT_UNIT_TRACKING
                 assert( is_consistent() == assignments[0].is_zero() );
               #endif
