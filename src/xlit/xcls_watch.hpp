@@ -64,6 +64,9 @@ class xcls_watch {
       xlits[1] += shared_part;
 
       //ensure that xlits[0] and xlits[1] are non-empty
+      assert(xlits[0].size()>0 && xlits[1].size()>0);
+      //if xlits[0] is empty: std::swap(xlits[0],shared_part); xlits[1].add_one();
+      //if xlits[1] is empty: std::swap(xlits[1],shared_part); xlits[0].add_one();
       
       //init ws
       ws[0] = 0;
