@@ -17,7 +17,7 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     //init watch_list
     watch_list.resize(opt_.num_vars+1);
     L_watch_list.resize(opt_.num_vars+1);
-    assignments_list.resize(opt_.num_vars+1);
+    //assignments_list.resize(opt_.num_vars+1);
     
     assignments_watches.reserve( opt_.num_vars+1 );
     assignments_watches.emplace_back( vec<xlit_watch>() );
@@ -48,7 +48,7 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
 
     xclss = vec<xcls_watch>(0);
     xclss.reserve(clss.size());
-    
+
     // temporarily store clss in _xclss - before init of xclss we might want to reduce with pure literals in _L (!)
     vec<xcls> _xclss;
     _xclss.reserve(clss.size());
@@ -70,8 +70,8 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     xsys _Lsys(_L);
     for(auto& cls : _xclss) {
         cls.update_short(_Lsys); //TODO no full reduction?!
-            init_and_add_xcls_watch( std::move(cls) );
-        }
+        init_and_add_xcls_watch( std::move(cls) );
+    }
 
     active_cls = clss.size() - _L.size() - no_zero_cls; // count only non-linear cls!
     assert(active_cls == xclss.size());

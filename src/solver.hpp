@@ -137,7 +137,7 @@ class solver
     /**
      * @brief assignments_list[lt] contains all assignments with leading term lt
      */
-    vec< std::list< std::array<var_t,4> > > assignments_list;
+    //vec< std::list< std::array<var_t,4> > > assignments_list;
 
 #ifdef EXACT_UNIT_TRACKING
     /**
@@ -349,7 +349,7 @@ class solver
         L_watch_list[ assignments_watches[lvl].back().get_wl0() ].emplace_back( std::array<var_t,4>({lvl, (var_t) (assignments_watches[lvl].size()-1), lvl, dl_count[lvl]}) );
         if(assignments_watches[lvl].back().get_wl0() != assignments_watches[lvl].back().get_wl1()) L_watch_list[ assignments_watches[lvl].back().get_wl1() ].emplace_back( std::array<var_t,4>({lvl, (var_t) (assignments_watches[lvl].size()-1), lvl, dl_count[lvl]}) );
       }
-      assignments_list[lt].emplace_back( std::array<var_t,4>({lvl, (var_t) (assignments_watches[lvl].size()-1), lvl, dl_count[lvl]}) );
+      //assignments_list[lt].emplace_back( std::array<var_t,4>({lvl, (var_t) (assignments_watches[lvl].size()-1), lvl, dl_count[lvl]}) );
 
       //if assignments_watch.back() is already assigned, update alpha!
       const auto [lt2,val] = assignments_watches[lvl].back().get_assignment(alpha);
