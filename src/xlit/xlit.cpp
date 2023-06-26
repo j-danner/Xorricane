@@ -55,6 +55,29 @@ bool xlit::reduce(const xsys& sys) {
     return changed;
 };
 
+xlit tmp;
+
+bool xlit::reduce_short(const xsys& sys) {
+    bool changed = false;
+    auto prev_sz = size();
+    if(prev_sz <= 2) return false;
+    //complexity to find correct update xlits: O( log( this.size() ) * sys.size() )
+    for (const auto &[lt,row] : sys.get_pivot_poly_idx()) {
+        if( (*this)[lt] ) {
+            tmp = *this + *row;
+            if(tmp.size() < 1.05 * prev_sz) {
+                swap(tmp);
+                prev_sz = size();
+                changed = true;
+                if(prev_sz <= 2) return true;
+            }
+            changed = true;
+        }
+    }
+    return changed;
+};
+
+
 bool xlit::reduce(const vec<bool3>& alpha) {
     //IMPLEMENATION 1 (swapping)
     //const auto sz = idxs.size();

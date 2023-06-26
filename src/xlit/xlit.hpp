@@ -71,6 +71,13 @@ class xlit
         inline xlit add_one() { p1 ^= true; return *this; };
 
         bool reduce(const xsys& sys);
+        /**
+         * @brief Reduces the lineral by the given system s.t. the lineral increases in size no more than (1.05)^(sys.size()); also does nothing when size()<=2.
+         * 
+         * @param sys input xsys
+         * @return true iff lineral was updated
+         */
+        bool reduce_short(const xsys& sys);
         bool reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t lvl);
         bool reduce(const vec<bool3>& alpha);
         bool reduce(const vec<xlit>& assignments);

@@ -49,6 +49,9 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     xclss = vec<xcls_watch>(0);
     xclss.reserve(clss.size());
     
+    // temporarily store clss in _xclss - before init of xclss we might want to reduce with pure literals in _L (!)
+    vec<xcls> _xclss;
+    _xclss.reserve(clss.size());
 
     var_t no_zero_cls = 0;
     // run through xor-clauses to find lineq and construct watch-literals
@@ -60,15 +63,21 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
         } else if (cls.is_zero()) {
             no_zero_cls++;
         } else {
-            //add xcls_watch
-            init_and_add_xcls_watch( std::move(cls) );
+            _xclss.emplace_back( std::move(cls) );
         }
     }
+    //reduce xclss with _L
+    xsys _Lsys(_L);
+    for(auto& cls : _xclss) {
+        cls.update_short(_Lsys); //TODO no full reduction?!
+            init_and_add_xcls_watch( std::move(cls) );
+        }
+
     active_cls = clss.size() - _L.size() - no_zero_cls; // count only non-linear cls!
     assert(active_cls == xclss.size());
 
     //init xlits
-    for(const auto& lit : _L) add_new_xlit(lit, -1, 0);
+    for(const auto& [_,it] : _Lsys.get_pivot_poly_idx()) add_new_xlit(*it, -1, 0);
 
     // init activity_score
     activity_score = vec<unsigned int>(opt.num_vars + 1, 1);

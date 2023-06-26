@@ -73,6 +73,17 @@ class xcls {
       }
       return xcls( xsys(lits) );
     };
+    
+    //only update if the result does not blow up the linerals!
+    xcls update_short(const xsys L) const {
+      vec<xlit> lits;
+      for(const auto& l : assVS.get_xlits() ) {
+        xlit l_(l);
+        l_.reduce_short(L);
+        if(!l_.is_zero()) lits.emplace_back( std::move(l_) );
+      }
+      return xcls( xsys(lits) );
+    };
 
     const xsys& get_ass_VS() const { return assVS; };
   
