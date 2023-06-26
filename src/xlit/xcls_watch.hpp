@@ -262,8 +262,6 @@ class xcls_watch {
       //note that xlits[0] and xlits[1] are always the xlits that are watched, i.e., start search from xlits[2] (!)
       cls_size_t new_i = 2;
       for(; new_i<xlits.size(); ++new_i) {
-        //assert(false); //TODO CODE NEEDS to be tested first!
-
         //skip xlits which evaluate to 1 in current search tree
         if(dl_count[ xlit_dl_count1[new_i].first ] == xlit_dl_count1[new_i].second) continue;
 
