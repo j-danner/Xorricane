@@ -42,6 +42,11 @@ class xcls_watch {
      * @brief literal watches; offset into idxs-sets of xlits[0] and xlits[1]
      */
     lit_watch ws[2];
+
+    /**
+     * @brief cache watched vars
+     */
+    var_t ptr_cache[2];
     
     /**
      * @brief initializes xlit_dl_count0, xlit_dl_count1, and ws[0], ws[1]
@@ -50,12 +55,8 @@ class xcls_watch {
     void init() {
       assert(xlits.size()>1);
       //init xlit_dl_counts
-      xlit_dl_count1.resize(xlits.size());
-      xlit_dl_count0.resize(xlits.size());
-      for (cls_size_t j = 0; j < xlits.size(); j++) {
-        xlit_dl_count1[j] = {0,0};
-        xlit_dl_count0[j] = {0,0};
-      }
+      xlit_dl_count1.resize(xlits.size(), {0,0});
+      xlit_dl_count0.resize(xlits.size(), {0,0});
 
       //init shared
       shared_part = xlits[0].shared_part(xlits[1]);
@@ -71,6 +72,8 @@ class xcls_watch {
       //init ws
       ws[0] = 0;
       ws[1] = 0;
+      ptr_cache[0] = ptr_(0,ws[0]);
+      ptr_cache[1] = ptr_(1,ws[1]);
       assert(get_wl0() != get_wl1());
     }
 
@@ -81,7 +84,8 @@ class xcls_watch {
     }
     
     const var_t& ptr_ws(const cls_size_t& i) const {
-      return ptr_(i,ws[i]);
+      assert( ptr_(i,ws[i]) == ptr_cache[i] );
+      return ptr_cache[i];
     }
 
     /**
@@ -95,6 +99,8 @@ class xcls_watch {
     std::pair<var_t,xcls_upd_ret> advance_lw(const cls_size_t& i, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
       assert(i == (cls_size_t)0 || i == (cls_size_t)1);
       assert(alpha[ ptr_(i,ws[i]) ] != bool3::None);
+
+      assert(false); //SO FAR UNUSED! -- may be buggy!
       
       //TODO shorter & cleaner impl with c++20 ranges?
       //vec<std::ranges::subrange<lit_watch, xlit::iterator, std::ranges::subrange_kind::sized>> tmp{ std::ranges::subrange(ws[i], xlits[i].end()), std::ranges::subrange(xlits[i].begin(), ws[i]) };
@@ -125,13 +131,13 @@ class xcls_watch {
       }
       //note: alpha[ ptr_ws(i,new_w) ] is None if and only if xlits[i] cannot be evaluated and a new literal to be watched was found!
       if(alpha[ ptr_(i,new_w) ]==bool3::None) {
-        ws[i] = new_w;
+        ws[i] = new_w; ptr_cache[i] = ptr_(i,ws[i]);
         return {ptr_ws(i), xcls_upd_ret::NONE};
       }
       //now no unassigned idx was found and the value of xlits[i] can be computed:
       if( xlits[i].eval(alpha) ) { //xlits[i] evaluates to 0
         //xlits[i] satisfied! --> xclause does not need to be watched any longer!
-        ws[i] = new_w;
+        ws[i] = new_w; ptr_cache[i] = ptr_(i,ws[i]);
         //xlit_dl_count0[i] = {dl, dl_count[dl]};
         xlit_dl_count0[i] = {alpha_dl[ptr_ws(i)], dl_count[alpha_dl[ptr_ws(i)]]};
         //now swap to xlits[0]
@@ -139,6 +145,7 @@ class xcls_watch {
         std::swap(ws[0],ws[i]);
         std::swap(xlit_dl_count0[0], xlit_dl_count0[i]);
         std::swap(xlit_dl_count1[0], xlit_dl_count1[i]);
+        std::swap(ptr_cache[0],ptr_cache[i]);
         assert( !is_active(dl_count) ); //clause is not active any longer!
         return {ptr_ws(0), xcls_upd_ret::SAT};
       }
@@ -168,7 +175,7 @@ class xcls_watch {
           //new xlit to be watched found (which luckily already renders xcls satisfied!) --> change watched xlit and return SAT
           xlits[i].swap(xlits[new_i]); //ensures that no iterators are invalidated
           new_w = 0;
-          ws[i] = new_w;
+          ws[i] = new_w; ptr_cache[i] = ptr_(i,ws[i]);
           std::swap(xlit_dl_count0[i], xlit_dl_count0[new_i]);
           std::swap(xlit_dl_count1[i], xlit_dl_count1[new_i]);
           xlit_dl_count0[i] = {dl_sat, dl_count[dl_sat]};
@@ -177,6 +184,7 @@ class xcls_watch {
           std::swap(ws[0],ws[i]);
           std::swap(xlit_dl_count0[0], xlit_dl_count0[i]);
           std::swap(xlit_dl_count1[0], xlit_dl_count1[i]);
+          std::swap(ptr_cache[0],ptr_cache[i]);
           assert( !is_active(dl_count) );
           return {ptr_ws(0), xcls_upd_ret::SAT};
         }
@@ -187,7 +195,7 @@ class xcls_watch {
       if(new_i != xlits.size()) {
         //new xlit to watch found! --> swap xlit[new_i] into correct position!
         xlits[i].swap(xlits[new_i]); //ensures that no iterators are invalidated
-        ws[i] = new_w;
+        ws[i] = new_w; ptr_cache[i] = ptr_(i,ws[i]);
         std::swap(xlit_dl_count0[i], xlit_dl_count0[new_i]);
         std::swap(xlit_dl_count1[i], xlit_dl_count1[new_i]);
         assert( is_active(dl_count) );
@@ -195,17 +203,18 @@ class xcls_watch {
         return {ptr_ws(i), xcls_upd_ret::NONE};
       } else {
         //we have new_i == xlits.size(), i.e., no xlit to be watched found! --> all other xlits eval to 1 (!) --> learn unit!
-        ws[i] = new_w;
+        ws[i] = new_w; ptr_cache[i] = ptr_(i,ws[i]);
         //swap xlits s.t. xlits[1] is unit
         xlits[1-i].swap(xlits[1]); //ensures that not iterators into xlits are invalidated
         std::swap(ws[1-i], ws[1]);
         std::swap(xlit_dl_count0[1-i], xlit_dl_count0[1]);
         std::swap(xlit_dl_count1[1-i], xlit_dl_count1[1]);
+        std::swap(ptr_cache[1-i],ptr_cache[1]);
         return {ptr_ws(0), xcls_upd_ret::UNIT};
       }
     };
 
-        /**
+    /**
      * @brief advances ws[0], requires that alpha[ ptr_ws(0) ] != bool3::None
      * 
      * @param alpha current bool3-alpha
@@ -234,6 +243,7 @@ class xcls_watch {
       if(new_w!=ws[0]) {
         assert(alpha[ ptr_(0,new_w) ] == bool3::None);
         ws[0] = new_w;
+        ptr_cache[0] = ptr_(0,ws[0]);
         return {ptr_ws(0), xcls_upd_ret::NONE};
       }
       //now xlits[0] is constant under alpha! ...i.e. check shared part
@@ -245,6 +255,7 @@ class xcls_watch {
         xlits[0].swap(shared_part);
         xlits[1].add_one();
         ws[0] = new_w;
+        ptr_cache[0] = ptr_(0,ws[0]);
         return {ptr_ws(0), xcls_upd_ret::NONE};
       }
 
@@ -300,6 +311,8 @@ class xcls_watch {
             //fix ws[0] AND ws[1]!
             ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
             ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
+            ptr_cache[0] = ptr_(0,ws[0]);
+            ptr_cache[1] = ptr_(1,ws[1]);
             assert( is_active(dl_count) );
             return {ptr_ws(0), xcls_upd_ret::NONE};
           }
@@ -312,6 +325,7 @@ class xcls_watch {
             //new xlit to be watched found (which luckily already renders xcls satisfied!) --> change watched xlit and return SAT
             xlits[0].swap(xlits[new_i]); //ensures that no iterators are invalidated
             ws[0] = new_w;
+            ptr_cache[0] = ptr_(0,ws[0]);
             std::swap(xlit_dl_count0[0], xlit_dl_count0[new_i]);
             std::swap(xlit_dl_count1[0], xlit_dl_count1[new_i]);
             xlit_dl_count0[0] = {dl_assigned, dl_count[dl_assigned]};
@@ -338,6 +352,7 @@ class xcls_watch {
       std::swap(ws[0],ws[1]);
       std::swap(xlit_dl_count0[0], xlit_dl_count0[1]);
       std::swap(xlit_dl_count1[0], xlit_dl_count1[1]);
+      std::swap(ptr_cache[0],ptr_cache[1]);
     }
     
   public:
@@ -691,6 +706,10 @@ class xcls_watch {
 
       //check that xlits[0] and xlits[1] share no inds!
       assert( xlits[0].shared_part(xlits[1]).is_zero() );
+
+      //check ptr_cache
+      assert( ptr_cache[0] = ptr_(0,ws[0]) );
+      assert( ptr_cache[1] = ptr_(1,ws[1]) );
 
       return true;
     };
