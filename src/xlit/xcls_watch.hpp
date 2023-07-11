@@ -708,8 +708,8 @@ class xcls_watch {
       assert( xlits[0].shared_part(xlits[1]).is_zero() );
 
       //check ptr_cache
-      assert( ptr_cache[0] = ptr_(0,ws[0]) );
-      assert( ptr_cache[1] = ptr_(1,ws[1]) );
+      assert( ptr_cache[0] == ptr_(0,ws[0]) );
+      assert( ptr_cache[1] == ptr_(1,ws[1]) );
 
       return true;
     };
