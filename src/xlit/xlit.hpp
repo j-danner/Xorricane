@@ -13,6 +13,7 @@
 //forward declaration of class xsys
 class xsys;
 
+enum class presorted { yes, no };
 
 //sparse implementation of a xor-literal
 class xlit
@@ -27,16 +28,16 @@ class xlit
         xlit(xlit&& l) noexcept : p1(std::move(l.p1)), idxs(std::move(l.idxs)) {};
         xlit(const xlit& l) noexcept : p1(l.p1), idxs(l.idxs) {}; // no init required, as l.idxs is already sorted (i.e. initialized!)
         //b can be set to true if idxs_ is already sorted...
-        xlit(const vec< var_t >& idxs_, const bool b = false) noexcept : p1(false), idxs(std::move(idxs_)) {
-          if(!b){ init(); }
+        xlit(const vec< var_t >& idxs_, const presorted b = presorted::no) noexcept : p1(false), idxs(std::move(idxs_)) {
+          if(b==presorted::no){ init(); }
           else if( idxs.size()>0 && idxs[0]==0 ) { idxs.erase(idxs.begin()); p1^=true; }
         };
-        xlit(vec< var_t >&& idxs_, const bool b = false) noexcept : p1(false), idxs(std::move(idxs_)) {
-          if(!b){ init(); }
+        xlit(vec< var_t >&& idxs_, const presorted b = presorted::no) noexcept : p1(false), idxs(std::move(idxs_)) {
+          if(b==presorted::no){ init(); }
           else if( idxs.size()>0 && idxs[0]==0 ) { idxs.erase(idxs.begin()); p1^=true; }
         };
-        xlit(const vec< var_t >& idxs_, const bool p1_, const bool b) noexcept : p1(p1_), idxs(idxs_) { if(!b){ init(); } };
-        xlit(vec< var_t >&& idxs_, const bool p1_, const bool b) noexcept : p1(p1_), idxs(std::move(idxs_)) { if(!b){ init(); } };
+        xlit(const vec< var_t >& idxs_, const bool p1_, const presorted b) noexcept : p1(p1_), idxs(idxs_) { if(b==presorted::no){ init(); } };
+        xlit(vec< var_t >&& idxs_, const bool p1_, const presorted b) noexcept : p1(p1_), idxs(std::move(idxs_)) { if(b==presorted::no){ init(); } };
         xlit(const var_t& idx, const bool p1_) noexcept : p1(p1_), idxs({idx}) { 
           if( idxs.size()>0 && idxs[0]==0 ) { idxs.clear(); p1^=true; }
         }
@@ -66,7 +67,7 @@ class xlit
 
         size_t hash() const;
 
-        inline xlit plus_one() const { return xlit( idxs, !p1, true ); };
+        inline xlit plus_one() const { return xlit( idxs, !p1, presorted::yes ); };
 
         inline xlit add_one() { p1 ^= true; return *this; };
 
@@ -81,6 +82,7 @@ class xlit
         bool reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t lvl);
         bool reduce(const vec<bool3>& alpha);
         bool reduce(const vec<xlit>& assignments);
+        bool reduce(const vec<equivalence>& equiv_lits);
         xlit reduced(const vec<xlit>& assignments) const { xlit ret(*this); ret.reduce(assignments); return ret; };
         vec<var_t> reducers(const vec<xlit>& assignments) const;
 

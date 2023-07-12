@@ -83,7 +83,7 @@ class xlit_watch : public xlit
      * @brief return the watched literal
      * @return xlit corr to watched xlit
      */
-    xlit to_xlit() const { return xlit(idxs, p1, true); };
+    xlit to_xlit() const { return xlit(idxs, p1, presorted::yes); };
     
     /**
      * @brief checks whether the polynomial is assigning
@@ -131,6 +131,11 @@ class xlit_watch : public xlit
      * @return the second watched literal
      */
     var_t get_wl1() const { return idxs[ws[1]]; };
+
+    /**
+     * @brief returns the equivalent lit, if this is an equivalence
+     */
+    var_t get_equiv_lit() const { return xlit::is_equiv() ? ( get_wl0()==LT() ? get_wl1() : get_wl0() ) : 0; }
 
     /**
      * @brief get assigning xlit

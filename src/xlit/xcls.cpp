@@ -91,7 +91,7 @@ vec<xlit> intersectVS(const xsys& U, const xsys& W) {
         for(rci_t c=(n_vars+1)+1; c<ncols; ++c) {
             if( mzd_read_bit(M, r, c) ) idxs.push_back(supp[c-n_vars-1]);
         }
-        int_lits.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars+1), true );
+        int_lits.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars+1), presorted::yes );
         --r;
     }
 

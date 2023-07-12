@@ -137,6 +137,21 @@ bool xlit::reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl
     return ret;
 };
 
+bool xlit::reduce(const vec<equivalence>& equiv_lits) {
+    bool ret = false;
+    var_t offset = 0;
+    while(offset<idxs.size()) {
+        if( equiv_lits[ idxs[offset] ].ind>0 ) {
+            ret = true;
+            assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
+            *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
+        } else {
+            ++offset;
+        }
+    }
+    return ret;
+};
+
 
 vec<var_t> xlit::reducers(const vec<xlit>& assignments) const {
     vec<var_t> ret;
@@ -184,7 +199,7 @@ std::string xlit::to_full_str(var_t num_vars) const{
 xlit xlit::shared_part(const xlit& other) const {
   DIFF.clear(); // DIFF is declared global and static, this saves creating new DIFFs for each calling
   std::set_intersection(std::execution::par, idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
-  return std::move( xlit(DIFF, false, true) ); //call ctor that does NOT sort DIFF
+  return std::move( xlit(DIFF, false, presorted::yes) ); //call ctor that does NOT sort DIFF
 };
 
 //overloaded operators
@@ -195,7 +210,7 @@ xlit xlit::operator+(const xlit &other) const {
     //NOTE back_insterter might lead to repeated reallocations!
     //idxs = DIFF;
 
-    return std::move( xlit(DIFF, p1^other.p1, true) ); //call ctor that does NOT sort DIFF
+    return std::move( xlit(DIFF, p1^other.p1, presorted::yes) ); //call ctor that does NOT sort DIFF
 };
 
 //in-place operation (!)
