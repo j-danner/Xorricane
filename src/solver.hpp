@@ -42,7 +42,7 @@ struct state_repr {
 
 };
 
-enum class trail_t { NEW_UNIT, IMPLIED_ALPHA };
+enum class trail_t { EQUIV, NEW_UNIT, IMPLIED_ALPHA };
 
 struct trail_elem {
   var_t ind;
@@ -170,9 +170,10 @@ class solver
 #endif
 
     /**
-     * @brief if equiv_lits[i] is non-zero, i is congruent to equiv_lits[i] or equiv_lits[i]+1 (can be checked using assignments[i]!)
+     * @brief if equiv_lits[i].ind is non-zero, i is congruent to equiv_lits[i].ind + (equiv_lits[i].polarity ? 1 : 0).
+     * @note we must have i < equiv_lits[i].first
      */
-    vec<var_t> equiv_lits;
+    vec<equivalence> equiv_lits;
 
     /**
      * @brief idx of reason clause of propagated units
@@ -230,9 +231,17 @@ class solver
       }
 #endif
       //store last_phase
-      save_phase();
-      alpha[TRAIL.back().ind] = bool3::None;
-      alpha_dl[TRAIL.back().ind] = 0;
+      switch(TRAIL.back().type) {
+      case trail_t::NEW_UNIT:
+        break;
+      case trail_t::IMPLIED_ALPHA:
+        save_phase();
+        alpha[TRAIL.back().ind] = bool3::None;
+        alpha_dl[TRAIL.back().ind] = 0;
+        break;
+      case trail_t::EQUIV:
+        equiv_lits[TRAIL.back().ind].ind = 0;
+      }
       TRAIL.pop_back();
       return true;
     }
@@ -250,7 +259,7 @@ class solver
     inline void add_new_guess(const xsys& L) {
       //update assignments
       for(const auto& [lt,idx] : L.get_pivot_poly_idx()) {
-        add_new_xlit(*idx, -1, dl);
+        add_new_xlit(*idx, -1);
         //OLD CODE
         //assert(assignments[lt].is_zero()); //ensure that guess is actually new!
         ////TODO should we allow to guess variables for which we already have information?
@@ -303,75 +312,62 @@ class solver
      * 
      * @return bool true iff xlit was actually new at current dl!
      */
-    inline bool add_new_xlit(const xlit& lit, const var_t& rs, const var_t& lvl) {
+    inline bool add_new_xlit(const xlit& lit, const var_t& rs) {
       //new code
       //store lit in 
       _reduced_lit = lit;
       _reduced_lit.reduce(alpha); //reduce with alpha assignments -- the least we should do!
-      //TODO optimize non-debuging code!
+      _reduced_lit.reduce(equiv_lits); //reduce equivalent variable
 #ifdef EXACT_UNIT_TRACKING
-      if( !_reduced_lit.is_assigning() ) _reduced_lit.reduce(assignments, assignments_dl, lvl); //reduce with assignments AND alpha...
+      if( !_reduced_lit.is_assigning() ) _reduced_lit.reduce(assignments, assignments_dl, dl); //reduce with assignments AND alpha...
 #endif
       if(_reduced_lit.is_zero()) return false; 
-      if(lvl < dl) {
-        assert(false); //due to arc-consistency, we should never add a literal on a previous dl!
-        VERB(100, "adding UNIT on previous level!");
-      }
-      VERB(65, "c " + std::to_string(lvl) + " : new UNIT " + lit.to_str() + " ~> " + _reduced_lit.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
+      VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lit.to_str() + " ~> " + _reduced_lit.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
       
       const var_t lt = _reduced_lit.LT();
       //TODO should we always reduce?! consider the following:
       //we already have UNIT x1+x2+x3 and now get x1; as of now, we add x2+x3, even though x1 would be assigning!
       //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
       // add to trail //TODO add in propoer position in trail!
-      trails[lvl].emplace_back(lt, trail_t::NEW_UNIT);
 
 #ifdef EXACT_UNIT_TRACKING
       // update assignments
       if(assignments[lt].is_zero()) {
         assignments[lt] = _reduced_lit;
-        assignments_dl[lt] = lvl;
+        assignments_dl[lt] = dl;
       }
-      //assignments_xsys.add_reduced_lit(assignments[lt]); //might fail if lvl < dl (!)
       //add _reduced_lit to assignments_xsys
       assert((var_t)state_stack.size() >= dl);
-      for(auto i = lvl+1; i < (var_t) state_stack.size(); ++i) {
+      for(auto i = dl+1; i < (var_t) state_stack.size(); ++i) {
         state_stack[i].L += xsys(_reduced_lit);
       }
       assignments_xsys += xsys(_reduced_lit);
 #endif
 
       //assert( assignments_watch.back().to_xlit().is_zero() );
-      assignments_watches[lvl].emplace_back( std::move(_reduced_lit), alpha, alpha_dl, lvl, dl_count, rs );
-      assert( assignments_watches[lvl].back().is_active(dl_count) );
+      assignments_watches[dl].emplace_back( std::move(_reduced_lit), alpha, alpha_dl, dl, dl_count, rs );
+      assert( assignments_watches[dl].back().is_active(dl_count) );
       // add to L_watch_list's -- if there is anything to watch
-      if(assignments_watches[lvl].back().size()>0) {
-        L_watch_list[ assignments_watches[lvl].back().get_wl0() ].emplace_back( std::array<var_t,4>({lvl, (var_t) (assignments_watches[lvl].size()-1), lvl, dl_count[lvl]}) );
-        if(assignments_watches[lvl].back().get_wl0() != assignments_watches[lvl].back().get_wl1()) L_watch_list[ assignments_watches[lvl].back().get_wl1() ].emplace_back( std::array<var_t,4>({lvl, (var_t) (assignments_watches[lvl].size()-1), lvl, dl_count[lvl]}) );
+      if(assignments_watches[dl].back().size()>0) {
+        L_watch_list[ assignments_watches[dl].back().get_wl0() ].emplace_back( std::array<var_t,4>({dl, (var_t) (assignments_watches[dl].size()-1), dl, dl_count[dl]}) );
+        if(assignments_watches[dl].back().get_wl0() != assignments_watches[dl].back().get_wl1()) L_watch_list[ assignments_watches[dl].back().get_wl1() ].emplace_back( std::array<var_t,4>({dl, (var_t) (assignments_watches[dl].size()-1), dl, dl_count[dl]}) );
       }
-      //assignments_list[lt].emplace_back( std::array<var_t,4>({lvl, (var_t) (assignments_watches[lvl].size()-1), lvl, dl_count[lvl]}) );
+      //assignments_list[lt].emplace_back( std::array<var_t,4>({dl, (var_t) (assignments_watches[dl].size()-1), dl, dl_count[dl]}) );
 
       //if assignments_watch.back() is already assigned, update alpha!
-      const auto [lt2,val] = assignments_watches[lvl].back().get_assignment(alpha);
+      const auto [lt2,val] = assignments_watches[dl].back().get_assignment(alpha);
       if(val!=bool3::None) {
-        if(lvl < dl && alpha[lt2]!=bool3::None && alpha_dl[lt2] > lvl) {
-          assert(false);
-          //TODO what if val is now determined on lvl < dl; where alpha_dl[lt2] > lvl; we should replace alpha_dl[lt2] AND reason_ALPHA[lt2]; however then we need to be careful when dealing with the trail in trails[ alpha_dl[lt2] ]], as lt2 must be skipped... also this new ALPHA-assignment might have implied other assignments at lvl, how to proceed with those??
-          //maybe add upd_queue for every dl?
-          //merge upd_queue and gcp_queue and integrate find_implied_alpha() into GCP() ?
-        }
         assert( alpha[lt2]==val || alpha[lt2]==bool3::None );
         alpha[lt2] = val;
-        alpha_dl[lt2] = assignments_watches[lvl].back().get_assigning_lvl(alpha_dl);
+        alpha_dl[lt2] = assignments_watches[dl].back().get_assigning_lvl(alpha_dl);
+        assert(alpha_dl[lt2] == dl); //TODO this should always hold true!
         reason_ALPHA[lt2] = rs;
-        VERB(70, "c "+ std::to_string(alpha_dl[lt2]) + " : new ALPHA " + assignments_watches[lvl].back().get_assigning_xlit(alpha).to_str() + " from UNIT " + assignments_watches[lvl].back().to_str() + ( (reason_ALPHA[lt2]<xclss.size()) ? " with reason clause " + xclss[reason_ALPHA[lt2]].to_str() : "") );
+        VERB(70, "c "+ std::to_string(alpha_dl[lt2]) + " : new ALPHA " + assignments_watches[dl].back().get_assigning_xlit(alpha).to_str() + " from UNIT " + assignments_watches[dl].back().to_str() + ( (reason_ALPHA[lt2]<xclss.size()) ? " with reason clause " + xclss[reason_ALPHA[lt2]].to_str() : "") );
         GCP_QUEUE.emplace(lt2); //ensure it is propagated now!
         if(alpha_dl[lt2] < dl) {
-          gcp_queues[lvl].emplace(lt2); //ensure it is propagated after backtracking!
+          gcp_queues[dl].emplace(lt2); //ensure it is propagated after backtracking!
         }
-        if(lt!=lt2) {
-          trails[ alpha_dl[lt2] ].emplace_back( lt2, trail_t::IMPLIED_ALPHA );
-        }
+        trails[ alpha_dl[lt2] ].emplace_back( lt2, trail_t::IMPLIED_ALPHA );
         if (lt2==0) { assert(!no_conflict()); return true; };
 #ifdef EXACT_UNIT_TRACKING
         if(lt!=lt2) {
@@ -379,16 +375,20 @@ class solver
           assert( assignments[lt2].is_zero() || assignments_dl[lt2] == alpha_dl[lt2] );
           //either lt2 has not been assigned yet; or it has been done on this level; i.e., we can just overwrite it! (note: here we have a forcing assignment, i.e., a better assignment...)
           //trails[ alpha_dl[lt2] ].emplace_back( lt2, trail_t::IMPLIED_ALPHA );
-          assignments[lt2] = assignments_watches[lvl].back().get_assigning_xlit(alpha);
+          assignments[lt2] = assignments_watches[dl].back().get_assigning_xlit(alpha);
           assignments_dl[lt2] = alpha_dl[lt2];
         }
 #endif
+      } else if (assignments_watches[dl].back().is_equiv()) { //TODO update to check is_equiv for xlit_watches!!
+        assert(lt < assignments_watches[dl].back().get_equiv_lit() ); //ensure that lt is smallest!
+        equiv_lits[lt].set_ind( assignments_watches[dl].back().get_equiv_lit() );
+        equiv_lits[lt].set_polarity( assignments_watches[dl].back().has_constant() );
+        trails[dl].emplace_back( lt, trail_t::EQUIV );
+        VERB(65, "c " + std::to_string(dl) + " : new EQUIV " + assignments_watches[dl].back().to_str() )
+      } else {
+        //new unit is not assigning and not an equivalence!
+        trails[dl].emplace_back(lt, trail_t::NEW_UNIT);
       }
-      //else if (assignments_watch.back().is_equiv()) { //TODO update to check is_equiv for xlit_watches!!
-      //  equiv_lits[lt] = assignments[lt].get_idxs_()[1];
-      //  VERB(65, "c " + std::to_string(lvl) + ": new EQUIV " + assignments[lt].to_str() )
-      //  //TODO currently unused information!
-      //}
       
       return true;
     };

@@ -49,6 +49,24 @@ inline std::string b3_to_str(const bool3 b) { return b==bool3::None ? "None" : (
 inline bool b3_to_bool(const bool3 b) { assert(b!=bool3::None); return b==bool3::True ? true : false; };
 
 
+/**
+ * @brief structure for storing equivalence of vars; essentially a pair of ind and polarity
+ * @todo bitpacking?
+ */
+struct equivalence {
+  var_t ind;
+  bool polarity;
+
+  equivalence() : ind(0), polarity(false) {};
+  equivalence(const var_t _ind, const bool _polarity) : ind(_ind), polarity(_polarity) {};
+  equivalence(const equivalence& other) : ind(other.ind), polarity(other.polarity) {};
+  equivalence(equivalence&& other) : ind(other.ind), polarity(other.polarity) {};
+  
+  void set_ind(const var_t _ind) { ind = _ind; };
+  void set_polarity(const bool _polarity) { polarity = _polarity; };
+};
+
+
 enum class dec_heu { vsids, lwl, lex, swl };
 enum class phase_opt { rand, save, save_inv };
 enum class ca_alg { no, fuip };

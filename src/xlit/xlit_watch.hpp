@@ -19,7 +19,7 @@ class xlit_watch : public xlit
     /**
      * @brief literal watches; offset into idxs-set of idxs
      */
-    lit_watch ws[2] = {0,0};
+    lit_watch ws[3] = {0,0,0};
 
     /**
      * @brief dl_count when xlit_watch was instantiated, req to check if xlit is active!
