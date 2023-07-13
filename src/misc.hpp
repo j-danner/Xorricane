@@ -69,7 +69,7 @@ struct equivalence {
 
 enum class dec_heu { vsids, lwl, lex, swl };
 enum class phase_opt { rand, save, save_inv };
-enum class ca_alg { no, fuip };
+enum class ca_alg { dpll, fuip };
 
 /**
  * @brief struct that holds options for the various heuristic choices

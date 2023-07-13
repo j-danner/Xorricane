@@ -88,10 +88,10 @@ int main(int argc, char const *argv[])
     
     //cdcd opts
     program.add_argument("-ca","--conflict-analysis")
-        .help("algorithm to use for conflict analysis, 'no' (means dpll-alg) or '1uip'")
+        .help("algorithm to use for conflict analysis, 'dpll' (means dpll-alg) or '1uip'")
         .default_value(std::string("1uip"))
         .action([](const std::string& value) {
-            static const vec<std::string> choices = { "no", "1uip" };
+            static const vec<std::string> choices = { "dpll", "1uip" };
             if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
                 return value;
             }
@@ -145,7 +145,7 @@ int main(int argc, char const *argv[])
     
     auto ca_str = program.get<std::string>("-ca");
     ca_alg ca = (ca_alg)1;
-    if(ca_str=="no") ca = (ca_alg)0;
+    if(ca_str=="dpll") ca = (ca_alg)0;
     else if(ca_str=="1uip") ca = (ca_alg)1;
 
     //auto jobs = program.get<int>("-j");

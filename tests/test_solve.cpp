@@ -224,6 +224,16 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         CHECK( s.sat == true ); //SAT!
         CHECK( check_sol(clss.cls, s.sol) );
     }
+    
+    SECTION( "test22_.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test22_.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.dpll_solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
 
     SECTION( "test22.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test22.xnf");

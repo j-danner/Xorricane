@@ -30,6 +30,7 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     assignments_xsys = xsys();
 #endif
     equiv_lits = vec<equivalence>(opt_.num_vars+1);
+    equiv_lits_dl = vec<var_t>(opt_.num_vars+1, 0);
     dl_count = vec<var_t>(opt_.num_vars+1, 1); 
     reason_ALPHA = vec<var_t>(opt_.num_vars + 1, -1);
     trails = vec< std::list<trail_elem> >();
@@ -611,7 +612,6 @@ std::pair<var_t, xcls> solver::analyze_no_sres() {
 std::pair<var_t, xcls> solver::analyze_no_sres() { return analyze_dpll(); };
 #endif
     
-#ifdef EXACT_UNIT_TRACKING
 std::pair<var_t,xcls> solver::analyze_dpll() {
     VERB(60, "analyze_dpll called!")
 #ifndef NDEBUG
@@ -621,28 +621,18 @@ std::pair<var_t,xcls> solver::analyze_dpll() {
     //return negation of last decision!
     assert(!TRAIL.empty());
     //if trail is empty, we are at dl 0, i.e., analyze_dpll should not be called!
-    xlit dec;
-    //now accumulate all previous decisions
-    assert(TRAIL.size() == assignments_watches[dl].size());
     vec<xlit> xlits;
-    for(const auto& lw : assignments_watches) {
-        xlits.push_back( lw[0].to_xlit() );
+    for(auto tr = trails.begin()+1; tr!=trails.end(); ++tr) {
+        if(!tr->empty()) xlits.push_back( xlit(tr->front().ind, !b3_to_bool(alpha[tr->front().ind]) ) );
     }
-    xlits.back().add_one();
     xcls learnt_cls(xlits);
-    //TODO incorrect!!
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
+    #ifdef EXACT_UNIT_TRACKING
     VERB(70, "   '----> gives with current assignments: " + learnt_cls.update(assignments).to_str());
+    #endif
 
     return {dl-1, learnt_cls};
 };
-#else
-std::pair<var_t,xcls> solver::analyze_dpll() {
-    assert(false);
-    //TODO adapt to removed assignments!
-    return {0, xcls()};
-};
-#endif
 
 
 #ifdef EXACT_UNIT_TRACKING
@@ -651,7 +641,7 @@ void solver::add_learnt_cls(xcls&& cls) {
     //assert(cls.deg()>1); //IF THIS FAILS ADD PROPER HANDLING FOR LIN-CLAUSES! (add to xsys directly!)
     if(cls.deg()==1) {
         assert(dl == 0); //if a unit is learnt, we should backtrack to dl 0...
-        add_new_xlit( cls.get_unit(), -1);
+        add_new_xlit( cls.get_unit(), -1, 0);
         return;
     }
     //now cls has at least two xlits, i.e., we can construct xcls_watch!
@@ -671,14 +661,22 @@ void solver::add_learnt_cls(xcls&& cls) {
     unit.reduce(assignments, assignments_dl, dl); //TODO we should also be able to use 'unit.reduced(assignments);'
     VERB(65, "new UNIT " + unit.to_str() + " with reason clause " + get_last_reason().to_str());
     // add to assignments and trail
-    add_new_xlit(unit, i);
+    add_new_xlit(unit, i, dl);
     bump_score(unit);
     assert(assert_data_structs());
 };
 #else
-void solver::add_learnt_cls([[maybe_unused]] xcls&& cls) {
-    assert(false);
-    //TODO adapt to removed assignments!
+void solver::add_learnt_cls(xcls&& cls) {
+    if(cls.deg()>=2) {
+        incr_active_cls(0);
+        const var_t i = init_and_add_xcls_watch( std::move(cls) );
+        xclss[i].mark_redundant();
+        assert(xclss[i].get_inactive_lvl(dl_count) == dl); //ensure we did backtrack as far as possible!
+    } else {
+        assert(cls.deg()==1);
+        assert(dl==0);
+        add_new_xlit( cls.get_unit(), -1);
+    }
 }
 #endif
 
@@ -806,7 +804,7 @@ void solver::GCP(stats &s) {
                 // NEW LIN-EQS
                 new_unit = std::move(xclss[i].get_unit());
                 // add to assignments
-                if( add_new_xlit(new_unit, i) ) {
+                if( add_new_xlit(new_unit, i ) ) {
                   #ifdef EXACT_UNIT_TRACKING
                     assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero()); //in particular it must now be zero w.r.t. assignments (since new_unit has already been added!)
                   #endif
@@ -815,7 +813,7 @@ void solver::GCP(stats &s) {
                 if (!no_conflict()) { 
                     VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
                     return; //quit propagation immediately at conflict!
-                    }
+                }
                 break;
             case xcls_upd_ret::NONE:
                 //assert(xclss[i].is_none(alpha));
@@ -973,7 +971,7 @@ void solver::cdcl_solve(stats &s) {
 
     // current decision lvl
     dl = 0;
-    dl_count[dl]++;
+    dl_count[dl] = 1;
 
     // set update/fls/decH funcs
     dec_heu_t decH = &solver::dh_lex_LT;
@@ -988,7 +986,7 @@ void solver::cdcl_solve(stats &s) {
         decH = &solver::dh_lex_LT;
         break;
     case dec_heu::swl:
-        decH = &solver::dh_shortest_wl;
+        decH = &solver::dh_vsids_UNFINISHED;
         break;
     default:
         assert(false);
@@ -997,7 +995,7 @@ void solver::cdcl_solve(stats &s) {
     
     ca_t analyze;
     switch (opt.ca) {
-    case ca_alg::no:
+    case ca_alg::dpll:
         analyze = &solver::analyze_dpll;
         break;
     case ca_alg::fuip:
@@ -1008,91 +1006,96 @@ void solver::cdcl_solve(stats &s) {
         assert(false);
         break;
     }
-
+    
     // stack for xsys that store alternative dec
     xsys new_xsys = xsys();
 
-    // propagate -- before making decisions!
+    // update graph -- before making decisions!
     GCP(s);
 
-    while (active_cls > 0 || !no_conflict()) {
+    while (true) {
         if (s.cancelled.load()) {
             VERB(10, "c cancelled");
             return;
         }
-        // make decision / backtrack
-        if (!no_conflict()) {
-            VERB(25, "c " << std::to_string(dl) << " : "
-                          << "conflict --> backtrack!")
-            ++s.no_confl;
-            // conflict!
-            if (dl == 0) {
-                // return UNSAT
+        if (active_cls > 0 || !no_conflict()) {
+            // make decision / backtrack
+            if (!no_conflict()) {
+                VERB(25, "c " << std::to_string(dl) << " : "
+                              << "conflict --> backtrack!")
+                ++s.no_confl;
+                // conflict!
+                if (dl == 0) {
+                    // return UNSAT
+                    s.finished = true;
+                    s.sat = false;
+                    return;
+                }
+            
+                ///// BACKTRACKING /////
+                ///// CLAUSE LEARNING /////
+                auto [lvl, learnt_cls] = (this->*analyze)();
+                // backtrack
+                backtrack(lvl);
+                VERB(100, to_str());
+
+                // add learnt_cls
+                add_learnt_cls( std::move(learnt_cls) );
+                VERB(100, to_str());
+                // decay + bump scores of conflict clause!
+                bump_score(learnt_cls.get_ass_VS());
+                decay_score();
+              #ifdef EXACT_UNIT_TRACKING
+                assert( is_consistent() == assignments[0].is_zero() );
+              #endif
+            } else {
+                ++dl;
+                ++dl_count[dl];
+                trails.emplace_back( std::list<trail_elem>() );
+                gcp_queues.emplace_back( std::queue<var_t>() );
+                ++s.no_dec;
+                // save state
+                save_state();
+
+                // make new decision!
+                // use decisions heuristic to find next decision!
+                std::pair<xsys, xsys> dec = (this->*decH)();
+                VERB(25, "c " << std::to_string(dl) << " : "
+                              << "decision " << std::to_string(s.no_dec) << " : " << std::to_string(dec.first.size()) << " or " << std::to_string(dec.second.size()) << " eqs")
+                VERB(50, "c " << std::to_string(dl) << " : "
+                              << "decision " << std::to_string(s.no_dec) << " namely [" << dec.first.to_str() << "] or [" << dec.second.to_str() << "]")
+                add_new_guess(std::move(dec.first));
+            }
+
+            GCP(s);
+
+            assert((var_t)state_stack.size() == dl + 1);
+            assert((var_t)trails.size() == dl + 1);
+            assert((var_t)gcp_queues.size() == dl + 1);
+            assert(assert_data_structs());
+        } else {
+            //now active_cls == 0 AND no_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
+            xsys L = get_assignments_xsys();
+            if (!L.is_consistent()) {
+                //alpha[0] = bool3::True; //enforce backtracking!
+                add_new_xlit(xlit(0, false), -1);
+            } else {
+              #ifdef EXACT_UNIT_TRACKING
+                // solution can be deduced from assignments!
+                // matrix corr to eqs in assignments is in upper triangular form, i.e., solve from 'back' to 'front'
+                s.sol = vec<bool>(opt.num_vars, false);
+                for (auto l = assignments.rbegin(); l != assignments.rend(); ++l) l->solve(s.sol);
+              #else
+                s.sol = vec<bool>(opt.num_vars, false);
+                L.solve(s.sol);
+              #endif
+
+                s.sat = true;
                 s.finished = true;
-                s.sat = false;
-                s.end = std::chrono::steady_clock::now();
                 return;
             }
-            // backtrack
-
-            ///// CLAUSE LEARNING /////
-            auto [lvl, learnt_cls] = (this->*analyze)();
-            // backtrack
-            backtrack(lvl);
-            VERB(100, to_str());
-
-            // add learnt_cls
-            add_learnt_cls( std::move(learnt_cls) );
-            VERB(100, to_str());
-            // decay + bump scores of conflict clause!
-            bump_score(learnt_cls.get_ass_VS());
-            decay_score();
-          #ifdef EXACT_UNIT_TRACKING
-            assert( is_consistent() == assignments[0].is_zero() );
-          #endif
-        } else {
-            ++dl;
-            ++dl_count[dl];
-            ++s.no_dec;
-            // save state
-            save_state();
-
-            // make new decision!
-            // use decisions heuristic to find next decision!
-            std::pair<xsys, xsys> dec = (this->*decH)();
-            VERB(25, "c " << std::to_string(dl) << " : "
-                          << "decision " << std::to_string(s.no_dec) << " : " << std::to_string(dec.first.size()) << " or " << std::to_string(dec.second.size()) << " eqs")
-            VERB(50, "c " << std::to_string(dl) << " : "
-                          << "decision " << std::to_string(s.no_dec) << " namely [" << dec.first.to_str() << "] or [" << dec.second.to_str() << "]")
-            add_new_guess(std::move(dec.first));
         }
-
-        GCP(s);
-
-        assert((var_t)state_stack.size() == dl + 1);
-        assert(assert_data_structs());
     }
-
-#ifdef EXACT_UNIT_TRACKING
-    // solution can be deduced from assignments!
-    // matrix corr to eqs in assignments is in upper triangular form, i.e., solve from 'back' to 'front'
-    s.sol = vec<bool>(opt.num_vars, false);
-    for (auto l = assignments.rbegin(); l != assignments.rend(); ++l)
-        l->solve(s.sol);
-#else
-    vec<xlit> lits; lits.reserve(assignments_watches.size());
-    for(const auto& l_dl : assignments_watches) {
-        for(const auto& l : l_dl) if(l.is_active(dl_count)) lits.emplace_back( l.to_xlit() );
-    }
-    xsys L( std::move(lits) );
-    s.sol = vec<bool>(opt.num_vars, false);
-    L.solve(s.sol);
-#endif
-
-    s.sat = true;
-    s.finished = true;
-
-    return;
 };
 
 

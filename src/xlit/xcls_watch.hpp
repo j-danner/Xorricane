@@ -47,6 +47,18 @@ class xcls_watch {
      * @brief cache watched vars
      */
     var_t ptr_cache[2];
+
+    //flags
+    /**
+     * @brief indicates if clause is irredundant; be default all clauses are irredundant (and cannot be removed!)
+     */
+    bool is_irredundant = true;
+    
+    /**
+     * @brief indicates if clause should be removed on next cleanup
+     */
+    bool delete_on_cleanup = false;
+
     
     /**
      * @brief initializes xlit_dl_count0, xlit_dl_count1, and ws[0], ws[1]
@@ -75,6 +87,9 @@ class xcls_watch {
       ptr_cache[0] = ptr_(0,ws[0]);
       ptr_cache[1] = ptr_(1,ws[1]);
       assert(get_wl0() != get_wl1());
+
+      is_irredundant = true;
+      delete_on_cleanup = false;
     }
 
     const var_t& ptr_(const cls_size_t& i, const var_t val) const {
@@ -381,8 +396,12 @@ class xcls_watch {
       init();
     };
 
-    xcls_watch(const xcls_watch& o) noexcept : xlits(o.xlits), xlit_dl_count1(o.xlit_dl_count1), xlit_dl_count0(o.xlit_dl_count0) { 
-      ws[0] = o.ws[0]; ws[1] = o.ws[1];
+    xcls_watch(const xcls_watch& o) noexcept : xlits(o.xlits), shared_part(o.shared_part), xlit_dl_count1(o.xlit_dl_count1), xlit_dl_count0(o.xlit_dl_count0), is_irredundant(o.is_irredundant), delete_on_cleanup(o.delete_on_cleanup) { 
+      ws[0] = o.ws[0]; ws[1] = o.ws[1]; ptr_cache[0] = o.ptr_cache[0]; ptr_cache[1] = o.ptr_cache[1];
+    };
+
+    xcls_watch(xcls_watch&& o) noexcept : xlits(std::move(o.xlits)), shared_part(std::move(o.shared_part)), xlit_dl_count1(std::move(o.xlit_dl_count1)), xlit_dl_count0(std::move(o.xlit_dl_count0)), is_irredundant(o.is_irredundant), delete_on_cleanup(o.delete_on_cleanup) { 
+      ws[0] = o.ws[0]; ws[1] = o.ws[1]; ptr_cache[0] = o.ptr_cache[0]; ptr_cache[1] = o.ptr_cache[1];
     };
     
     xcls_watch(const xsys& lits) noexcept {
@@ -391,6 +410,10 @@ class xcls_watch {
       std::for_each(xlits.begin(), xlits.end(), [](xlit& l){ l.add_one(); });
       init();
     };
+
+    void mark_irredundant() { is_irredundant = true; };
+    void mark_redundant() { is_irredundant = false; };
+    void remove() { if(!is_irredundant) { delete_on_cleanup = true; } };
 
     /**
      * @brief evals the 0-th watched literal at alpha
@@ -459,7 +482,7 @@ class xcls_watch {
 
     
     /**
-     * @brief updates xcls_watch and watch_list according to current alpha, updates watch_list (and requires dl_count and dl)
+     * @brief updates xcls_watch and watch_list according to current alpha (and requires dl_count and dl)
      * @note should only be used when new clauses are added!
      * 
      * @param alpha current bool3-assignment
@@ -467,48 +490,54 @@ class xcls_watch {
      * @param dl_count current dl_count
      * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
      */
-    std::pair<var_t,xcls_upd_ret> update(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
-      assert(false); //TODO fix! use advance() instead of advance_wl()!
+    xcls_upd_ret update(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t>& dl_count) {
       //check if clause needs any processing
       if( !is_active(dl_count) ) {
         assert(is_sat(dl_count) || is_unit(dl_count));
-        return {0, xcls_upd_ret::SAT}; //NOTE here it might also be a UNIT, but it did not become one by this update!
+        return xcls_upd_ret::SAT; //NOTE here it might also be a UNIT, but it did not become one by this update!
       }
-
+      
       //check if -- and which ws need to be updated
       if(alpha[ ptr_ws(0) ] == bool3::None && alpha[ ptr_ws(1) ] == bool3::None) {
-        assert(false);
         //nothing needs to be updated!
-        if(is_none(alpha)) return {0, xcls_upd_ret::NONE}; //TODO these next two cases should never occur, or??
-        else if(is_sat(dl_count)) return {0, xcls_upd_ret::SAT};
-        else if(is_unit(dl_count)) return {0, xcls_upd_ret::UNIT};
-        assert(false);
+        if(is_none(dl_count)) return xcls_upd_ret::NONE; //TODO these next two cases should never occur, or??
+        else if(is_sat(dl_count)) return xcls_upd_ret::SAT;
+        else if(is_unit(dl_count)) return xcls_upd_ret::UNIT;
       }
-      //exactly one of { *ws[0], *ws[1] } can be advanced!
-      assert( (alpha[ptr_ws(0)] != bool3::None) ^ (alpha[ptr_ws(1)] != bool3::None) );
-      const auto i = alpha[ptr_ws(0)] != bool3::None ? 0 : 1;
       
-      auto [new_w, upd] = advance_lw(i, alpha, alpha_dl, dl_count);
-      //note watch-lists are already updated! --> only need to deal with 
-      //assert correct return value!
-      if(upd == xcls_upd_ret::NONE) {
-        //assert( is_none(alpha) );
-        //update ws[1] if necessary! (also updates upd)
-        if(alpha[ptr_ws(1-i)]!=bool3::None) {
-          const auto tmp = advance_lw(1-i, alpha, alpha_dl, dl_count);
-          new_w = tmp.first;
-          upd = tmp.second;
+      advance(alpha, alpha_dl, dl_count);
+      assert(is_sat(dl_count) || is_unit(dl_count) || ptr_ws(0)==new_w);
+      assert(watches(new_w));
+      assert(assert_data_struct());
+
+      if(alpha[get_wl0()]==bool3::None) {
+        swap_wl(); //if one of the watched literals is unassigned, ensure it is wl1
+      
+        advance(alpha, alpha_dl, dl_count);
+        assert(is_sat(dl_count) || is_unit(dl_count) || ptr_ws(0)==new_w);
+        assert(watches(new_w));
+        assert(assert_data_struct());
+
+        if(is_sat(dl_count)) {
+          //ensure we watch the lineral with lowest dl!
+          assert(false);
+        } else if (is_unit(dl_count)) {
+          //ensure we watch the lineral with highest dl!
+          const var_t new_i = std::distance(xlit_dl_count1.begin(), std::max_element(xlit_dl_count1.begin(), xlit_dl_count1.end(), [](const auto& a, const auto& b){ return a.first < b.first; } ));
+          xlits[0].swap(xlits[new_i]); //ensures that no iterators are invalidated
+          //esnure we watch the variable with hightest dl!
+          const var_t new_w = std::distance(xlits[0].begin(), std::max_element(xlits[0].begin(), xlits[0].end(), [&](const auto& a, const auto& b){ return alpha_dl[a] < alpha_dl[b]; } ));
+          ws[0] = new_w;
+          ptr_cache[0] = ptr_(0,ws[0]);
+          std::swap(xlit_dl_count0[0], xlit_dl_count0[new_i]);
+          std::swap(xlit_dl_count1[0], xlit_dl_count1[new_i]);
         }
-        assert( (upd==xcls_upd_ret::NONE) == is_none(alpha) );
-      } else if(upd == xcls_upd_ret::SAT) {
-        assert( is_sat(dl_count) );
-      } else { assert(upd == xcls_upd_ret::UNIT);
-        assert( is_unit(dl_count) );
-      };
+      }
 
-      assert( assert_data_struct() );
-
-      return {new_w, upd};
+      if(is_active(dl_count)) return xcls_upd_ret::NONE;
+      else if(is_sat(dl_count)) return xcls_upd_ret::SAT;
+      else assert(is_unit(dl_count));
+      return xcls_upd_ret::UNIT;
     };
 
     std::string to_str(const vec<xlit>& assignments) const { return to_xcls().reduced(assignments).to_str(); };

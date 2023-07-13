@@ -174,6 +174,11 @@ class solver
      * @note we must have i < equiv_lits[i].first
      */
     vec<equivalence> equiv_lits;
+    
+    /**
+     * @brief dl info when equivalents were added
+     */
+    vec<var_t> equiv_lits_dl;
 
     /**
      * @brief idx of reason clause of propagated units
@@ -241,6 +246,7 @@ class solver
         break;
       case trail_t::EQUIV:
         equiv_lits[TRAIL.back().ind].ind = 0;
+        equiv_lits_dl[TRAIL.back().ind] = 0;
       }
       TRAIL.pop_back();
       return true;
@@ -299,7 +305,7 @@ class solver
       //update curr val
       ++active_cls;
       //update vals in state_stack
-      for(var_t j = lvl+1; j<state_stack.size(); ++j) ++state_stack[j].active_cls;
+      for(var_t j = lvl; j<state_stack.size(); ++j) ++state_stack[j].active_cls;
     }
 
     xlit _reduced_lit;
@@ -308,19 +314,19 @@ class solver
      * 
      * @param lit literal to be added
      * @param rs idx of reason_UNIT clause
-     * @param lvl dl in which lit is deduced
      * 
      * @return bool true iff xlit was actually new at current dl!
      */
     inline bool add_new_xlit(const xlit& lit, const var_t& rs) {
-      //new code
       //store lit in 
       _reduced_lit = lit;
       _reduced_lit.reduce(alpha); //reduce with alpha assignments -- the least we should do!
-      _reduced_lit.reduce(equiv_lits); //reduce equivalent variable
-#ifdef EXACT_UNIT_TRACKING
-      if( !_reduced_lit.is_assigning() ) _reduced_lit.reduce(assignments, assignments_dl, dl); //reduce with assignments AND alpha...
-#endif
+      if(!_reduced_lit.is_assigning()) {
+        _reduced_lit.reduce(equiv_lits); //reduce equivalent variable
+  #ifdef EXACT_UNIT_TRACKING
+        if( !_reduced_lit.is_assigning() ) _reduced_lit.reduce(assignments, assignments_dl, dl); //reduce with assignments AND alpha...
+  #endif
+      }
       if(_reduced_lit.is_zero()) return false; 
       VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lit.to_str() + " ~> " + _reduced_lit.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
       
@@ -383,6 +389,7 @@ class solver
         assert(lt < assignments_watches[dl].back().get_equiv_lit() ); //ensure that lt is smallest!
         equiv_lits[lt].set_ind( assignments_watches[dl].back().get_equiv_lit() );
         equiv_lits[lt].set_polarity( assignments_watches[dl].back().has_constant() );
+        equiv_lits_dl[lt] = dl;
         trails[dl].emplace_back( lt, trail_t::EQUIV );
         VERB(65, "c " + std::to_string(dl) + " : new EQUIV " + assignments_watches[dl].back().to_str() )
       } else {
@@ -446,13 +453,53 @@ class solver
 //      VERB(65, "c triangulate end" )
     }
 
-    inline void init_and_add_xcls_watch(xcls&& cls) {
+    inline var_t init_and_add_xcls_watch(xcls&& cls) {
+      assert(assert_data_structs());
       xclss.emplace_back( std::move(cls) );
-      // update watch_lists and init iterators of watch_lits!
       const var_t i = xclss.size()-1;
+      //update cls
+      const auto ret = xclss[i].update(alpha, alpha_dl, dl_count);
+      //copied from GCP
+      xlit new_unit;
+      switch (ret) {
+      case xcls_upd_ret::SAT:
+          assert(xclss[i].is_sat(dl_count));
+          assert(xclss[i].is_inactive(dl_count));
+        #ifdef EXACT_UNIT_TRACKING
+          assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero()); //in particular it must be zero when reduced with assignments!
+        #endif
+          // IGNORE THIS CLAUSE FROM NOW ON
+          decr_active_cls(xclss[i].get_inactive_lvl(dl_count));
+          break;
+      case xcls_upd_ret::UNIT: //includes UNSAT case (i.e. get_unit() reduces with assignments to 1 !)
+          assert(xclss[i].is_unit(dl_count));
+          assert(xclss[i].is_inactive(dl_count));
+        #ifdef EXACT_UNIT_TRACKING
+          assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_unit() || xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero());
+        #endif
+          // IGNORE THIS CLAUSE FROM NOW ON
+          decr_active_cls(xclss[i].get_inactive_lvl(dl_count));
+          // NEW LIN-EQS
+          if( add_new_xlit(std::move(xclss[i].get_unit()), i) ) {
+            #ifdef EXACT_UNIT_TRACKING
+              assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero()); //in particular it must now be zero w.r.t. assignments (since new_unit has already been added!)
+            #endif
+          }
+          if (!no_conflict()) { 
+              VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
+              return i; //quit propagation immediately at conflict!
+          }
+          break;
+      case xcls_upd_ret::NONE:
+          assert(xclss[i].is_none(dl_count));
+          assert(xclss[i].is_active(dl_count));
+          break;
+      }
+      // add new cls to watch_lists
       watch_list[ (xclss.back().get_wl0()) ].emplace_back(i);
       watch_list[ (xclss.back().get_wl1()) ].emplace_back(i);
       assert(assert_data_structs());
+      return i;
     }
 
   public:
@@ -511,7 +558,7 @@ class solver
     std::pair< xsys, xsys > dh_lex_LT() const;
 
     //solve-main
-    void dpll_solve(stats& s);
+    void dpll_solve(stats& s); //{ opt.ca = ca_alg::dpll; return cdcl_solve(s); };
     stats dpll_solve() { stats s; dpll_solve(s); return s; };
     
     void cdcl_solve(stats& s);
