@@ -48,12 +48,15 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
 
     xclss = vec<xcls_watch>(0);
     xclss.reserve(clss.size());
+    
+    utility = vec<var_t>(0);
+    utility.reserve(clss.size());
 
     // temporarily store clss in _xclss - before init of xclss we might want to reduce with pure literals in _L (!)
     vec<xcls> _xclss;
     _xclss.reserve(clss.size());
+    active_cls = 0; //value is managed by 'init_and_add_xcls_watch'
 
-    var_t no_zero_cls = 0;
     // run through xor-clauses to find lineq and construct watch-literals
     for (var_t i = 0; i < clss.size(); i++) {
         xcls cls = xcls(clss[i]); 
@@ -61,7 +64,7 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
         if (cls.deg() == 1) { // lin-eq!
             _L.emplace_back( cls.get_ass_VS().get_non_zero_el().add_one() );
         } else if (cls.is_zero()) {
-            no_zero_cls++;
+            //ignore cls
         } else {
             _xclss.emplace_back( std::move(cls) );
         }
@@ -70,10 +73,9 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     xsys _Lsys(_L);
     for(auto& cls : _xclss) {
         cls.update_short(_Lsys); //TODO no full reduction?!
-        init_and_add_xcls_watch( std::move(cls) );
+        init_and_add_xcls_watch( std::move(cls), false );
     }
 
-    active_cls = clss.size() - _L.size() - no_zero_cls; // count only non-linear cls!
     assert(active_cls == xclss.size());
 
     //init xlits
@@ -136,9 +138,9 @@ void solver::backtrack(const var_t& lvl) {
 
     // revert active_cls count
     active_cls = state_stack.back().active_cls;
-    //VERB(90, "active_cls restored:   " + std::to_string(active_cls))
-    //VERB(90, "active_cls recomputed: " + std::to_string(std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); })))
-    assert(active_cls == std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); }));
+    VERB(90, "active_cls restored:   " + std::to_string(active_cls))
+    VERB(90, "active_cls recomputed: " + std::to_string(std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); })))
+    assert(active_cls == std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); }));
     //active_cls = std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); });
     // revert assignments_xsys
 #ifdef EXACT_UNIT_TRACKING
@@ -611,7 +613,7 @@ std::pair<var_t, xcls> solver::analyze_no_sres() {
 #else
 std::pair<var_t, xcls> solver::analyze_no_sres() { return analyze_dpll(); };
 #endif
-    
+
 std::pair<var_t,xcls> solver::analyze_dpll() {
     VERB(60, "analyze_dpll called!")
 #ifndef NDEBUG
@@ -621,17 +623,17 @@ std::pair<var_t,xcls> solver::analyze_dpll() {
     //return negation of last decision!
     assert(!TRAIL.empty());
     //if trail is empty, we are at dl 0, i.e., analyze_dpll should not be called!
-    vec<xlit> xlits;
+    std::list<xlit> xlits;
     for(auto tr = trails.begin()+1; tr!=trails.end(); ++tr) {
-        if(!tr->empty()) xlits.push_back( xlit(tr->front().ind, !b3_to_bool(alpha[tr->front().ind]) ) );
+        if(!tr->empty()) xlits.emplace_back( tr->front().ind, !b3_to_bool(alpha[tr->front().ind]) );
     }
-    xcls learnt_cls(xlits);
+    xcls learnt_cls( std::move(xlits) );
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
     #ifdef EXACT_UNIT_TRACKING
     VERB(70, "   '----> gives with current assignments: " + learnt_cls.update(assignments).to_str());
     #endif
 
-    return {dl-1, learnt_cls};
+    return {dl-1, std::move(learnt_cls) };
 };
 
 
@@ -668,10 +670,9 @@ void solver::add_learnt_cls(xcls&& cls) {
 #else
 void solver::add_learnt_cls(xcls&& cls) {
     if(cls.deg()>=2) {
-        incr_active_cls(0);
-        const var_t i = init_and_add_xcls_watch( std::move(cls) );
-        xclss[i].mark_redundant();
+        const var_t i = init_and_add_xcls_watch( std::move(cls), true );
         assert(xclss[i].get_inactive_lvl(dl_count) == dl); //ensure we did backtrack as far as possible!
+        utility[i]++;
     } else {
         assert(cls.deg()==1);
         assert(dl==0);
@@ -679,6 +680,36 @@ void solver::add_learnt_cls(xcls&& cls) {
     }
 }
 #endif
+
+
+void solver::xcls_cleanup() {
+    //mark clauses to be deleted
+    for(var_t i=0; i<xclss.size(); ++i) {
+        if(utility[i] < util_cutoff) {
+            xclss[i].mark_for_removal();
+        }
+    }
+    assert( assert_data_structs() );
+    //remove all clss marked for removal
+    vec<xcls_watch> cpy; cpy.reserve(xclss.size());
+    vec<var_t> util_cpy = vec<var_t>(utility.size(), 0);
+    for(var_t i=0; i<xclss.size(); ++i) {
+        if(!xclss[i].is_marked_for_removal()) {
+            cpy.emplace_back(std::move(xclss[i]));
+            util_cpy[i] = utility[i];
+        }
+    }
+    std::swap(cpy, xclss);
+    std::swap(util_cpy, utility);
+    //empty watchlists
+    for(auto& wl : watch_list) wl.clear();
+    //re-fill watchlists!
+    for(var_t i=0; i<xclss.size(); ++i) {
+        watch_list[xclss[i].get_wl0()].emplace_back( i );
+        watch_list[xclss[i].get_wl1()].emplace_back( i );
+    }
+    assert( assert_data_structs() );
+};
 
 xlit new_unit;
 //perform full GCP -- does not stop if conflict is found -- otherwise assert_data_struct will fail!
@@ -790,7 +821,7 @@ void solver::GCP(stats &s) {
                 assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero()); //in particular it must be zero when reduced with assignments!
               #endif
                 // IGNORE THIS CLAUSE FROM NOW ON
-                decr_active_cls(xclss[i].get_inactive_lvl(dl_count));
+                decr_active_cls(i);
                 break;
             case xcls_upd_ret::UNIT: //includes UNSAT case (i.e. get_unit() reduces with assignments to 1 !)
                 assert(xclss[i].is_unit(dl_count));
@@ -799,8 +830,10 @@ void solver::GCP(stats &s) {
                 assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_unit() || xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero());
               #endif
                 //assert(xclss[i].is_inactive(alpha));
+                //increase utility
+                utility[i]++;
                 // IGNORE THIS CLAUSE FROM NOW ON
-                decr_active_cls(xclss[i].get_inactive_lvl(dl_count));
+                decr_active_cls(i);
                 // NEW LIN-EQS
                 new_unit = std::move(xclss[i].get_unit());
                 // add to assignments
@@ -1024,6 +1057,10 @@ void solver::cdcl_solve(stats &s) {
                 VERB(25, "c " << std::to_string(dl) << " : "
                               << "conflict --> backtrack!")
                 ++s.no_confl;
+                if(s.no_confl % cleanup_schedule == 0) {
+                    VERB(100, "c " << std::to_string(dl) << " : " << "xcls cleanup!")
+                    xcls_cleanup();
+                }
                 // conflict!
                 if (dl == 0) {
                     // return UNSAT
@@ -1202,6 +1239,8 @@ std::string solver::to_str() const noexcept {
         }
       #endif
         
+        //check active_cls
+        assert( active_cls == std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch& xcls) { return xcls.is_active(dl_count) && xcls.is_irredundant(); }) );
 
         // check solution! (for rand-10-20.xnf) -- may help in debugging!
         /*

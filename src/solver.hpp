@@ -63,6 +63,13 @@ class solver
     vec< xcls_watch > xclss;
 
     /**
+     * @brief utility[i] gives number of unit propagations of xclss[i] (with moving average)
+     */
+    vec<var_t> utility;
+    const var_t util_cutoff = 5; //min utility to keep a clause on cleanup
+    const var_t cleanup_schedule = 2<<12; //number of conflicts between cleanups
+
+    /**
      * @brief watch_list[i] contains all idxs j s.t. xclss[j] watches indet i
      */
     vec< std::list<var_t> > watch_list;
@@ -88,11 +95,6 @@ class solver
     var_t active_cls;
 
     /**
-     * @brief number of active unit xcls
-     */
-    var_t active_lits;
-
-    /**
      * @brief stack of state repr -- used for backtracking (and for dl-wise update of learnt-clauses)
      */
     vec<state_repr> state_stack;
@@ -102,8 +104,8 @@ class solver
      * @note entries must be strictly positive! (otherwise max_path/max_tree might fail!)
      */
     vec<unsigned int> activity_score;
-    unsigned int bump = 1;
-    float decay = 0.9;
+    const unsigned int bump = 1;
+    const float decay = 0.9;
 
     /**
      * @brief checks 
@@ -287,25 +289,14 @@ class solver
     /**
      * @brief decrease active_cls by one -- starting at dl lvl
      * 
-     * @param lvl dl in which cls got inactive
+     * @param idx of xcls that became inactive
      */
-    inline void decr_active_cls(const var_t& lvl) {
+    inline void decr_active_cls(const var_t& idx) {
+      if(!xclss[idx].is_irredundant()) return;
       //update curr val
       --active_cls;
       //update vals in state_stack
-      for(var_t j = lvl+1; j<state_stack.size(); ++j) --state_stack[j].active_cls;
-    }
-    
-    /**
-     * @brief decrease active_cls by one -- starting at dl lvl
-     * 
-     * @param lvl dl in which cls got inactive
-     */
-    inline void incr_active_cls(const var_t& lvl) {
-      //update curr val
-      ++active_cls;
-      //update vals in state_stack
-      for(var_t j = lvl; j<state_stack.size(); ++j) ++state_stack[j].active_cls;
+      for(var_t j = xclss[idx].get_inactive_lvl(dl_count)+1; j<state_stack.size(); ++j) --state_stack[j].active_cls;
     }
 
     xlit _reduced_lit;
@@ -453,10 +444,23 @@ class solver
 //      VERB(65, "c triangulate end" )
     }
 
-    inline var_t init_and_add_xcls_watch(xcls&& cls) {
+    /**
+     * @brief adds a new cls to the database
+     * 
+     * @param cls to be added
+     * @param redundant bool to indicate whether the cls is redundant
+     * @return var_t idx of new cls in vec<xcls_watch> xclss
+     */
+    inline var_t init_and_add_xcls_watch(xcls&& cls, const bool redundant) {
       assert(assert_data_structs());
       xclss.emplace_back( std::move(cls) );
+      utility.emplace_back( 0 );
       const var_t i = xclss.size()-1;
+      //set redundancy
+      xclss[i].set_redundancy(redundant);
+      assert(redundant == !xclss[i].is_irredundant());
+      //update active_cls
+      if(xclss[i].is_irredundant()) ++active_cls;
       //update cls
       const auto ret = xclss[i].update(alpha, alpha_dl, dl_count);
       //copied from GCP
@@ -469,7 +473,7 @@ class solver
           assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero()); //in particular it must be zero when reduced with assignments!
         #endif
           // IGNORE THIS CLAUSE FROM NOW ON
-          decr_active_cls(xclss[i].get_inactive_lvl(dl_count));
+          decr_active_cls(i);
           break;
       case xcls_upd_ret::UNIT: //includes UNSAT case (i.e. get_unit() reduces with assignments to 1 !)
           assert(xclss[i].is_unit(dl_count));
@@ -477,8 +481,10 @@ class solver
         #ifdef EXACT_UNIT_TRACKING
           assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_unit() || xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero());
         #endif
+          //update utility
+          utility[i]++;
           // IGNORE THIS CLAUSE FROM NOW ON
-          decr_active_cls(xclss[i].get_inactive_lvl(dl_count));
+          decr_active_cls(i);
           // NEW LIN-EQS
           if( add_new_xlit(std::move(xclss[i].get_unit()), i) ) {
             #ifdef EXACT_UNIT_TRACKING
@@ -502,6 +508,11 @@ class solver
       return i;
     }
 
+    /**
+     * @brief deletes all marked redundant clauses
+     */
+    void xcls_cleanup();
+
   public:
     /**
      * @brief Construct a new impl graph where each vector in clss represents a xor-clause; they must be of length at most two!
@@ -521,7 +532,7 @@ class solver
     solver(parsed_xnf& p_xnf) noexcept : solver(p_xnf.cls, options(p_xnf.num_vars, p_xnf.num_cls), 0) {};
 
     //copy ctor
-    solver(const solver& o) noexcept : xclss(o.xclss), opt(o.opt), dl(o.dl), active_cls(o.active_cls), activity_score(o.activity_score) {};
+    solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), state_stack(o.state_stack), activity_score(o.activity_score), dl_count(o.dl_count), assignments_watches(o.assignments_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), gcp_queues(o.gcp_queues) { assert(assert_data_structs()); };
 
     ~solver() = default;
     

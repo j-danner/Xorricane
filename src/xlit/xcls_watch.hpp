@@ -52,7 +52,7 @@ class xcls_watch {
     /**
      * @brief indicates if clause is irredundant; be default all clauses are irredundant (and cannot be removed!)
      */
-    bool is_irredundant = true;
+    bool irredundant = true;
     
     /**
      * @brief indicates if clause should be removed on next cleanup
@@ -88,7 +88,7 @@ class xcls_watch {
       ptr_cache[1] = ptr_(1,ws[1]);
       assert(get_wl0() != get_wl1());
 
-      is_irredundant = true;
+      irredundant = true;
       delete_on_cleanup = false;
     }
 
@@ -396,11 +396,11 @@ class xcls_watch {
       init();
     };
 
-    xcls_watch(const xcls_watch& o) noexcept : xlits(o.xlits), shared_part(o.shared_part), xlit_dl_count1(o.xlit_dl_count1), xlit_dl_count0(o.xlit_dl_count0), is_irredundant(o.is_irredundant), delete_on_cleanup(o.delete_on_cleanup) { 
+    xcls_watch(const xcls_watch& o) noexcept : xlits(o.xlits), shared_part(o.shared_part), xlit_dl_count1(o.xlit_dl_count1), xlit_dl_count0(o.xlit_dl_count0), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup) { 
       ws[0] = o.ws[0]; ws[1] = o.ws[1]; ptr_cache[0] = o.ptr_cache[0]; ptr_cache[1] = o.ptr_cache[1];
     };
 
-    xcls_watch(xcls_watch&& o) noexcept : xlits(std::move(o.xlits)), shared_part(std::move(o.shared_part)), xlit_dl_count1(std::move(o.xlit_dl_count1)), xlit_dl_count0(std::move(o.xlit_dl_count0)), is_irredundant(o.is_irredundant), delete_on_cleanup(o.delete_on_cleanup) { 
+    xcls_watch(xcls_watch&& o) noexcept : xlits(std::move(o.xlits)), shared_part(std::move(o.shared_part)), xlit_dl_count1(std::move(o.xlit_dl_count1)), xlit_dl_count0(std::move(o.xlit_dl_count0)), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup) { 
       ws[0] = o.ws[0]; ws[1] = o.ws[1]; ptr_cache[0] = o.ptr_cache[0]; ptr_cache[1] = o.ptr_cache[1];
     };
     
@@ -411,9 +411,10 @@ class xcls_watch {
       init();
     };
 
-    void mark_irredundant() { is_irredundant = true; };
-    void mark_redundant() { is_irredundant = false; };
-    void remove() { if(!is_irredundant) { delete_on_cleanup = true; } };
+    void set_redundancy(const bool red) { irredundant = !red; };
+    void mark_for_removal() { if(!irredundant) { delete_on_cleanup = true; } };
+    bool is_marked_for_removal() const { return delete_on_cleanup; };
+    bool is_irredundant() const { return irredundant; };
 
     /**
      * @brief evals the 0-th watched literal at alpha
@@ -505,7 +506,7 @@ class xcls_watch {
         else if(is_unit(dl_count)) return xcls_upd_ret::UNIT;
       }
       
-      advance(alpha, alpha_dl, dl_count);
+      [[maybe_unused]] const auto [new_w,_] = advance(alpha, alpha_dl, dl_count);
       assert(is_sat(dl_count) || is_unit(dl_count) || ptr_ws(0)==new_w);
       assert(watches(new_w));
       assert(assert_data_struct());
