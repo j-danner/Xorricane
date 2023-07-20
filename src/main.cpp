@@ -88,10 +88,10 @@ int main(int argc, char const *argv[])
     
     //cdcd opts
     program.add_argument("-ca","--conflict-analysis")
-        .help("algorithm to use for conflict analysis, 'dpll' (means dpll-alg) or '1uip'")
+        .help("algorithm to use for conflict analysis, 'no' (means DPLL-solving), 'dpll' (means cdcl-implementation with DPLL-like learning (USE ONLY FOR DEBUGGING!)) or '1uip'")
         .default_value(std::string("1uip"))
         .action([](const std::string& value) {
-            static const vec<std::string> choices = { "dpll", "1uip" };
+            static const vec<std::string> choices = { "no", "dpll", "1uip" };
             if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
                 return value;
             }
@@ -131,22 +131,23 @@ int main(int argc, char const *argv[])
     auto fname = program.get<std::string>("fname");
 
     auto dh_str = program.get<std::string>("-dh");
-    dec_heu dh = (dec_heu)1;
-    if(dh_str=="vsids") dh = (dec_heu)0;
-    else if(dh_str=="lwl") dh = (dec_heu)1;
-    else if(dh_str=="lex") dh = (dec_heu)2;
-    else if(dh_str=="swl") dh = (dec_heu)3;
+    dec_heu dh = dec_heu::lwl;
+    if(dh_str=="vsids") dh = dec_heu::vsids;
+    else if(dh_str=="lwl") dh = dec_heu::lwl;
+    else if(dh_str=="swl") dh = dec_heu::swl;
+    else if(dh_str=="lex") dh = dec_heu::lex;
     
     auto po_str = program.get<std::string>("-po");
-    phase_opt po = (phase_opt)1;
-    if(po_str=="rand") po = (phase_opt)0;
-    else if(po_str=="save") po = (phase_opt)1;
-    else if(po_str=="save_inv") po = (phase_opt)2;
+    phase_opt po = phase_opt::save;
+    if(po_str=="rand") po = phase_opt::rand;
+    else if(po_str=="save") po = phase_opt::save;
+    else if(po_str=="save_inv") po = phase_opt::save_inv;
     
     auto ca_str = program.get<std::string>("-ca");
-    ca_alg ca = (ca_alg)1;
-    if(ca_str=="dpll") ca = (ca_alg)0;
-    else if(ca_str=="1uip") ca = (ca_alg)1;
+    ca_alg ca = ca_alg::fuip;
+    if(ca_str=="no") ca = ca_alg::no;
+    else if(ca_str=="dpll") ca = ca_alg::dpll;
+    else if(ca_str=="1uip") ca = ca_alg::fuip;
 
     //auto jobs = program.get<int>("-j");
     auto jobs = 1;

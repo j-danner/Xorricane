@@ -167,7 +167,7 @@ void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
         auto timeout = std::chrono::seconds(opts.timeout);
         std::promise<int> p1;
         std::future<int> f_solve = p1.get_future();
-        std::thread thr([&s,&sol](std::promise<int> p1){ sol.cdcl_solve(s); p1.set_value_at_thread_exit(0); }, std::move(p1));
+        std::thread thr([&s,&sol](std::promise<int> p1){ sol.solve(s); p1.set_value_at_thread_exit(0); }, std::move(p1));
         thr.detach();
 
         std::future_status status = f_solve.wait_for(timeout);
@@ -177,7 +177,7 @@ void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
             f_solve.wait(); //wait for thread to terminate fully!
         }
     } else {
-        sol.cdcl_solve(s);
+        sol.solve(s);
     };
     
     //print stats

@@ -67,9 +67,28 @@ struct equivalence {
 };
 
 
+/**
+ * @brief options for decision heuristic
+ * lex: proceed lexicographically
+ * vsids: use vsids heuristic
+ * lwl: choose variable with longest watch list
+ * swl: choose variable with shortest watch list
+ */
 enum class dec_heu { vsids, lwl, lex, swl };
+/**
+ * @brief options for phase selection
+ * rand: use random phases
+ * save: save phases from last run
+ * save_inv: use oppositve phase from last run
+ */
 enum class phase_opt { rand, save, save_inv };
-enum class ca_alg { dpll, fuip };
+/**
+ * @brief options for conflict analysis
+ * no: no conflict analysis --> DPLL solving
+ * dpll: DPLL-style solving, but we add learnt clauses (should only be used for testing!)
+ * fuip: first UIP conflict analysis
+ */
+enum class ca_alg { no, dpll, fuip };
 
 /**
  * @brief struct that holds options for the various heuristic choices

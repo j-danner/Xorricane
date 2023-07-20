@@ -993,7 +993,8 @@ void solver::dpll_solve(stats &s) {
 };
 
 //implementation of a cdcl-solver
-void solver::cdcl_solve(stats &s) {
+void solver::solve(stats &s) {
+    if(opt.ca == ca_alg::no) return dpll_solve(s);
     VERB(25, "c cdcl-solving start")
     // return UNSAT if linsys has no solution
     if (!no_conflict()) {

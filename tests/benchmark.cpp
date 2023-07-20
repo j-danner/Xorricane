@@ -10,7 +10,7 @@ static void BM_dpll_solve(benchmark::State& state, std::string fname) {
     for (auto _ : state) {
         auto clss = parse_file(fname);
         auto slvr = solver(clss);
-        stats s = slvr.dpll_solve();
+        stats s = slvr.solve();
     }
 }
 

@@ -569,11 +569,11 @@ class solver
     std::pair< xsys, xsys > dh_lex_LT() const;
 
     //solve-main
-    void dpll_solve(stats& s); //{ opt.ca = ca_alg::dpll; return cdcl_solve(s); };
-    stats dpll_solve() { stats s; dpll_solve(s); return s; };
+    void solve(stats& s); //{ opt.ca = ca_alg::dpll; return cdcl_solve(s); };
+    stats solve() { stats s; solve(s); return s; };
     
-    void cdcl_solve(stats& s);
-    stats cdcl_solve() { stats s; cdcl_solve(s); return s; };
+    void dpll_solve(stats& s);
+    stats dpll_solve() { stats s; dpll_solve(s); return s; };
 
     var_t get_dl() const noexcept { return dl; };
     
