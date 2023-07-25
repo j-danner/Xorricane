@@ -154,18 +154,11 @@ void solver::backtrack(const var_t& lvl) {
     print_trail();
     print_assignments();
 #ifdef EXACT_UNIT_TRACKING
-    // restore/update assignments
-    for(const auto [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
-        assert( assignments[lt].is_zero() || assignments_dl[lt] <= lvl );
-        if(assignments_dl[lt] == 0) {
-            assignments[lt] = assignments_xsys.get_xlits(idx);
-            assignments_dl[lt] = lvl;
-            trails[lvl].emplace_back(lt, trail_t::NEW_UNIT);
-            alpha[lt] = assignments[lt].as_bool3();
-            if(alpha[lt]!=bool3::None) {
-                alpha_dl[lt] = dl;
-                GCP_QUEUE.emplace(lt);
-            }
+    //remove all assignments with too high dl
+    for(var_t lt=1; lt<assignments.size(); ++lt) {
+        if(assignments_dl[lt] > lvl) {
+            assignments[lt] = xlit();
+            assignments_dl[lt] = 0;
         }
     }
 #endif
@@ -637,37 +630,6 @@ std::pair<var_t,xcls> solver::analyze_dpll() {
 };
 
 
-#ifdef EXACT_UNIT_TRACKING
-void solver::add_learnt_cls(xcls&& cls) {
-    assert(assert_data_structs());
-    //assert(cls.deg()>1); //IF THIS FAILS ADD PROPER HANDLING FOR LIN-CLAUSES! (add to xsys directly!)
-    if(cls.deg()==1) {
-        assert(dl == 0); //if a unit is learnt, we should backtrack to dl 0...
-        add_new_xlit( cls.get_unit(), -1, 0);
-        return;
-    }
-    //now cls has at least two xlits, i.e., we can construct xcls_watch!
-
-    // first convert cls to xcls_watch, then update with dl 0 units
-    const var_t i = xclss.size();
-    // add cls to xclss (and update watch_lists)
-    init_and_add_xcls_watch( std::move(cls) );
-    xclss[i].set_unit(assignments, dl_count, dl);
-    VERB(65, "c new xclss "+xclss.back().to_str(assignments));
-    xclss[i].update(alpha, alpha_dl, dl_count);
-    assert( xclss.back().is_unit(dl_count) );
-
-    // perform steps as in GCP case UNIT
-    // NEW LIN-EQS
-    xlit unit = xclss.back().get_unit();
-    unit.reduce(assignments, assignments_dl, dl); //TODO we should also be able to use 'unit.reduced(assignments);'
-    VERB(65, "new UNIT " + unit.to_str() + " with reason clause " + get_last_reason().to_str());
-    // add to assignments and trail
-    add_new_xlit(unit, i, dl);
-    bump_score(unit);
-    assert(assert_data_structs());
-};
-#else
 void solver::add_learnt_cls(xcls&& cls) {
     if(cls.deg()>=2) {
         const var_t i = init_and_add_xcls_watch( std::move(cls), true );
@@ -679,7 +641,6 @@ void solver::add_learnt_cls(xcls&& cls) {
         add_new_xlit( cls.get_unit(), -1);
     }
 }
-#endif
 
 
 void solver::xcls_cleanup() {
@@ -937,7 +898,7 @@ void solver::dpll_solve(stats &s) {
                 dec_stack.pop();
                 //decay_score();
               #ifdef EXACT_UNIT_TRACKING
-                assert( is_consistent() == assignments[0].is_zero() );
+                assert( no_conflict() == assignments[0].is_zero() );
               #endif
             } else {
                 ++dl;
@@ -1084,7 +1045,7 @@ void solver::solve(stats &s) {
                 bump_score(learnt_cls.get_ass_VS());
                 decay_score();
               #ifdef EXACT_UNIT_TRACKING
-                assert( is_consistent() == assignments[0].is_zero() );
+                assert( no_conflict() == assignments[0].is_zero() );
               #endif
             } else {
                 ++dl;
@@ -1212,7 +1173,7 @@ std::string solver::to_str() const noexcept {
 
 
         // check that assignments in alpha are backed by assignment_xsys
-        if(is_consistent()) {
+        if(no_conflict()) {
             for([[maybe_unused]] const auto& [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
                 if(assignments_xsys.get_xlits(idx).as_bool3() != alpha[lt] ) {
                     VERB(100, "assignments_xys.get_xlits(idx) = " + idx->to_str() );

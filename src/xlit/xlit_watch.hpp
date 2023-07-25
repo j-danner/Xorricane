@@ -33,8 +33,8 @@ class xlit_watch : public xlit
 
   public:
     xlit_watch() {};
-    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); };
-    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) : xlit(lit), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) noexcept : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) noexcept : xlit(lit), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); }
 
     ~xlit_watch() = default;
     

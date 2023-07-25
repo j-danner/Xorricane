@@ -259,6 +259,7 @@ class xcls_watch {
         assert(alpha[ ptr_(0,new_w) ] == bool3::None);
         ws[0] = new_w;
         ptr_cache[0] = ptr_(0,ws[0]);
+        assert( assert_data_struct() );
         return {ptr_ws(0), xcls_upd_ret::NONE};
       }
       //now xlits[0] is constant under alpha! ...i.e. check shared part
@@ -271,6 +272,7 @@ class xcls_watch {
         xlits[1].add_one();
         ws[0] = new_w;
         ptr_cache[0] = ptr_(0,ws[0]);
+        assert( assert_data_struct() );
         return {ptr_ws(0), xcls_upd_ret::NONE};
       }
 
@@ -280,6 +282,7 @@ class xcls_watch {
         //do not change watches!
         xlit_dl_count0[0] = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
         assert( !is_active(dl_count) ); //clause is no longer active!
+        assert( assert_data_struct() );
         return {ptr_ws(0), xcls_upd_ret::SAT};
       }
       //now xlits[0]+shared_part evaluates to 1 under alpha, i.e., we check whether a different xlit can be watched.
@@ -346,6 +349,7 @@ class xcls_watch {
             xlit_dl_count0[0] = {dl_assigned, dl_count[dl_assigned]};
             assert( !is_active(dl_count) );
             assert( is_sat(dl_count) );
+            assert( assert_data_struct() );
             return {ptr_ws(0), xcls_upd_ret::SAT};
           }
           //now xlits[new_i] evaluates to 1 --> choose different new_i
@@ -356,6 +360,7 @@ class xcls_watch {
       //moreover, no watch literals need to be updated! (ws[0] is already at highest dl and xlits[0] evaluates to 1!)
       assert( !is_active(dl_count) );
       assert( is_unit(dl_count) );
+      assert( assert_data_struct() );
       return {ptr_ws(0), xcls_upd_ret::UNIT};
     };
 

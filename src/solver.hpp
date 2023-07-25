@@ -314,10 +314,12 @@ class solver
       _reduced_lit.reduce(alpha); //reduce with alpha assignments -- the least we should do!
       if(!_reduced_lit.is_assigning()) {
         _reduced_lit.reduce(equiv_lits); //reduce equivalent variable
-  #ifdef EXACT_UNIT_TRACKING
-        if( !_reduced_lit.is_assigning() ) _reduced_lit.reduce(assignments, assignments_dl, dl); //reduce with assignments AND alpha...
-  #endif
       }
+  #ifdef EXACT_UNIT_TRACKING
+      if(!_reduced_lit.is_assigning()) {
+        _reduced_lit.reduce(assignments, assignments_dl, dl); //reduce with assignments AND alpha...
+      }
+  #endif
       if(_reduced_lit.is_zero()) return false; 
       VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lit.to_str() + " ~> " + _reduced_lit.to_str() + ( 0<=rs && rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
       
@@ -329,6 +331,7 @@ class solver
 
 #ifdef EXACT_UNIT_TRACKING
       // update assignments
+      assert(assignments[lt].is_zero() || _reduced_lit == assignments[lt]);
       if(assignments[lt].is_zero()) {
         assignments[lt] = _reduced_lit;
         assignments_dl[lt] = dl;
@@ -532,7 +535,11 @@ class solver
     solver(parsed_xnf& p_xnf) noexcept : solver(p_xnf.cls, options(p_xnf.num_vars, p_xnf.num_cls), 0) {};
 
     //copy ctor
+  #ifdef EXACT_UNIT_TRACKING
+    solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), state_stack(o.state_stack), activity_score(o.activity_score), dl_count(o.dl_count), assignments(o.assignments), assignments_watches(o.assignments_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), assignments_dl(o.assignments_dl), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), gcp_queues(o.gcp_queues) { assert(assert_data_structs()); };
+  #else
     solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), state_stack(o.state_stack), activity_score(o.activity_score), dl_count(o.dl_count), assignments_watches(o.assignments_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), gcp_queues(o.gcp_queues) { assert(assert_data_structs()); };
+  #endif
 
     ~solver() = default;
     
