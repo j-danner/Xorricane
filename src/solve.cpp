@@ -182,7 +182,7 @@ void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
     
     //print stats
     s.end = std::chrono::steady_clock::now();
-    s.print_final();
+    if(opts.verb>0) s.print_final();
 }
 
 stats solve(const vec< vec<xlit> >& xnf, const options& opts) {
