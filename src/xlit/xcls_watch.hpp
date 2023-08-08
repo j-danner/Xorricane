@@ -12,8 +12,7 @@ using lit_watch = var_t;
 /**
  * @brief return type for update of xcls_watch
  */
-enum class xcls_upd_ret
-{
+enum class xcls_upd_ret {
   SAT,
   UNIT,
   NONE
@@ -76,13 +75,11 @@ private:
    * @brief initializes xlit_dl_count0, xlit_dl_count1, and ws[0], ws[1]
    * @note assumes that xlits are already set; wl_it must still be initiated!
    */
-  void init()
-  {
+  void init() {
     irredundant = true;
     delete_on_cleanup = false;
 
-    if (xlits.size() == 1)
-    {
+    if (xlits.size() == 1) {
       ws[0] = 0;
       ptr_cache[0] = ptr_(0, ws[0]);
       return;
@@ -112,169 +109,16 @@ private:
     assert(get_wl0() != get_wl1());
   }
 
-  const var_t &ptr_(const cls_size_t &i, const var_t val) const
-  {
+  const var_t &ptr_(const cls_size_t &i, const var_t val) const {
     assert(val < xlits[i].get_idxs_().size());
     // return xlits[i].get_idxs_().at(val);
     return xlits[i].get_idxs_()[val];
   }
 
-  const var_t &ptr_ws(const cls_size_t &i) const
-  {
+  const var_t &ptr_ws(const cls_size_t &i) const {
     assert(ptr_(i, ws[i]) == ptr_cache[i]);
     return ptr_cache[i];
   }
-
-  /**
-   * @brief advances ws[i] if alpha[ *ws[i] ] not bool3::None, i.e., *ws[i] is assigned a truth value
-   *
-   * @param i idx of literal-watch to advance
-   * @param alpha current bool3-alpha
-   * @param alpha_dl dl of alpha-assignments
-   * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
-   */
-  std::pair<var_t, xcls_upd_ret> advance_lw(const cls_size_t &i, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count)
-  {
-    assert(i == (cls_size_t)0 || i == (cls_size_t)1);
-    assert(alpha[ptr_(i, ws[i])] != bool3::None);
-
-    assert(false); // SO FAR UNUSED! -- may be buggy!
-
-    // TODO shorter & cleaner impl with c++20 ranges?
-    // vec<std::ranges::subrange<lit_watch, xlit::iterator, std::ranges::subrange_kind::sized>> tmp{ std::ranges::subrange(ws[i], xlits[i].end()), std::ranges::subrange(xlits[i].begin(), ws[i]) };
-    // auto r = tmp | std::ranges::views::join;
-
-    // advance iterator as long as there is another unassigned idx to point to
-    auto new_w = ws[i];
-    while ((new_w < (var_t)xlits[i].size()) && (alpha[ptr_(i, new_w)] != bool3::None))
-      ++new_w;
-    if (new_w == (var_t)xlits[i].size()) /*wrap around end if necessary */
-      new_w = 0;
-    while ((alpha[ptr_(i, new_w)] != bool3::None) && (new_w != ws[i]))
-      ++new_w;
-    // advancing done; now new_w points to ws[i] or at an unassigned idx -- or again to ws[i] (!)
-
-    // ensure that ws[0] and ws[1] point to different inds:
-    if (ptr_(i, new_w) == ptr_ws(1 - i))
-    {
-      // update xlits[i] as xlits[i]+xlits[1-i]+1; i.e., rewrite clause s.t. xlits[i] does not even contain ptr_ws(1-i)
-      xlits[i] += xlits[1 - i];
-      xlits[i].add_one();
-      // find literal to watch in xlits[i]
-      new_w = 0;
-      var_t max_w = 0;
-      while (new_w < (var_t)xlits[i].size() && alpha[ptr_(i, new_w)] != bool3::None)
-      {
-        if (alpha_dl[ptr_(i, new_w)] > alpha_dl[ptr_(i, max_w)])
-          max_w = new_w;
-        ++new_w;
-      }
-      // if new_w is not xlits[new_i].size(), then we found an unassigned literal (at new_w); otherwise set new_w to max_w and thus ensure that xlits[i] is evaluated!
-      if (new_w == (var_t)xlits[i].size())
-      {
-        new_w = max_w;
-      }
-    }
-    // note: alpha[ ptr_ws(i,new_w) ] is None if and only if xlits[i] cannot be evaluated and a new literal to be watched was found!
-    if (alpha[ptr_(i, new_w)] == bool3::None)
-    {
-      ws[i] = new_w;
-      ptr_cache[i] = ptr_(i, ws[i]);
-      return {ptr_ws(i), xcls_upd_ret::NONE};
-    }
-    // now no unassigned idx was found and the value of xlits[i] can be computed:
-    if (xlits[i].eval(alpha))
-    { // xlits[i] evaluates to 0
-      // xlits[i] satisfied! --> xclause does not need to be watched any longer!
-      ws[i] = new_w;
-      ptr_cache[i] = ptr_(i, ws[i]);
-      // xlit_dl_count0[i] = {dl, dl_count[dl]};
-      xlit_dl_count0[i] = {alpha_dl[ptr_ws(i)], dl_count[alpha_dl[ptr_ws(i)]]};
-      // now swap to xlits[0]
-      xlits[0].swap(xlits[i]); // ensures that no iterators are invalidated
-      std::swap(ws[0], ws[i]);
-      std::swap(xlit_dl_count0[0], xlit_dl_count0[i]);
-      std::swap(xlit_dl_count1[0], xlit_dl_count1[i]);
-      std::swap(ptr_cache[0], ptr_cache[i]);
-      assert(!is_active(dl_count)); // clause is not active any longer!
-      return {ptr_ws(0), xcls_upd_ret::SAT};
-    }
-    // now xlits[i] evaluates to 1 under alpha, i.e., we need to find a different xlit to watch
-    xlit_dl_count1[i] = {alpha_dl[ptr_(i, new_w)], dl_count[alpha_dl[ptr_(i, new_w)]]};
-
-    // note that xlits[0] and xlits[1] are always the xlits that are watched, i.e., start search from xlits[2] (!)
-    cls_size_t new_i = 2;
-    for (; new_i < xlits.size(); ++new_i)
-    {
-      assert(false); // TODO UNTESTED CODE!
-      // skip xlits which evaluate to 1 in current search tree
-      if (dl_count[xlit_dl_count1[new_i].first] == xlit_dl_count1[new_i].second)
-        continue;
-
-      // find lit that was assigned at highest dl (req for proper backtracking!) -- or find unassigned lit!
-      new_w = 0;
-      var_t max_w = 0;
-      while (new_w < (var_t)xlits[new_i].size() && alpha[ptr_(new_i, new_w)] != bool3::None)
-      {
-        if (alpha_dl[ptr_(new_i, new_w)] > alpha_dl[ptr_(new_i, max_w)])
-          max_w = new_w;
-        ++new_w;
-      }
-      // if new_w is not xlits[new_i].size(), then there is an unassigned literal, i.e.,
-      if (new_w != (var_t)xlits[new_i].size())
-        break;
-      new_w = max_w;
-      const var_t dl_sat = alpha_dl[ptr_(new_i, new_w)]; // TODO rm local var
-      // otherwise eval and see whether it is satisfied
-      if (xlits[new_i].eval(alpha))
-      {
-        // new xlit to be watched found (which luckily already renders xcls satisfied!) --> change watched xlit and return SAT
-        xlits[i].swap(xlits[new_i]); // ensures that no iterators are invalidated
-        new_w = 0;
-        ws[i] = new_w;
-        ptr_cache[i] = ptr_(i, ws[i]);
-        std::swap(xlit_dl_count0[i], xlit_dl_count0[new_i]);
-        std::swap(xlit_dl_count1[i], xlit_dl_count1[new_i]);
-        xlit_dl_count0[i] = {dl_sat, dl_count[dl_sat]};
-        // now swap to xlits[0]
-        xlits[0].swap(xlits[i]); // ensures that not iterators into xlits are invalidated
-        std::swap(ws[0], ws[i]);
-        std::swap(xlit_dl_count0[0], xlit_dl_count0[i]);
-        std::swap(xlit_dl_count1[0], xlit_dl_count1[i]);
-        std::swap(ptr_cache[0], ptr_cache[i]);
-        assert(!is_active(dl_count));
-        return {ptr_ws(0), xcls_upd_ret::SAT};
-      }
-      // now xlits[new_i] evaluates to 1 --> choose different new_i
-      xlit_dl_count1[new_i] = {dl_sat, dl_count[dl_sat]};
-    }
-
-    if (new_i != xlits.size())
-    {
-      // new xlit to watch found! --> swap xlit[new_i] into correct position!
-      xlits[i].swap(xlits[new_i]); // ensures that no iterators are invalidated
-      ws[i] = new_w;
-      ptr_cache[i] = ptr_(i, ws[i]);
-      std::swap(xlit_dl_count0[i], xlit_dl_count0[new_i]);
-      std::swap(xlit_dl_count1[i], xlit_dl_count1[new_i]);
-      assert(is_active(dl_count));
-      assert(false);
-      return {ptr_ws(i), xcls_upd_ret::NONE};
-    }
-    else
-    {
-      // we have new_i == xlits.size(), i.e., no xlit to be watched found! --> all other xlits eval to 1 (!) --> learn unit!
-      ws[i] = new_w;
-      ptr_cache[i] = ptr_(i, ws[i]);
-      // swap xlits s.t. xlits[1] is unit
-      xlits[1 - i].swap(xlits[1]); // ensures that not iterators into xlits are invalidated
-      std::swap(ws[1 - i], ws[1]);
-      std::swap(xlit_dl_count0[1 - i], xlit_dl_count0[1]);
-      std::swap(xlit_dl_count1[1 - i], xlit_dl_count1[1]);
-      std::swap(ptr_cache[1 - i], ptr_cache[1]);
-      return {ptr_ws(0), xcls_upd_ret::UNIT};
-    }
-  };
 
   /**
    * @brief advances ws[0], requires that alpha[ ptr_ws(0) ] != bool3::None
@@ -284,8 +128,7 @@ private:
    * @param dl_count current dl_count
    * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
    */
-  std::pair<var_t, xcls_upd_ret> advance(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count)
-  {
+  std::pair<var_t, xcls_upd_ret> advance(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count) {
     assert(alpha[ptr_ws(0)] != bool3::None);
 
     // TODO shorter & cleaner impl with c++20 ranges?
@@ -440,8 +283,7 @@ private:
   /**
    * @brief swap watched literals
    */
-  void swap_wl()
-  {
+  void swap_wl() {
     xlits[0].swap(xlits[1]);
     std::swap(ws[0], ws[1]);
     std::swap(xlit_dl_count0[0], xlit_dl_count0[1]);
@@ -452,53 +294,45 @@ private:
 public:
   xcls_watch(){};
 
-  xcls_watch(const xlit &l1, const xlit &l2) noexcept : xlits(vec<xlit>({l1.get_idxs_(), l2.get_idxs_()}))
-  {
+  xcls_watch(const xlit &l1, const xlit &l2) noexcept : xlits(vec<xlit>({l1.get_idxs_(), l2.get_idxs_()})) {
     assert(!l1.is_one() && !l1.is_zero());
     assert(!l2.is_one() && !l2.is_zero());
     init();
   };
 
-  xcls_watch(const xcls &cl) noexcept
-  {
+  xcls_watch(const xcls &cl) noexcept {
     assert(cl.deg() >= 1);
     xlits.reserve(cl.deg());
-    for (auto lit : cl.get_ass_VS().get_xlits())
-    {
+    for (auto lit : cl.get_ass_VS().get_xlits()) {
       xlits.emplace_back(lit.add_one());
     }
     init();
   };
 
-  xcls_watch(xcls &&cl) noexcept
-  {
+  xcls_watch(xcls &&cl) noexcept {
     assert(cl.deg() >= 1);
     xlits.reserve(cl.deg());
-    for (auto lit : cl.get_ass_VS().get_xlits())
-    {
+    for (auto lit : cl.get_ass_VS().get_xlits()) {
       xlits.emplace_back(std::move(lit.add_one()));
     }
     init();
   };
 
-  xcls_watch(const xcls_watch &o) noexcept : xlits(o.xlits), shared_part(o.shared_part), xlit_dl_count1(o.xlit_dl_count1), xlit_dl_count0(o.xlit_dl_count0), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup), assigning_lvl(o.assigning_lvl)
-  {
+  xcls_watch(const xcls_watch &o) noexcept : xlits(o.xlits), shared_part(o.shared_part), xlit_dl_count1(o.xlit_dl_count1), xlit_dl_count0(o.xlit_dl_count0), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup), assigning_lvl(o.assigning_lvl) {
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
     ptr_cache[1] = o.ptr_cache[1];
   };
 
-  xcls_watch(xcls_watch &&o) noexcept : xlits(std::move(o.xlits)), shared_part(std::move(o.shared_part)), xlit_dl_count1(std::move(o.xlit_dl_count1)), xlit_dl_count0(std::move(o.xlit_dl_count0)), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup), assigning_lvl(std::move(o.assigning_lvl))
-  {
+  xcls_watch(xcls_watch &&o) noexcept : xlits(std::move(o.xlits)), shared_part(std::move(o.shared_part)), xlit_dl_count1(std::move(o.xlit_dl_count1)), xlit_dl_count0(std::move(o.xlit_dl_count0)), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup), assigning_lvl(std::move(o.assigning_lvl)) {
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
     ptr_cache[1] = o.ptr_cache[1];
   };
 
-  xcls_watch(const xsys &lits) noexcept
-  {
+  xcls_watch(const xsys &lits) noexcept {
     assert(lits.dim() >= 2);
     xlits = vec<xlit>(lits.get_xlits().begin(), lits.get_xlits().end());
     std::for_each(xlits.begin(), xlits.end(), [](xlit &l)
@@ -507,13 +341,7 @@ public:
   };
 
   void set_redundancy(const bool red) { irredundant = !red; };
-  void mark_for_removal()
-  {
-    if (!irredundant)
-    {
-      delete_on_cleanup = true;
-    }
-  };
+  void mark_for_removal() { if (!irredundant) { delete_on_cleanup = true; } };
   bool is_marked_for_removal() const { return delete_on_cleanup; };
   bool is_irredundant() const { return irredundant; };
 
@@ -524,8 +352,7 @@ public:
    *
    * @return true iff alpha( xlits[0]+shared_part ) = 0
    */
-  bool eval0(const vec<bool3> &alpha) const
-  {
+  bool eval0(const vec<bool3> &alpha) const {
     return true ^ xlits[0].eval(alpha) ^ shared_part.eval(alpha);
   }
 
@@ -536,8 +363,7 @@ public:
    *
    * @return true iff alpha( xlits[1]+shared_part ) = 0
    */
-  bool eval1(const vec<bool3> &alpha) const
-  {
+  bool eval1(const vec<bool3> &alpha) const {
     return true ^ xlits[1].eval(alpha) ^ shared_part.eval(alpha);
   }
 
@@ -551,11 +377,9 @@ public:
    * @param dl current dl
    * @return var_t,xcls_upd_ret upd_ret is SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t is the new-watched literal (or the same if unchanged!)
    */
-  std::pair<var_t, xcls_upd_ret> update(const var_t &new_lit, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count)
-  {
+  std::pair<var_t, xcls_upd_ret> update(const var_t &new_lit, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count) {
     // check if clause needs any processing
-    if (!is_active(dl_count))
-    {
+    if (!is_active(dl_count)) {
       assert(is_sat(dl_count) || is_unit(dl_count));
       return {new_lit, xcls_upd_ret::SAT}; // NOTE here it might also be a UNIT, but it did not become one by this update!
     }
@@ -573,19 +397,14 @@ public:
     assert(assert_data_struct());
 
     // assert correct return value!
-    if (upd == xcls_upd_ret::NONE)
-    {
+    if (upd == xcls_upd_ret::NONE) {
       // assert( is_none(alpha) ); //leads to error: it might be SAT but ONLY after all updates have been performed! (i.e. if xlits[0] AND xlits[1] needs an update!)
       assert(is_none(dl_count));
       return {new_w, upd};
-    }
-    else if (upd == xcls_upd_ret::SAT)
-    {
+    } else if (upd == xcls_upd_ret::SAT) {
       assert(is_sat(dl_count));
       return {new_w, upd};
-    }
-    else
-    {
+    } else {
       assert(upd == xcls_upd_ret::UNIT);
       assert(is_unit(dl_count));
       return {new_w, upd};
@@ -601,18 +420,15 @@ public:
    * @param dl_count current dl_count
    * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
    */
-  xcls_upd_ret init(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count)
-  {
+  xcls_upd_ret init(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count) {
     // check if clause needs any processing
-    if (!is_active(dl_count))
-    {
+    if (!is_active(dl_count)) {
       assert(is_sat(dl_count) || is_unit(dl_count));
       return xcls_upd_ret::SAT; // NOTE here it might also be a UNIT, but it did not become one by this update!
     }
 
     // check if -- and which ws need to be updated
-    if (alpha[ptr_ws(0)] == bool3::None && alpha[ptr_ws(1)] == bool3::None)
-    {
+    if (alpha[ptr_ws(0)] == bool3::None && alpha[ptr_ws(1)] == bool3::None) {
       // nothing needs to be updated!
       if (is_none(dl_count))
         return xcls_upd_ret::NONE; // TODO these next two cases should never occur, or??
@@ -627,8 +443,7 @@ public:
     assert(watches(new_w));
     assert(assert_data_struct());
 
-    if (alpha[get_wl0()] == bool3::None)
-    {
+    if (alpha[get_wl0()] == bool3::None) {
       swap_wl(); // if one of the watched literals is unassigned, ensure it is wl1
 
       advance(alpha, alpha_dl, dl_count);
@@ -636,13 +451,10 @@ public:
       assert(watches(new_w));
       assert(assert_data_struct());
 
-      if (is_sat(dl_count))
-      {
+      if (is_sat(dl_count)) {
         // ensure we watch the lineral with lowest dl!
         assert(false);
-      }
-      else if (is_unit(dl_count))
-      {
+      } else if (is_unit(dl_count)) {
         // ensure we watch the lineral with highest dl!
         const var_t new_i = std::distance(xlit_dl_count1.begin(), std::max_element(xlit_dl_count1.begin(), xlit_dl_count1.end(), [](const auto &a, const auto &b)
                                                                                    { return a.first < b.first; }));
@@ -666,8 +478,7 @@ public:
     return xcls_upd_ret::UNIT;
   };
 
-  xcls_upd_ret resolve(const xcls_watch &rs_cls, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence> &equiv_lits, const vec<var_t> &equiv_lits_dl)
-  {
+  xcls_upd_ret resolve(const xcls_watch &rs_cls, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence> &equiv_lits, const vec<var_t> &equiv_lits_dl) {
     // fix unit part ('resolving' part)
     if (deg() == 1) {
       xlits[0] += rs_cls.get_unit();
@@ -703,8 +514,7 @@ public:
    * @param dl currenct dl
    * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
    */
-  xcls_upd_ret init_unit(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence> &equiv_lits, const vec<var_t> &equiv_lits_dl)
-  {
+  xcls_upd_ret init_unit(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence> &equiv_lits, const vec<var_t> &equiv_lits_dl) {
     if (deg() == 1)
       return xcls_upd_ret::UNIT;
     assert(xlits.size()>0);
@@ -714,16 +524,14 @@ public:
     shared_part.clear();
 
     // reduce all xlits at dl 0
-    for (auto &l : xlits)
-    {
+    for (auto &l : xlits) {
       l.reduce(alpha, alpha_dl, 0);
       l.reduce(equiv_lits, equiv_lits_dl, 0);
     }
 
     // re-order occuring indets with decreasing dl
     std::set<var_t> tmp;
-    for (const auto &l : xlits)
-    {
+    for (const auto &l : xlits) {
       tmp.insert(l.get_idxs_().begin(), l.get_idxs_().end());
     }
     vec<var_t> idxs(tmp.begin(), tmp.end());
@@ -733,8 +541,7 @@ public:
     // construct permutation maps
     vec<var_t> perm(alpha.size());
     vec<var_t> perm_inv(alpha.size());
-    for (var_t i = 0; i < idxs.size(); ++i)
-    {
+    for (var_t i = 0; i < idxs.size(); ++i) {
       perm[idxs[i]] = i + 1;
       perm_inv[i + 1] = idxs[i];
     }
@@ -743,12 +550,10 @@ public:
 
     // map xlits into new ring
     vec<xlit> xlits_(xlits.size());
-    for (var_t i = 0; i < xlits.size(); ++i)
-    {
+    for (var_t i = 0; i < xlits.size(); ++i) {
       vec<var_t> xlit_idxs;
       xlit_idxs.reserve(xlits[i].size());
-      for (const auto &v : xlits[i].get_idxs_())
-      {
+      for (const auto &v : xlits[i].get_idxs_()) {
         xlit_idxs.push_back(perm[v]);
       }
       xlit xlit_(std::move(xlit_idxs), !xlits[i].has_constant());
@@ -759,20 +564,18 @@ public:
 
     // write reduced xlits back to xlits_
     xlits_.clear();
-    for (const auto &[_, l_it] : sys.get_pivot_poly_idx())
-    {
+    for (const auto &[_, l_it] : sys.get_pivot_poly_idx()) {
       xlits_.emplace_back(*l_it);
     }
 
     // now the LTs (w.r.t to the alpha_dl induced order) of all xlits have highest dl, and we can easily check which xlits are evaluated at highest dl, by chcecking their LTs
     // compute the two xlits where the alpha_dl of LTs is the highest
-    std::sort(xlits_.begin(), xlits_.end(), [](const xlit &a, const xlit &b)
-              { return a.LT() < b.LT(); });
+    std::sort(xlits_.begin(), xlits_.end(), 
+        [](const xlit &a, const xlit &b) { return a.LT() < b.LT(); });
     // std::sort(xlits_.begin(), xlits_.end(), [&alpha_dl,&alpha_trail_pos,&perm_inv](const xlit& a, const xlit& b){ return alpha_dl[perm_inv[a.LT()]]==0 || alpha_dl[perm_inv[a.LT()]] > alpha_dl[perm_inv[b.LT()]] || (alpha_dl[perm_inv[a.LT()]]==alpha_dl[perm_inv[b.LT()]] && alpha_trail_pos[perm_inv[a.LT()]] > alpha_trail_pos[perm_inv[b.LT()]]); } );
 
     // set xlit_dl_count1, since all except the first xlits must be satisfied by assumption
-    for (var_t i = 1; i < xlits_.size(); ++i)
-    {
+    for (var_t i = 1; i < xlits_.size(); ++i) {
       const var_t lvl = alpha_dl[perm_inv[xlits_[i].LT()]];
       if(lvl==(var_t)-1) { xlit_dl_count1[i] =  {0,0}; }
       else { xlit_dl_count1[i] = {lvl, dl_count[lvl]}; }
@@ -783,8 +586,7 @@ public:
     var_t wl1 = xlits_.size() > 1 ? perm_inv[xlits_[1].LT()] : -1;
 
     // translate xlits back AND recompute watched idxs
-    for (auto &l : xlits_)
-    {
+    for (auto &l : xlits_) {
       vec<var_t> xlit_idxs;
       xlit_idxs.reserve(l.size());
       for (const auto &v : l.get_idxs_()) { xlit_idxs.push_back(perm_inv[v]); }
@@ -825,8 +627,7 @@ public:
   };
 
   std::string to_str(const vec<xlit> &assignments) const { return to_xcls().reduced(assignments).to_str(); };
-  std::string to_str() const
-  {
+  std::string to_str() const {
     if (xlits.empty())
       return "";
     if (xlits.size() == 1)
@@ -842,8 +643,7 @@ public:
     return out;
   };
 
-  xcls to_xcls() const
-  {
+  xcls to_xcls() const {
     vec<xlit> xlits_cpy(xlits.begin(), xlits.end());
     xlits_cpy[0] += shared_part;
     if (xlits_cpy.size() > 1)
@@ -868,8 +668,7 @@ public:
    * @param dl_count current dl_count of solver
    * @return true iff xcls is satisfied under current alpha
    */
-  bool is_sat(const vec<dl_c_t> &dl_count) const
-  {
+  bool is_sat(const vec<dl_c_t> &dl_count) const {
     return (dl_count[xlit_dl_count0[0].first] == xlit_dl_count0[0].second); // || (dl_count[ xlit_dl_count0[1].first ] == xlit_dl_count0[1].second);
   }
 
@@ -879,8 +678,7 @@ public:
    * @param dl_count current dl_count of solver
    * @return true iff xcls is evaluates to unit (including 1, i.e., unsat!)
    */
-  bool is_unit(const vec<dl_c_t> &dl_count) const
-  {
+  bool is_unit(const vec<dl_c_t> &dl_count) const {
     return dl_count[xlit_dl_count1[0].first] == xlit_dl_count1[0].second; // || (dl_count[ xlit_dl_count1[1].first ] == xlit_dl_count1[1].second);
   }
 
@@ -890,13 +688,11 @@ public:
    *
    * @return var_t lvl at which xcls is unit
    */
-  var_t get_unit_at_lvl() const
-  {
+  var_t get_unit_at_lvl() const {
     return xlits.size() == 1 ? 0 : xlit_dl_count1[0].first;
   }
 
-  var_t get_unit_assigning_lvl(const vec<var_t>& alpha_dl) const
-  {
+  var_t get_unit_assigning_lvl(const vec<var_t>& alpha_dl) const {
     return xlits.size() == 1 ? xlits[0].get_assigning_lvl(alpha_dl) : std::max( shared_part.get_assigning_lvl(alpha_dl), xlits[1].get_assigning_lvl(alpha_dl) );
   }
 
@@ -906,18 +702,15 @@ public:
    *
    * @return var_t lvl at which xcls is unit and the unit is assigning
    */
-  inline var_t get_assigning_lvl() const
-  {
+  inline var_t get_assigning_lvl() const {
     return assigning_lvl;
   }
 
-  bool is_inactive(const vec<dl_c_t> &dl_count) const
-  {
+  bool is_inactive(const vec<dl_c_t> &dl_count) const {
     return is_sat(dl_count) || is_unit(dl_count);
   }
 
-  bool is_inactive(const vec<bool3> &alpha) const
-  {
+  bool is_inactive(const vec<bool3> &alpha) const {
     return !is_active(alpha);
   }
 
@@ -927,14 +720,12 @@ public:
    * @param dl_count current dl_count of solver
    * @return true iff both literal_watches point to unassigned variables
    */
-  bool is_active(const vec<dl_c_t> &dl_count) const
-  {
+  bool is_active(const vec<dl_c_t> &dl_count) const {
     // if it is satisfied, then ws[0] points to assigned variable!
     return !is_inactive(dl_count);
   }
 
-  bool is_active(const vec<bool3> &alpha) const
-  {
+  bool is_active(const vec<bool3> &alpha) const {
     // if it is satisfied, then ws[0] points to assigned variable!
     return alpha[ptr_ws(0)] == bool3::None; //&& alpha[ptr_ws(1)]==bool3::None;
   }
@@ -945,13 +736,11 @@ public:
    * @param dl_count current dl_count of solver
    * @return true iff xcls is satisfied under current alpha
    */
-  bool is_none(const vec<bool3> &alpha) const
-  {
+  bool is_none(const vec<bool3> &alpha) const {
     return alpha[ptr_ws(0)] == bool3::None && alpha[ptr_ws(1)] == bool3::None;
   }
 
-  bool is_none(const vec<dl_c_t> &dl_count) const
-  {
+  bool is_none(const vec<dl_c_t> &dl_count) const {
     return !is_unit(dl_count) && !is_sat(dl_count);
   }
 
@@ -961,8 +750,7 @@ public:
    * @param ind indet to check
    * @return true if and only if ind is watched by xcls
    */
-  bool watches(const var_t &ind) const
-  {
+  bool watches(const var_t &ind) const {
     return (ptr_ws(0) == ind) || (ptr_ws(1) == ind);
   }
 
@@ -973,8 +761,7 @@ public:
    */
   xlit get_unit() const { return xlits.size() > 1 ? xlits[1] + shared_part : xlits[0]; };
 
-  bool unit_contains(const var_t &ind) const
-  {
+  bool unit_contains(const var_t &ind) const {
     return shared_part[ind] || (xlits.size() > 1 ? xlits[1][ind] : xlits[0][ind]);
   }
 
@@ -985,28 +772,11 @@ public:
    *
    * @param lin lineral to add to unit part
    */
-  void add_to_unit(const xlit &lin, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<equivalence> &equiv_lit, const vec<var_t> &equiv_lit_dl, const vec<dl_c_t> &dl_count)
-  {
+  void add_to_unit(const xlit &lin, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<equivalence> &equiv_lit, const vec<var_t> &equiv_lit_dl, const vec<dl_c_t> &dl_count) {
     xlits[1] += lin;
     // re-init watches!
     init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lit, equiv_lit_dl);
     assigning_lvl = std::max( get_unit_at_lvl(), get_unit_assigning_lvl(alpha_dl) );
-  }
-
-  /**
-   * @brief get all the unsat lins of this clause
-   * @note assumes that the clause is unit (i.e. is_unit(dl_count) is true)
-   * @return std::list<xlit> list of xlits which are not satisfied by the current alpha
-   */
-  std::list<xlit> get_unsat_lins() const
-  {
-    std::list<xlit> lins;
-    lins.emplace_back(xlits[0] + shared_part);
-    for (auto it = xlits.begin() + 2; it != xlits.end(); ++it)
-    {
-      lins.emplace_back(*it);
-    }
-    return lins;
   }
 
 #ifndef NDEBUG
@@ -1016,8 +786,7 @@ public:
    * @param assignments current assignments
    * @return xlit unit
    */
-  xlit get_unit(const vec<xlit> &assignments) const
-  {
+  xlit get_unit(const vec<xlit> &assignments) const {
     const xcls cls = to_xcls().reduced(assignments);
     xlit unit = cls.get_unit();
     unit.reduce(assignments);
@@ -1031,8 +800,7 @@ public:
    * @param dl_count current dl_count of solver
    * @return var_t lvl at which clause got inactive
    */
-  var_t get_inactive_lvl(const vec<dl_c_t> &dl_count) const
-  {
+  var_t get_inactive_lvl(const vec<dl_c_t> &dl_count) const {
     assert(is_inactive(dl_count)); // implies is_unit(dl_count) OR is_sat(dl_count)
     // if(is_unit(dl_count)) return xlit_dl_count1[0].first;
     // assert(is_sat(dl_count));
@@ -1047,56 +815,12 @@ public:
    * @param assignments current assignments
    * @return true iff xcls is a unit under assignments
    */
-  bool is_unit(const vec<xlit> &assignments) const
-  {
+  bool is_unit(const vec<xlit> &assignments) const {
     xcls cls = to_xcls().reduced(assignments);
     return cls.is_unit();
   }
 
-  /**
-   * @brief sets the xclss to be a unit, i.e., forces is_unit(dl_count) to return true, and ensures that get_unit() returns the correct xlit; assumes that xcls is a unit under the given assignment
-   *
-   * @param assignments current assignments under which the clause is a unit!
-   * @param dl_count current dl_count of solver
-   * @param dl current dl
-   *
-   */
-  void set_unit(const vec<xlit> &assignments, const vec<dl_c_t> &dl_count, const var_t &dl)
-  {
-    // TODO untested! and should be updated
-    assert(false);
-    assert(is_unit(assignments));
-    // find first xlit in cls that does NOT reduce to 1
-    var_t i = 0;
-    xlit l_ = xlits[i];
-    l_.reduce(assignments);
-    for (; l_.is_one(); ++i)
-    {
-      l_ = xlits[i];
-      l_.reduce(assignments);
-    }
-    assert(i < xlits.size());
-    // swap xlits[i] to first position
-    xlits[i].swap(xlits[0]);
-    // TODO HOW TO CHANGE LIT_WATCH S.T. AFTER BACKTRACKING THIS XCLS IS IN CORRECT STATE?!
-    // change_lit_watch(0, new_w, watch_list);
-    std::swap(xlit_dl_count0[i], xlit_dl_count0[0]);
-    std::swap(xlit_dl_count1[i], xlit_dl_count1[0]);
-    // set dl_count of other watched literal!
-    xlit_dl_count1[1] = {dl, dl_count[dl]};
-    // now is_unit(dl_count) returns true!
-    assert(is_unit(dl_count));
-#ifndef NDEBUG
-    // check that unit can be correctly retrieved!
-    xlit unit = get_unit(assignments);
-    xlit unit_ = get_unit();
-    unit_.reduce(assignments);
-    assert(unit == unit_);
-#endif
-  };
-
-  void set_assigning_lvl(const var_t &lvl)
-  {
+  void set_assigning_lvl(const var_t &lvl) {
     assigning_lvl = lvl;
   }
 
@@ -1110,8 +834,7 @@ public:
 
   xlit get_first() const { return xlits[0] + shared_part; };
 
-  bool assert_data_struct() const
-  {
+  bool assert_data_struct() const {
     assert(xlit_dl_count0.size() == xlits.size());
     assert(xlit_dl_count1.size() == xlits.size());
     // sanity check to see whether ws[i] is actually contained in xlits[i]
@@ -1132,8 +855,7 @@ public:
     return true;
   };
 
-  bool assert_data_struct(const vec<bool3> &alpha, const vec<dl_c_t> &dl_count) const
-  {
+  bool assert_data_struct(const vec<bool3> &alpha, const vec<dl_c_t> &dl_count) const {
     assert(assert_data_struct());
     // assert(is_unit(alpha) == is_unit(dl_count));
     assert(is_active(alpha) == is_active(dl_count));
@@ -1151,14 +873,12 @@ public:
     return assert_data_struct();
   };
 
-  bool eval(const vec<bool> &sol) const
-  {
-    return std::any_of(xlits.begin(), xlits.end(), [&sol](const xlit l)
-                       { return l.eval(sol); });
+  bool eval(const vec<bool> &sol) const {
+    return std::any_of(xlits.begin(), xlits.end(), 
+        [&sol](const xlit l) { return l.eval(sol); });
   };
 
-  void operator=(const xcls_watch &&o)
-  {
+  void operator=(const xcls_watch &&o) {
     xlits = std::move(o.xlits);
     shared_part = std::move(o.shared_part);
     xlit_dl_count0 = std::move(o.xlit_dl_count0);
