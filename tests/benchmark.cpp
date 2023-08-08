@@ -32,8 +32,8 @@ int xlit_performance(var_t n, long k) {
 
     vec<var_t> xlit_set;
     srand((unsigned)time(NULL));
-    for(int j=0; j<2*k; j++) {
-        for (int i=0; i < n; i++){
+    for(var_t j=0; j<2*k; j++) {
+        for (var_t i=0; i < n; i++){
             if(rand() % 2) xlit_set.push_back(i);
         }
         xlits.push_back( xlit(xlit_set) );

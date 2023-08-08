@@ -59,7 +59,7 @@ vec<xlit> intersectVS(const xsys& U, const xsys& W) {
         }
         for(const auto& i : l.get_idxs_()) {
             assert(i>0);
-            assert(Isupp[i]+n_vars+1<ncols);
+            assert(Isupp[i]+n_vars+1<(var_t) ncols);
             mzd_write_bit(M, r, Isupp[i], 1);
             mzd_write_bit(M, r, Isupp[i]+n_vars+1, 1);
         }

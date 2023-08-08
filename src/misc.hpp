@@ -30,6 +30,9 @@
 typedef uint16_t var_t;
 //typedef uint_fast16_t var_t;
 
+//type for dl_counting
+typedef uint16_t dl_c_t; //change to something larger?
+
 //type for cls length
 typedef unsigned char cls_size_t;
 
@@ -56,14 +59,19 @@ inline bool b3_to_bool(const bool3 b) { assert(b!=bool3::None); return b==bool3:
 struct equivalence {
   var_t ind;
   bool polarity;
+  var_t reason;
 
-  equivalence() : ind(0), polarity(false) {};
+  equivalence() : ind(0), polarity(false), reason(-1) {};
   equivalence(const var_t _ind, const bool _polarity) : ind(_ind), polarity(_polarity) {};
   equivalence(const equivalence& other) : ind(other.ind), polarity(other.polarity) {};
   equivalence(equivalence&& other) : ind(other.ind), polarity(other.polarity) {};
   
   void set_ind(const var_t _ind) { ind = _ind; };
   void set_polarity(const bool _polarity) { polarity = _polarity; };
+  void set_reason(const var_t _reason) { reason = _reason; };
+
+  void clear() { ind = 0; polarity = false; reason = -1; };
+  std::string to_str(const var_t& idx) const { return "x" + std::to_string(idx) + "+x" + std::to_string(ind) + (polarity ? "+1" : ""); };
 };
 
 

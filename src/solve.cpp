@@ -91,8 +91,8 @@ parsed_xnf parse_file(const std::string &fname) {
                         int v_ = stoi(v);
                         //std::cout << v << std::endl;
                         if (v_>0) {
-                            idxs.push_back( (var_t) v_ );
-                            if (v_ > num_vars) {
+                            idxs.push_back( v_ );
+                            if ((var_t) v_ > num_vars) {
                                 throw std::invalid_argument( "c provided clauses include larger vars than announced by header!" );
                             };
                         } else if (v_==0) {

@@ -109,6 +109,15 @@ bool xlit::reduce(const vec<bool3>& alpha) {
     //return ret;
 };
 
+bool xlit::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl) {
+    const auto sz = idxs.size();
+    std::for_each(idxs.begin(), idxs.end(), [&](const var_t& i){ if(alpha[i] != bool3::None && alpha_dl[i]<=lvl) p1 ^= b3_to_bool(alpha[i]); } );
+    const auto new_end = std::remove_if(idxs.begin(), idxs.end(), [&](const var_t& i){ return alpha[i] != bool3::None && alpha_dl[i]<=lvl; } );
+    idxs.erase(new_end, idxs.end());
+    return sz != idxs.size();
+};
+
+
 bool xlit::reduce(const vec<xlit>& assignments) {
     bool ret = false;
     var_t offset = 0;
@@ -123,7 +132,7 @@ bool xlit::reduce(const vec<xlit>& assignments) {
     return ret;
 };
 
-bool xlit::reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t lvl) {
+bool xlit::reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t& lvl) {
     bool ret = false;
     var_t offset = 0;
     while(offset<idxs.size()) {
@@ -152,6 +161,26 @@ bool xlit::reduce(const vec<equivalence>& equiv_lits) {
     return ret;
 };
 
+bool xlit::reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl) {
+    bool ret = false;
+    var_t offset = 0;
+    while(offset<idxs.size()) {
+        if( equiv_lits[ idxs[offset] ].ind>0 && equiv_lits_dl[ idxs[offset] ] <= lvl ) {
+            ret = true;
+            assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
+            *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
+        } else {
+            ++offset;
+        }
+    }
+    return ret;
+};
+
+vec<var_t> xlit::support() const {
+    vec<var_t> ret;
+    for (auto &&i : idxs) ret.emplace_back(i);
+    return ret;
+};
 
 vec<var_t> xlit::reducers(const vec<xlit>& assignments) const {
     vec<var_t> ret;
