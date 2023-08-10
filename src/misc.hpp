@@ -113,7 +113,7 @@ struct options {
     
     int jobs = omp_get_num_threads();
     
-    int verb = 0;
+    int verb = 1;
 
     int timeout = 0;
 

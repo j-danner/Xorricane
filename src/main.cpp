@@ -109,7 +109,7 @@ int main(int argc, char const *argv[])
     #ifdef VERBOSITY
         program.add_argument("-vb", "--verb")
             .help("verbosity (choose in 0-100)")
-            .default_value(0)
+            .default_value(1)
             .scan<'i', int>();
     #endif
     
@@ -155,7 +155,7 @@ int main(int argc, char const *argv[])
     #ifdef VERBOSITY
         int verb = program.get<int>("-vb");
     #else
-        int verb = 0;
+        int verb = 1;
     #endif
     
     auto time_out = program.get<int>("-t");
@@ -172,7 +172,7 @@ int main(int argc, char const *argv[])
 
         if(s.finished && s.sat) { //check sol!
             if(check_sol(p_xnf.cls, s.sol)) {
-                std::cout << "c solution verified" << std::endl;
+                if(opts.verb > 0) std::cout << "c solution verified" << std::endl;
                 return 0;
             } else {
                 std::cout << "c solution INCORRECT!" << std::endl;
