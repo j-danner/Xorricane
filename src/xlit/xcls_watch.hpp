@@ -6,6 +6,7 @@
 #include "xsys.hpp"
 #include <list>
 #include <set>
+#include "xlit_watch.hpp"
 
 using lit_watch = var_t;
 
@@ -78,18 +79,19 @@ private:
   void init() {
     irredundant = true;
     delete_on_cleanup = false;
-
-    if (xlits.size() == 1) {
-      ws[0] = 0;
-      ptr_cache[0] = ptr_(0, ws[0]);
-      return;
-    }
-
-    assert(xlits.size() > 1);
+    
     // init xlit_dl_counts
     xlit_dl_count1.resize(xlits.size(), {0, 0});
     xlit_dl_count0.resize(xlits.size(), {0, 0});
 
+    if (xlits.size() == 1) {
+      ws[0] = 0;
+      ptr_cache[0] = ptr_(0, ws[0]);
+      shared_part.clear();
+      return;
+    }
+
+    assert(xlits.size() > 1);
     // init shared
     shared_part = xlits[0].shared_part(xlits[1]);
     // rm shared part from xlits[0] and xlits[1]
@@ -179,6 +181,7 @@ private:
     // note that xlits[0] and xlits[1] are always the xlits that are watched, i.e., start search from xlits[2] (!)
     cls_size_t new_i = 2;
     for (; new_i < xlits.size(); ++new_i) {
+      assert(new_i < ( 1 << (CHAR_BIT * sizeof(cls_size_t)) ) );
       // skip xlits which evaluate to 1 in current search tree
       if (dl_count[xlit_dl_count1[new_i].first] == xlit_dl_count1[new_i].second)
         continue;
@@ -187,22 +190,21 @@ private:
       new_w = 0;
       var_t max_w = 0;
       while (new_w < (var_t)xlits[new_i].size() && alpha[ptr_(new_i, new_w)] != bool3::None) {
-        if (alpha_dl[ptr_(new_i, new_w)] > alpha_dl[ptr_(new_i, max_w)])
-          max_w = new_w;
+        if (alpha_dl[ptr_(new_i, new_w)] > alpha_dl[ptr_(new_i, max_w)]) max_w = new_w;
         ++new_w;
       }
-      // if new_w is not xlits[new_i].size(), then there is an unassigned literal, i.e., watches can be updated
-      if (new_w != (var_t)xlits[new_i].size()) {
-        // if new_w is ptr_ws(1), we have to rewrite xlits[new_i]!
-        if (ptr_(new_i, new_w) == ptr_ws(1)) {
-          // add xlits[1] to xlits[new_i] to eliminate shared part in xlits[1]
-          xlits[new_i] += shared_part;
-          xlits[new_i] += xlits[1];
-          xlits[new_i].add_one();
-          // repeat with same new_i
-          new_i--;
-          continue;
-        } else {
+      new_w = ( new_w == (var_t)xlits[new_i].size() ) ? max_w : new_w;
+      if (ptr_(new_i, new_w) == ptr_ws(1) || ( xlits[new_i][ptr_ws(1)] && (xlits[1][ptr_(new_i,new_w)] || shared_part[ptr_(new_i,new_w)]) ) ) {
+        //add xlits[1] to xlits[new_i] to eliminate shared part in xlits[new_i]
+        xlits[new_i] += xlits[1]; xlits[new_i] += shared_part;
+        xlits[new_i].add_one();
+        // repeat with same new_i
+        new_i--;
+        continue;
+      }
+      if (alpha[ptr_(new_i,new_w)] == bool3::None ) {
+        //if ptr_(new_i,new_w) AND ptr_(1,ws[1]) both are in shared part of xlits[1] AND xlits[new_i]; rewrite xlits[new_i] and start over
+        {
           // new xlit to be watched found --> change watched xlit and return SAT
           const auto wl0 = ptr_(new_i, new_w);
           const auto wl1 = ptr_ws(1);
@@ -218,15 +220,28 @@ private:
           xlits[1] += shared_part;
           // fix ws[0] AND ws[1]!
           ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
+          //if ptr_(0,ws[0]) is NOT wl0, then we need to rewrite xlits[0]
+          if(ws[0] >= xlits[0].size() || ptr_(0,ws[0])!=wl0 ) {
+            xlits[0].swap(shared_part);
+            xlits[1].add_one();
+            assert( xlits[1][wl1] );
+            ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
+          }
           ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
+          if(ws[1] >= xlits[1].size() || ptr_(1,ws[1])!=wl1 ) {
+            xlits[1].swap(shared_part);
+            xlits[0].add_one();
+            assert( xlits[0][wl0] );
+            ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
+          }
           ptr_cache[0] = ptr_(0, ws[0]);
           ptr_cache[1] = ptr_(1, ws[1]);
-          assert(is_active(dl_count));
+          assert(ptr_cache[0] == wl0 && ptr_cache[1] == wl1);
+          assert(is_active(dl_count)); assert(is_active(alpha));
           return {ptr_ws(0), xcls_upd_ret::NONE};
         }
       } else {
         // xlits[new_i] evaluates to a constant; this is only useful if xlits[new_i].eval(alpha) is SAT
-        new_w = max_w; // if SAT we need to watch the ind assigned with highest dl
         const var_t dl_assigned = alpha_dl[ptr_(new_i, new_w)];
         // check whether xlit[new_i] it is satisfied
         if (xlits[new_i].eval(alpha)) {
@@ -247,10 +262,24 @@ private:
           xlits[1] += shared_part;
           // fix ws[0] AND ws[1]!
           ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
+          //if ptr_(0,ws[0]) is NOT wl0, then we need to rewrite xlits[0]
+          if(ws[0] >= xlits[0].size() || ptr_(0,ws[0])!=wl0 ) {
+            xlits[0].swap(shared_part);
+            xlits[1].add_one();
+            assert( xlits[1][wl1] );
+            ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
+          }
           ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
+          if(ws[1] >= xlits[1].size() || ptr_(1,ws[1])!=wl1 ) {
+            xlits[1].swap(shared_part);
+            xlits[0].add_one();
+            assert( xlits[0][wl0] );
+            ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
+          }
           ptr_cache[0] = ptr_(0, ws[0]);
           ptr_cache[1] = ptr_(1, ws[1]);
-          assert(!is_active(dl_count));
+          assert(ptr_cache[0] == wl0 && ptr_cache[1] == wl1);
+          assert(!is_active(dl_count)); assert(!is_active(alpha));
           assert(is_sat(dl_count));
           assert(assert_data_struct());
           assert(assert_data_struct(alpha, dl_count));
@@ -332,11 +361,26 @@ public:
     ptr_cache[1] = o.ptr_cache[1];
   };
 
+  xcls_watch(const xlit_watch& lin, const vec<var_t>& alpha_dl) noexcept {
+    irredundant = false;
+    delete_on_cleanup = false;
+    
+    xlits.emplace_back( lin );
+    // init xlit_dl_counts
+    xlit_dl_count1.emplace_back(0,0);
+    xlit_dl_count0.emplace_back(0,0);
+    
+    shared_part.clear();
+
+    ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), lin.get_wl0()));
+    ptr_cache[0] = lin.get_wl0();
+    assigning_lvl = lin.get_assigning_lvl(alpha_dl);
+  }
+
   xcls_watch(const xsys &lits) noexcept {
-    assert(lits.dim() >= 2);
+    assert(lits.dim() >= 1);
     xlits = vec<xlit>(lits.get_xlits().begin(), lits.get_xlits().end());
-    std::for_each(xlits.begin(), xlits.end(), [](xlit &l)
-                  { l.add_one(); });
+    std::for_each(xlits.begin(), xlits.end(), [](xlit &l) { l.add_one(); });
     init();
   };
 
@@ -478,7 +522,7 @@ public:
     return xcls_upd_ret::UNIT;
   };
 
-  xcls_upd_ret resolve(const xcls_watch &rs_cls, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence> &equiv_lits, const vec<var_t> &equiv_lits_dl) {
+  xcls_upd_ret resolve(const xcls_watch &rs_cls, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl) {
     // fix unit part ('resolving' part)
     if (deg() == 1) {
       xlits[0] += rs_cls.get_unit();
@@ -487,7 +531,7 @@ public:
       xlits[1] += rs_cls.get_unit();
     }
     // add xlits from rs_cls to this
-    if (rs_cls.deg() > 1) {
+    if(rs_cls.deg() > 1) {
       std::copy(rs_cls.xlits.begin() + 2, rs_cls.xlits.end(), std::back_inserter(xlits));
       std::copy(rs_cls.xlit_dl_count0.begin() + 2, rs_cls.xlit_dl_count0.end(), std::back_inserter(xlit_dl_count0));
       std::copy(rs_cls.xlit_dl_count1.begin() + 2, rs_cls.xlit_dl_count1.end(), std::back_inserter(xlit_dl_count1));
@@ -499,7 +543,7 @@ public:
     const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
     assert(ret == xcls_upd_ret::UNIT);
     assert(is_unit(dl_count));
-    assigning_lvl = std::max( get_unit_at_lvl(), get_unit_assigning_lvl(alpha_dl) );
+    assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
     return ret;
   }
 
@@ -514,10 +558,17 @@ public:
    * @param dl currenct dl
    * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
    */
-  xcls_upd_ret init_unit(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence> &equiv_lits, const vec<var_t> &equiv_lits_dl) {
-    if (deg() == 1)
+  xcls_upd_ret init_unit(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl) {
+    if (deg() == 1) {
+      //reduce xlit[0]
+      xlits[0].reduce(alpha, alpha_dl, 0);
+      xlits[0].reduce(equiv_lits, equiv_lits_dl, 0, alpha);
+      //update watched variable
+      ws[0] = std::get<2>( xlits[0].get_watch_var(alpha_dl, alpha_trail_pos) );
+      ptr_cache[0] = ptr_(0, ws[0]);
       return xcls_upd_ret::UNIT;
-    assert(xlits.size()>0);
+    }
+    assert(xlits.size()>1);
     // distribute shared_part
     xlits[0] += shared_part;
     xlits[1] += shared_part;
@@ -526,7 +577,7 @@ public:
     // reduce all xlits at dl 0
     for (auto &l : xlits) {
       l.reduce(alpha, alpha_dl, 0);
-      l.reduce(equiv_lits, equiv_lits_dl, 0);
+      l.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
     }
 
     // re-order occuring indets with decreasing dl
@@ -600,6 +651,8 @@ public:
     // resize xlit_dl_counts
     xlit_dl_count0.resize(xlits.size());
     xlit_dl_count1.resize(xlits.size());
+
+    assert(xlits.size()>0);
 
     // recompute the indices at which wl0 and wl1 are stored
     shared_part = xlits.size() > 1 ? xlits[0].shared_part(xlits[1]) : xlit();
@@ -679,7 +732,7 @@ public:
    * @return true iff xcls is evaluates to unit (including 1, i.e., unsat!)
    */
   bool is_unit(const vec<dl_c_t> &dl_count) const {
-    return dl_count[xlit_dl_count1[0].first] == xlit_dl_count1[0].second; // || (dl_count[ xlit_dl_count1[1].first ] == xlit_dl_count1[1].second);
+    return xlits.size()==1 || dl_count[xlit_dl_count1[0].first] == xlit_dl_count1[0].second; // || (dl_count[ xlit_dl_count1[1].first ] == xlit_dl_count1[1].second);
   }
 
   /**
@@ -692,7 +745,7 @@ public:
     return xlits.size() == 1 ? 0 : xlit_dl_count1[0].first;
   }
 
-  var_t get_unit_assigning_lvl(const vec<var_t>& alpha_dl) const {
+  var_t compute_unit_assigning_lvl(const vec<var_t>& alpha_dl) const {
     return xlits.size() == 1 ? xlits[0].get_assigning_lvl(alpha_dl) : std::max( shared_part.get_assigning_lvl(alpha_dl), xlits[1].get_assigning_lvl(alpha_dl) );
   }
 
@@ -772,11 +825,15 @@ public:
    *
    * @param lin lineral to add to unit part
    */
-  void add_to_unit(const xlit &lin, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<equivalence> &equiv_lit, const vec<var_t> &equiv_lit_dl, const vec<dl_c_t> &dl_count) {
-    xlits[1] += lin;
+  void add_to_unit(const xlit &lin, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl) {
+    if(xlits.size()==1) {
+      xlits[0] += lin;
+    } else {
+      xlits[1] += lin;
+    }
     // re-init watches!
-    init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lit, equiv_lit_dl);
-    assigning_lvl = std::max( get_unit_at_lvl(), get_unit_assigning_lvl(alpha_dl) );
+    init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+    assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
   }
 
 #ifndef NDEBUG

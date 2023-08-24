@@ -135,7 +135,7 @@ void solver::backtrack(const var_t& lvl) {
 #endif
 
     //cleanup lineral_queue
-    while(!lineral_queue.empty()) lineral_queue.pop();
+    lineral_queue.clear();
 
     print_trail();
     print_assignments();
@@ -268,10 +268,10 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
     print_assignments("    *");
     print_trail("    *");
 #endif
-    assert( trails.back().back().ind == 0 && trails.back().back().type != trail_t::LINERAL_IMPLIED_ALPHA ); //ensure last trail entry is a conflict & it comes from an actual clause
+    assert( trails.back().back().ind == 0 ); //ensure last trail entry is a conflict & it comes from an actual clause
 
     //go through trail of current dl -- skip over irrelevant parts
-    auto learnt_cls = xclss[trails.back().back().rs_cls_idx];
+    xcls_watch learnt_cls = (trails.back().back().type == trail_t::LINERAL_IMPLIED_ALPHA || trails.back().back().type == trail_t::LEARNT_UNIT) ? xcls_watch( lineral_watches[0][trails.back().back().rs_cls_idx], alpha_dl ) : xclss[ trails.back().back().rs_cls_idx ];
     assert(learnt_cls.is_unit(dl_count));
     VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + learnt_cls.get_unit().to_str() );
     pop_trail(); //remove conflict from trail, i.e., now we should have alpha[0]==bool3:None
@@ -284,44 +284,46 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
 
         unit = std::move(learnt_cls.get_unit());
         unit.reduce(alpha);
-        unit.reduce(equiv_lits, equiv_lits_dl, 0);
+        unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
         //if unit is still not 1, we need to resolve with reason clauses for equiv_lits which must reduce unit to 1 (!)
+      #ifdef USE_EQUIV
         if(!unit.is_one()) {
             //note: unit MUST reduce to 1 under equiv_lits
           #ifndef NDEBUG
             xlit unit_cpy = unit;
             unit_cpy.reduce(equiv_lits);
+            unit_cpy.reduce(alpha);
             assert(unit_cpy.is_one());
           #endif
             const auto reason_cls = xclss[equiv_lits[unit.LT()].reason];
             VERB(70, "   * reason clause " + reason_cls.to_str() + " for EQUIVALENCE " + equiv_lits[unit.LT()].to_str(unit.LT()) );
             //resolve!
-            //learnt_cls = xcls_watch( reason_cls, learnt_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
             learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
-            if(learnt_cls.deg()==1) {
-                VERB(50, "   * 1UIP! ");
-                break;
-            }
             continue;
         }
+      #else
+        assert( unit.is_one() );
+      #endif
         assert(!learnt_cls.to_xcls().is_zero());
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
-        while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA && TRAIL.back().type != trail_t::LINERAL_IMPLIED_ALPHA ) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
+        while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA && TRAIL.back().type != trail_t::LINERAL_IMPLIED_ALPHA && TRAIL.back().type != trail_t::LEARNT_UNIT ) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
             pop_trail();
         }
         
         //special case: TRAIL.back().type == trail_t::LINERAL_IMPLIED_ALPHA, which occurs only if the reason for the implied alpha is a unit clause, i.e., a lineral at dl 0:
-        if( TRAIL.back().type == trail_t::LINERAL_IMPLIED_ALPHA) {
+        if( TRAIL.back().type == trail_t::LINERAL_IMPLIED_ALPHA || TRAIL.back().type == trail_t::LEARNT_UNIT) {
             assert(TRAIL.back().rs_cls_idx < lineral_watches[0].size());
             VERB(70, "   * reason clause " + lineral_watches[0][TRAIL.back().rs_cls_idx].to_str() );
-            learnt_cls.add_to_unit( lineral_watches[0][TRAIL.back().rs_cls_idx].to_xlit(), alpha, alpha_dl, alpha_trail_pos, equiv_lits, equiv_lits_dl, dl_count );
+            const xlit lin = lineral_watches[0][TRAIL.back().rs_cls_idx].to_xlit();
             pop_trail();
+            
+            learnt_cls.add_to_unit( lin, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl );
             continue;
         }
         
         //get reason_cls
-        assert(TRAIL.back().rs_cls_idx < xclss.size() || TRAIL.back().type == trail_t::LINERAL_IMPLIED_ALPHA);
+        assert(TRAIL.back().rs_cls_idx < xclss.size() && TRAIL.back().type == trail_t::IMPLIED_ALPHA);
         const auto reason_cls = xclss[TRAIL.back().rs_cls_idx];
         VERB(70, "   * reason clause " + reason_cls.to_str() + " for UNIT " + reason_cls.get_unit().to_str() );
         pop_trail(); //remove from trail!
@@ -516,10 +518,16 @@ std::pair<var_t,xcls_watch> solver::analyze_dpll() {
 
 
 
-void solver::xcls_cleanup() {
+void solver::restart(stats& s) {
+    ++s.no_restarts;
+
+    //go to dl 0
+    backtrack(0);
+
+    //rm 'useless' cls:
     //mark clauses to be deleted
     for(var_t i=0; i<xclss.size(); ++i) {
-        if(utility[i] < util_cutoff) {
+        if(utility[i] < util_cutoff && xclss[i].is_active(dl_count)) {
             xclss[i].mark_for_removal();
         }
     }
@@ -872,6 +880,7 @@ void solver::solve(stats &s) {
         break;
     default: //should never be executed
         assert(false);
+        analyze = &solver::analyze_exp;
         break;
     }
     
@@ -892,10 +901,6 @@ void solver::solve(stats &s) {
                 VERB(25, "c " << std::to_string(dl) << " : "
                               << "conflict --> backtrack!")
                 ++s.no_confl;
-                if(s.no_confl % cleanup_schedule == 0) {
-                    VERB(100, "c " << std::to_string(dl) << " : " << "xcls cleanup!")
-                    xcls_cleanup();
-                }
                 // conflict!
                 if (dl == 0) {
                     // return UNSAT
@@ -917,6 +922,11 @@ void solver::solve(stats &s) {
               #ifdef EXACT_UNIT_TRACKING
                 assert( no_conflict() == assignments[0].is_zero() );
               #endif
+                //restart?
+                //if(s.no_confl % restart_schedule == 0) {
+                //    VERB(100, "c " << std::to_string(dl) << " : " << "xcls cleanup!")
+                //    restart(s);
+                //}
             } else {
                 ++dl;
                 ++dl_count[dl];
@@ -1072,13 +1082,18 @@ std::string solver::to_str() const noexcept {
         //check active_cls
         assert( active_cls == std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch& xcls) { return xcls.is_active(dl_count) && xcls.is_irredundant(); }) );
 
-        //check that trails[dl] contains exactly as many trail_t::NEW_UNIT elements as there are xlit_watches in lineral_watches[dl]
+        //check that trails[dl] contains exactly as many trail_t::IMPLIED_UNIT elements as there are xlit_watches in lineral_watches[dl]
         for(var_t lvl = 0; lvl<=dl; lvl++) {
-            assert( (var_t) std::count_if(trails[lvl].begin(), trails[lvl].end(), [&](const trail_elem& t) { return t.type==trail_t::NEW_UNIT || t.type==trail_t::GUESS; }) == (var_t) lineral_watches[lvl].size() );
+            assert( (var_t) std::count_if(trails[lvl].begin(), trails[lvl].end(), [&](const trail_elem& t) { return t.type==trail_t::IMPLIED_UNIT || t.type==trail_t::GUESS; }) == (var_t) lineral_watches[lvl].size() );
             for(const auto& [ind, type, rs] : trails[lvl]) {
                 assert( alpha[ind]==bool3::None || alpha_dl[ind]<=dl );
             }
         }
+
+      #ifndef USE_EQUIV
+        //ensure that equiv_lits_dl is 'empty'
+        for(const auto& lvl : equiv_lits_dl) assert(lvl==(var_t)-1);
+      #endif
 
         // check solution! (for rand-10-20.xnf) -- may help in debugging!
         /*
@@ -1127,12 +1142,13 @@ void solver::print_trail(std::string lead) const noexcept {
   const auto trail_t_to_str = [](const trail_t& t) {
     switch(t) {
       case trail_t::EQUIV:                 return "NEW_EQUIV ";
-      case trail_t::NEW_UNIT:              return "NEW_UNIT  ";
+      case trail_t::IMPLIED_UNIT:          return "IMPL_UNIT ";
       case trail_t::LINERAL_IMPLIED_ALPHA: return "IMPL_ALPHA";
       case trail_t::IMPLIED_ALPHA:         return "IMPL_ALPHA";
       case trail_t::GUESS:                 return "GUESS     ";
-      default:                             return "UNKNOWN   ";
+      case trail_t::LEARNT_UNIT:           return "LRNT_UNIT ";
     }
+    return "";
   };
   var_t lvl = 0;
   for(const auto& t_dl : trails) {

@@ -17,6 +17,7 @@
 #include <boost/container/allocator.hpp>
 #include <boost/container/adaptive_pool.hpp>
 
+//#define USE_EQUIV
 
 //verbosity output
 #ifdef VERBOSITY
@@ -34,7 +35,7 @@ typedef uint16_t var_t;
 typedef uint16_t dl_c_t; //change to something larger?
 
 //type for cls length
-typedef unsigned char cls_size_t;
+typedef uint8_t cls_size_t;
 
 //select vector impl to use
 template<class T>
@@ -52,6 +53,7 @@ inline std::string b3_to_str(const bool3 b) { return b==bool3::None ? "None" : (
 inline bool b3_to_bool(const bool3 b) { assert(b!=bool3::None); return b==bool3::True ? true : false; };
 
 
+#ifdef USE_EQUIV
 /**
  * @brief structure for storing equivalence of vars; essentially a pair of ind and polarity
  * @todo bitpacking?
@@ -73,6 +75,9 @@ struct equivalence {
   void clear() { ind = 0; polarity = false; reason = -1; };
   std::string to_str(const var_t& idx) const { return "x" + std::to_string(idx) + "+x" + std::to_string(ind) + (polarity ? "+1" : ""); };
 };
+#else
+struct equivalence {};
+#endif
 
 
 /**

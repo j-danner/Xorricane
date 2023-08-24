@@ -87,6 +87,7 @@ class xlit
          */
         bool reduce_short(const xsys& sys);
         bool reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t& lvl);
+        bool reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl, const vec<bool3>& alpha);
         bool reduce(const vec<bool3>& alpha);
         bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl);
         bool reduce(const vec<xlit>& assignments);
@@ -153,7 +154,7 @@ class xlit
         inline std::tuple<var_t,var_t,var_t> get_watch_var(const vec<var_t>& alpha_dl, const vec<var_t>& alpha_trail_pos) const {
           var_t max_dl = 0;
           var_t max_trail_pos = 0;
-          var_t max_idx;
+          var_t max_idx = 0;
           for(var_t i=0; i<idxs.size(); ++i) {
             const var_t v = idxs[i];
             if( alpha_dl[v] > max_dl || (alpha_dl[v] == max_dl && alpha_trail_pos[v]>max_trail_pos) ) { 

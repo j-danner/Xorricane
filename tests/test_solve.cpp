@@ -353,6 +353,17 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         CHECK( s.sat == true ); //SAT!
         CHECK( check_sol(clss.cls, s.sol) );
     }
+    
+    SECTION( "test32.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test32.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+
 }
 
 TEST_CASE( "solving xnf test instances" , "[solver]" ) {
@@ -361,7 +372,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
     
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //UNSAT
+        CHECK( s.sat == true ); //SAT!
         CHECK( check_sol(clss.cls, s.sol) );
     }
     
@@ -370,9 +381,109 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
     
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //UNSAT
+        CHECK( s.sat == true ); //SAT!
         CHECK( check_sol(clss.cls, s.sol) );
     }
+    
+    SECTION( "test3.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test3.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+
+    SECTION( "test4.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test4.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+
+    SECTION( "test5.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test5.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test6.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test6.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test7.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test7.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+
+    SECTION( "test8.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test8.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test9.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test9.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test10.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test10.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test11.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test11.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    //SECTION( "test_hard.xnf" ) {
+    //    auto clss = parse_file("../../benchmarks/instances/xnfs/test_hard.xnf");
+    //    auto slvr = solver(clss);
+    //    slvr.get_opts()->verb = 90;
+
+    //    stats s = slvr.solve();
+    //    CHECK( s.sat == true ); //SAT!
+    //    CHECK( check_sol(clss.cls, s.sol) );
+    //}
 }
 
 TEST_CASE( "solving simple instances", "[solver]") {
