@@ -6,6 +6,7 @@
 #include "xsys.hpp"
 #include <list>
 #include <set>
+#include <m4ri/m4ri.h>
 #include "xlit_watch.hpp"
 
 using lit_watch = var_t;
@@ -593,55 +594,67 @@ public:
     vec<var_t> perm(alpha.size());
     vec<var_t> perm_inv(alpha.size());
     for (var_t i = 0; i < idxs.size(); ++i) {
-      perm[idxs[i]] = i + 1;
-      perm_inv[i + 1] = idxs[i];
+      perm[idxs[i]] = i;
+      perm_inv[i] = idxs[i];
     }
 
-    // TODO use M4RI instead?! (should be A LOT faster!)
+    const var_t n_vars = idxs.size();
+    rci_t nrows = xlits.size();
+    rci_t ncols = n_vars+1;
 
-    // map xlits into new ring
-    vec<xlit> xlits_(xlits.size());
-    for (var_t i = 0; i < xlits.size(); ++i) {
-      vec<var_t> xlit_idxs;
-      xlit_idxs.reserve(xlits[i].size());
-      for (const auto &v : xlits[i].get_idxs_()) {
-        xlit_idxs.push_back(perm[v]);
-      }
-      xlit xlit_(std::move(xlit_idxs), !xlits[i].has_constant());
-      xlits_.push_back(xlit_);
+    mzd_t* M = mzd_init(nrows, ncols);
+    assert( mzd_is_zero(M) );
+
+    //fill with xlits
+    rci_t r = 0;
+    for(const auto& l : xlits) {
+        if(l.is_zero()) continue;
+        if(!l.has_constant()) {
+            mzd_write_bit(M, r, n_vars, 1);
+        }
+        for(const auto& i : l.get_idxs_()) {
+            assert(i>0);
+            assert(perm[i] < ncols-1);
+            mzd_write_bit(M, r, perm[i], 1);
+        }
+        ++r;
     }
-    // rref
-    xsys sys(std::move(xlits_));
+    assert(r == nrows);
 
-    // write reduced xlits back to xlits_
-    xlits_.clear();
-    for (const auto &[_, l_it] : sys.get_pivot_poly_idx()) {
-      xlits_.emplace_back(*l_it);
+    //compute rref
+    const rci_t rank = mzd_echelonize(M, true); //should we use mzd_echelonize_m4ri ??
+    //read results
+    vec<xlit> xlits_; xlits_.reserve(rank);
+    for(rci_t r = 0; r<rank; ++r) {
+        vec<var_t> idxs;
+        for(rci_t c=0; c<n_vars; ++c) {
+            if( mzd_read_bit(M, r, c) ) idxs.push_back(c+1);
+        }
+        xlits_.emplace_back( std::move(idxs), (bool) !mzd_read_bit(M, r, n_vars), presorted::yes );
     }
+    mzd_free(M);
 
-    // now the LTs (w.r.t to the alpha_dl induced order) of all xlits have highest dl, and we can easily check which xlits are evaluated at highest dl, by chcecking their LTs
-    // compute the two xlits where the alpha_dl of LTs is the highest
-    std::sort(xlits_.begin(), xlits_.end(), 
-        [](const xlit &a, const xlit &b) { return a.LT() < b.LT(); });
-    // std::sort(xlits_.begin(), xlits_.end(), [&alpha_dl,&alpha_trail_pos,&perm_inv](const xlit& a, const xlit& b){ return alpha_dl[perm_inv[a.LT()]]==0 || alpha_dl[perm_inv[a.LT()]] > alpha_dl[perm_inv[b.LT()]] || (alpha_dl[perm_inv[a.LT()]]==alpha_dl[perm_inv[b.LT()]] && alpha_trail_pos[perm_inv[a.LT()]] > alpha_trail_pos[perm_inv[b.LT()]]); } );
+    //xlits_ must already be sorted w.r.t. lt!
+    assert( std::is_sorted(xlits_.begin(), xlits_.end(), [](const xlit &a, const xlit &b) { return a.LT() < b.LT(); }) );
+    //std::sort(xlits_.begin(), xlits_.end(), [](const xlit &a, const xlit &b) { return a.LT() < b.LT(); });
 
     // set xlit_dl_count1, since all except the first xlits must be satisfied by assumption
     for (var_t i = 1; i < xlits_.size(); ++i) {
-      const var_t lvl = alpha_dl[perm_inv[xlits_[i].LT()]];
+      const var_t lvl = alpha_dl[ perm_inv[xlits_[i].LT()-1] ];
       if(lvl==(var_t)-1) { xlit_dl_count1[i] =  {0,0}; }
       else { xlit_dl_count1[i] = {lvl, dl_count[lvl]}; }
     }
 
     // now watch the first two xlits as usual
-    var_t wl0 = perm_inv[xlits_[0].LT()];
-    var_t wl1 = xlits_.size() > 1 ? perm_inv[xlits_[1].LT()] : -1;
+    var_t wl0 = perm_inv[xlits_[0].LT()-1];
+    var_t wl1 = xlits_.size() > 1 ? perm_inv[xlits_[1].LT()-1] : -1;
 
     // translate xlits back AND recompute watched idxs
     for (auto &l : xlits_) {
       vec<var_t> xlit_idxs;
       xlit_idxs.reserve(l.size());
-      for (const auto &v : l.get_idxs_()) { xlit_idxs.push_back(perm_inv[v]); }
-      xlit xlit_(std::move(xlit_idxs), !l.has_constant());
+      for (const auto &v : l.get_idxs_()) { xlit_idxs.push_back( perm_inv[v-1] ); }
+      xlit xlit_(std::move(xlit_idxs), l.has_constant(), presorted::no);
       l = std::move(xlit_);
     }
 
