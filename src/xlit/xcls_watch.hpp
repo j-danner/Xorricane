@@ -10,7 +10,7 @@
 #include "xlit_watch.hpp"
 
 using lit_watch = var_t;
-
+  
 /**
  * @brief return type for update of xcls_watch
  */
@@ -547,6 +547,10 @@ public:
     assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
     return ret;
   }
+  
+  
+  //tmp vars
+  vec<var_t> xlit_idxs;
 
   /**
    * @brief inits this xcls_watch according to the current alpha, alpha_dl s.t. all invariants hold and it can be used with all other xcls_watches
@@ -651,7 +655,7 @@ public:
 
     // translate xlits back AND recompute watched idxs
     for (auto &l : xlits_) {
-      vec<var_t> xlit_idxs;
+      xlit_idxs.clear();
       xlit_idxs.reserve(l.size());
       for (const auto &v : l.get_idxs_()) { xlit_idxs.push_back( perm_inv[v-1] ); }
       xlit xlit_(std::move(xlit_idxs), l.has_constant(), presorted::no);

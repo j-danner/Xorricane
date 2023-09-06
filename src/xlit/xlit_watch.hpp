@@ -174,7 +174,9 @@ class xlit_watch : public xlit
      * @return <ind,val> xlit is assigning iff val!=bool3::None; in that case we have x(ind) = val; otherwise val == bool3::None
      */
     std::tuple<var_t,bool3> get_assignment(const vec<bool3>& alpha) const {
-      if(alpha[get_assigning_ind()]==bool3::None || alpha[get_assigning_ind()]==get_assigning_val(alpha)) return {get_assigning_ind(), get_assigning_val(alpha)};
+      const var_t ass_ind = get_assigning_ind();
+      const bool3 ass_val = get_assigning_val(alpha);
+      if(alpha[ass_ind]==bool3::None || alpha[ass_ind]==ass_val) return {ass_ind, ass_val};
       return {0, bool3::True};
     }
 
