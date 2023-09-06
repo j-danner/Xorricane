@@ -156,32 +156,17 @@ void solver::backtrack(const var_t& lvl) {
 
 // decision heuristics
 std::pair<xsys, xsys> solver::dh_vsids_UNFINISHED() const {
-    return dh_lex_LT();
-    var_t i = 0;
-    while (!xclss[i].is_active(dl_count))
-        i++;
-    xlit fc = xclss[i].get_first();
-#ifdef EXACT_UNIT_TRACKING
-    fc.reduced(assignments);
-#else
-    //TODO reduce with other watched-literals!
-#endif
-    return std::pair<xsys, xsys>(xsys(fc.plus_one()), xsys(fc));
-    //get inital guess
-    //var_t i = 0;
-    //while (!xclss[i].is_active()) ++i;
-    //xlit guess = xclss[i].get_first();
-    ////find optimum!
-    //while(i<xclss.size()) {
-    //    if(!xclss[i].is_active() ) { ++i; continue; }
-    //    for(cls_size_t j = 0; j<xclss[i].size(); ++j) {
-    //        if(activity_score[xclss[i].LT(j)] > activity_score[guess.LT()]) {
-    //            guess = xclss[i].get_assVS().get_xlits(j);
-    //        }
-    //    }
-    //    ++i;
-    //}
-    //return std::pair<xsys, xsys>(xsys(guess.plus_one()), xsys(guess));
+    var_t lt_max = 0;
+    unsigned int max_activity = 0;
+    for(size_t idx=1; idx<alpha.size(); ++idx) {
+        if(alpha[idx]==bool3::None && (activity_score[idx] > max_activity)) {
+            lt_max = idx; max_activity = activity_score[idx];
+        }
+    }
+    assert(lt_max!=0 && lt_max < (var_t)alpha.size());
+
+    xlit xi = xlit( lt_max, last_phase[lt_max]==bool3::True);
+    return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
 };
 
 std::pair<xsys, xsys> solver::dh_shortest_wl() const {
@@ -226,6 +211,11 @@ std::pair<xsys, xsys> solver::dh_lex_LT() const {
     //return std::pair<xsys, xsys>(xsys(xi.plus_one()), xsys(xi));
 };
 
+
+void solver::bump_score(const var_t &ind) {
+    assert(ind < activity_score.size());
+    activity_score[ind] += bump;
+};
 
 void solver::bump_score(const xlit &lit) {
     assert(lit.LT() < activity_score.size());
@@ -274,6 +264,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
     xcls_watch learnt_cls = (trails.back().back().type == trail_t::LINERAL_IMPLIED_ALPHA || trails.back().back().type == trail_t::LEARNT_UNIT) ? xcls_watch( lineral_watches[0][trails.back().back().rs_cls_idx], alpha_dl ) : xclss[ trails.back().back().rs_cls_idx ];
     assert(learnt_cls.is_unit(dl_count));
     VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + learnt_cls.get_unit().to_str() );
+    bump_score( TRAIL.back().ind );
     pop_trail(); //remove conflict from trail, i.e., now we should have alpha[0]==bool3:None
     
     //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
@@ -316,6 +307,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
             assert(TRAIL.back().rs_cls_idx < lineral_watches[0].size());
             VERB(70, "   * reason clause " + lineral_watches[0][TRAIL.back().rs_cls_idx].to_str() );
             const xlit lin = lineral_watches[0][TRAIL.back().rs_cls_idx].to_xlit();
+            bump_score( TRAIL.back().ind );
             pop_trail();
             
             learnt_cls.add_to_unit( lin, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl );
@@ -326,6 +318,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
         assert(TRAIL.back().rs_cls_idx < xclss.size() && TRAIL.back().type == trail_t::IMPLIED_ALPHA);
         const auto reason_cls = xclss[TRAIL.back().rs_cls_idx];
         VERB(70, "   * reason clause " + reason_cls.to_str() + " for UNIT " + reason_cls.get_unit().to_str() );
+        bump_score( TRAIL.back().ind );
         pop_trail(); //remove from trail!
 
         learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
@@ -918,15 +911,18 @@ void solver::solve(stats &s) {
 
                 // add learnt_cls
                 add_learnt_cls( std::move(learnt_cls) );
+                // decay score
+                decay_score();
+
                 VERB(100, to_str());
               #ifdef EXACT_UNIT_TRACKING
                 assert( no_conflict() == assignments[0].is_zero() );
               #endif
                 //restart?
-                //if(s.no_confl % restart_schedule == 0) {
-                //    VERB(100, "c " << std::to_string(dl) << " : " << "xcls cleanup!")
-                //    restart(s);
-                //}
+                if(s.no_confl % restart_schedule == 0) {
+                    VERB(100, "c " << std::to_string(dl) << " : " << "xcls cleanup!")
+                    restart(s);
+                }
             } else {
                 ++dl;
                 ++dl_count[dl];
