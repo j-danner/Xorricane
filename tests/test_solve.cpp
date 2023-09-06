@@ -570,7 +570,11 @@ TEST_CASE( "solving with different options" , "[impl-graph][graph][parser][solve
         stats s2 = solve(xnf, opts2);
         end = std::chrono::steady_clock::now();
         float time_with_time_out = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
+    #ifdef NDEBUG
         CHECK( time_no_time_out == Catch::Approx(time_with_time_out).margin(0.1) );
+    #else
+        CHECK( time_no_time_out == Catch::Approx(time_with_time_out).margin(0.5) );
+    #endif
 
         CHECK( s.finished == true ); //SAT
         CHECK( s.sat == true ); //SAT
