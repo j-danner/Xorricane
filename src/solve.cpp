@@ -91,8 +91,8 @@ parsed_xnf parse_file(const std::string &fname) {
                         int v_ = stoi(v);
                         //std::cout << v << std::endl;
                         if (v_>0) {
-                            idxs.push_back( (var_t) v_ );
-                            if (v_ > num_vars) {
+                            idxs.push_back( v_ );
+                            if ((var_t) v_ > num_vars) {
                                 throw std::invalid_argument( "c provided clauses include larger vars than announced by header!" );
                             };
                         } else if (v_==0) {
@@ -159,7 +159,7 @@ void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
     std::signal(SIGINT, signal_handler);
     interrupt_handler = [&s]([[maybe_unused]] int signal) {
         std::cout << "!!! INTERRUPTED !!!" << std::endl;
-        s.cancelled.store( true ); //make sure dpll_solve ends in next iteration!
+        s.cancelled.store( true ); //make sure cdcl_solve ends in next iteration!
     };
 
     //if timeout was set:
@@ -167,7 +167,7 @@ void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
         auto timeout = std::chrono::seconds(opts.timeout);
         std::promise<int> p1;
         std::future<int> f_solve = p1.get_future();
-        std::thread thr([&s,&sol](std::promise<int> p1){ sol.dpll_solve(s); p1.set_value_at_thread_exit(0); }, std::move(p1));
+        std::thread thr([&s,&sol](std::promise<int> p1){ sol.solve(s); p1.set_value_at_thread_exit(0); }, std::move(p1));
         thr.detach();
 
         std::future_status status = f_solve.wait_for(timeout);
@@ -177,12 +177,12 @@ void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
             f_solve.wait(); //wait for thread to terminate fully!
         }
     } else {
-        sol.dpll_solve(s);
+        sol.solve(s);
     };
     
     //print stats
     s.end = std::chrono::steady_clock::now();
-    s.print_final();
+    if(opts.verb>0) s.print_final();
 }
 
 stats solve(const vec< vec<xlit> >& xnf, const options& opts) {

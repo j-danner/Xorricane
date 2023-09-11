@@ -23,6 +23,15 @@ class xcls {
       for(auto& l : lits_) l.add_one();
       assVS = xsys( std::move(lits_) );
     };
+    xcls(const std::list<xlit>& lits_) noexcept {
+      auto lits_p1(lits_);
+      for(auto& l : lits_p1) l.add_one();
+      assVS = xsys( std::move(lits_) );
+    };
+    xcls(std::list<xlit>&& lits_) noexcept {
+      for(auto& l : lits_) l.add_one();
+      assVS = xsys( std::move(lits_) );
+    };
 
     var_t deg() const { return !is_zero() ? assVS.dim() : 0; };
 

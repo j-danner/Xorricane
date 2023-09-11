@@ -19,7 +19,7 @@ class xlit_watch : public xlit
     /**
      * @brief literal watches; offset into idxs-set of idxs
      */
-    lit_watch ws[2] = {0,0};
+    lit_watch ws[3] = {0,0,0};
 
     /**
      * @brief dl_count when xlit_watch was instantiated, req to check if xlit is active!
@@ -33,8 +33,8 @@ class xlit_watch : public xlit
 
   public:
     xlit_watch() {};
-    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); };
-    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<var_t>& dl_count, const var_t& rs) : xlit(lit), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<dl_c_t>& dl_count, const var_t& rs) noexcept : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<dl_c_t>& dl_count, const var_t& rs) noexcept : xlit(lit), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); }
 
     ~xlit_watch() = default;
     
@@ -83,7 +83,7 @@ class xlit_watch : public xlit
      * @brief return the watched literal
      * @return xlit corr to watched xlit
      */
-    xlit to_xlit() const { return xlit(idxs, p1, true); };
+    xlit to_xlit() const { return xlit(idxs, p1, presorted::yes); };
     
     /**
      * @brief checks whether the polynomial is assigning
@@ -115,7 +115,7 @@ class xlit_watch : public xlit
       return xlit::is_zero() || ( is_assigning(alpha) && alpha[get_assigning_ind()] != bool3::None && eval(alpha) == false );
     };
 
-    inline bool is_active(const vec<var_t>& dl_count) const {
+    inline bool is_active(const vec<dl_c_t>& dl_count) const {
       return dl_count[ dl_c.first ] == dl_c.second;
     }
 
@@ -131,6 +131,11 @@ class xlit_watch : public xlit
      * @return the second watched literal
      */
     var_t get_wl1() const { return idxs[ws[1]]; };
+
+    /**
+     * @brief returns the equivalent lit, if this is an equivalence
+     */
+    var_t get_equiv_lit() const { return xlit::is_equiv() ? ( get_wl0()==LT() ? get_wl1() : get_wl0() ) : 0; }
 
     /**
      * @brief get assigning xlit
@@ -166,10 +171,12 @@ class xlit_watch : public xlit
      * @brief get assigning xlit
      * 
      * @param alpha current bool3-assignment
-     * @return <ind,val> xlit is assigning iff val!=bool3::None; in that case we have x(ind) = val
+     * @return <ind,val> xlit is assigning iff val!=bool3::None; in that case we have x(ind) = val; otherwise val == bool3::None
      */
     std::tuple<var_t,bool3> get_assignment(const vec<bool3>& alpha) const {
-      if(alpha[get_assigning_ind()]==bool3::None || alpha[get_assigning_ind()]==get_assigning_val(alpha)) return {get_assigning_ind(), get_assigning_val(alpha)};
+      const var_t ass_ind = get_assigning_ind();
+      const bool3 ass_val = get_assigning_val(alpha);
+      if(alpha[ass_ind]==bool3::None || alpha[ass_ind]==ass_val) return {ass_ind, ass_val};
       return {0, bool3::True};
     }
 
@@ -183,7 +190,7 @@ class xlit_watch : public xlit
      * @return var_t lvl at which the xlit became assigning
      */
     var_t get_assigning_lvl(const vec<var_t>& alpha_dl) const {
-      return idxs.size()==0 ? dl_c.first : std::max( alpha_dl[idxs[ws[0]]], dl_c.first );
+      return (idxs.size()==0 || alpha_dl[idxs[ws[0]]] == (var_t) -1) ? dl_c.first : std::max( alpha_dl[idxs[ws[0]]], dl_c.first );
     };
 
     /**

@@ -17,6 +17,7 @@
 #include <boost/container/allocator.hpp>
 #include <boost/container/adaptive_pool.hpp>
 
+//#define USE_EQUIV
 
 //verbosity output
 #ifdef VERBOSITY
@@ -30,8 +31,11 @@
 typedef uint16_t var_t;
 //typedef uint_fast16_t var_t;
 
+//type for dl_counting
+typedef uint16_t dl_c_t; //change to something larger?
+
 //type for cls length
-typedef unsigned char cls_size_t;
+typedef uint8_t cls_size_t;
 
 //select vector impl to use
 template<class T>
@@ -49,9 +53,55 @@ inline std::string b3_to_str(const bool3 b) { return b==bool3::None ? "None" : (
 inline bool b3_to_bool(const bool3 b) { assert(b!=bool3::None); return b==bool3::True ? true : false; };
 
 
+#ifdef USE_EQUIV
+/**
+ * @brief structure for storing equivalence of vars; essentially a pair of ind and polarity
+ * @todo bitpacking?
+ */
+struct equivalence {
+  var_t ind;
+  bool polarity;
+  var_t reason;
+
+  equivalence() : ind(0), polarity(false), reason(-1) {};
+  equivalence(const var_t _ind, const bool _polarity) : ind(_ind), polarity(_polarity) {};
+  equivalence(const equivalence& other) : ind(other.ind), polarity(other.polarity) {};
+  equivalence(equivalence&& other) : ind(other.ind), polarity(other.polarity) {};
+  
+  void set_ind(const var_t _ind) { ind = _ind; };
+  void set_polarity(const bool _polarity) { polarity = _polarity; };
+  void set_reason(const var_t _reason) { reason = _reason; };
+
+  void clear() { ind = 0; polarity = false; reason = -1; };
+  std::string to_str(const var_t& idx) const { return "x" + std::to_string(idx) + "+x" + std::to_string(ind) + (polarity ? "+1" : ""); };
+};
+#else
+struct equivalence {};
+#endif
+
+
+/**
+ * @brief options for decision heuristic
+ * lex: proceed lexicographically
+ * vsids: use vsids heuristic
+ * lwl: choose variable with longest watch list
+ * swl: choose variable with shortest watch list
+ */
 enum class dec_heu { vsids, lwl, lex, swl };
+/**
+ * @brief options for phase selection
+ * rand: use random phases
+ * save: save phases from last run
+ * save_inv: use oppositve phase from last run
+ */
 enum class phase_opt { rand, save, save_inv };
-enum class ca_alg { no, fuip };
+/**
+ * @brief options for conflict analysis
+ * no: no conflict analysis --> DPLL solving
+ * dpll: DPLL-style solving, but we add learnt clauses (should only be used for testing!)
+ * fuip: first UIP conflict analysis
+ */
+enum class ca_alg { no, dpll, fuip };
 
 /**
  * @brief struct that holds options for the various heuristic choices
@@ -68,7 +118,7 @@ struct options {
     
     int jobs = omp_get_num_threads();
     
-    int verb = 0;
+    int verb = 1;
 
     int timeout = 0;
 

@@ -19,41 +19,39 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     L_watch_list.resize(opt_.num_vars+1);
     //assignments_list.resize(opt_.num_vars+1);
     
-    assignments_watches.reserve( opt_.num_vars+1 );
-    assignments_watches.emplace_back( vec<xlit_watch>() );
+    lineral_watches = vec<vec<xlit_watch>>(opt_.num_vars+1, vec<xlit_watch>() );
     
     // init assignments
     alpha = vec<bool3>(opt_.num_vars + 1, bool3::None);
-    alpha_dl = vec<var_t>(opt_.num_vars + 1, 0);
+    alpha_dl = vec<var_t>(opt_.num_vars + 1, (var_t) -1);
+    alpha_trail_pos = vec<var_t>(opt_.num_vars + 1, (var_t) -1);
 #ifdef EXACT_UNIT_TRACKING
     assignments = vec<xlit>(opt_.num_vars + 1, xlit());
     assignments_dl = vec<var_t>(opt_.num_vars + 1, 0);
     assignments_xsys = xsys();
 #endif
-    equiv_lits = vec<var_t>(opt_.num_vars+1, 0);
-    dl_count = vec<var_t>(opt_.num_vars+1, 1); 
-    reason_ALPHA = vec<var_t>(opt_.num_vars + 1, -1);
+    equiv_lits = vec<equivalence>(opt_.num_vars+1);
+    equiv_lits_dl = vec<var_t>(opt_.num_vars+1, (var_t) -1);
+    dl_count = vec<dl_c_t>(opt_.num_vars+1, 1); 
     trails = vec< std::list<trail_elem> >();
     trails.reserve(opt_.num_vars+1);
     trails.emplace_back( std::list<trail_elem>() );
     last_phase = vec<bool3>(opt_.num_vars + 1, bool3::None);
-
-    //init gcp_queue
-    gcp_queues = vec< std::queue<var_t> >();
-    gcp_queues.reserve(opt_.num_vars+1);
-    gcp_queues.emplace_back( std::queue<var_t>() );
 
     // vec of pure literals
     vec<xlit> _L = vec<xlit>();
 
     xclss = vec<xcls_watch>(0);
     xclss.reserve(clss.size());
+    
+    utility = vec<var_t>(0);
+    utility.reserve(clss.size());
 
     // temporarily store clss in _xclss - before init of xclss we might want to reduce with pure literals in _L (!)
     vec<xcls> _xclss;
     _xclss.reserve(clss.size());
+    active_cls = 0; //value is managed by 'init_and_add_xcls_watch'
 
-    var_t no_zero_cls = 0;
     // run through xor-clauses to find lineq and construct watch-literals
     for (var_t i = 0; i < clss.size(); i++) {
         xcls cls = xcls(clss[i]); 
@@ -61,7 +59,7 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
         if (cls.deg() == 1) { // lin-eq!
             _L.emplace_back( cls.get_ass_VS().get_non_zero_el().add_one() );
         } else if (cls.is_zero()) {
-            no_zero_cls++;
+            //ignore cls
         } else {
             _xclss.emplace_back( std::move(cls) );
         }
@@ -70,14 +68,13 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     xsys _Lsys(_L);
     for(auto& cls : _xclss) {
         cls.update_short(_Lsys); //TODO no full reduction?!
-        init_and_add_xcls_watch( std::move(cls) );
+        init_and_add_xcls_watch( std::move(cls), false );
     }
 
-    active_cls = clss.size() - _L.size() - no_zero_cls; // count only non-linear cls!
     assert(active_cls == xclss.size());
 
     //init xlits
-    for(const auto& [_,it] : _Lsys.get_pivot_poly_idx()) add_new_xlit(*it, -1, 0);
+    for(const auto& [_,it] : _Lsys.get_pivot_poly_idx()) queue_implied_lineral(*it, -1);
 
     // init activity_score
     activity_score = vec<unsigned int>(opt.num_vars + 1, 1);
@@ -103,7 +100,6 @@ void solver::save_state() {
 
 void solver::backtrack(const var_t& lvl) {
     VERB(90, "BACKTRACK start");
-    assert(assert_data_structs());
     assert(lvl < dl);
     VERB(80, "c backtracking to dl " << lvl);
     ///// --------------- /////
@@ -115,53 +111,40 @@ void solver::backtrack(const var_t& lvl) {
     // trail and assignments!
     print_trail();
     print_assignments();
-    
-    assert(lvl == dl-1); //adapt backtrack code to handle more than one level!!!
-    
-    // adapt dl
-    dl = lvl;
 
-    //backtrack state
-    while ((var_t)state_stack.size() > dl + 3) state_stack.pop_back();
-
-    // revert assignments and alpha, and reset trail, reasons, queue
-    while(trails.size() > (var_t)(dl+1)) {
+    //undo unit linerals, revert assignments and alpha, and reset trail, reasons, queue
+    while(dl>lvl) {
         while(!TRAIL.empty()) { pop_trail(); };
         trails.pop_back();
+        assert(lineral_watches[dl].empty());
+        //adapt dl
+        --dl;
+        //restore active_cls count
+        active_cls = state_stack.back().active_cls;
+        state_stack.pop_back();
     }
-    gcp_queues.pop_back();
-    assignments_watches.pop_back();
+    assert(dl==lvl);
 
-    // revert active_cls count
-    active_cls = state_stack.back().active_cls;
+    // check active_cls count
     //VERB(90, "active_cls restored:   " + std::to_string(active_cls))
-    //VERB(90, "active_cls recomputed: " + std::to_string(std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); })))
-    assert(active_cls == std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); }));
-    //active_cls = std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count); });
+    //VERB(90, "active_cls recomputed: " + std::to_string(std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); })))
+    assert(active_cls == std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); }));
     // revert assignments_xsys
 #ifdef EXACT_UNIT_TRACKING
     assignments_xsys = std::move(state_stack.back().L);
 #endif
-    state_stack.pop_back();
 
-    //cleanup gcp_queue
-    while(!GCP_QUEUE.empty()) GCP_QUEUE.pop();
+    //cleanup lineral_queue
+    lineral_queue.clear();
 
     print_trail();
     print_assignments();
 #ifdef EXACT_UNIT_TRACKING
-    // restore/update assignments
-    for(const auto [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
-        assert( assignments[lt].is_zero() || assignments_dl[lt] <= lvl );
-        if(assignments_dl[lt] == 0) {
-            assignments[lt] = assignments_xsys.get_xlits(idx);
-            assignments_dl[lt] = lvl;
-            trails[lvl].emplace_back(lt, trail_t::NEW_UNIT);
-            alpha[lt] = assignments[lt].as_bool3();
-            if(alpha[lt]!=bool3::None) {
-                alpha_dl[lt] = dl;
-                GCP_QUEUE.emplace(lt);
-            }
+    //remove all assignments with too high dl
+    for(var_t lt=1; lt<assignments.size(); ++lt) {
+        if(assignments_dl[lt] > lvl) {
+            assignments[lt] = xlit();
+            assignments_dl[lt] = 0;
         }
     }
 #endif
@@ -173,32 +156,17 @@ void solver::backtrack(const var_t& lvl) {
 
 // decision heuristics
 std::pair<xsys, xsys> solver::dh_vsids_UNFINISHED() const {
-    return dh_lex_LT();
-    var_t i = 0;
-    while (!xclss[i].is_active(dl_count))
-        i++;
-    xlit fc = xclss[i].get_first();
-#ifdef EXACT_UNIT_TRACKING
-    fc.reduced(assignments);
-#else
-    //TODO reduce with other watched-literals!
-#endif
-    return std::pair<xsys, xsys>(xsys(fc.plus_one()), xsys(fc));
-    //get inital guess
-    //var_t i = 0;
-    //while (!xclss[i].is_active()) ++i;
-    //xlit guess = xclss[i].get_first();
-    ////find optimum!
-    //while(i<xclss.size()) {
-    //    if(!xclss[i].is_active() ) { ++i; continue; }
-    //    for(cls_size_t j = 0; j<xclss[i].size(); ++j) {
-    //        if(activity_score[xclss[i].LT(j)] > activity_score[guess.LT()]) {
-    //            guess = xclss[i].get_assVS().get_xlits(j);
-    //        }
-    //    }
-    //    ++i;
-    //}
-    //return std::pair<xsys, xsys>(xsys(guess.plus_one()), xsys(guess));
+    var_t lt_max = 0;
+    unsigned int max_activity = 0;
+    for(size_t idx=1; idx<alpha.size(); ++idx) {
+        if(alpha[idx]==bool3::None && (activity_score[idx] > max_activity)) {
+            lt_max = idx; max_activity = activity_score[idx];
+        }
+    }
+    assert(lt_max!=0 && lt_max < (var_t)alpha.size());
+
+    xlit xi = xlit( lt_max, last_phase[lt_max]==bool3::True);
+    return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
 };
 
 std::pair<xsys, xsys> solver::dh_shortest_wl() const {
@@ -244,14 +212,19 @@ std::pair<xsys, xsys> solver::dh_lex_LT() const {
 };
 
 
+void solver::bump_score(const var_t &ind) {
+    assert(ind < activity_score.size());
+    activity_score[ind] += bump;
+};
+
 void solver::bump_score(const xlit &lit) {
-    assert(lit.LT() >= 0 && lit.LT() < activity_score.size());
+    assert(lit.LT() < activity_score.size());
     activity_score[lit.LT()] += bump;
 };
 
 void solver::bump_score(const xsys &new_xsys) {
     for (const auto &[lt, _] : new_xsys.get_pivot_poly_idx()) {
-        assert(lt >= 0 && lt < activity_score.size());
+        assert(lt < activity_score.size());
         activity_score[lt] += bump;
     }
 };
@@ -265,11 +238,11 @@ void solver::decay_score() {
 xcls solver::get_last_reason() const {
     vec<xlit> lits = vec<xlit>();
     // if the reason cls of the last learnt unit is 'out of range', i.e., last trail entry comes from guess, return empty reason-cls
-    if (assignments_watches.back().back().get_reason() >= xclss.size()) {
+    if (lineral_watches[dl].back().get_reason() >= xclss.size()) {
         lits.push_back( xlit(vec<var_t>({0})) );
         return xcls(lits);
     }
-    const xcls_watch &cls = xclss[ assignments_watches.back().back().get_reason() ];
+    const xcls_watch &cls = xclss[ lineral_watches[dl].back().get_reason() ];
     assert(cls.is_unit(dl_count));
     return cls.to_xcls();
 };
@@ -278,194 +251,105 @@ bool is_subspace(const xsys U, const xsys L) {
     return !L.is_consistent() || (U+L == L);
 }
 
-#ifdef EXACT_UNIT_TRACKING
-std::pair<var_t, xcls> solver::analyze_exp() {
+xlit unit;
+std::pair<var_t, xcls_watch> solver::analyze_exp() {
     VERB(70, "**** analyzing conflict");
 #ifndef NDEBUG
     print_assignments("    *");
     print_trail("    *");
 #endif
-    VERB(70, "   * conflict clause " + get_last_reason().to_str());
+    assert( trails.back().back().ind == 0 ); //ensure last trail entry is a conflict & it comes from an actual clause
 
-    VERB(70, "   * trail in current dl");
     //go through trail of current dl -- skip over irrelevant parts
-    xcls learnt_cls = get_last_reason();
-    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
-    pop_trail();
+    xcls_watch learnt_cls = (trails.back().back().type == trail_t::LINERAL_IMPLIED_ALPHA || trails.back().back().type == trail_t::LEARNT_UNIT) ? xcls_watch( lineral_watches[0][trails.back().back().rs_cls_idx], alpha_dl ) : xclss[ trails.back().back().rs_cls_idx ];
+    assert(learnt_cls.is_unit(dl_count));
+    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + learnt_cls.get_unit().to_str() );
+    bump_score( TRAIL.back().ind );
+    pop_trail(); //remove conflict from trail, i.e., now we should have alpha[0]==bool3:None
+    
+    //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
+    while( learnt_cls.get_assigning_lvl() == dl || learnt_cls.get_assigning_lvl() == (var_t) -1 ) {
+        assert(!TRAIL.empty());
+        VERB(70, "   * conflict clause is " + learnt_cls.to_str());
+        VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
 
-    vec<xlit> lits;
-    vec<xsys> Ls;
-    vec<xsys> Ls_dl;
-    var_t c_dl = 0;
-    Ls.emplace_back( lits );
-    for(const auto& t_dl : trails) {
-        for(const auto& t : t_dl) {
-            if(assignments_dl[t.ind]>c_dl) {
-                c_dl = assignments_dl[t.ind];
-                Ls_dl.push_back(Ls.back());
-            }
-            lits.push_back( assignments[t.ind] );
-            Ls.emplace_back( lits );
-            VERB(100, "   * L("+std::to_string(Ls.size()-2)+")   : " + Ls.back().to_str());
+        unit = std::move(learnt_cls.get_unit());
+        unit.reduce(alpha);
+        unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
+        //if unit is still not 1, we need to resolve with reason clauses for equiv_lits which must reduce unit to 1 (!)
+      #ifdef USE_EQUIV
+        if(!unit.is_one()) {
+            //note: unit MUST reduce to 1 under equiv_lits
+          #ifndef NDEBUG
+            xlit unit_cpy = unit;
+            unit_cpy.reduce(equiv_lits);
+            unit_cpy.reduce(alpha);
+            assert(unit_cpy.is_one());
+          #endif
+            const auto reason_cls = xclss[equiv_lits[unit.LT()].reason];
+            VERB(70, "   * reason clause " + reason_cls.to_str() + " for EQUIVALENCE " + equiv_lits[unit.LT()].to_str(unit.LT()) );
+            //resolve!
+            learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+            continue;
         }
-    }
-    assert(is_subspace(learnt_cls.get_ass_VS(), Ls.back()));
-    assert(dl == Ls_dl.size());
-    Ls.pop_back();
+      #else
+        assert( unit.is_one() );
+      #endif
+        assert(!learnt_cls.to_xcls().is_zero());
 
-    while(!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl && (assignments_watches.back().back().get_reason() < xclss.size())) {
-    //while(!trail.empty() && is_subspace(learnt_cls.get_ass_VS(), Ls.back()) && (assignments_watches.back().back().get_reason() < xclss.size())) {
-        assert(assignments_watches.back().back().get_reason() > xclss.size() || xclss[assignments_watches.back().back().get_reason()].is_unit(dl_count));
-        while(is_subspace(learnt_cls.get_ass_VS(), Ls.back())) {
-            // rm from trail (before computing L)
+        //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
+        while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA && TRAIL.back().type != trail_t::LINERAL_IMPLIED_ALPHA && TRAIL.back().type != trail_t::LEARNT_UNIT ) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
             pop_trail();
-            Ls.pop_back();
-            VERB(70, "   * backtracking on trail! (c_dl = "+std::to_string(assignments_dl[TRAIL.back().ind])+")");
         }
-        assert(!is_subspace(learnt_cls.get_ass_VS(), Ls.back()));
-        if(assignments_watches.back().back().get_reason() > xclss.size()) { pop_trail(); Ls.pop_back(); break; }
         
-        const auto tmp_cls = xcls( learnt_cls.update(Ls_dl.back()) );
-        VERB(70, "   * conflict clause on prev dl is "+tmp_cls.to_str());
-        if( tmp_cls.is_unit() || tmp_cls.is_zero() ) {
-            VERB(50, "   * 1UIP! ");
-            break; 
+        //special case: TRAIL.back().type == trail_t::LINERAL_IMPLIED_ALPHA, which occurs only if the reason for the implied alpha is a unit clause, i.e., a lineral at dl 0:
+        if( TRAIL.back().type == trail_t::LINERAL_IMPLIED_ALPHA || TRAIL.back().type == trail_t::LEARNT_UNIT) {
+            assert(TRAIL.back().rs_cls_idx < lineral_watches[0].size());
+            VERB(70, "   * reason clause " + lineral_watches[0][TRAIL.back().rs_cls_idx].to_str() );
+            const xlit lin = lineral_watches[0][TRAIL.back().rs_cls_idx].to_xlit();
+            bump_score( TRAIL.back().ind );
+            pop_trail();
+            
+            learnt_cls.add_to_unit( lin, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl );
+            continue;
         }
-
-        //check conflict cls
-        //xsys L = Ls.back();
-        VERB(70, "   * conflict clause " + learnt_cls.to_str());
-        VERB(70, "   '----> gives with current assignments: " + learnt_cls.update(Ls.back()).to_str());
-        assert(learnt_cls.update(Ls.back()).deg() == 1);
-        xlit u = learnt_cls.update(Ls.back()).get_ass_VS().get_non_zero_el();
-        VERB(70, "   ' unit u:  " + u.to_str());
-        //get reason_UNIT clause
-        xcls r_cls = get_last_reason();
-        VERB(70, "   * reason clause " + r_cls.to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
-        VERB(70, "   '----> gives with current assignments: " + r_cls.update(Ls.back()).to_str());
-        assert(u.to_str() == r_cls.update(Ls.back()).to_str());
-        pop_trail();
-        const xsys L_old = Ls.back();
-        Ls.pop_back();
-
-        //check implied unit of r_cls
-        auto tmp = xcls( learnt_cls.get_ass_VS() );
-        VERB(70, "   ' tmp:  " + tmp.to_str());
-        tmp = tmp.update(assignments);
-        VERB(70, "   ' tmp:  " + tmp.to_str());
-        assert(tmp.is_unit());
-        xlit l_cls_implied_unit = tmp.get_unit();
-        VERB(70, "   ' implied unit C: " + l_cls_implied_unit.to_str());
-        //learnt_cls = xcls( learnt_cls.get_ass_VS()+xsys(u) );
- 
-        //r_cls = xcls( r_cls.get_ass_VS()+xsys(u.plus_one()) );
-        auto tmp2 = xcls( r_cls.get_ass_VS() );
-        VERB(70, "   ' tmp2: " + tmp2.to_str());
-        tmp2 = tmp2.update(assignments);
-        VERB(70, "   ' tmp2: " + tmp2.to_str());
-        assert(tmp2.is_unit());
-        xlit r_cls_implied_unit = tmp2.get_unit();
-        VERB(70, "   ' implied unit R: " + r_cls_implied_unit.to_str());
-
-        //learnt_cls = sres_opt(r_cls, learnt_cls);
-        assert(!learnt_cls.is_zero());
-        //if(r_cls.is_zero()) continue;
-        assert(!r_cls.is_zero());
-        //compute sys of assignments in trail
-        xsys VC = learnt_cls.get_ass_VS();
-        xsys VR = r_cls.get_ass_VS();
-        VERB(70, "   * L("+std::to_string(Ls.size()-1)+")   : " + L_old.to_str());
-        VERB(70, "   * V_C : " + VC.to_str());
-        VERB(70, "   * V_R : " + VR.to_str());
-        VERB(70, "   * V_C+V_R : " + (VC+VR).to_str());
-        vec<xlit> VC_int_L = intersectVS( VC, L_old );
-        vec<xlit> VR_int_L = intersectVS( VR, L_old );
-        vec<xlit> VR_int_VC = intersectVS( VR, VC );
-        VERB(70, "   * V_C int L : " + xsys(VC_int_L).to_str());
-        VERB(70, "   * V_R int L : " + xsys(VR_int_L).to_str());
-        VERB(70, "   * V_R int V_C : " + xsys(VR_int_VC).to_str());
-        auto VR_plus_VC_int_L = intersectVS( VR+VC, L_old );
-        VERB(70, "   * V_R+V_C int L : " + xsys(VR_plus_VC_int_L).to_str());
-        assert( (int) VC_int_L.size()+1 == VC.dim());
-        assert( (int) VR_int_L.size()+1 == VR.dim());
-        if((VC+VR).is_consistent()) {
-            xlit ext = (r_cls_implied_unit + l_cls_implied_unit).plus_one();
-            VERB(70, "   * extension required!");
-            VR += xsys( ext );
-            //VR += xsys( l_cls_implied_unit );
-            //VC += xsys( r_cls_implied_unit );
-            VERB(70, "   * V_C : " + VC.to_str());
-            VERB(70, "   * V_R : " + VR.to_str());
-            VERB(70, "   * V_C+V_R : " + (VC+VR).to_str());
-            VC_int_L  = intersectVS( VC, L_old );
-            VR_int_L  = intersectVS( VR, L_old );
-            VR_int_VC = intersectVS( VR, VC );
-            VERB(70, "   * V_C int L : " + xsys(VC_int_L).to_str());
-            VERB(70, "   * V_R int L : " + xsys(VR_int_L).to_str());
-            VERB(70, "   * V_R int V_C : " + xsys(VR_int_VC).to_str());
-            VR_plus_VC_int_L = intersectVS( VR+VC, L_old );
-            VERB(70, "   * V_R+V_C int L : " + xsys(VR_plus_VC_int_L).to_str());
-            assert( (int) VC_int_L.size()+1 == VC.dim());
-            assert( (int) VR_int_L.size()+1 == VR.dim());
-            assert( xsys(VR_int_L) + xsys(l_cls_implied_unit) == VR );
-            assert( xsys(VC_int_L) + xsys(l_cls_implied_unit.plus_one()) == VC );
-        }
-        assert(!(VC+VR).is_consistent());
-        //compute new learnt_cls with VS: (V_C int L) + (V_R int L)
-        lits.clear();
-        std::move(VC_int_L.begin(), VC_int_L.end(), std::back_inserter(lits));
-        std::move(VR_int_L.begin(), VR_int_L.end(), std::back_inserter(lits));
-        VERB(70, "   * S : " + xsys(lits).to_str());
-        learnt_cls = xcls( std::move(xsys(lits)) );
-        //VERB(70, "   * sres : " + sres_opt(r_cls, learnt_cls).to_str());
-
-        VERB(70, "   '----> resolution gives clause " + learnt_cls.to_str());
-        VERB(70, "   '----> gives with current assignments: " + learnt_cls.update(assignments).to_str());
         
-        assert( is_subspace(learnt_cls.get_ass_VS(),L_old) );
+        //get reason_cls
+        assert(TRAIL.back().rs_cls_idx < xclss.size() && TRAIL.back().type == trail_t::IMPLIED_ALPHA);
+        const auto reason_cls = xclss[TRAIL.back().rs_cls_idx];
+        VERB(70, "   * reason clause " + reason_cls.to_str() + " for UNIT " + reason_cls.get_unit().to_str() );
+        bump_score( TRAIL.back().ind );
+        pop_trail(); //remove from trail!
 
-        // TODO stop conflict analysis as soon as learnt_cls with assignments up to prev dl reduces to XOR-lit
-        // meanwhile only check if it learnt_cls is a pure XOR-lit!
-        if (learnt_cls.deg() == 1) break;
+        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
     }
     // clean-up trail!
-    while (!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl) {
-        pop_trail();
-        Ls.pop_back();
-    }
-
-//    
-//    while(is_subspace(learnt_cls.get_ass_VS(), Ls.back())) {
-//        // rm from trail (before computing L)
-//        pop_trail();
-//        Ls.pop_back();
-//        VERB(70, "   * backtracking on trail! (c_dl = "+std::to_string(assignments_dl[trail.back()])+")");
-//    }
-//    
-
+    
     VERB(70, "   * ");
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
-    if(!Ls.empty()) {
-        assert(!is_subspace(learnt_cls.get_ass_VS(), Ls.back()));
-        VERB(70, "   * L("+std::to_string(Ls.size()-1)+")   : " + Ls.back().to_str());
-    }
-    VERB(70, "   '----> gives with current assignments: " + learnt_cls.update(assignments).to_str());
+    VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
 
 #ifndef NDEBUG
     print_assignments("    *");
     print_trail("    *");
 #endif
-    const var_t b_lvl = assignments_dl[TRAIL.back().ind];
-    if( assignments_dl[TRAIL.back().ind] < learnt_cls.deg() && b_lvl == dl-1 ) {
+
+    //TODO
+    //CLAUSE MINIMIZATION!
+
+    //find correct backtrack-lvl
+    const var_t b_lvl = learnt_cls.get_assigning_lvl();
+    if( dl < learnt_cls.deg() && b_lvl == dl-1 ) {
         VERB(50, "   * negated decisions lead to smaller learnt_cls and the same backtrack-level!");
         //assert(false);
+        
     }
     
     VERB(70, "****");
-    return std::pair<var_t, xcls>(b_lvl, learnt_cls);
+    return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls);
 };
 
-std::pair<var_t, xcls> solver::analyze() {
+std::pair<var_t, xcls_watch> solver::analyze() {
     VERB(70, "**** analyzing conflict");
 #ifndef NDEBUG
     print_assignments("    *");
@@ -477,41 +361,37 @@ std::pair<var_t, xcls> solver::analyze() {
     //go through trail of current dl -- skip over irrelevant parts
     std::set<var_t> relevant_lts;
     xcls learnt_cls = get_last_reason();
-    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
+    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for ALPHA " + b3_to_str(alpha[TRAIL.back().ind]) );
     //go through conflict clause, identify relevant reducers
     for(const xlit& l : learnt_cls.get_ass_VS().get_xlits()) {
-        auto reds = l.reducers(assignments);
-        for(const auto& lt : reds)
-            relevant_lts.insert(lt);
+        for(const auto& lt : l.support()) relevant_lts.insert(lt);
     }
     // rm from trail
     pop_trail();
 
-    while (!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl) {
-        assert(assignments_watches.back().back().get_reason() > opt.num_vars + 1 || xclss[assignments_watches.back().back().get_reason()].is_unit(dl_count));
+    while (!TRAIL.empty() && alpha_dl[TRAIL.back().ind] >= dl) {
+        assert(lineral_watches[dl].back().get_reason() > opt.num_vars + 1 || xclss[lineral_watches[dl].back().get_reason()].is_unit(dl_count));
         if (relevant_lts.contains(TRAIL.back().ind)) {
             relevant_lts.erase(TRAIL.back().ind);
             // get reason_UNIT clause
             xcls r_cls = get_last_reason();
             // update relevant_lts
             for (const xlit &l : r_cls.get_ass_VS().get_xlits()) {
-                auto reds = l.reducers(assignments);
-                for (const auto &lt : reds)
-                    relevant_lts.insert(lt);
+                for (const auto &lt : l.support()) relevant_lts.insert(lt);
             }
-            // const xcls_watch& cls = xclss[assignments_watches.back().back().get_reason()];
+            // const xcls_watch& cls = xclss[lineral_watches[dl].back().get_reason()];
             // const cls_size_t u_idx = cls.get_unit_idx();
             // std::move( cls.to_xlit(u_idx)+cls.orig_xlit(u_idx) );
         
-            VERB(70, "   * reason clause " + r_cls.to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
+            VERB(70, "   * reason clause " + r_cls.to_str() + " for UNIT " + b3_to_str( alpha[TRAIL.back().ind] ));
             learnt_cls = sres_opt(r_cls, learnt_cls);
             // rm from trail
             pop_trail();
             VERB(70, "   '----> resolution gives clause " + learnt_cls.to_str());
-            VERB(70, "   '----> gives with current assignments: " + learnt_cls.update(assignments).to_str());
+            VERB(70, "   '----> gives with current assignments: " + learnt_cls.reduced(alpha).to_str());
         } else {
             // skipping implication, since its irrelevant!
-            VERB(70, " SKIPPING * reason clause " + get_last_reason().to_str() + " for UNIT " + assignments[TRAIL.back().ind].to_str());
+            VERB(70, " SKIPPING * reason clause " + get_last_reason().to_str() + " for ALPHA " + b3_to_str( alpha[TRAIL.back().ind] ));
             // rm from trail
             pop_trail();
         }
@@ -524,18 +404,15 @@ std::pair<var_t, xcls> solver::analyze() {
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
 
     // clean-up trail!
-    while (!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl) { pop_trail(); }
+    while (!TRAIL.empty() && alpha_dl[TRAIL.back().ind] >= dl) { pop_trail(); }
 
     VERB(70, "****");
     assert(false);
     return std::pair<var_t, xcls>(dl - 1, learnt_cls);
 };
-#else
-std::pair<var_t, xcls> solver::analyze_exp() { return analyze_dpll(); };
-#endif
 
 #ifdef EXACT_UNIT_TRACKING
-std::pair<var_t, xcls> solver::analyze_no_sres() {
+std::pair<var_t, xcls_watch> solver::analyze_no_sres() {
     VERB(70, "**** analyzing conflict");
 #ifndef NDEBUG
     print_assignments("   *");
@@ -556,8 +433,8 @@ std::pair<var_t, xcls> solver::analyze_no_sres() {
     // rm from trail
     pop_trail();
 
-    while (!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl && assignments_watches.back().back().get_reason() <= xclss.size()) {
-        assert(xclss[assignments_watches.back().back().get_reason()].is_unit(dl_count));
+    while (!TRAIL.empty() && assignments_dl[TRAIL.back().ind] >= dl && lineral_watches[dl].back().get_reason() <= xclss.size()) {
+        assert(xclss[lineral_watches[dl].back().get_reason()].is_unit(dl_count));
         if (relevant_lts.contains(TRAIL.back().ind)) {
             relevant_lts.erase(TRAIL.back().ind);
             // get reason_UNIT clause
@@ -607,11 +484,10 @@ std::pair<var_t, xcls> solver::analyze_no_sres() {
     return std::pair<var_t, xcls>(backtrack_lvl, learnt_cls);
 };
 #else
-std::pair<var_t, xcls> solver::analyze_no_sres() { return analyze_dpll(); };
+std::pair<var_t, xcls_watch> solver::analyze_no_sres() { return analyze_dpll(); };
 #endif
-    
-#ifdef EXACT_UNIT_TRACKING
-std::pair<var_t,xcls> solver::analyze_dpll() {
+
+std::pair<var_t,xcls_watch> solver::analyze_dpll() {
     VERB(60, "analyze_dpll called!")
 #ifndef NDEBUG
     print_assignments("    *");
@@ -620,78 +496,66 @@ std::pair<var_t,xcls> solver::analyze_dpll() {
     //return negation of last decision!
     assert(!TRAIL.empty());
     //if trail is empty, we are at dl 0, i.e., analyze_dpll should not be called!
-    xlit dec;
-    //now accumulate all previous decisions
-    assert(TRAIL.size() == assignments_watches.back().size());
-    vec<xlit> xlits;
-    for(const auto& lw : assignments_watches) {
-        xlits.push_back( lw[0].to_xlit() );
+    std::list<xlit> xlits;
+    for(auto tr = trails.begin()+1; tr!=trails.end(); ++tr) {
+        if(!tr->empty()) xlits.emplace_back( tr->front().ind, !b3_to_bool(alpha[tr->front().ind]) );
     }
-    xlits.back().add_one();
-    xcls learnt_cls(xlits);
-    //TODO incorrect!!
+    xcls learnt_cls( std::move(xlits) );
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
+    #ifdef EXACT_UNIT_TRACKING
     VERB(70, "   '----> gives with current assignments: " + learnt_cls.update(assignments).to_str());
+    #endif
 
-    return {dl-1, learnt_cls};
+    return {dl-1, std::move(learnt_cls) };
 };
-#else
-std::pair<var_t,xcls> solver::analyze_dpll() {
-    assert(false);
-    //TODO adapt to removed assignments!
-    return {0, xcls()};
-};
-#endif
 
 
-#ifdef EXACT_UNIT_TRACKING
-void solver::add_learnt_cls(xcls&& cls) {
-    assert(assert_data_structs());
-    //assert(cls.deg()>1); //IF THIS FAILS ADD PROPER HANDLING FOR LIN-CLAUSES! (add to xsys directly!)
-    if(cls.deg()==1) {
-        assert(dl == 0); //if a unit is learnt, we should backtrack to dl 0...
-        add_new_xlit( cls.get_unit(), -1, 0);
-        return;
+
+void solver::restart(stats& s) {
+    ++s.no_restarts;
+
+    //go to dl 0
+    backtrack(0);
+
+    //rm 'useless' cls:
+    //mark clauses to be deleted
+    for(var_t i=0; i<xclss.size(); ++i) {
+        if(utility[i] < util_cutoff && xclss[i].is_active(dl_count)) {
+            xclss[i].mark_for_removal();
+        }
     }
-    //now cls has at least two xlits, i.e., we can construct xcls_watch!
-
-    // first convert cls to xcls_watch, then update with dl 0 units
-    const var_t i = xclss.size();
-    // add cls to xclss (and update watch_lists)
-    init_and_add_xcls_watch( std::move(cls) );
-    xclss[i].set_unit(assignments, dl_count, dl);
-    VERB(65, "c new xclss "+xclss.back().to_str(assignments));
-    xclss[i].update(alpha, alpha_dl, dl_count);
-    assert( xclss.back().is_unit(dl_count) );
-
-    // perform steps as in GCP case UNIT
-    // NEW LIN-EQS
-    xlit unit = xclss.back().get_unit();
-    unit.reduce(assignments, assignments_dl, dl); //TODO we should also be able to use 'unit.reduced(assignments);'
-    VERB(65, "new UNIT " + unit.to_str() + " with reason clause " + get_last_reason().to_str());
-    // add to assignments and trail
-    add_new_xlit(unit, i, dl);
-    bump_score(unit);
-    assert(assert_data_structs());
+    assert( assert_data_structs() );
+    //remove all clss marked for removal
+    vec<xcls_watch> cpy; cpy.reserve(xclss.size());
+    vec<var_t> util_cpy = vec<var_t>(utility.size(), 0);
+    for(var_t i=0; i<xclss.size(); ++i) {
+        if(!xclss[i].is_marked_for_removal()) {
+            cpy.emplace_back(std::move(xclss[i]));
+            util_cpy[i] = utility[i];
+        }
+    }
+    std::swap(cpy, xclss);
+    std::swap(util_cpy, utility);
+    //empty watchlists
+    for(auto& wl : watch_list) wl.clear();
+    //re-fill watchlists!
+    for(var_t i=0; i<xclss.size(); ++i) {
+        watch_list[xclss[i].get_wl0()].emplace_back( i );
+        watch_list[xclss[i].get_wl1()].emplace_back( i );
+    }
+    assert( assert_data_structs() );
 };
-#else
-void solver::add_learnt_cls([[maybe_unused]] xcls&& cls) {
-    assert(false);
-    //TODO adapt to removed assignments!
-}
-#endif
 
 xlit new_unit;
 //perform full GCP -- does not stop if conflict is found -- otherwise assert_data_struct will fail!
 void solver::GCP(stats &s) {
     //first check for implied alphas
+    s.no_gcp++;
     VERB(90, "GCP start");
-    while(!GCP_QUEUE.empty() && no_conflict()) {
-        s.no_gcp++;
-        // s.total_upd_xsys_size += get_latest_xsys().size();
-        // update relevant xclsses
-        const var_t upd_lt = GCP_QUEUE.front();
-        GCP_QUEUE.pop();
+    while(!lineral_queue.empty() && no_conflict()) {
+        const var_t upd_lt = propagate_implied_lineral();
+        if(upd_lt == (var_t) -1) continue; //nothing new to propagate!
+        if(upd_lt == 0) { assert(!no_conflict()); continue; } //at conflict!
 
         {
         //find new implied alphas! -- propagate to watched units
@@ -699,19 +563,19 @@ void solver::GCP(stats &s) {
         while(it != L_watch_list[upd_lt].end()) {
           const auto [lvl, i, dl_, dl_c] = *it;
           //if assignments_watch[i] has been removed and possibly filled with another literal between adding it to this watch-list in the first place, we have to fix the watching scheme now!
-          if(i>=assignments_watches[lvl].size() || dl_count[dl_] != dl_c) {
+          if(i>=lineral_watches[lvl].size() || dl_count[dl_] != dl_c) {
               it = L_watch_list[upd_lt].erase( it );
               continue;
           }
-          assert(assignments_watches[lvl][i].watches(upd_lt));
+          assert(lineral_watches[lvl][i].watches(upd_lt));
           //skip if it is already assigned && it does not contradict alpha[i]
           //TODO optimize! i.e., offer a function that checks if it is was already assigned the last time it was checked! (use dl_count?!)
-          const auto& [lt,val] = assignments_watches[lvl][i].get_assignment(alpha);
+          const auto& [lt,val] = lineral_watches[lvl][i].get_assignment(alpha);
           if(val!=bool3::None && alpha[lt] == val) {
             ++it;
             continue;
           }
-          const auto& [new_wl, ret] = assignments_watches[lvl][i].update(upd_lt, alpha);
+          const auto& [new_wl, ret] = lineral_watches[lvl][i].update(upd_lt, alpha);
           //if watched-literal has changed, i.e., new_wl != 0; update watch-list
           if(new_wl != upd_lt) {
               //rm *it from current watch-list:
@@ -724,43 +588,43 @@ void solver::GCP(stats &s) {
           switch (ret) {
           case xlit_upd_ret::ASSIGNING:
             {
-              assert( assignments_watches[lvl][i].is_assigning(alpha) );
+              assert( lineral_watches[lvl][i].is_assigning(alpha) );
             #ifdef EXACT_UNIT_TRACKING
-              assert( assignments_watches[lvl][i].to_xlit().reduced(assignments).is_assigning() );
+              assert( lineral_watches[lvl][i].to_xlit().reduced(assignments).is_assigning() );
             #endif
               // update alpha
-              const auto [lt,val] = assignments_watches[lvl][i].get_assignment(alpha);
+              const auto [lt,val] = lineral_watches[lvl][i].get_assignment(alpha);
               assert(alpha[lt] == bool3::None);
-              const var_t ass_lvl = assignments_watches[lvl][i].get_assigning_lvl(alpha_dl); assert(ass_lvl == dl);
-              trails[ass_lvl].emplace_back( lt, trail_t::IMPLIED_ALPHA );
+              const var_t rs = lineral_watches[lvl][i].get_reason();
+              assert( rs < xclss.size() || lvl == 0 );
             #ifdef EXACT_UNIT_TRACKING
               if(assignments[lt].is_zero()) {
-                  assignments[lt] = assignments_watches[lvl][i].to_xlit();
+                  assignments[lt] = lineral_watches[lvl][i].to_xlit();
                   assignments[lt].reduce(alpha);
                   assignments_dl[lt] = dl;
               }
             #endif
-              alpha[lt] = val;
-              alpha_dl[lt] = ass_lvl;
-              reason_ALPHA[lt] = assignments_watches[lvl][i].get_reason();
-              GCP_QUEUE.emplace(lt);
-              VERB(70, "c " + std::to_string(ass_lvl) + " : new ALPHA " + assignments_watches[lvl][i].get_assigning_xlit(alpha).to_str() + " from UNIT " + assignments_watches[lvl][i].to_str() + ( (reason_ALPHA[lt]<xclss.size()) ? " with reason clause " + xclss[reason_ALPHA[lt]].to_str() : "") );
+              queue_implied_alpha(lt, val, rs < xclss.size() ? rs : i, rs < xclss.size() ? trail_t::IMPLIED_ALPHA : trail_t::LINERAL_IMPLIED_ALPHA);
+              //trails[dl].emplace_back( lt, rs < xclss.size() ? trail_t::IMPLIED_ALPHA : trail_t::LINERAL_IMPLIED_ALPHA, rs < xclss.size() ? rs : i);
+              //alpha[lt] = val;
+              //alpha_dl[lt] = dl;
+              //alpha_trail_pos[lt] = (var_t) trails[dl].size();
+              //VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + lineral_watches[lvl][i].get_assigning_xlit(alpha).to_str() + " from UNIT " + lineral_watches[lvl][i].to_str() + ( (lineral_watches[lvl][i].get_reason()<xclss.size()) ? " with reason clause " + xclss[lineral_watches[lvl][i].get_reason()].to_str() : "") );
               //update assignments
-              if (!no_conflict()) {
-                VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
-                return; //quit propagation immediately at conflict!
-              }
+              //if (!no_conflict()) {
+              //  VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
+              //  return; //quit propagation immediately at conflict!
+              //}
             }
             break;
           case xlit_upd_ret::UNIT:
-              assert(!assignments_watches[lvl][i].is_assigning(alpha));
+              assert(!lineral_watches[lvl][i].is_assigning(alpha));
               break;
           }
         }
         }
 
         {
-        // for(const auto& [i,j] : upd_idxs) {
         auto it = watch_list[upd_lt].begin();
         while(it != watch_list[upd_lt].end()) {
             if (s.cancelled.load()) {
@@ -791,30 +655,33 @@ void solver::GCP(stats &s) {
                 assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero()); //in particular it must be zero when reduced with assignments!
               #endif
                 // IGNORE THIS CLAUSE FROM NOW ON
-                decr_active_cls(xclss[i].get_inactive_lvl(dl_count));
+                decr_active_cls(i);
                 break;
             case xcls_upd_ret::UNIT: //includes UNSAT case (i.e. get_unit() reduces with assignments to 1 !)
                 assert(xclss[i].is_unit(dl_count));
                 assert(xclss[i].is_inactive(dl_count));
+                assert(xclss[i].get_unit_at_lvl() == dl);
               #ifdef EXACT_UNIT_TRACKING
                 assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_unit() || xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero());
               #endif
                 //assert(xclss[i].is_inactive(alpha));
+                //increase utility
+                utility[i]++;
                 // IGNORE THIS CLAUSE FROM NOW ON
-                decr_active_cls(xclss[i].get_inactive_lvl(dl_count));
+                decr_active_cls(i);
                 // NEW LIN-EQS
                 new_unit = std::move(xclss[i].get_unit());
                 // add to assignments
-                if( add_new_xlit(new_unit, i, xclss[i].get_inactive_lvl(dl_count)) ) {
+                if( queue_implied_lineral(new_unit, i) ) {
                   #ifdef EXACT_UNIT_TRACKING
                     assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero()); //in particular it must now be zero w.r.t. assignments (since new_unit has already been added!)
                   #endif
                     ++s.new_px_upd;
                 }
-                if (!no_conflict()) { 
-                    VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
-                    return; //quit propagation immediately at conflict!
-                    }
+                //if (!no_conflict()) { 
+                //    VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
+                //    return; //quit propagation immediately at conflict!
+                //}
                 break;
             case xcls_upd_ret::NONE:
                 //assert(xclss[i].is_none(alpha));
@@ -827,6 +694,8 @@ void solver::GCP(stats &s) {
         }
         }
     }
+    assert(lineral_queue.empty() || !no_conflict());
+
     VERB(90, to_str());
     VERB(90, "GCP end");
     assert(assert_data_structs());
@@ -870,7 +739,7 @@ void solver::dpll_solve(stats &s) {
     xsys new_xsys = xsys();
     std::stack<xsys> dec_stack;
 
-    // update graph -- before making decisions!
+    // GCP -- before making decisions!
     GCP(s);
 
     while (true) {
@@ -905,15 +774,12 @@ void solver::dpll_solve(stats &s) {
                 dec_stack.pop();
                 //decay_score();
               #ifdef EXACT_UNIT_TRACKING
-                assert( is_consistent() == assignments[0].is_zero() );
+                assert( no_conflict() == assignments[0].is_zero() );
               #endif
             } else {
                 ++dl;
                 ++dl_count[dl];
                 trails.emplace_back( std::list<trail_elem>() );
-                gcp_queues.emplace_back( std::queue<var_t>() );
-                assignments_watches.emplace_back( vec<xlit_watch>() );
-                assignments_watches.back().reserve(10); //TODO heuristically guess how many new assignments will get implied
                 ++s.no_dec;
                 // save state
                 save_state();
@@ -934,15 +800,13 @@ void solver::dpll_solve(stats &s) {
 
             assert((var_t)state_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
-            assert((var_t)gcp_queues.size() == dl + 1);
-            assert((var_t)assignments_watches.size() == dl + 1);
             assert(assert_data_structs());
         } else {
             //now active_cls == 0 AND no_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
             xsys L = get_assignments_xsys();
             if (!L.is_consistent()) {
                 //alpha[0] = bool3::True; //enforce backtracking!
-                add_new_xlit(xlit(0, false), -1, dl);
+                add_implied_lineral(xlit(0, false), -1);
             } else {
               #ifdef EXACT_UNIT_TRACKING
                 // solution can be deduced from assignments!
@@ -964,7 +828,8 @@ void solver::dpll_solve(stats &s) {
 };
 
 //implementation of a cdcl-solver
-void solver::cdcl_solve(stats &s) {
+void solver::solve(stats &s) {
+    if(opt.ca == ca_alg::no) return dpll_solve(s);
     VERB(25, "c cdcl-solving start")
     // return UNSAT if linsys has no solution
     if (!no_conflict()) {
@@ -975,7 +840,7 @@ void solver::cdcl_solve(stats &s) {
 
     // current decision lvl
     dl = 0;
-    dl_count[dl]++;
+    dl_count[dl] = 1;
 
     // set update/fls/decH funcs
     dec_heu_t decH = &solver::dh_lex_LT;
@@ -990,7 +855,7 @@ void solver::cdcl_solve(stats &s) {
         decH = &solver::dh_lex_LT;
         break;
     case dec_heu::swl:
-        decH = &solver::dh_shortest_wl;
+        decH = &solver::dh_vsids_UNFINISHED;
         break;
     default:
         assert(false);
@@ -999,102 +864,111 @@ void solver::cdcl_solve(stats &s) {
     
     ca_t analyze;
     switch (opt.ca) {
-    case ca_alg::no:
+    case ca_alg::dpll:
         analyze = &solver::analyze_dpll;
         break;
     case ca_alg::fuip:
-        analyze = &solver::analyze_dpll;
-        //analyze = &solver::analyze_exp;
+        //analyze = &solver::analyze_dpll;
+        analyze = &solver::analyze_exp;
         break;
     default: //should never be executed
         assert(false);
+        analyze = &solver::analyze_exp;
         break;
     }
-
+    
     // stack for xsys that store alternative dec
     xsys new_xsys = xsys();
 
-    // propagate -- before making decisions!
+    // GCP -- before making decisions!
     GCP(s);
 
-    while (active_cls > 0 || !no_conflict()) {
+    while (true) {
         if (s.cancelled.load()) {
             VERB(10, "c cancelled");
             return;
         }
-        // make decision / backtrack
-        if (!no_conflict()) {
-            VERB(25, "c " << std::to_string(dl) << " : "
-                          << "conflict --> backtrack!")
-            ++s.no_confl;
-            // conflict!
-            if (dl == 0) {
-                // return UNSAT
+        if (active_cls > 0 || !no_conflict()) {
+            // make decision / backtrack
+            if (!no_conflict()) {
+                VERB(25, "c " << std::to_string(dl) << " : "
+                              << "conflict --> backtrack!")
+                ++s.no_confl;
+                // conflict!
+                if (dl == 0) {
+                    // return UNSAT
+                    s.finished = true;
+                    s.sat = false;
+                    return;
+                }
+            
+                ///// BACKTRACKING /////
+                ///// CLAUSE LEARNING /////
+                auto [lvl, learnt_cls] = (this->*analyze)();
+                // backtrack
+                backtrack(lvl);
+                VERB(100, to_str());
+
+                // add learnt_cls
+                add_learnt_cls( std::move(learnt_cls) );
+                // decay score
+                decay_score();
+
+                VERB(100, to_str());
+              #ifdef EXACT_UNIT_TRACKING
+                assert( no_conflict() == assignments[0].is_zero() );
+              #endif
+                //restart?
+                if(s.no_confl % restart_schedule == 0) {
+                    VERB(100, "c " << std::to_string(dl) << " : " << "xcls cleanup!")
+                    restart(s);
+                }
+            } else {
+                ++dl;
+                ++dl_count[dl];
+                trails.emplace_back( std::list<trail_elem>() );
+                ++s.no_dec;
+                // save state
+                save_state();
+
+                // make new decision!
+                // use decisions heuristic to find next decision!
+                std::pair<xsys, xsys> dec = (this->*decH)();
+                VERB(25, "c " << std::to_string(dl) << " : "
+                              << "decision " << std::to_string(s.no_dec) << " : " << std::to_string(dec.first.size()) << " or " << std::to_string(dec.second.size()) << " eqs")
+                VERB(50, "c " << std::to_string(dl) << " : "
+                              << "decision " << std::to_string(s.no_dec) << " namely [" << dec.first.to_str() << "] or [" << dec.second.to_str() << "]")
+                add_new_guess(std::move(dec.first));
+            }
+
+            GCP(s);
+
+            assert((var_t)state_stack.size() == dl + 1);
+            assert((var_t)trails.size() == dl + 1);
+            assert(assert_data_structs());
+        } else {
+            //now active_cls == 0 AND no_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
+            xsys L = get_assignments_xsys();
+            if (!L.is_consistent()) {
+                //alpha[0] = bool3::True; //enforce backtracking!
+                add_implied_lineral(xlit(0, false), -1);
+            } else {
+              #ifdef EXACT_UNIT_TRACKING
+                // solution can be deduced from assignments!
+                // matrix corr to eqs in assignments is in upper triangular form, i.e., solve from 'back' to 'front'
+                s.sol = vec<bool>(opt.num_vars, false);
+                for (auto l = assignments.rbegin(); l != assignments.rend(); ++l) l->solve(s.sol);
+              #else
+                s.sol = vec<bool>(opt.num_vars, false);
+                L.solve(s.sol);
+              #endif
+
+                s.sat = true;
                 s.finished = true;
-                s.sat = false;
-                s.end = std::chrono::steady_clock::now();
                 return;
             }
-            // backtrack
-
-            ///// CLAUSE LEARNING /////
-            auto [lvl, learnt_cls] = (this->*analyze)();
-            // backtrack
-            backtrack(lvl);
-            VERB(100, to_str());
-
-            // add learnt_cls
-            add_learnt_cls( std::move(learnt_cls) );
-            VERB(100, to_str());
-            // decay + bump scores of conflict clause!
-            bump_score(learnt_cls.get_ass_VS());
-            decay_score();
-          #ifdef EXACT_UNIT_TRACKING
-            assert( is_consistent() == assignments[0].is_zero() );
-          #endif
-        } else {
-            ++dl;
-            ++dl_count[dl];
-            ++s.no_dec;
-            // save state
-            save_state();
-
-            // make new decision!
-            // use decisions heuristic to find next decision!
-            std::pair<xsys, xsys> dec = (this->*decH)();
-            VERB(25, "c " << std::to_string(dl) << " : "
-                          << "decision " << std::to_string(s.no_dec) << " : " << std::to_string(dec.first.size()) << " or " << std::to_string(dec.second.size()) << " eqs")
-            VERB(50, "c " << std::to_string(dl) << " : "
-                          << "decision " << std::to_string(s.no_dec) << " namely [" << dec.first.to_str() << "] or [" << dec.second.to_str() << "]")
-            add_new_guess(std::move(dec.first));
         }
-
-        GCP(s);
-
-        assert((var_t)state_stack.size() == dl + 1);
-        assert(assert_data_structs());
     }
-
-#ifdef EXACT_UNIT_TRACKING
-    // solution can be deduced from assignments!
-    // matrix corr to eqs in assignments is in upper triangular form, i.e., solve from 'back' to 'front'
-    s.sol = vec<bool>(opt.num_vars, false);
-    for (auto l = assignments.rbegin(); l != assignments.rend(); ++l)
-        l->solve(s.sol);
-#else
-    vec<xlit> lits; lits.reserve(assignments_watches.size());
-    for(const auto& l_dl : assignments_watches) {
-        for(const auto& l : l_dl) if(l.is_active(dl_count)) lits.emplace_back( l.to_xlit() );
-    }
-    xsys L( std::move(lits) );
-    s.sol = vec<bool>(opt.num_vars, false);
-    L.solve(s.sol);
-#endif
-
-    s.sat = true;
-    s.finished = true;
-
-    return;
 };
 
 
@@ -1130,13 +1004,13 @@ std::string solver::to_str() const noexcept {
       #ifdef EXACT_UNIT_TRACKING
         for([[maybe_unused]] const auto lvl : assignments_dl) assert( lvl <= dl);
       #endif
-        for([[maybe_unused]] const auto lvl : alpha_dl) assert( lvl <= dl);
+        for([[maybe_unused]] const auto lvl : alpha_dl) assert( lvl <= dl || lvl == (var_t) -1 );
 
         // check data structs of xclss
         for (var_t i = 0; i < xclss.size(); i++) {
             assert(xclss[i].assert_data_struct());
-            //only check advanced conditions if gcp_queue is empty!
-            if(no_conflict() && GCP_QUEUE.empty()) assert(xclss[i].assert_data_struct(alpha,dl_count));
+            //only check advanced conditions if lineral_queue is empty!
+            if(no_conflict() && lineral_queue.empty()) assert(xclss[i].assert_data_struct(alpha,dl_count));
         }
         //check watch-lists
         {
@@ -1152,7 +1026,7 @@ std::string solver::to_str() const noexcept {
             var_t idx = 0;
             while(it != L_watch_list.end()) {
                 for([[maybe_unused]] auto [lvl, i, dl_, dl_c] : *it) {
-                    assert( i>=assignments_watches[lvl].size() || dl_count[dl_]!=dl_c || assignments_watches[lvl][i].watches( idx ) || assignments_watches[lvl][i].to_xlit().is_one() || assignments_watches[lvl][i].to_xlit().is_zero() );
+                    assert( i>=lineral_watches[lvl].size() || dl_count[dl_]!=dl_c || lineral_watches[lvl][i].watches( idx ) || lineral_watches[lvl][i].to_xlit().is_one() || lineral_watches[lvl][i].to_xlit().is_zero() );
                     assert( lvl == dl_ );
                 }
                 ++it; ++idx;
@@ -1173,7 +1047,7 @@ std::string solver::to_str() const noexcept {
 
 
         // check that assignments in alpha are backed by assignment_xsys
-        if(is_consistent()) {
+        if(no_conflict()) {
             for([[maybe_unused]] const auto& [lt,idx] : assignments_xsys.get_pivot_poly_idx()) {
                 if(assignments_xsys.get_xlits(idx).as_bool3() != alpha[lt] ) {
                     VERB(100, "assignments_xys.get_xlits(idx) = " + idx->to_str() );
@@ -1201,6 +1075,21 @@ std::string solver::to_str() const noexcept {
         }
       #endif
         
+        //check active_cls
+        assert( active_cls == std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch& xcls) { return xcls.is_active(dl_count) && xcls.is_irredundant(); }) );
+
+        //check that trails[dl] contains exactly as many trail_t::IMPLIED_UNIT elements as there are xlit_watches in lineral_watches[dl]
+        for(var_t lvl = 0; lvl<=dl; lvl++) {
+            assert( (var_t) std::count_if(trails[lvl].begin(), trails[lvl].end(), [&](const trail_elem& t) { return t.type==trail_t::IMPLIED_UNIT || t.type==trail_t::GUESS; }) == (var_t) lineral_watches[lvl].size() );
+            for(const auto& [ind, type, rs] : trails[lvl]) {
+                assert( alpha[ind]==bool3::None || alpha_dl[ind]<=dl );
+            }
+        }
+
+      #ifndef USE_EQUIV
+        //ensure that equiv_lits_dl is 'empty'
+        for(const auto& lvl : equiv_lits_dl) assert(lvl==(var_t)-1);
+      #endif
 
         // check solution! (for rand-10-20.xnf) -- may help in debugging!
         /*
@@ -1244,12 +1133,27 @@ void solver::print_assignments([[maybe_unused]] std::string lead) const noexcept
 void solver::print_trail(std::string lead) const noexcept {
   VERB(80, lead);
   VERB(80, lead+" trail");
-  VERB(80, lead+" pos dl unit");
+  VERB(80, lead+" pos dl type unit");
+
+  const auto trail_t_to_str = [](const trail_t& t) {
+    switch(t) {
+      case trail_t::EQUIV:                 return "NEW_EQUIV ";
+      case trail_t::IMPLIED_UNIT:          return "IMPL_UNIT ";
+      case trail_t::LINERAL_IMPLIED_ALPHA: return "IMPL_ALPHA";
+      case trail_t::IMPLIED_ALPHA:         return "IMPL_ALPHA";
+      case trail_t::GUESS:                 return "GUESS     ";
+      case trail_t::LEARNT_UNIT:           return "LRNT_UNIT ";
+    }
+    return "";
+  };
+  var_t lvl = 0;
   for(const auto& t_dl : trails) {
     var_t i = 0;
     for (const auto& t : t_dl) {
-        VERB(80, lead+" " + std::to_string(i) + " " + std::to_string(alpha_dl[t.ind]) + " " + "x" + std::to_string(t.ind) + " " + b3_to_str( alpha[t.ind] ));
-        i++;
+        assert( (t.type!=trail_t::IMPLIED_ALPHA && t.type!=trail_t::LINERAL_IMPLIED_ALPHA) || alpha_dl[t.ind] == lvl );
+        VERB(80, lead+" " + std::to_string(i) + " " + std::to_string(lvl) + " " + trail_t_to_str(t.type) + " " + "x" + std::to_string(t.ind) + " " + b3_to_str( alpha[t.ind] ));
+        ++i;
     }
+    ++lvl;
   }
 }
