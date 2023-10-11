@@ -1020,7 +1020,11 @@ std::string solver::to_xnf_str() const noexcept {
     //add linear polys
     for(const auto& lw_dl : lineral_watches) {
         for(const auto& l : lw_dl) {
-            xclss_str.emplace( l.to_xnf_str() );
+            if(!l.is_active(dl_count)) continue;
+            xlit lin = l.to_xlit();
+            lin.reduce(alpha);
+            if(lin.is_zero()) continue;
+            xclss_str.emplace( lin.to_xnf_str() );
             ++n_cls;
         }
     }
