@@ -1003,18 +1003,12 @@ std::string solver::to_str() const noexcept {
 }
 
 std::string solver::to_xnf_str() const noexcept {
-    auto xclss_str = std::set<std::string>();
+    auto xclss_str = vec<std::string>();
     var_t n_cls = 0;
-    //go through xclss
-    for(const auto& cls_w : xclss) {
-        if(!cls_w.is_active(dl_count)) continue;
-        std::string cls_str = "";
-        auto cls = cls_w.to_xcls().reduced(alpha);
-        for(const auto& lin : cls.get_ass_VS().get_xlits()) {
-            cls_str += lin.to_xnf_str();
-            cls_str += " ";
-        }
-        xclss_str.emplace( cls_str );
+    //add alpha
+    for(var_t i=0; i<alpha.size(); ++i) {
+        if(alpha[i] == bool3::None) continue;
+        xclss_str.emplace_back( xlit(i, b3_to_bool(alpha[i])).to_xnf_str() );
         ++n_cls;
     }
     //add linear polys
@@ -1024,9 +1018,21 @@ std::string solver::to_xnf_str() const noexcept {
             xlit lin = l.to_xlit();
             lin.reduce(alpha);
             if(lin.is_zero()) continue;
-            xclss_str.emplace( lin.to_xnf_str() );
+            xclss_str.emplace_back( lin.to_xnf_str() );
             ++n_cls;
         }
+    }
+    //go through xclss
+    for(const auto& cls_w : xclss) {
+        if(!cls_w.is_active(dl_count)) continue;
+        std::string cls_str = "";
+        auto cls = cls_w.to_xcls().reduced(alpha);
+        for(const auto& lin : cls.get_ass_VS().get_xlits()) {
+            cls_str += lin.to_xnf_str();
+            cls_str += " ";
+        }
+        xclss_str.emplace_back( cls_str );
+        ++n_cls;
     }
     //convert to one big string
     std::string str = "p xnf "+std::to_string(get_const_opts()->num_vars)+" "+std::to_string(n_cls)+"\n";
