@@ -240,6 +240,21 @@ std::string xlit::to_str() const {
     return str;
 };
 
+std::string xlit::to_xnf_str() const {
+    //if empty
+    if(idxs.size() == 0 && !has_constant()) return "";
+    //else construct string
+    std::string str;
+    if(!has_constant()) {
+        str.append("-");
+    }
+    for (var_t i = 0; i < idxs.size(); i++) {
+        str.append( std::to_string( idxs[i] )+"+" );
+    }
+    if(idxs.size()>0) str.pop_back();
+    return str;
+};
+
 std::string xlit::to_full_str(var_t num_vars) const{ 
     std::string str(num_vars, '0');
     for (auto &&i : idxs) {

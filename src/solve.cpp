@@ -137,6 +137,13 @@ std::string to_str(const vec< vec<xlit> >& xclss) {
     return str;
 }
 
+void write_str(const std::string& fname, const std::string& out) {
+    std::ofstream myfile;
+    myfile.open (fname);
+    myfile << out;
+    myfile.close();
+}
+
 //register signal-interupt handler using lambda with capture, adapted from 'https://stackoverflow.com/a/48164204/14352840'
 namespace {
     std::function<void(int)> interrupt_handler;
@@ -187,4 +194,48 @@ void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
 
 stats solve(const vec< vec<xlit> >& xnf, const options& opts) {
     stats s; solve(xnf, opts, s); return s;
+}
+
+//perform one gcp run
+std::string gcp_only(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
+    //set number of omp jobs!
+    omp_set_num_threads(opts.jobs > omp_get_max_threads() ? omp_get_max_threads() : opts.jobs);
+
+    //time comp, start
+    s.begin = std::chrono::steady_clock::now();
+
+    //std::cout << to_str( xnf ) << std::endl;
+    auto sol = solver( xnf, opts );
+
+    //register interupt handler
+    std::signal(SIGINT, signal_handler);
+    interrupt_handler = [&s]([[maybe_unused]] int signal) {
+        std::cout << "!!! INTERRUPTED !!!" << std::endl;
+        s.cancelled.store( true ); //make sure cdcl_solve ends in next iteration!
+    };
+
+    //if timeout was set:
+    std::string out = "";
+    if(opts.timeout>0) {
+        auto timeout = std::chrono::seconds(opts.timeout);
+        std::promise<int> p1;
+        std::future<int> f_solve = p1.get_future();
+        std::thread thr([&out,&s,&sol](std::promise<int> p1){ sol.GCP(s); out = sol.to_xnf_str(); p1.set_value_at_thread_exit(0); }, std::move(p1));
+        thr.detach();
+
+        std::future_status status = f_solve.wait_for(timeout);
+        if(status != std::future_status::ready) { //if computation not finished
+            std::cout << "c timeout reached!" << std::endl;
+            s.cancelled.store( true ); //make thread terminate
+            f_solve.wait(); //wait for thread to terminate fully!
+        }
+    } else {
+        sol.GCP(s);
+        out = sol.to_xnf_str();
+    };
+    
+    //print stats
+    s.end = std::chrono::steady_clock::now();
+    if(opts.verb>0) s.print_final_gcp_only();
+    return out;
 }

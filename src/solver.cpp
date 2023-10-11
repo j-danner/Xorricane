@@ -318,6 +318,13 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
         assert(TRAIL.back().rs_cls_idx < xclss.size() && TRAIL.back().type == trail_t::IMPLIED_ALPHA);
         const auto reason_cls = xclss[TRAIL.back().rs_cls_idx];
         VERB(70, "   * reason clause " + reason_cls.to_str() + " for UNIT " + reason_cls.get_unit().to_str() );
+    #ifndef NDEBUG
+        //ensure that reason cls is reason for provided alpha
+        xlit unit = reason_cls.get_unit();
+        unit.reduce(alpha);
+        unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
+        assert(unit.is_zero()); //unit MUST reduce to zero, as TRAIL is not yet popped
+    #endif
         bump_score( TRAIL.back().ind );
         pop_trail(); //remove from trail!
 
@@ -994,6 +1001,36 @@ std::string solver::to_str() const noexcept {
 
     return result;
 }
+
+std::string solver::to_xnf_str() const noexcept {
+    auto xclss_str = std::set<std::string>();
+    var_t n_cls = 0;
+    //go through xclss
+    for(const auto& cls_w : xclss) {
+        if(!cls_w.is_active(dl_count)) continue;
+        std::string cls_str = "";
+        auto cls = cls_w.to_xcls().reduced(alpha);
+        for(const auto& lin : cls.get_ass_VS().get_xlits()) {
+            cls_str += lin.to_xnf_str();
+            cls_str += " ";
+        }
+        xclss_str.emplace( cls_str );
+        ++n_cls;
+    }
+    //add linear polys
+    for(const auto& lw_dl : lineral_watches) {
+        for(const auto& l : lw_dl) {
+            xclss_str.emplace( l.to_xnf_str() );
+            ++n_cls;
+        }
+    }
+    //convert to one big string
+    std::string str = "p xnf "+std::to_string(get_const_opts()->num_vars)+" "+std::to_string(n_cls)+"\n";
+    for(const auto &cls : xclss_str) {
+        str += cls + (cls.size()>0 ? " 0\n" : "0\n");
+    }
+    return str;
+};
 
 #ifdef NDEBUG
     bool solver::assert_data_structs() const noexcept { return true; };

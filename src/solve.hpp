@@ -15,6 +15,22 @@ void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s);
 
 stats solve(const vec< vec<xlit> >& xnf, const options& opts);
 
+/**
+ * @brief perform one GCP on xnf using provided opts
+ * 
+ * @param xnf vector of vector representing list of xor-clauses to be solved -- only works for 2-XNFs so far!
+ * @param opts options specifying update alg, timeout, inprocessing settings etc
+ * @param s stats to put statistics into
+ */
+std::string gcp_only(const vec< vec<xlit> >& xnf, const options& opts, stats& s);
+
+/**
+ * @brief writes string to file
+ * 
+ * @param fname file path
+ * @param out string to write
+ */
+void write_str(const std::string& fname, const std::string& out);
 
 struct parsed_xnf {
     var_t num_vars;

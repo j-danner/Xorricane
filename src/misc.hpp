@@ -168,19 +168,11 @@ class stats {
       std::cout << std::fixed << std::setprecision(3);
 
       std::cout << "c dec/sec    : "  << no_dec/total_time << std::endl;
-      //std::cout << "c v_upd/sec  : " << no_vert_upd/total_time << std::endl;
-      //std::cout << "c " << std::endl;
-      //std::cout << "c v_upd/dec  : " << ((float) no_vert_upd)/((float) no_dec) << std::endl;
-      //std::cout << "c " << std::endl;
-      //std::cout << "c avg graph size : " << ((float) total_upd_no_v)/((float) no_graph_upd) << std::endl;
       std::cout << "c avg xsys size  : " << ((float) total_upd_xsys_size)/((float) no_gcp) << std::endl;
-      //std::cout << "c " << std::endl;
 
       std::cout << "c px by upd  : " << new_px_upd << std::endl;
       std::cout << "c " << std::endl;
 
-      //std::cout << "c vertex upd : " << no_vert_upd << std::endl;
-      //std::cout << "c graph upd  : " << no_graph_upd << std::endl;
       std::cout << "c restarts   : " << no_restarts << std::endl;
       std::cout << "c decisions  : " << no_dec << std::endl;
       std::cout << "c conflicts  : " << no_confl << std::endl;
@@ -201,6 +193,13 @@ class stats {
               std::cout << "c timeout reached or interupted!" << std::endl;
               std::cout << "s INDEFINITE" << std::endl;
       }
+    };
+    
+    void print_final_gcp_only() {
+      float total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
+      std::cout << std::fixed << std::setprecision(3);
+      std::cout << "c px by upd  : " << new_px_upd << std::endl;
+      std::cout << "c Total time : " << total_time << " [s]" << std::endl;
     };
     
     stats() {};

@@ -119,6 +119,12 @@ int main(int argc, char const *argv[])
         .default_value(-1)
         .scan<'i', int>();
 
+    //gcp-out
+    program.add_argument("-g","--gcp-out")
+        .help("applies GCP once and prints result givn fname")
+        .default_value(std::string("out.xnf"));
+
+
     try {
         program.parse_args(argc, argv);
     } catch (const std::runtime_error& err) {
@@ -149,6 +155,9 @@ int main(int argc, char const *argv[])
     else if(ca_str=="dpll") ca = ca_alg::dpll;
     else if(ca_str=="1uip") ca = ca_alg::fuip;
 
+    const bool only_gcp = program.is_used("-g");
+    const std::string gcp_out = only_gcp ? program.get<std::string>("-g") : "";
+
     //auto jobs = program.get<int>("-j");
     auto jobs = 1;
     
@@ -166,6 +175,16 @@ int main(int argc, char const *argv[])
 
         //set upt options
         options opts( p_xnf.num_vars, p_xnf.num_cls, dh, po, ca, jobs, verb, time_out );
+
+        if(only_gcp) {
+            stats s;
+            std::string out = gcp_only(p_xnf.cls, opts, s);
+            if(out.size()>0) {
+                write_str(gcp_out, out);
+                return 0;
+            }
+            return 1; //preprocessing failed.
+        }
 
         stats s = solve(p_xnf.cls, opts);
         s.begin = begin;

@@ -106,6 +106,7 @@ class xlit
         inline int size() const { return idxs.size(); };
 
         std::string to_str() const;
+        std::string to_xnf_str() const;
         std::string to_full_str(var_t num_vars) const;
 
         //overloaded operators

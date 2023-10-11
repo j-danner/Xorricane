@@ -87,7 +87,7 @@ class solver
     vec< std::list<var_t> > watch_list;
     
     /**
-     * @brief watch_list[i] contains all idxs j s.t. xlits[j] watches indet i
+     * @brief TODO
      */
     vec< std::list< std::array<var_t,4> > > L_watch_list;
 
@@ -285,8 +285,6 @@ class solver
 
     typedef std::pair<xsys,xsys> (solver::*dec_heu_t)() const;
     typedef std::pair<var_t,xcls_watch> (solver::*ca_t)();
-
-    void GCP(stats& s);
 
     void bump_score(const var_t& ind);
     void bump_score(const xsys& new_xsys);
@@ -699,6 +697,8 @@ class solver
 
     ~solver() = default;
     
+    void GCP(stats& s);
+    
     /**
      * @brief saves current state to state_stack
      */
@@ -741,8 +741,10 @@ class solver
     var_t get_dl() const noexcept { return dl; };
     
     options* get_opts() { return &opt; };
+    const options* get_const_opts() const { return &opt; };
 
     std::string to_str() const noexcept;
+    std::string to_xnf_str() const noexcept;
 
     solver& operator=(const solver& ig) = delete;
 
