@@ -1024,7 +1024,7 @@ std::string solver::to_xnf_str() const noexcept {
         std::string cls_str = "";
         auto cls = cls_w.to_xcls().reduced(alpha);
         for(const auto& lin : cls.get_ass_VS().get_xlits()) {
-            cls_str += lin.to_xnf_str();
+            cls_str += lin.plus_one().to_xnf_str();
             cls_str += " ";
         }
         xclss_str.emplace_back( cls_str );
