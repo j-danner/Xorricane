@@ -8,11 +8,7 @@
 #include "solver.hpp"
 
 solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl_) noexcept : opt(opt_), dl(dl_) {
-    #ifndef NDEBUG
-        if(opt.verb==0) opt.verb = 100;
-    #endif
-
-    // init stacks
+    //init stacks
     state_stack = vec< state_repr >();
     //init watch_list
     watch_list.resize(opt_.num_vars+1);

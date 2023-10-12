@@ -190,6 +190,7 @@ void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
     //print stats
     s.end = std::chrono::steady_clock::now();
     if(opts.verb>0) s.print_final();
+    s.print_sol();
 }
 
 stats solve(const vec< vec<xlit> >& xnf, const options& opts) {
@@ -236,6 +237,6 @@ std::string gcp_only(const vec< vec<xlit> >& xnf, const options& opts, stats& s)
     
     //print stats
     s.end = std::chrono::steady_clock::now();
-    if(opts.verb>0) s.print_final_gcp_only();
+    if(opts.verb>0) s.print_gcp_info();
     return out;
 }

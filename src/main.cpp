@@ -183,15 +183,15 @@ int main(int argc, char const *argv[])
                 write_str(gcp_out, out);
                 return 0;
             }
-            return 1; //preprocessing failed.
+            return 1; //gcp failed.
         }
 
         stats s = solve(p_xnf.cls, opts);
         s.begin = begin;
 
-        if(s.finished && s.sat) { //check sol!
+        if(opts.verb > 0 && s.finished && s.sat) { //check sol!
             if(check_sol(p_xnf.cls, s.sol)) {
-                if(opts.verb > 0) std::cout << "c solution verified" << std::endl;
+                std::cout << "c solution verified" << std::endl;
                 return 0;
             } else {
                 std::cout << "c solution INCORRECT!" << std::endl;

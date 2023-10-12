@@ -177,7 +177,9 @@ class stats {
       std::cout << "c decisions  : " << no_dec << std::endl;
       std::cout << "c conflicts  : " << no_confl << std::endl;
       std::cout << "c Total time : " << total_time << " [s]" << std::endl;
+    }
 
+    void print_sol() {
       if(finished) {
           if(sat) {
               std::cout << "s SATISFIABLE" << std::endl;
@@ -195,7 +197,7 @@ class stats {
       }
     };
     
-    void print_final_gcp_only() {
+    void print_gcp_info() {
       float total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
       std::cout << std::fixed << std::setprecision(3);
       std::cout << "c px by upd  : " << new_px_upd << std::endl;
