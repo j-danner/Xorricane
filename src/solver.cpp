@@ -1002,11 +1002,18 @@ std::string solver::to_xnf_str() const noexcept {
     auto xclss_str = vec<std::string>();
     var_t n_cls = 0;
     //add alpha
-    for(var_t i=0; i<alpha.size(); ++i) {
-        if(alpha[i] == bool3::None) continue;
-        xclss_str.emplace_back( xlit(i, b3_to_bool(alpha[i])).to_xnf_str() );
-        ++n_cls;
+    VERB(80, "c printing alpha assignment")
+    if (alpha[0] != bool3::None) {
+        VERB(85, "instance is UNSAT; print only empty clause.")
+        return "p xnf "+std::to_string(get_const_opts()->num_vars)+" 1\n 0\n";
     }
+    for(var_t i=1; i<alpha.size(); ++i) {
+        if(alpha[i] == bool3::None) continue;
+        xclss_str.emplace_back( xlit(i, b3_to_bool(alpha[i])).to_xnf_str() + " 0" );
+        ++n_cls;
+        VERB(85, "c " + xclss_str.back());
+    }
+    VERB(80, "c printing linear polys")
     //add linear polys
     for(const auto& lw_dl : lineral_watches) {
         for(const auto& l : lw_dl) {
@@ -1014,10 +1021,12 @@ std::string solver::to_xnf_str() const noexcept {
             xlit lin = l.to_xlit();
             lin.reduce(alpha);
             if(lin.is_zero()) continue;
-            xclss_str.emplace_back( lin.to_xnf_str() );
+            xclss_str.emplace_back( lin.to_xnf_str() + " 0" );
             ++n_cls;
+            VERB(85, "c " + xclss_str.back());
         }
     }
+    VERB(80, "c printing XNF clauses")
     //go through xclss
     for(const auto& cls_w : xclss) {
         if(!cls_w.is_active(dl_count)) continue;
@@ -1027,13 +1036,14 @@ std::string solver::to_xnf_str() const noexcept {
             cls_str += lin.plus_one().to_xnf_str();
             cls_str += " ";
         }
-        xclss_str.emplace_back( cls_str );
+        xclss_str.emplace_back( cls_str + "0" );
         ++n_cls;
+        VERB(95, "c " + xclss_str.back());
     }
     //convert to one big string
     std::string str = "p xnf "+std::to_string(get_const_opts()->num_vars)+" "+std::to_string(n_cls)+"\n";
     for(const auto &cls : xclss_str) {
-        str += cls + (cls.size()>0 ? " 0\n" : "0\n");
+        str += cls + "\n";
     }
     return str;
 };
