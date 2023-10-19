@@ -146,7 +146,7 @@ bool xlit::reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl
     return ret;
 };
 
-bool xlit::reduce(const vec<equivalence>& equiv_lits) {
+bool xlit::reduce([[maybe_unused]] const vec<equivalence>& equiv_lits) {
   #ifndef USE_EQUIV
     return false;
   #else
@@ -165,7 +165,7 @@ bool xlit::reduce(const vec<equivalence>& equiv_lits) {
   #endif
 };
 
-bool xlit::reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl) {
+bool xlit::reduce([[maybe_unused]] const vec<equivalence>& equiv_lits, [[maybe_unused]] const vec<var_t>& equiv_lits_dl, [[maybe_unused]] const var_t& lvl) {
   #ifndef USE_EQUIV
     return false;
   #else
@@ -184,7 +184,7 @@ bool xlit::reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_li
   #endif
 };
 
-bool xlit::reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl, const vec<bool3>& alpha) {
+bool xlit::reduce([[maybe_unused]] const vec<equivalence>& equiv_lits, [[maybe_unused]] const vec<var_t>& equiv_lits_dl, [[maybe_unused]] const var_t& lvl, [[maybe_unused]] const vec<bool3>& alpha) {
   #ifndef USE_EQUIV
     return false;
   #else
