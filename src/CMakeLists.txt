@@ -2,11 +2,6 @@ add_library(
     xlit
     #misc
     misc.hpp
-    #solve
-    solve.hpp
-    solve.cpp
-    solver.hpp
-    solver.cpp
     #xlit
     xlit/xlit.hpp
     xlit/xlit.cpp
@@ -23,6 +18,17 @@ add_library(
     robin_hood-3.11.5/robin_hood.h
 )
 
+add_library(
+    solver
+    #solve
+    solve.hpp
+    solve.cpp
+    solver.hpp
+    solver.cpp
+    #misc
+    misc.hpp
+)
+
 #find openmp package
 find_package(OpenMP REQUIRED)
 
@@ -34,4 +40,6 @@ find_package(Boost 1.67 COMPONENTS container REQUIRED)
 message(STATUS "Boost version: ${Boost_VERSION}")
 
 target_link_libraries(xlit PUBLIC ${EXTRA_LIBS} PRIVATE OpenMP::OpenMP_CXX Boost::container m4ri)
+
+target_link_libraries(solver PUBLIC ${EXTRA_LIBS} PRIVATE OpenMP::OpenMP_CXX Boost::container m4ri xlit)
 
