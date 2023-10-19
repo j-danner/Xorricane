@@ -8,8 +8,6 @@
 #include <memory>
 #include <array>
 #include <m4ri/m4ri.h>
-#include <m4ri/m4ri_config.h>
-#include <m4ri/mzd.h>
 
 #include "solve.hpp"
 #include "misc.hpp"
@@ -21,27 +19,6 @@
 
 #define TRAIL trails.back()
 
-//#define EXACT_UNIT_TRACKING
-
-struct state_repr {
-  /**
-   * @brief number of active clauses
-   */
-  var_t active_cls;
-
-#ifdef EXACT_UNIT_TRACKING
-  /**
-   * @brief current (non)-constant assignments
-   * @todo remove!
-   */
-  xsys L;
-
-  state_repr(const var_t _active_cls, const xsys& _L) : active_cls(_active_cls), L(_L) {};
-#else
-  state_repr(const var_t _active_cls) : active_cls(_active_cls) {};
-#endif
-
-};
 
 enum class trail_t { EQUIV, IMPLIED_UNIT, IMPLIED_ALPHA, LINERAL_IMPLIED_ALPHA, LEARNT_UNIT, GUESS };
 
@@ -112,7 +89,7 @@ class solver
     /**
      * @brief stack of state repr -- used for backtracking (and for dl-wise update of learnt-clauses)
      */
-    vec<state_repr> state_stack;
+    vec<var_t> active_cls_stack;
     
     /**
      * @brief 'activity' of each variable; used for decision heuristic
@@ -136,13 +113,6 @@ class solver
      */
     vec<dl_c_t> dl_count;
 
-#ifdef EXACT_UNIT_TRACKING
-    /**
-     * @brief current assignments of vars; assignments[i] contains xlit with LT i
-     */
-    vec< xlit > assignments;
-#endif
-    
     /**
      * @brief current unit watches
      * @note lineral_watches[lvl] contains all units added in dl lvl; used as stack
@@ -156,13 +126,6 @@ class solver
      */
     //vec< std::list< std::array<var_t,4> > > assignments_list;
 
-#ifdef EXACT_UNIT_TRACKING
-    /**
-     * @brief current assignments -- stored as xsys
-     */
-    xsys assignments_xsys;
-#endif
-    
     /**
      * @brief current assignments of vars; assignments[i] contains xlit with LT i
      */
@@ -183,13 +146,6 @@ class solver
      * 
      */
     vec<var_t> alpha_trail_pos;
-
-#ifdef EXACT_UNIT_TRACKING
-    /**
-     * @brief dl of chosen assignments; i was assigned at dl assignments_dl[i]
-     */
-    vec<var_t> assignments_dl;
-#endif
 
     /**
      * @brief if equiv_lits[i].ind is non-zero, i is congruent to equiv_lits[i].ind + (equiv_lits[i].polarity ? 1 : 0).
@@ -236,7 +192,7 @@ class solver
     inline void save_phase() {
       switch (opt.po) {
       case phase_opt::rand:
-        //last_phase[trail.back()] = (bool)(rand() > (RAND_MAX/2)) ?  bool3::True : bool3::False;
+        //last_phase[TRAIL.back()] = (bool)(rand() > (RAND_MAX/2)) ?  bool3::True : bool3::False;
         last_phase[TRAIL.back().ind] = alpha[TRAIL.back().ind];
         break;
       case phase_opt::save:
@@ -250,14 +206,6 @@ class solver
 
     inline bool pop_trail() noexcept {
       if (TRAIL.empty()) return false;
-      //check if assignments or only alpha needs to be cleared!
-#ifdef EXACT_UNIT_TRACKING
-      if(alpha_dl[TRAIL.back().ind] <= assignments_dl[TRAIL.back().ind]) {
-        //clear assignments_dl
-        assignments[TRAIL.back().ind] = xlit();
-        assignments_dl[TRAIL.back().ind] = (var_t) -1;
-      }
-#endif
       //store last_phase
       switch(TRAIL.back().type) {
       case trail_t::GUESS:
@@ -310,8 +258,8 @@ class solver
       if(!xclss[idx].is_irredundant()) return;
       //update curr val
       --active_cls;
-      //update vals in state_stack
-      for(var_t j = xclss[idx].get_inactive_lvl(dl_count)+1; j<state_stack.size(); ++j) --state_stack[j].active_cls;
+      //update vals in active_cls_stack
+      for(var_t j = xclss[idx].get_inactive_lvl(dl_count)+1; j<active_cls_stack.size(); ++j) --active_cls_stack[j];
     }
 
     xlit _reduced_lit;
@@ -330,11 +278,6 @@ class solver
       if(!_reduced_lit.is_assigning()) {
         _reduced_lit.reduce(equiv_lits,equiv_lits_dl,lvl); //reduce equivalent variable
       }
-  #ifdef EXACT_UNIT_TRACKING
-      if(!_reduced_lit.is_assigning()) {
-        _reduced_lit.reduce(assignments, assignments_dl, dl); //reduce with assignments AND alpha...
-      }
-  #endif
       if(_reduced_lit.is_zero()) return -1; 
       VERB(65, "c " + std::to_string(lvl) + " : new UNIT " + lit.to_str() + " ~> " + _reduced_lit.to_str() + (type!=trail_t::LINERAL_IMPLIED_ALPHA && type!=trail_t::LEARNT_UNIT ? (rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") : (" with reason clause " + lineral_watches[0][rs].to_str()) ) );
       
@@ -343,21 +286,6 @@ class solver
       //we already have UNIT x1+x2+x3 and now get x1; as of now, we add x2+x3, even though x1 would be assigning!
       //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
       // add to trail //TODO add in propoer position in trail!
-
-#ifdef EXACT_UNIT_TRACKING
-      // update assignments
-      assert(assignments[lt].is_zero() || _reduced_lit == assignments[lt]);
-      if(assignments[lt].is_zero()) {
-        assignments[lt] = _reduced_lit;
-        assignments_dl[lt] = dl;
-      }
-      //add _reduced_lit to assignments_xsys
-      assert((var_t)state_stack.size() >= dl);
-      for(auto i = dl+1; i < (var_t) state_stack.size(); ++i) {
-        state_stack[i].L += xsys(_reduced_lit);
-      }
-      assignments_xsys += xsys(_reduced_lit);
-#endif
 
       if(type!=trail_t::IMPLIED_ALPHA && type!=trail_t::LINERAL_IMPLIED_ALPHA && type!=trail_t::LEARNT_UNIT) {
         trails[lvl].emplace_back( lt, type, rs);
@@ -382,16 +310,6 @@ class solver
           VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + lit.to_str() + (type!=trail_t::LINERAL_IMPLIED_ALPHA ? (rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") : (" with reason clause " + lineral_watches[0][rs].to_str()) ) );
           alpha_trail_pos[lt2] = (var_t) trails[dl].size()-1;
           if(rs<xclss.size() && type!=trail_t::LINERAL_IMPLIED_ALPHA) xclss[rs].set_assigning_lvl(dl);
-      #ifdef EXACT_UNIT_TRACKING
-          if(lt!=lt2) {
-            //update assignments
-            assert( assignments[lt2].is_zero() || assignments_dl[lt2] == alpha_dl[lt2] );
-            //either lt2 has not been assigned yet; or it has been done on this level; i.e., we can just overwrite it! (note: here we have a forcing assignment, i.e., a better assignment...)
-            //trails[ alpha_dl[lt2] ].emplace_back( lt2, trail_t::IMPLIED_ALPHA );
-            assignments[lt2] = lineral_watches[dl].back().get_assigning_xlit(alpha);
-            assignments_dl[lt2] = alpha_dl[lt2];
-          }
-      #endif
         } else if (l.is_equiv()) { //TODO update to check is_equiv for xlit_watches!!
       #ifdef USE_EQUIV
           assert(lt < l.get_equiv_lit() ); //ensure that lt is smallest!
@@ -488,30 +406,10 @@ class solver
       if(!_reduced_lit.is_assigning()) {
         _reduced_lit.reduce(equiv_lits, equiv_lits_dl, 0); //reduce equivalent variables
       }
-  #ifdef EXACT_UNIT_TRACKING
-      if(!_reduced_lit.is_assigning()) {
-        _reduced_lit.reduce(assignments, assignments_dl, dl); //reduce with assignments AND alpha...
-      }
-  #endif
       if(_reduced_lit.is_zero()) return false; 
       VERB(65, "c " + std::to_string(0) + " : new UNIT " + lit.to_str() + " ~> " + _reduced_lit.to_str() );
 
-#ifdef EXACT_UNIT_TRACKING
-      const var_t lt = _reduced_lit.LT();
-      // update assignments
-      assert(assignments[lt].is_zero() || _reduced_lit == assignments[lt]);
-      if(assignments[lt].is_zero()) {
-        assignments[lt] = _reduced_lit;
-        assignments_dl[lt] = dl;
-      }
-      //add _reduced_lit to assignments_xsys
-      assert((var_t)state_stack.size() >= 0);
-      for(auto i = 1; i < (var_t) state_stack.size(); ++i) {
-        state_stack[i].L += xsys(_reduced_lit);
-      }
-      assignments_xsys += xsys(_reduced_lit);
-#endif
-      //TODO what to do if lit becomes an equivilan e on some intermediate dl? schould we keep track of that?! (certainly if lin is has assigning_lvl l, then it is an equivalence at l-1 (!))
+      //TODO what to do if lit becomes an equivilance on some intermediate dl? schould we keep track of that?! (certainly if lin has assigning_lvl l, then it is an equivalence at l-1 (!))
 
       trails[0].emplace_back( _reduced_lit.LT(), trail_t::IMPLIED_UNIT, -1);
       lineral_watches[0].emplace_back( std::move(_reduced_lit), alpha, alpha_dl, 0, dl_count, -1 );
@@ -522,17 +420,6 @@ class solver
         if(lineral_watches[0].back().get_wl0() != lineral_watches[0].back().get_wl1()) L_watch_list[ lineral_watches[0].back().get_wl1() ].emplace_back( std::array<var_t,4>({0, (var_t) (lineral_watches[0].size()-1), 0, dl_count[0]}) );
       }
 
-#ifdef EXACT_UNIT_TRACKING
-      if(lt!=lt2) {
-        //update assignments
-        assert( assignments[lt2].is_zero() || assignments_dl[lt2] == alpha_dl[lt2] );
-        //either lt2 has not been assigned yet; or it has been done on this level; i.e., we can just overwrite it! (note: here we have a forcing assignment, i.e., a better assignment...)
-        //trails[ alpha_dl[lt2] ].emplace_back( lt2, trail_t::IMPLIED_ALPHA );
-        assignments[lt2] = lineral_watches[0].back().get_assigning_xlit(alpha);
-        assignments_dl[lt2] = alpha_dl[lt2];
-      }
-#endif
-      
       return true;
     };
 
@@ -734,28 +621,18 @@ class solver
       case xcls_upd_ret::SAT:
           assert(xclss[i].is_sat(dl_count));
           assert(xclss[i].is_inactive(dl_count));
-        #ifdef EXACT_UNIT_TRACKING
-          assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero()); //in particular it must be zero when reduced with assignments!
-        #endif
           // IGNORE THIS CLAUSE FROM NOW ON
           decr_active_cls(i);
           break;
       case xcls_upd_ret::UNIT: //includes UNSAT case (i.e. get_unit() reduces with assignments to 1 !)
           assert(xclss[i].is_unit(dl_count));
           assert(xclss[i].is_inactive(dl_count));
-        #ifdef EXACT_UNIT_TRACKING
-          assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_unit() || xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero());
-        #endif
           //update utility
           utility[i]++;
           // IGNORE THIS CLAUSE FROM NOW ON
           decr_active_cls(i);
           // NEW LIN-EQS
-          if( queue_implied_lineral(std::move(xclss[i].get_unit()), i) ) {
-            #ifdef EXACT_UNIT_TRACKING
-              assert(xclss[i].to_xcls().reduced(alpha).reduced(assignments).is_zero()); //in particular it must now be zero w.r.t. assignments (since new_unit has already been added!)
-            #endif
-          }
+          queue_implied_lineral(std::move(xclss[i].get_unit()), i);
           if (!no_conflict()) { 
               VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
               return i; //quit propagation immediately at conflict!
@@ -797,20 +674,11 @@ class solver
     solver(parsed_xnf& p_xnf) noexcept : solver(p_xnf.cls, options(p_xnf.num_vars, p_xnf.num_cls), 0) {};
 
     //copy ctor
-  #ifdef EXACT_UNIT_TRACKING
-    solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), state_stack(o.state_stack), activity_score(o.activity_score), dl_count(o.dl_count), assignments(o.assignments), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), assignments_dl(o.assignments_dl), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), lineral_queue(o.lineral_queue) { assert(assert_data_structs()); };
-  #else
-    solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), state_stack(o.state_stack), activity_score(o.activity_score), dl_count(o.dl_count), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), lineral_queue(o.lineral_queue) { assert(assert_data_structs()); };
-  #endif
+    solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), active_cls_stack(o.active_cls_stack), activity_score(o.activity_score), dl_count(o.dl_count), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), lineral_queue(o.lineral_queue) { assert(assert_data_structs()); };
 
     ~solver() = default;
     
     void GCP(stats& s);
-    
-    /**
-     * @brief saves current state to state_stack
-     */
-    void save_state();
 
     /**
      * @brief backtracks to dl
@@ -857,7 +725,7 @@ class solver
     solver& operator=(const solver& ig) = delete;
 
     bool assert_data_structs() const noexcept;
-    void print_assignments(std::string lead = "") const noexcept;
+    void print_assignments([[maybe_unused]] const std::string lead = "") const noexcept { return; };
     void print_trail(std::string lead = "") const noexcept;
 
 };
