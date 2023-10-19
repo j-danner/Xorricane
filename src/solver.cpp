@@ -96,6 +96,7 @@ void solver::save_state() {
 
 void solver::backtrack(const var_t& lvl) {
     VERB(90, "BACKTRACK start");
+    if(lvl == dl) return;
     assert(lvl < dl);
     VERB(80, "c backtracking to dl " << lvl);
     ///// --------------- /////
@@ -302,7 +303,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
         if( TRAIL.back().type == trail_t::LINERAL_IMPLIED_ALPHA || TRAIL.back().type == trail_t::LEARNT_UNIT) {
             assert(TRAIL.back().rs_cls_idx < lineral_watches[0].size());
             VERB(70, "   * reason clause " + lineral_watches[0][TRAIL.back().rs_cls_idx].to_str() );
-            const xlit lin = lineral_watches[0][TRAIL.back().rs_cls_idx].to_xlit();
+            const xlit& lin = lineral_watches[0][TRAIL.back().rs_cls_idx];
             bump_score( TRAIL.back().ind );
             pop_trail();
             
@@ -806,7 +807,7 @@ void solver::dpll_solve(stats &s) {
             assert(assert_data_structs());
         } else {
             //now active_cls == 0 AND no_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
-            xsys L = get_assignments_xsys();
+            const auto [L,_] = get_assignments_xsys();
             if (!L.is_consistent()) {
                 //alpha[0] = bool3::True; //enforce backtracking!
                 add_implied_lineral(xlit(0, false), -1);
@@ -951,10 +952,11 @@ void solver::solve(stats &s) {
             assert(assert_data_structs());
         } else {
             //now active_cls == 0 AND no_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
-            xsys L = get_assignments_xsys();
+            auto [L,r_cls] = get_assignments_xsys();
             if (!L.is_consistent()) {
-                //alpha[0] = bool3::True; //enforce backtracking!
-                add_implied_lineral(xlit(0, false), -1);
+                backtrack( r_cls.get_assigning_lvl() );
+                add_learnt_cls( std::move(r_cls) );
+                GCP(s);
             } else {
               #ifdef EXACT_UNIT_TRACKING
                 // solution can be deduced from assignments!

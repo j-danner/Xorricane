@@ -7,6 +7,9 @@
 #include <queue>
 #include <memory>
 #include <array>
+#include <m4ri/m4ri.h>
+#include <m4ri/m4ri_config.h>
+#include <m4ri/mzd.h>
 
 #include "solve.hpp"
 #include "misc.hpp"
@@ -536,56 +539,161 @@ class solver
     /**
      * @brief triangulates watched linerals; i.e. updates them w.r.t. previous linearls and brings them in non-reduced row-echelon form
      */
-    inline xsys get_assignments_xsys() {
-      vec<xlit> lits; lits.reserve(lineral_watches.size());
+    inline std::tuple<xsys,xcls_watch> get_assignments_xsys() {
+      //simple implementation
+      //vec<xlit> lits; lits.reserve(lineral_watches.size());
+      //for(const auto& l_dl : lineral_watches) {
+      //    for(const auto& l : l_dl) if(l.is_active(dl_count)) lits.emplace_back( l.to_xlit() );
+      //}
+      //return {xsys( std::move(lits) ),xcls()};
+
+      //M4RI implementation
+
+      //(1) reduce watched linerals
+
+      //construct matrix only with occuring lits
+      vec<var_t> perm(alpha.size(), 0);
+      vec<var_t> perm_inv(alpha.size(), 0);
+      var_t n_wlins = 0;
       for(const auto& l_dl : lineral_watches) {
-          for(const auto& l : l_dl) if(l.is_active(dl_count)) lits.emplace_back( l.to_xlit() );
+        for(const auto& l : l_dl) {
+          if(!l.is_active(dl_count)) continue;
+          for(const auto& v : l.get_idxs_()) perm[v] = 1;
+          ++n_wlins;
+        }
       }
-      return xsys( std::move(lits) );
+      //apply alpha already? the following does not work, since if x1=0, x2=1 then the literal x1+x2 is omitted, despite resembling a conflict!
+      ////ignore all assigned values
+      //for(var_t i=0; i<alpha.size(); ++i) {
+      //  if(alpha[i]!=bool3::None) perm[i]=0;
+      //}
+      
+      //construct permutation maps
+      var_t idx = 0;
+      for (var_t i = 1; i < alpha.size(); ++i) { 
+        if(perm[i]==1) {
+          perm[i] = idx; perm_inv[idx] = i; ++idx;
+        }
+      }
 
-      //triangulate code snippet -- NOT WORKING!
-//
-//      //we need to rewrite the current history, i.e., trails, alpha, alpha_dl, assignments, assignments_dl, assignments_list, lineral_watches and L_watch_list -- as if we reduced every new unit directly with the previous units!
-//      
-//      //reduce all watched linerals, and update assignments_list AND L_watch_list
-//      vec< vec< std::array<var_t,4> > > assignments_list_new;
-//      assignments_list_new.resize(opt.num_vars+1);
-//      vec<var_t> assignments_list_index(assignments_list.size(),0);
-//
-//      //empty watch-lists
-//      L_watch_list.clear();
-//      L_watch_list.resize(opt.num_vars+1);
-//
-//      for(var_t lvl = 0; lvl <= dl; ++lvl) {
-//        for(const auto& [lt,__] : trails[lvl]) {
-//          const auto& [_, i, dl_, dl_c] = assignments_list[lt][assignments_list_index[lt]];
-//          ++assignments_list_index[lt];
-//          assert( _ == lvl && dl_ == lvl );
-//          if(dl_count[dl_] != dl_c) continue;
-//
-//          //reduce with previous assignments, then update L_watch_list
-//          xlit& lit = lineral_watches[lvl][i];
-//          //reduce
-//          while( !assignments_list_new[lit.LT()].empty() ) {
-//            const auto& [lvl2, i2, dl2, dl_c2] = assignments_list_new[lit.LT()].back();
-//            assert( dl_count[dl2] == dl_c2 );
-//            lit += lineral_watches[lvl2][i2];
-//          }
-//          if(lit.is_zero()) continue;
-//          //re-initialize lit
-//          lineral_watches[lvl][i].init(alpha, alpha_dl);
-//          //add to L_watch_list and assignments_list_new
-//          assignments_list_new[lit.LT()].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
-//          L_watch_list[ lineral_watches[lvl].back().get_wl0() ].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
-//          if(lineral_watches[lvl].back().get_wl0() != lineral_watches[lvl].back().get_wl1()) L_watch_list[ lineral_watches[lvl].back().get_wl1() ].emplace_back( std::array<var_t,4>({_, i, dl_, dl_c}) );
-//        }
-//      }
-//      //replace assignments_list by assignments_list_new
-//      assignments_list = std::move(assignments_list_new);
-//
-//      VERB(65, "c triangulate end" )
+      const var_t n_vars = idx;
+      const rci_t nrows = n_wlins;
+      const rci_t ncols = n_vars+1;
+
+      mzd_t* M = mzd_init(nrows, ncols);
+      assert( mzd_is_zero(M) );
+
+      //fill with xlits
+      rci_t r = 0;
+      for(const auto& l_dl : lineral_watches) {
+        for(const auto& l : l_dl) {
+          //std::cout << l.to_str() << std::endl;
+          if(!l.is_active(dl_count)) continue;
+          if(l.has_constant()) {
+              mzd_write_bit(M, r, n_vars, 1);
+          }
+          for(const auto& i : l.get_idxs_()) {
+              assert(i>0); assert(perm[i] < ncols-1);
+              mzd_write_bit(M, r, perm[i], 1);
+          }
+          ++r;
+        }
+      }
+      assert(r == nrows);
+      //store transposed version (required to compute reason clause for )
+      mzd_t* M_tr = r>0 ? mzd_transpose(NULL, M) : mzd_init(0,0);
+      //TODO not memory efficient! we should really use PLUQ or PLE decomposition below and work from there...
+      
+      //for(var_t i=0; i<perm.size(); ++i) {
+      //  std::cout << std::to_string(i) << " ";
+      //}
+      //std::cout << std::endl;
+      //for(var_t i=0; i<perm.size(); ++i) {
+      //  std::cout << std::to_string(perm[i]) << " ";
+      //}
+      //std::cout << std::endl;
+      //mzd_print(M);
+
+      //compute rref
+      const rci_t rank = mzd_echelonize_pluq(M, true); //should we use mzd_echelonize instead?
+      
+      //mzd_print(M);
+      //read results
+      vec<xlit> xlits_; xlits_.reserve(rank);
+      vec<var_t> idxs;
+      for(rci_t r = 0; r<rank; ++r) {
+        idxs.clear();
+        for(rci_t c=0; c<n_vars; ++c) {
+            if( mzd_read_bit(M, r, c) ) idxs.push_back(perm_inv[c]);
+        }
+        xlits_.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::no );
+      }
+
+      xsys L = xsys( std::move(xlits_) );
+      if(L.is_consistent()) {
+        mzd_free(M);
+        mzd_free(M_tr);
+        return {L,xcls_watch()};
+      }
+
+      // (2) if 1 is contained in sys, construct reason cls!
+
+      //solve for M^T x = 1
+      mzd_t* b = mzd_init(std::max(ncols,nrows), 1);
+      mzd_write_bit(b, n_vars, 0, 1); //uses that supp[0]==0
+
+      //find solution
+      //mzd_print(M);
+      //std::cout << std::endl;
+      //mzd_print(M_tr);
+      //std::cout << std::endl;
+      //mzd_print(b);
+      //std::cout << std::endl;
+    #ifndef NDEBUG
+      const auto ret = mzd_solve_left(M_tr, b, 0, true);
+      assert(ret == 0);
+    #else
+      mzd_solve_left(M_tr, b, 0, false); //skip check for inconsistency; a solution exists i.e. is found!
+    #endif
+      //mzd_print(b);
+      
+    #ifndef NDEBUG
+      xlit tmp;
+    #endif
+      r = 0;
+      //resolve cls to get true reason cls
+      xcls_watch r_cls;
+      for(const auto& l_dl : lineral_watches) {
+        for(const auto& l : l_dl) {
+          if(mzd_read_bit(b,r,0)) {
+          #ifndef NDEBUG
+            tmp += l;
+          #endif
+            if(r_cls.size()==0) {
+              r_cls = l.get_reason()<xclss.size() ? xclss[l.get_reason()] : xcls_watch( std::move(xcls( std::move(l.plus_one()) )) );
+            } else {
+              //resolve cls
+              if( l.get_reason() < xclss.size() ) {
+                const auto& r_cls2 = xclss[l.get_reason()];
+                //add (unit of r_cls)+1 to r_cls2, and (unit of r_cls2)+1 to r_cls
+                r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+              } else {
+                r_cls.add_to_unit( l, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl );
+              }
+            }
+            assert( tmp.is_one() || r_cls.get_unit() == tmp );
+          }
+          ++r;
+        }
+      }
+      assert(tmp.is_one());
+
+      mzd_free(b);
+      mzd_free(M_tr);
+      mzd_free(M);
+
+      return {L,r_cls};
     }
-
 
 
     /**
