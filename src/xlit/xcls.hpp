@@ -103,4 +103,4 @@ std::pair<bool, xlit> intersectaffineVS(const xsys& U, const xsys& W);
 
 vec<xlit> intersectVS(const xsys& U, const xsys& W);
 
-xcls sres_opt(xcls& cl1, xcls& cl2);
+xcls sres_opt(const xcls& cl1, const xcls& cl2);

@@ -78,7 +78,7 @@ vec<xlit> intersectVS(const xsys& U, const xsys& W) {
     assert(r == nrows);
 
     //compute rref
-    const rci_t rank = mzd_echelonize(M, true);
+    const rci_t rank = mzd_echelonize_pluq(M, true);
     //read results
     vec<xlit> int_lits;
     r = rank-1;
@@ -164,7 +164,7 @@ std::pair<bool, xlit> intersectaffineVS(const xsys& U, const xsys& W) {
     //mzd_print(b);
     //std::cout << std::endl;
     const auto ret = mzd_solve_left(M, b, 0, true);
-    if(ret==-1) return {false, xlit()};
+    if(ret==-1) { mzd_free(M); mzd_free(b); return {false, xlit()}; }
     assert(ret == 0);
     //mzd_print(b);
 
@@ -204,7 +204,7 @@ vec<xlit> extend_basis(const vec<xlit>& B, const xsys& L) {
 }
 
 
-xcls sres_opt(xcls& cl1, xcls& cl2) {
+xcls sres_opt(const xcls& cl1, const xcls& cl2) {
     //rewrite cl1 and cl2 s.t. we can do s-resolution
     //compute intersection of cl1.assVS and cl2.assVS
 
