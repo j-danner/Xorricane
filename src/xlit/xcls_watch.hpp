@@ -626,7 +626,7 @@ public:
     assert(r == nrows);
 
     //compute rref
-    const rci_t rank = mzd_echelonize(M, true); //should we use mzd_echelonize_m4ri ??
+    const rci_t rank = mzd_echelonize_pluq(M, true); //should we use mzd_echelonize instead?
     //read results
     vec<xlit> xlits_; xlits_.reserve(rank);
     for(rci_t r = 0; r<rank; ++r) {
@@ -647,6 +647,13 @@ public:
       const var_t lvl = alpha_dl[ perm_inv[xlits_[i].LT()-1] ];
       if(lvl==(var_t)-1) { xlit_dl_count1[i] =  {0,0}; }
       else { xlit_dl_count1[i] = {lvl, dl_count[lvl]}; }
+    }
+
+    if(xlits_.size()==0) {
+      xlits.clear();
+      xlits.emplace_back( std::move(xlit().add_one()) );
+      assert(is_unit(dl_count));
+      return xcls_upd_ret::UNIT;
     }
 
     // now watch the first two xlits as usual
@@ -950,6 +957,19 @@ public:
   bool eval(const vec<bool> &sol) const {
     return std::any_of(xlits.begin(), xlits.end(), 
         [&sol](const xlit l) { return l.eval(sol); });
+  };
+  
+  void operator=(const xcls_watch &o) {
+    xlits = o.xlits;
+    shared_part = o.shared_part;
+    xlit_dl_count0 = o.xlit_dl_count0;
+    xlit_dl_count1 = o.xlit_dl_count1;
+    irredundant = o.irredundant;
+    delete_on_cleanup = o.delete_on_cleanup;
+    ws[0] = o.ws[0];
+    ws[1] = o.ws[1];
+    ptr_cache[0] = o.ptr_cache[0];
+    ptr_cache[1] = o.ptr_cache[1];
   };
 
   void operator=(const xcls_watch &&o) {
