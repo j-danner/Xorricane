@@ -427,14 +427,18 @@ class solver
      * @brief triangulates watched linerals; i.e. updates them w.r.t. previous linearls and brings them in non-reduced row-echelon form
      */
     inline std::tuple<xsys,xcls_watch> get_assignments_xsys() {
+    #ifndef NDEBUG
       //simple implementation
-      //vec<xlit> lits; lits.reserve(lineral_watches.size());
-      //for(const auto& l_dl : lineral_watches) {
-      //    for(const auto& l : l_dl) if(l.is_active(dl_count)) lits.emplace_back( l.to_xlit() );
-      //}
-      //return {xsys( std::move(lits) ),xcls()};
+      vec<xlit> lits; lits.reserve(lineral_watches.size());
+      for(const auto& l_dl : lineral_watches) {
+          for(const auto& l : l_dl) if(l.is_active(dl_count)) lits.emplace_back( l.to_xlit() );
+      }
+      xsys L_( std::move(lits) );
+      //return {L_,xcls_watch()};
+    #endif
 
       //M4RI implementation
+      VERB(80, "c use M4RI to reduce watched linerals");
 
       //(1) reduce watched linerals
 
@@ -517,6 +521,8 @@ class solver
       }
 
       xsys L = xsys( std::move(xlits_) );
+      VERB(80, "c reduction done.");
+
       if(L.is_consistent()) {
         mzd_free(M);
         mzd_free(M_tr);
@@ -524,6 +530,9 @@ class solver
       }
 
       // (2) if 1 is contained in sys, construct reason cls!
+      assert(!L_.is_consistent());
+
+      VERB(80, "c watched linerals are inconsistent! resolving reason clause...");
 
       //solve for M^T x = 1
       mzd_t* b = mzd_init(std::max(ncols,nrows), 1);
@@ -550,34 +559,59 @@ class solver
       r = 0;
       //resolve cls to get true reason cls
       xcls_watch r_cls;
-      for(const auto& l_dl : lineral_watches) {
-        for(const auto& l : l_dl) {
+      for(var_t lvl=0; lvl<=dl; ++lvl) {
+        const auto& l_dl = lineral_watches[lvl];
+        VERB(85, "c processing linerals deduced on lvl "+std::to_string(lvl));
+        for(var_t idx= 0; idx<l_dl.size(); ++idx) {
+          const auto& l = l_dl[idx];
           if(mzd_read_bit(b,r,0)) {
           #ifndef NDEBUG
             tmp += l;
           #endif
-            if(r_cls.size()==0) {
+            if(lvl>0 && idx==0) continue; //NOTE here we assume that the first lineral on every dl>0 comes from a guess; i.e. skip it for resolution!
+            if(r_cls.size()==0) { //r_cls has not yet been instantiated
               r_cls = l.get_reason()<xclss.size() ? xclss[l.get_reason()] : xcls_watch( std::move(xcls( std::move(l.plus_one()) )) );
             } else {
               //resolve cls
               if( l.get_reason() < xclss.size() ) {
                 const auto& r_cls2 = xclss[l.get_reason()];
                 //add (unit of r_cls)+1 to r_cls2, and (unit of r_cls2)+1 to r_cls
+                VERB(85, "c resolving clauses\nc   "+ r_cls.to_str()+"\nc and\nc   "+r_cls2.to_str());
                 r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+                VERB(85, "c and get \nc   "+ r_cls.to_str());
+              #ifndef NDEBUG
+                VERB(85, "c tmp = "+tmp.to_str());
+              #endif
+                VERB(85, "c");
               } else {
+                assert(lvl == 0); //the reason cls should only be a unit clause if it was deduced at lvl 0 (!)
+                VERB(85, "c resolving clauses\nc   "+ r_cls.to_str()+"\nc and\nc   "+l.to_str());
                 r_cls.add_to_unit( l, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl );
+                VERB(85, "c and get \nc   "+ r_cls.to_str());
+              #ifndef NDEBUG
+                VERB(85, "c tmp = "+tmp.to_str());
+              #endif
+                VERB(85, "c");
               }
             }
-            assert( tmp.is_one() || r_cls.get_unit() == tmp );
+            assert( tmp.is_one() || r_cls.get_unit().reduced(alpha, alpha_dl, 0) == tmp.reduced(alpha, alpha_dl, 0) );
+          }
+          if( r_cls.get_assigning_lvl() < lvl ) {
+            //early abort if r_cls is already assigning, i.e., already gives a conflict!
+            assert( r_cls.get_unit().reduced(alpha).is_one() );
+            goto finalize;
           }
           ++r;
         }
       }
       assert(tmp.is_one());
 
+    finalize:
       mzd_free(b);
       mzd_free(M_tr);
       mzd_free(M);
+
+      VERB(80, "c done, reason clause is "+r_cls.to_str());
 
       return {L,r_cls};
     }

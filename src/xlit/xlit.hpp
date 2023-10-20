@@ -94,7 +94,8 @@ class xlit
         bool reduce(const vec<equivalence>& equiv_lits);
         bool reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl);
         xlit reduced(const vec<xlit>& assignments) const { xlit ret(*this); ret.reduce(assignments); return ret; };
-        xlit reduced(const vec<bool3>& alpha) { reduce(alpha); return *this; };
+        xlit reduced(const vec<bool3>& alpha) const { xlit ret(*this); ret.reduce(alpha); return ret; };
+        xlit reduced(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl) const { xlit ret(*this); ret.reduce(alpha, alpha_dl, lvl); return ret; };
         vec<var_t> reducers(const vec<xlit>& assignments) const;
 
         inline vec<var_t> get_idxs() const { vec<var_t> r = idxs; if(p1){ r.insert(r.begin(), 0); } return r; };

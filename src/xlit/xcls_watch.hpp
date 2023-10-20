@@ -112,7 +112,8 @@ private:
     assert(get_wl0() != get_wl1());
   }
 
-  const var_t &ptr_(const cls_size_t &i, const var_t val) const {
+  var_t ptr_(const cls_size_t &i, const var_t val) const {
+    if(val == 0 && xlits[i].get_idxs_().size()==0) return 0;
     assert(val < xlits[i].get_idxs_().size());
     // return xlits[i].get_idxs_().at(val);
     return xlits[i].get_idxs_()[val];
@@ -322,7 +323,10 @@ private:
   }
 
 public:
-  xcls_watch(){};
+  xcls_watch(){
+    ws[0] = 0; ws[1] = 0;
+    ptr_cache[0] = 0; ptr_cache[1] = 0;
+  };
 
   xcls_watch(const xlit &l1, const xlit &l2) noexcept : xlits(vec<xlit>({l1.get_idxs_(), l2.get_idxs_()})) {
     assert(!l1.is_one() && !l1.is_zero());

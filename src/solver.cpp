@@ -122,7 +122,7 @@ void solver::backtrack(const var_t& lvl) {
     print_trail();
     print_assignments();
 
-    VERB(90, to_str());
+    VERB(101, to_str());
     VERB(90, "BACKTRACK end");
     assert(assert_data_structs());
 };
@@ -580,7 +580,7 @@ void solver::GCP(stats &s) {
     }
     assert(lineral_queue.empty() || !no_conflict());
 
-    VERB(90, to_str());
+    VERB(101, to_str());
     VERB(90, "GCP end");
     assert(assert_data_structs());
 };
@@ -649,10 +649,10 @@ void solver::dpll_solve(stats &s) {
                 ///// BACKTRACKING /////
                 //auto [lvl, learnt_cls] = (this->*analyze)();
                 backtrack(dl-1);
-                VERB(100, to_str());
+                VERB(101, to_str());
 
                 add_new_guess( dec_stack.top() ); //add as 'guess', i.e., trail and reason stacks are ill-managed here, but that is irrelevant since we do not use those in the dpll-type solver!
-                VERB(100, to_str());
+                VERB(101, to_str());
                 // decay + bump scores of conflict clause!
                 //bump_score( dec_stack.top() );
                 dec_stack.pop();
@@ -782,14 +782,14 @@ void solver::solve(stats &s) {
                 auto [lvl, learnt_cls] = (this->*analyze)();
                 // backtrack
                 backtrack(lvl);
-                VERB(100, to_str());
+                VERB(101, to_str());
 
                 // add learnt_cls
                 add_learnt_cls( std::move(learnt_cls) );
                 // decay score
                 decay_score();
 
-                VERB(100, to_str());
+                VERB(101, to_str());
                 //restart?
                 if(s.no_confl % restart_schedule == 0) {
                     VERB(100, "c " << std::to_string(dl) << " : " << "xcls cleanup!")
@@ -826,6 +826,7 @@ void solver::solve(stats &s) {
                 backtrack( r_cls.get_assigning_lvl() );
                 add_learnt_cls( std::move(r_cls) );
                 GCP(s);
+                if(no_conflict()) ++s.no_confl; //count as conflict here only if we do not need another conflict analysis
             } else {
                 s.sol = vec<bool>(opt.num_vars, false);
                 L.solve(s.sol);

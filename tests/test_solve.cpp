@@ -519,6 +519,25 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     SECTION( "test2.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test2.xnf");
         auto slvr = solver(clss);
+    
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test3.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test3.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 100;
+    
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sol(clss.cls, s.sol) );
+    }
+    
+    SECTION( "test4.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test4.xnf");
+        auto slvr = solver(clss);
         slvr.get_opts()->verb = 100;
     
         stats s = slvr.solve();
