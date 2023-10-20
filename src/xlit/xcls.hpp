@@ -84,7 +84,7 @@ class xcls {
     };
     
     //only update if the result does not blow up the linerals!
-    xcls update_short(const xsys L) const {
+    xcls update_short(const xsys& L) const {
       vec<xlit> lits;
       for(const auto& l : assVS.get_xlits() ) {
         xlit l_(l);
