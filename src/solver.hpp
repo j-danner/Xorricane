@@ -192,8 +192,7 @@ class solver
     inline void save_phase() {
       switch (opt.po) {
       case phase_opt::rand:
-        //last_phase[TRAIL.back()] = (bool)(rand() > (RAND_MAX/2)) ?  bool3::True : bool3::False;
-        last_phase[TRAIL.back().ind] = alpha[TRAIL.back().ind];
+        last_phase[TRAIL.back().ind] = rand()%2 ? bool3::True : bool3::False;
         break;
       case phase_opt::save:
         last_phase[TRAIL.back().ind] = alpha[TRAIL.back().ind];
