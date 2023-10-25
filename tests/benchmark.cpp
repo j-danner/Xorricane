@@ -42,7 +42,7 @@ BENCHMARK_CAPTURE(BM_cdcl_solve, mq-toyexample-type1-n15,  concat(BENCH_FILES, "
 BENCHMARK_CAPTURE(BM_cdcl_solve, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed4.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
 
 
-int xlit_performance(var_t n, long k) {
+int xlit_performance(var_t n, unsigned long k) {
     //compute k random xlit additions in n vars
     vec< xlit > xlits;
     xlits.reserve(2*k);
@@ -62,7 +62,7 @@ int xlit_performance(var_t n, long k) {
     vec<xlit> sums;
     sums.reserve(k);
 
-    for (int i = 0; i < k; i++)
+    for (unsigned int i = 0; i < k; i++)
     {
         sums[i] = xlits[2*i] + xlits[2*i+1];
     }

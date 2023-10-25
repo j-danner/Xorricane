@@ -7,7 +7,7 @@
 TEST_CASE( "xlit_watch", "[xlit_watch]" ) {
     vec<bool3> alpha = { bool3::None, bool3::True, bool3::True, bool3::True, bool3::False, bool3::None, bool3::None };
     vec<var_t> alpha_dl = { 0, 1, 1, 3, 2, 2, 1 };
-    vec<var_t> dl_count = {1,2,1};
+    vec<dl_c_t> dl_count = {1,2,1};
 
     vec<var_t> idxs1 = {0,3,4,5,6};
     xlit l1 = xlit(idxs1);

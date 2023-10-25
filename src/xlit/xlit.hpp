@@ -105,7 +105,7 @@ class xlit
         iterator begin() const { return idxs.begin(); };
         iterator end() const { return idxs.end(); };
 
-        inline int size() const { return idxs.size(); };
+        inline std::size_t size() const { return idxs.size(); };
 
         std::string to_str() const;
         std::string to_xnf_str() const;

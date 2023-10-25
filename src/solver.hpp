@@ -513,7 +513,7 @@ class solver
       vec<var_t> idxs;
       for(rci_t r = 0; r<rank; ++r) {
         idxs.clear();
-        for(rci_t c=0; c<n_vars; ++c) {
+        for(rci_t c=0; (unsigned)c<n_vars; ++c) {
             if( mzd_read_bit(M, r, c) ) idxs.push_back(perm_inv[c]);
         }
         xlits_.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::no );

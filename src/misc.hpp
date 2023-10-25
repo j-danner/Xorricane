@@ -27,15 +27,14 @@
 #endif
 
 
-//type for variable numbering (16bit should suffice)
-typedef uint16_t var_t;
-//typedef uint_fast16_t var_t;
+//type for variable numbering (must be unsigned; as (var_t)-1 must be bigger than all other values...)
+typedef uint_fast32_t var_t;
 
 //type for dl_counting
-typedef uint16_t dl_c_t; //change to something larger?
+typedef uint_fast16_t dl_c_t; //change to something larger? this might overflow if we have dl > 65535... but in that case a solution is unlikely to be found anyways...
 
 //type for cls length
-typedef uint8_t cls_size_t;
+typedef uint_fast8_t cls_size_t; //clauses with more than 256 linerals are impractical!
 
 //select vector impl to use
 template<class T>

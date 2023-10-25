@@ -635,7 +635,7 @@ public:
     vec<xlit> xlits_; xlits_.reserve(rank);
     for(rci_t r = 0; r<rank; ++r) {
         vec<var_t> idxs;
-        for(rci_t c=0; c<n_vars; ++c) {
+        for(rci_t c=0; (unsigned)c<n_vars; ++c) {
             if( mzd_read_bit(M, r, c) ) idxs.push_back(c+1);
         }
         xlits_.emplace_back( std::move(idxs), (bool) !mzd_read_bit(M, r, n_vars), presorted::yes );

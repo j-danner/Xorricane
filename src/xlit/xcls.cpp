@@ -172,7 +172,7 @@ std::pair<bool, xlit> intersectaffineVS(const xsys& U, const xsys& W) {
 
     //comp xlit l in U with l+1 in W
     xlit out = xlit();
-    for(rci_t r = 0; r<U.size(); ++r) {
+    for(rci_t r = 0; (unsigned)r<U.size(); ++r) {
         if(mzd_read_bit(b, r, 0)) out += U.get_xlits(r);
     }
 

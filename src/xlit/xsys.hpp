@@ -110,7 +110,7 @@ class xsys
 
     inline int dim() const { return pivot_poly_its.size(); };
     
-    inline int size() const { return xlits.size(); };
+    inline std::size_t size() const { return xlits.size(); };
     
     //deprecated!
     inline const vec<xlit> get_xlits_vec() const { return vec<xlit>(xlits.begin(),xlits.end()); };
