@@ -32,6 +32,14 @@ std::string gcp_only(const vec< vec<xlit> >& xnf, const options& opts, stats& s)
  */
 void write_str(const std::string& fname, const std::string& out);
 
+/**
+ * @brief parses file with name fname
+ * 
+ * @param fname guessing path file name; each line contains one index
+ * @return reordering of variables, s.t. lex is the correct order
+ */
+reordering parse_gp(const std::string& fname);
+
 struct parsed_xnf {
     var_t num_vars;
     var_t num_cls;
@@ -45,7 +53,16 @@ struct parsed_xnf {
  * @brief parses file with name fname
  * 
  * @param fname xnf-file name
- * @return std::pair<std::pair<var_t,var_t>, vec< vec<xlit> > > parsed num-cls, num-vars and parsed xlits
+ * @param reordering permutation of indices
+ * @return parsed_Xnf parsed num-cls, num-vars and parsed xlits
+ */
+parsed_xnf parse_file_gp(const std::string& fname, const reordering& P);
+
+/**
+ * @brief parses file with name fname
+ * 
+ * @param fname xnf-file name
+ * @return parsed_Xnf parsed num-cls, num-vars and parsed xlits
  */
 parsed_xnf parse_file(const std::string& fname);
 

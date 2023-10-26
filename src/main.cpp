@@ -123,6 +123,10 @@ int main(int argc, char const *argv[])
     program.add_argument("-g","--gcp-out")
         .help("applies GCP once and prints result givn fname")
         .default_value(std::string("out.xnf"));
+    
+    //guessing path input
+    program.add_argument("-gp","--guessing-path")
+        .help("path to file storing guessing path; each line contains exactly one number corr to the corresponding variable");
 
 
     try {
@@ -157,6 +161,8 @@ int main(int argc, char const *argv[])
 
     const bool only_gcp = program.is_used("-g");
     const std::string gcp_out = only_gcp ? program.get<std::string>("-g") : "";
+    
+    const std::string gp_fname = program.is_used("-gp") ? program.get<std::string>("-gp") : "";
 
     //auto jobs = program.get<int>("-j");
     auto jobs = 1;
@@ -171,10 +177,11 @@ int main(int argc, char const *argv[])
 
     //parse file
     try {
-        parsed_xnf p_xnf = parse_file( fname );
+        reordering P = parse_gp( gp_fname );
+        parsed_xnf p_xnf = P.size()==0 ? parse_file( fname ) : parse_file_gp( fname, P );
 
         //set upt options
-        options opts( p_xnf.num_vars, p_xnf.num_cls, dh, po, ca, jobs, verb, time_out );
+        options opts( p_xnf.num_vars, p_xnf.num_cls, dh, po, ca, jobs, verb, time_out, P );
 
         if(only_gcp) {
             stats s;

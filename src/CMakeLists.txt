@@ -27,6 +27,8 @@ add_library(
     solver.cpp
     #misc
     misc.hpp
+    #hmaps
+    robin_hood-3.11.5/robin_hood.h
 )
 
 #find openmp package

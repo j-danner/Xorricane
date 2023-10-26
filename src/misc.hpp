@@ -9,8 +9,10 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <unordered_map>
 //other
 #include <omp.h>
+#include "robin_hood-3.11.5/robin_hood.h"
 
 #include <boost/container/vector.hpp>
 #include <boost/container/stable_vector.hpp>
@@ -78,6 +80,35 @@ struct equivalence {
 struct equivalence {};
 #endif
 
+/**
+ * @brief class that handles reordering according to guessing path
+ */
+class reordering {
+  private:
+    //TODO use faster hashmap
+  #ifdef NDEBUG
+    robin_hood::unordered_flat_map<var_t,var_t> P;
+  #else
+    std::unordered_map<var_t,var_t> P;
+  #endif
+
+  public:
+    reordering() {};
+    reordering(const reordering& o) : P(o.P) {};
+    reordering(reordering&& o) : P(std::move(o.P)) {};
+
+    std::size_t size() const noexcept { return P.size(); };
+
+    void insert(const var_t& ind, const var_t& pos) {
+      if(at(ind)==pos) return;
+      const auto p_ind = at(pos);
+      const auto p_pos = at(ind);
+      P[p_ind] = ind;
+      P[p_pos] = pos;
+    };
+    const var_t& at(const var_t& ind) const noexcept { return P.contains(ind) ? P.at(ind) : ind; };
+};
+
 
 /**
  * @brief options for decision heuristic
@@ -121,11 +152,14 @@ struct options {
 
     int timeout = 0;
 
+    reordering P;
+
     //default settings
     options() : num_vars(0), num_cls(0) {};
     options(var_t n_vars) : num_vars(n_vars), num_cls(0) {};
     options(var_t n_vars, var_t n_cls) : num_vars(n_vars), num_cls(n_cls) {};
     options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
+    options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_, reordering P_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_), P(P_) {};
 };
 
 
@@ -155,14 +189,14 @@ class stats {
     std::chrono::steady_clock::time_point begin;
     std::chrono::steady_clock::time_point end;
 
-    void print_stats() {
+    void print_stats() const {
       std::cout << "c v_upd     : " << no_vert_upd << std::endl;
       std::cout << "c restarts  : " << no_restarts << std::endl;
       std::cout << "c decisions : " << no_dec << std::endl;
       std::cout << "c conflicts : " << no_confl << std::endl;
     };
 
-    void print_final() {
+    void print_final() const {
       float total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
       std::cout << std::fixed << std::setprecision(3);
 
@@ -178,7 +212,16 @@ class stats {
       std::cout << "c Total time : " << total_time << " [s]" << std::endl;
     }
 
-    void print_sol() {
+    void reorder_sol(const reordering& P) {
+      if(sol.size()==0) return;
+      vec<bool> Psol(sol);
+      for(var_t i=1; i <= sol.size(); ++i) {
+        Psol[i-1] = sol[P.at(i)-1];
+      }
+      sol = std::move(Psol);
+    }
+
+    void print_sol() const {
       if(finished) {
           if(sat) {
               std::cout << "s SATISFIABLE" << std::endl;
