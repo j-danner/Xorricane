@@ -622,7 +622,7 @@ public:
         }
         for(const auto& i : l.get_idxs_()) {
             assert(i>0);
-            assert(perm[i] < ncols-1);
+            assert(perm[i] < (var_t) ncols-1);
             mzd_write_bit(M, r, perm[i], 1);
         }
         ++r;

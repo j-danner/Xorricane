@@ -483,7 +483,7 @@ class solver
               mzd_write_bit(M, r, n_vars, 1);
           }
           for(const auto& i : l.get_idxs_()) {
-              assert(i>0); assert(perm[i] < ncols-1);
+              assert(i>0); assert(perm[i] < (var_t) ncols-1);
               mzd_write_bit(M, r, perm[i], 1);
           }
           ++r;
@@ -690,19 +690,17 @@ class solver
 
   public:
     /**
-     * @brief Construct a new impl graph where each vector in clss represents a xor-clause; they must be of length at most two!
+     * @brief Construct main solver object
      * 
      * @param clss vector of xlit-vectors that represent the clauses
      * @param opt_ options for heuristics, also includes number of vars
-     * @param ext bool decides whether extended graph is constructed
      */
     solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl_ = 0) noexcept;
 
     /**
-     * @brief Construct a new impl graph
+     * @brief Construct main solver object from parsed_xnf
      * 
      * @param parsed_xnf pair of options and clauses, as returned by parse_file
-     * @param ext bool decides whether extended graph is constructed
      */
     solver(parsed_xnf& p_xnf) noexcept : solver(p_xnf.cls, options(p_xnf.num_vars, p_xnf.num_cls), 0) {};
 
