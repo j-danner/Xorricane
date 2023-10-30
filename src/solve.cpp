@@ -176,12 +176,12 @@ namespace {
 
 
 //main solving func; solves xnf using opts!
-void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
+int solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
     //set number of omp jobs!
     omp_set_num_threads(opts.jobs > omp_get_max_threads() ? omp_get_max_threads() : opts.jobs);
 
     //time comp, start
-    s.begin = std::chrono::steady_clock::now();
+    if(s.begin==std::chrono::steady_clock::time_point::min()) s.begin = std::chrono::steady_clock::now();
 
     //std::cout << to_str( xnf ) << std::endl;
     auto sol = solver( xnf, opts );
@@ -214,8 +214,23 @@ void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
     //print stats
     s.end = std::chrono::steady_clock::now();
     if(opts.verb>0) s.print_final();
+
+    const bool check_sol_flag = opts.verb == 0 || !s.finished || !s.sat || check_sol(xnf, s.sol);
+    
     if(opts.P.size()>0) s.reorder_sol(opts.P);
     s.print_sol();
+        
+    if(opts.verb > 0 && s.finished && s.sat) { //check sol!
+        if(check_sol_flag) {
+            std::cout << "c solution verified" << std::endl;
+            return 0;
+        } else {
+            std::cout << "c solution INCORRECT!" << std::endl;
+            return 1;
+        }
+    } else {
+        return 0;
+    }
 }
 
 stats solve(const vec< vec<xlit> >& xnf, const options& opts) {

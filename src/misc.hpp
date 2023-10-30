@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <string>
 #include <unordered_map>
+#include <set>
 //other
 #include <omp.h>
 #include "robin_hood-3.11.5/robin_hood.h"
@@ -86,11 +87,11 @@ struct equivalence {};
 class reordering {
   private:
     //TODO use faster hashmap
-  #ifdef NDEBUG
-    robin_hood::unordered_flat_map<var_t,var_t> P;
-  #else
+  //#ifdef NDEBUG
+  //  robin_hood::unordered_flat_map<var_t,var_t> P;
+  //#else
     std::unordered_map<var_t,var_t> P;
-  #endif
+  //#endif
 
   public:
     reordering() {};
@@ -101,12 +102,29 @@ class reordering {
 
     void insert(const var_t& ind, const var_t& pos) {
       if(at(ind)==pos) return;
-      const auto p_ind = at(pos);
-      const auto p_pos = at(ind);
-      P[p_ind] = ind;
-      P[p_pos] = pos;
+      const auto P_ind = at(pos);
+      const auto P_pos = at(ind);
+      P[ind] = P_ind;
+      P[pos] = P_pos;
     };
     const var_t& at(const var_t& ind) const noexcept { return P.contains(ind) ? P.at(ind) : ind; };
+
+    bool assert_data_stuct(const var_t& n_vars) {
+      std::set<var_t> tmp;
+      for(var_t i=1; i<=n_vars; ++i) {
+        var_t P_i = at(i);
+        assert(P_i <= n_vars && P_i > 0);
+        tmp.insert( P_i );
+      }
+      for(var_t i=1; i<=n_vars; ++i) {
+        if( !tmp.contains(i) ) {
+          std::cout << "c reordering: missing index " << i << std::endl;
+        }
+        assert(tmp.contains(i));
+      }
+      assert( tmp.size() == n_vars );
+      return true;
+    };
 };
 
 
@@ -186,8 +204,8 @@ class stats {
     //newly learnt pure-xors via upd
     unsigned int new_px_upd = 0;
 
-    std::chrono::steady_clock::time_point begin;
-    std::chrono::steady_clock::time_point end;
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::time_point::min();
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::time_point::min();
 
     void print_stats() const {
       std::cout << "c v_upd     : " << no_vert_upd << std::endl;

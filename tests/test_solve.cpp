@@ -374,6 +374,37 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         P.insert(4,3);
         P.insert(5,4);
         P.insert(3,5);
+        CHECK( P.assert_data_stuct(10) );
+        auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/test33.xnf", P);
+        auto slvr_gp = solver(clss_gp);
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test33.xnf");
+        auto slvr = solver(clss);
+
+        stats s_gp = slvr_gp.solve();
+        stats s = slvr.solve();
+
+        CHECK( s.sat == true ); //SAT!
+        CHECK( s_gp.sat == true ); //SAT!
+        CHECK( check_sol(clss.cls, s.sol) );
+        CHECK( check_sol(clss_gp.cls, s_gp.sol) );
+
+        //check that after reordering sol of s_gp, we get a sol of original clss
+        CHECK( !check_sol(clss.cls, s_gp.sol) );
+        s_gp.reorder_sol(P);
+        CHECK( check_sol(clss.cls, s_gp.sol) );
+    }
+    
+    SECTION( "test33.xnf II" ) {
+        reordering P;
+        P.insert(2,1);
+        P.insert(1,2);
+        P.insert(4,3);
+        P.insert(5,4);
+        P.insert(3,5);
+        P.insert(7,6);
+        P.insert(8,7);
+        P.insert(6,8);
+        CHECK( P.assert_data_stuct(10) );
         auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/test33.xnf", P);
         auto slvr_gp = solver(clss_gp);
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test33.xnf");
@@ -397,6 +428,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         reordering P;
         P.insert(2,1);
         P.insert(1,2);
+        CHECK( P.assert_data_stuct(100) );
         //auto P = parse_gp("gp");
         auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/flat/flat30-100.xnf", P);
         auto slvr_gp = solver(clss_gp);

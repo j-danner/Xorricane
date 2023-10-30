@@ -10,8 +10,10 @@
  * @param xnf vector of vector representing list of xor-clauses to be solved -- only works for 2-XNFs so far!
  * @param opts options specifying update alg, timeout, inprocessing settings etc
  * @param s stats to put statistics into
+ * 
+ * @return int exit code
  */
-void solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s);
+int solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s);
 
 stats solve(const vec< vec<xlit> >& xnf, const options& opts);
 

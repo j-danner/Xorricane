@@ -6,7 +6,8 @@
 //main -- parses args
 int main(int argc, char const *argv[])
 {
-    auto begin = std::chrono::steady_clock::now();
+    stats s;
+    s.begin  = std::chrono::steady_clock::now();
 
     argparse::ArgumentParser program(__PROJECT_NAME, __VERSION__, argparse::default_arguments::help);
     program.add_argument("-v", "--version")
@@ -178,7 +179,8 @@ int main(int argc, char const *argv[])
     //parse file
     try {
         reordering P = parse_gp( gp_fname );
-        parsed_xnf p_xnf = P.size()==0 ? parse_file( fname ) : parse_file_gp( fname, P );
+        parsed_xnf p_xnf = parse_file_gp( fname, P );
+        assert( P.assert_data_stuct(p_xnf.num_vars) );
 
         //set upt options
         options opts( p_xnf.num_vars, p_xnf.num_cls, dh, po, ca, jobs, verb, time_out, P );
@@ -193,20 +195,7 @@ int main(int argc, char const *argv[])
             return 1; //gcp failed.
         }
 
-        stats s = solve(p_xnf.cls, opts);
-        s.begin = begin;
-
-        if(opts.verb > 0 && s.finished && s.sat) { //check sol!
-            if(check_sol(p_xnf.cls, s.sol)) {
-                std::cout << "c solution verified" << std::endl;
-                return 0;
-            } else {
-                std::cout << "c solution INCORRECT!" << std::endl;
-                return 1; //
-            }
-        } else {
-            return 0;
-        }
+        return solve(p_xnf.cls, opts, s);
     } catch (std::exception &ex) {
         std::cout << "s INDEFINITE" << std::endl;
         return 1;
