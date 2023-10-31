@@ -164,6 +164,7 @@ int main(int argc, char const *argv[])
     const std::string gcp_out = only_gcp ? program.get<std::string>("-g") : "";
     
     const std::string gp_fname = program.is_used("-gp") ? program.get<std::string>("-gp") : "";
+    if(program.is_used("-gp")) dh = dec_heu::lex;
 
     //auto jobs = program.get<int>("-j");
     auto jobs = 1;

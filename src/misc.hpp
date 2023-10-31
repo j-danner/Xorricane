@@ -101,11 +101,11 @@ class reordering {
     std::size_t size() const noexcept { return P.size(); };
 
     void insert(const var_t& ind, const var_t& pos) {
-      if(at(ind)==pos) return;
-      const auto P_ind = at(pos);
-      const auto P_pos = at(ind);
-      P[ind] = P_ind;
-      P[pos] = P_pos;
+      if(at(pos)==ind) return;
+      const auto P_ind = at(ind);
+      const auto P_pos = at(pos);
+      P[pos] = P_ind;
+      P[ind] = P_pos;
     };
     const var_t& at(const var_t& ind) const noexcept { return P.contains(ind) ? P.at(ind) : ind; };
 

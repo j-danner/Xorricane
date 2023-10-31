@@ -1,5 +1,7 @@
 #pragma once
-//offers function to solve (and parse) 2-xnf instances
+//offers function to solve (and parse) xnf instances and guessing path files
+
+#include <set>
 
 #include "misc.hpp"
 #include "xlit/xlit.hpp"

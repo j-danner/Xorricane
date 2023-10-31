@@ -47,6 +47,7 @@ reordering parse_gp(const std::string& fname) {
         std::cout << "c file \'" << fname << "\' not found!" << std::endl; //TODO do proper error handling, i.e., throw exception?!
         throw std::runtime_error("file not found!");
     }
+    std::set<var_t> already_inserted;
     if(file.is_open()) {
         std::string line;
         var_t idx = 1;
@@ -56,7 +57,9 @@ reordering parse_gp(const std::string& fname) {
             const int val = stoi(words[0]);
             assert(val>0);
 
+            if(already_inserted.contains((var_t) val)) continue;
             P.insert((var_t) val, idx);
+            already_inserted.insert((var_t) val);
             ++idx;
         }
     }
