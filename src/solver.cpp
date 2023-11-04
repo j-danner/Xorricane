@@ -856,7 +856,7 @@ void solver::solve(stats &s) {
                     backtrack(lvl);
                     VERB(101, to_str());
                     // add learnt_cls
-                    const var_t idx = add_learnt_cls( std::move(learnt_cls), false );
+                    [[maybe_unused]] const var_t idx = add_learnt_cls( std::move(learnt_cls), false );
                     assert( idx>xclss.size() || xclss[idx].is_irredundant() );
                     // decay score
                     decay_score();
