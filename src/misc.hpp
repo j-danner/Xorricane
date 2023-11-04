@@ -6,6 +6,7 @@
 #include <cassert>
 #include <chrono>
 #include <vector>
+#include <list>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -170,6 +171,8 @@ struct options {
 
     int timeout = 0;
 
+    unsigned int sol_count = 1;
+
     reordering P;
 
     //default settings
@@ -177,7 +180,7 @@ struct options {
     options(var_t n_vars) : num_vars(n_vars), num_cls(0) {};
     options(var_t n_vars, var_t n_cls) : num_vars(n_vars), num_cls(n_cls) {};
     options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
-    options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_, reordering P_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_), P(P_) {};
+    options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, reordering P_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
 };
 
 
@@ -189,7 +192,7 @@ class stats {
   public:
     bool finished = false;
     bool sat = false;
-    vec<bool> sol;
+    std::list<vec<bool>> sols;
     std::atomic<bool> cancelled = false;
 
     unsigned int no_dec = 0;
@@ -229,23 +232,62 @@ class stats {
       std::cout << "c conflicts  : " << no_confl << std::endl;
       std::cout << "c Total time : " << total_time << " [s]" << std::endl;
     }
-
+    
     void reorder_sol(const reordering& P) {
-      if(sol.size()==0) return;
-      vec<bool> Psol(sol);
-      for(var_t i=1; i <= sol.size(); ++i) {
-        Psol[i-1] = sol[P.at(i)-1];
+      if(sols.size()==0) return;
+      vec<bool> Psol(sols.back());
+      for(var_t i=1; i <= sols.back().size(); ++i) {
+        Psol[i-1] = sols.back()[P.at(i)-1];
       }
-      sol = std::move(Psol);
+      sols.back() = std::move(Psol);
     }
 
+    void reorder_sols(const reordering& P) {
+      for(auto& sol : sols) {
+        if(sol.size()==0) return;
+        vec<bool> Psol(sol);
+        for(var_t i=1; i <= sol.size(); ++i) {
+          Psol[i-1] = sol[P.at(i)-1];
+        }
+        sol = std::move(Psol);
+      }
+    }
+
+    /**
+     * @brief print last sol of sols
+     */
     void print_sol() const {
       if(finished) {
+          const auto& sol = sols.back();
           if(sat) {
               std::cout << "s SATISFIABLE" << std::endl;
               std::cout << "v ";
               for (var_t i = 1; i <= sol.size(); i++) {
                   std::cout << (sol[i-1] ? "" : "-") << std::to_string( i ) << " ";
+              }
+              std::cout << "0" << std::endl;
+          } else {
+              std::cout << "s UNSATISFIABLE" << std::endl;
+          }
+      } else {
+              std::cout << "c timeout reached or interupted!" << std::endl;
+              std::cout << "s INDEFINITE" << std::endl;
+      }
+    };
+    
+    /**
+     * @brief print last sol of sols
+     * 
+     * @param reordering P that should be applied prior to printing
+     */
+    void print_sol(const reordering& P) const {
+      if(finished) {
+          const auto& sol = sols.back();
+          if(sat) {
+              std::cout << "s SATISFIABLE" << std::endl;
+              std::cout << "v ";
+              for (var_t i = 1; i <= sol.size(); i++) {
+                  std::cout << (sol[P.at(i)-1] ? "" : "-") << std::to_string( i ) << " ";
               }
               std::cout << "0" << std::endl;
           } else {
@@ -266,19 +308,19 @@ class stats {
     
     stats() {};
     ~stats() { /*std::cout << "destroying stats!" << std::endl;*/ };
-    stats(stats& o) noexcept : finished(o.finished), sat(o.sat), sol(o.sol), no_dec(o.no_dec), no_confl(o.no_confl), no_vert_upd(o.no_vert_upd), no_restarts(o.no_restarts), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
+    stats(stats& o) noexcept : finished(o.finished), sat(o.sat), sols(o.sols), no_dec(o.no_dec), no_confl(o.no_confl), no_vert_upd(o.no_vert_upd), no_restarts(o.no_restarts), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
       cancelled.store( o.cancelled.load() );
     }
-    stats(stats&& o) noexcept : finished(std::move(o.finished)), sat(std::move(o.sat)), sol(std::move(o.sol)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_vert_upd(std::move(o.no_vert_upd)), no_restarts(std::move(o.no_restarts)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
+    stats(stats&& o) noexcept : finished(std::move(o.finished)), sat(std::move(o.sat)), sols(std::move(o.sols)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_vert_upd(std::move(o.no_vert_upd)), no_restarts(std::move(o.no_restarts)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
       cancelled.store( o.cancelled.load() );
     }
-    stats(unsigned int no_dec_, unsigned int no_confl_, const vec<bool>& sol_) : sat(true), sol(sol_), no_dec(no_dec_), no_confl(no_confl_) {};
+    stats(unsigned int no_dec_, unsigned int no_confl_, const std::list<vec<bool>>& sols_) : sat(true), sols(sols_), no_dec(no_dec_), no_confl(no_confl_) {};
     stats(unsigned int no_dec_, unsigned int no_confl_) : sat(false), no_dec(no_dec_), no_confl(no_confl_) {};
 
     stats& operator=(const stats& o) noexcept {
       finished = o.finished;
       sat = o.sat;
-      sol = o.sol;
+      sols = o.sols;
       no_dec = o.no_dec;
       no_confl = o.no_confl;
       no_vert_upd = o.no_vert_upd;

@@ -393,7 +393,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
 
 std::pair<var_t, xcls_watch> solver::analyze_no_sres() { return analyze_dpll(); };
 
-std::pair<var_t,xcls_watch> solver::analyze_dpll() {
+std::pair<var_t, xcls_watch> solver::analyze_dpll() {
     VERB(60, "analyze_dpll called!")
 #ifndef NDEBUG
     print_assignments("    *");
@@ -409,7 +409,7 @@ std::pair<var_t,xcls_watch> solver::analyze_dpll() {
     xcls learnt_cls( std::move(xlits) );
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
 
-    return {dl-1, std::move(learnt_cls) };
+    return {dl>0 ? dl-1 : 0, std::move(learnt_cls) };
 };
 
 
@@ -634,6 +634,7 @@ void solver::dpll_solve(stats &s) {
         if (active_cls > 0 || !no_conflict()) {
             // make decision / backtrack
             if (!no_conflict()) {
+                dpll_conflict:
                 VERB(25, "c " << std::to_string(dl) << " : "
                               << "conflict --> backtrack!")
                 ++s.no_confl;
@@ -643,6 +644,8 @@ void solver::dpll_solve(stats &s) {
                     s.finished = true;
                     s.sat = false;
                     s.end = std::chrono::steady_clock::now();
+                    
+                    s.sols.emplace_back( vec<bool>() );
                     return;
                 }
 
@@ -690,11 +693,18 @@ void solver::dpll_solve(stats &s) {
                 //alpha[0] = bool3::True; //enforce backtracking!
                 add_implied_lineral(xlit(0, false), -1);
             } else {
-                s.sol = vec<bool>(opt.num_vars, false);
-                L.solve(s.sol);
+                s.sols.emplace_back( vec<bool>(opt.num_vars, false) );
+                L.solve( s.sols.back() );
 
                 s.sat = true;
                 s.finished = true;
+                if(s.sols.size() < get_const_opts()->sol_count) {
+                    s.print_sol(get_const_opts()->P);
+                    VERB(0, "c solutions found so far: "+std::to_string(s.sols.size()));
+                    //proceed as if we are at a conflict
+                    goto dpll_conflict;
+                }
+
                 return;
             }
         }
@@ -758,6 +768,7 @@ void solver::solve(stats &s) {
     // GCP -- before making decisions!
     GCP(s);
 
+
     while (true) {
         if (s.cancelled.load()) {
             VERB(10, "c cancelled");
@@ -774,6 +785,8 @@ void solver::solve(stats &s) {
                     // return UNSAT
                     s.finished = true;
                     s.sat = false;
+                    
+                    s.sols.emplace_back( vec<bool>() );
                     return;
                 }
             
@@ -814,6 +827,7 @@ void solver::solve(stats &s) {
                 add_new_guess(std::move(dec.first));
             }
 
+            cdcl_gcp:
             GCP(s);
 
             assert((var_t)active_cls_stack.size() == dl + 1);
@@ -824,15 +838,32 @@ void solver::solve(stats &s) {
             auto [L,r_cls] = get_assignments_xsys();
             if (!L.is_consistent()) {
                 backtrack( r_cls.get_assigning_lvl() );
-                add_learnt_cls( std::move(r_cls) );
+                add_learnt_cls( std::move(r_cls), false );
                 GCP(s);
                 if(no_conflict()) ++s.no_confl; //count as conflict here only if we do not need another conflict analysis
             } else {
-                s.sol = vec<bool>(opt.num_vars, false);
-                L.solve(s.sol);
+                s.sols.emplace_back( vec<bool>(opt.num_vars, false) );
+                L.solve( s.sols.back() );
 
                 s.sat = true;
                 s.finished = true;
+                if(s.sols.size() < get_const_opts()->sol_count) {
+                    s.print_sol(get_const_opts()->P);
+                    VERB(0, "c solutions found so far: "+std::to_string(s.sols.size()));
+                    //add clause that prevents this solution in the future, i.e., avoid taking the same decisions again
+                    auto [lvl, learnt_cls] = analyze_dpll();
+                    // backtrack
+                    backtrack(lvl);
+                    VERB(101, to_str());
+                    // add learnt_cls
+                    const var_t idx = add_learnt_cls( std::move(learnt_cls), false );
+                    assert( idx>xclss.size() || xclss[idx].is_irredundant() );
+                    // decay score
+                    decay_score();
+
+                    goto cdcl_gcp;
+                }
+
                 return;
             }
         }

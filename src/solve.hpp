@@ -92,3 +92,7 @@ inline bool check_sol(const vec< vec<xlit> >& clss, const vec<bool>& sol) {
                         }
                     );
 }
+
+inline bool check_sols(const vec< vec<xlit> >& clss, const std::list<vec<bool>>& sols) {
+    return std::all_of( sols.begin(), sols.end(), [&clss,&sols](const vec<bool>& sol){ return sol.size()==0 || check_sol(clss, sol); } );
+}

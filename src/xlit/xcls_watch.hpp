@@ -85,7 +85,10 @@ private:
     xlit_dl_count1.resize(xlits.size(), {0, 0});
     xlit_dl_count0.resize(xlits.size(), {0, 0});
 
-    if (xlits.size() == 1) {
+    if (xlits.size() == 0) {
+      shared_part.clear();
+      return;
+    } else if (xlits.size() == 1) {
       ws[0] = 0;
       ptr_cache[0] = ptr_(0, ws[0]);
       shared_part.clear();
@@ -344,7 +347,7 @@ public:
   };
 
   xcls_watch(xcls &&cl) noexcept {
-    assert(cl.deg() >= 1);
+    //assert(cl.deg() >= 1);
     xlits.reserve(cl.deg());
     for (auto lit : cl.get_ass_VS().get_xlits()) {
       xlits.emplace_back(std::move(lit.add_one()));
@@ -575,6 +578,7 @@ public:
       //update watched variable
       ws[0] = std::get<2>( xlits[0].get_watch_var(alpha_dl, alpha_trail_pos) );
       ptr_cache[0] = ptr_(0, ws[0]);
+      assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
       return xcls_upd_ret::UNIT;
     }
     assert(xlits.size()>1);
@@ -657,6 +661,7 @@ public:
       xlits.clear();
       xlits.emplace_back( std::move(xlit().add_one()) );
       assert(is_unit(dl_count));
+      assigning_lvl = 0;
       return xcls_upd_ret::UNIT;
     }
 
@@ -687,7 +692,10 @@ public:
     xlits[0] += shared_part;
     ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
     ptr_cache[0] = ptr_(0, ws[0]);
-    if (xlits.size() == 1) { return xcls_upd_ret::UNIT; }
+    if (xlits.size() == 1) {
+      assigning_lvl = xlits[0].get_assigning_lvl(alpha_dl);
+      return xcls_upd_ret::UNIT;
+    }
 
     xlits[1] += shared_part;
     ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
@@ -703,6 +711,8 @@ public:
     // check if clause needs any processing
     assert(!is_active(dl_count));
     assert(!is_sat(dl_count));
+
+    assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
 
     return xcls_upd_ret::UNIT;
   };
@@ -760,7 +770,7 @@ public:
    * @return true iff xcls is evaluates to unit (including 1, i.e., unsat!)
    */
   bool is_unit(const vec<dl_c_t> &dl_count) const {
-    return xlits.size()==1 || dl_count[xlit_dl_count1[0].first] == xlit_dl_count1[0].second; // || (dl_count[ xlit_dl_count1[1].first ] == xlit_dl_count1[1].second);
+    return xlits.size()<=1 || dl_count[xlit_dl_count1[0].first] == xlit_dl_count1[0].second; // || (dl_count[ xlit_dl_count1[1].first ] == xlit_dl_count1[1].second);
   }
 
   /**
@@ -770,11 +780,11 @@ public:
    * @return var_t lvl at which xcls is unit
    */
   var_t get_unit_at_lvl() const {
-    return xlits.size() == 1 ? 0 : xlit_dl_count1[0].first;
+    return xlits.size() <= 1 ? 0 : xlit_dl_count1[0].first;
   }
 
   var_t compute_unit_assigning_lvl(const vec<var_t>& alpha_dl) const {
-    return xlits.size() == 1 ? xlits[0].get_assigning_lvl(alpha_dl) : std::max( shared_part.get_assigning_lvl(alpha_dl), xlits[1].get_assigning_lvl(alpha_dl) );
+    return xlits.size()==0 ? 0 : ( xlits.size() == 1 ? xlits[0].get_assigning_lvl(alpha_dl) : std::max( shared_part.get_assigning_lvl(alpha_dl), xlits[1].get_assigning_lvl(alpha_dl) ) );
   }
 
   /**
@@ -840,7 +850,7 @@ public:
    *
    * @return xlit unit that this clause was reduced to
    */
-  xlit get_unit() const { return xlits.size() > 1 ? xlits[1] + shared_part : xlits[0]; };
+  xlit get_unit() const { return xlits.size() > 1 ? xlits[1] + shared_part : (xlits.size() == 0 ? xlit().plus_one() : xlits[0]); };
 
   bool unit_contains(const var_t &ind) const {
     return shared_part[ind] || (xlits.size() > 1 ? xlits[1][ind] : xlits[0][ind]);
@@ -861,7 +871,6 @@ public:
     }
     // re-init watches!
     init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
-    assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
   }
 
 #ifndef NDEBUG

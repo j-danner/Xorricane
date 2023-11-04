@@ -72,7 +72,7 @@ class solver
     vec< std::list< std::array<var_t,4> > > L_watch_list;
 
     /**
-     * @brief options for heuristics of dpll-solver (and more)
+     * @brief options for heuristics of solver (and more)
      */
     options opt;
 
@@ -173,17 +173,26 @@ class solver
     std::pair<var_t,xcls_watch> analyze_no_sres();
     std::pair<var_t,xcls_watch> analyze_dpll();
 
-    inline void add_learnt_cls(xcls_watch&& cls) {
+    /**
+     * @brief add new (learnt) clause to database
+     * 
+     * @param cls clause to be added; pointers must already be in correct shape (use init() and init_unit())
+     * @param redundant bool to declare clause redundant or not; defaults to true
+     * @return var_t idx of new clause; -1 if it was not added to clause database, i.e., cls was already a lineral
+     */
+    inline var_t add_learnt_cls(xcls_watch&& cls, const bool& redundant = true) {
         assert(lineral_queue.empty());
         if(cls.deg()>=2) {
-            const var_t i = add_xcls_watch( std::move(cls), true, true );
+            const var_t i = add_xcls_watch( std::move(cls), redundant, true );
             assert(xclss[i].get_assigning_lvl() == dl); //ensure we did backtrack as far as possible!
             //assert(xclss[i].get_inactive_lvl(dl_count) == dl); //ensure we did backtrack as far as possible!
             utility[i]++;
+            return i;
         } else {
-            assert(cls.deg()==1);
+            assert(cls.deg()<=1);
             add_new_lineral( cls.get_unit() );
             queue_implied_lineral( cls.get_unit(), lineral_watches[0].size()-1, trail_t::LEARNT_UNIT );
+            return -1;
         }
     }
 
@@ -256,9 +265,10 @@ class solver
     inline void decr_active_cls(const var_t& idx) {
       if(!xclss[idx].is_irredundant()) return;
       //update curr val
+      assert(active_cls>0);
       --active_cls;
       //update vals in active_cls_stack
-      for(var_t j = xclss[idx].get_inactive_lvl(dl_count)+1; j<active_cls_stack.size(); ++j) --active_cls_stack[j];
+      for(var_t j = xclss[idx].get_inactive_lvl(dl_count)+1; j<active_cls_stack.size(); ++j) { assert(active_cls_stack[j]>0); --active_cls_stack[j]; }
     }
 
     xlit _reduced_lit;
@@ -645,7 +655,10 @@ class solver
       xclss[i].set_redundancy(redundant);
       assert(redundant == !xclss[i].is_irredundant());
       //update active_cls
-      if(xclss[i].is_irredundant()) ++active_cls;
+      if(xclss[i].is_irredundant()) {
+        for(auto& a_cls : active_cls_stack) ++a_cls;
+        ++active_cls;
+      }
       //update cls
       const auto ret = learnt_cls ? xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl) : xclss[i].init(alpha, alpha_dl, dl_count);
       //copied from GCP
@@ -672,6 +685,7 @@ class solver
           }
           break;
       case xcls_upd_ret::NONE:
+          assert(!learnt_cls); //must not happen for learnt clauses
           assert(xclss[i].is_none(dl_count));
           assert(xclss[i].is_active(dl_count));
           break;

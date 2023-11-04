@@ -61,33 +61,7 @@ int main(int argc, char const *argv[])
         });
 
 
-    //fls opts
-    //program.add_argument("-fls","--failed-lit-search")
-    //    .help("failed literal search; 'no' to deactivate, 'trivial' to only search for trivial, and 'full' to search for all failed literals.")
-    //    .default_value(std::string("no"))
-    //    .action([](const std::string& value) {
-    //        static const vec<std::string> choices = { "no", "trivial", "full" };
-    //        if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
-    //            return value;
-    //        }
-    //        //arg invalid!
-    //        throw std::runtime_error("invalid argument passed for parameter -fls");
-    //    });
-    
-    //upd opts
-    //program.add_argument("-upd","--update-alg")
-    //    .help("algorithm to use for update-graph function, 'ts' for alg in two steps (1. update all xlits, 2. merge verts); 'hf' for hash-fight based update; 'par' for parallel version.")
-    //    .default_value(std::string("ts"))
-    //    .action([](const std::string& value) {
-    //        static const vec<std::string> choices = { "ts", "hf", "par", "hfd" };
-    //        if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
-    //            return value;
-    //        }
-    //        //arg invalid!
-    //        throw std::runtime_error("invalid argument passed for parameter -upd");
-    //    });
-    
-    //cdcd opts
+    //cdcl opts
     program.add_argument("-ca","--conflict-analysis")
         .help("algorithm to use for conflict analysis, 'no' (means DPLL-solving), 'dpll' (means cdcl-implementation with DPLL-like learning (USE ONLY FOR DEBUGGING!)) or '1uip'")
         .default_value(std::string("1uip"))
@@ -109,7 +83,7 @@ int main(int argc, char const *argv[])
     //verbosity
     #ifdef VERBOSITY
         program.add_argument("-vb", "--verb")
-            .help("verbosity (choose in 0-100)")
+            .help("verbosity level (choose in 0-100)")
             .default_value(1)
             .scan<'i', int>();
     #endif
@@ -128,6 +102,13 @@ int main(int argc, char const *argv[])
     //guessing path input
     program.add_argument("-gp","--guessing-path")
         .help("path to file storing guessing path; each line contains exactly one number corr to the corresponding variable");
+
+
+    //max sols to compute
+    program.add_argument("-ms", "--maxsol")
+        .help("number of solutions to compute; -1 to compute all solutions")
+        .default_value(1)
+        .scan<'i', int>();
 
 
     try {
@@ -167,15 +148,18 @@ int main(int argc, char const *argv[])
     if(program.is_used("-gp")) dh = dec_heu::lex;
 
     //auto jobs = program.get<int>("-j");
-    auto jobs = 1;
+    const auto jobs = 1;
     
     #ifdef VERBOSITY
-        int verb = program.get<int>("-vb");
+        const int verb = program.get<int>("-vb");
     #else
         int verb = 1;
     #endif
+        
+    const auto time_out = program.get<int>("-t");
     
-    auto time_out = program.get<int>("-t");
+    const int sol_count = program.get<int>("-ms");
+    
 
     //parse file
     try {
@@ -184,7 +168,7 @@ int main(int argc, char const *argv[])
         assert( P.assert_data_stuct(p_xnf.num_vars) );
 
         //set upt options
-        options opts( p_xnf.num_vars, p_xnf.num_cls, dh, po, ca, jobs, verb, time_out, P );
+        options opts( p_xnf.num_vars, p_xnf.num_cls, dh, po, ca, jobs, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;
