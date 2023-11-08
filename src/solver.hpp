@@ -70,7 +70,7 @@ class solver
      */
     vec<var_t> utility;
     const var_t util_cutoff = 5; //min utility to keep a clause on cleanup
-    const var_t restart_schedule = 2<<12; //number of conflicts between cleanups
+    const var_t restart_schedule = (var_t) -1;//2<<12; //number of conflicts between cleanups
 
     /**
      * @brief watch_list[i] contains all idxs j s.t. xclss[j] watches indet i
