@@ -254,7 +254,7 @@ class stats {
     }
 
     /**
-     * @brief print last sol of sols
+     * @brief print final solution
      */
     void print_sol() const {
       if(finished) {
