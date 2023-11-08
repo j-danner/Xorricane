@@ -428,6 +428,10 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         reordering P;
         P.insert(2,1);
         P.insert(1,2);
+        P.insert(10,3);
+        P.insert(11,4);
+        P.insert(83,5);
+        P.insert(74,6);
         CHECK( P.assert_data_stuct(100) );
         //auto P = parse_gp("gp");
         auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/flat/flat30-100.xnf", P);
