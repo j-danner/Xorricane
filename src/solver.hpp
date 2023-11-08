@@ -16,6 +16,8 @@
 #include "xlit/xsys.hpp"
 #include "xlit/xcls.hpp"
 #include "xlit/xcls_watch.hpp"
+#include "order_heap/heap.h"
+
 
 #define TRAIL trails.back()
 
@@ -45,6 +47,15 @@ struct lineral_queue_elem {
   lineral_queue_elem(lineral_queue_elem&& other) : lin(other.lin), type(other.type), rs_cls_idx(other.rs_cls_idx), lvl(other.lvl) {}; 
 };
 
+struct VarOrderLt { ///Order variables according to their activities
+    const vec<double>&  activity_score;
+    bool operator () (const var_t x, const var_t y) const {
+      assert(x<activity_score.size() && y<activity_score.size());
+      return activity_score[x] > activity_score[y];
+    }
+
+    explicit VarOrderLt(const vec<double>& _activity_score) : activity_score(_activity_score) {}
+};
 
 class solver
 {
@@ -95,9 +106,11 @@ class solver
      * @brief 'activity' of each variable; used for decision heuristic
      * @note entries must be strictly positive! (otherwise max_path/max_tree might fail!)
      */
-    vec<unsigned int> activity_score;
-    const unsigned int bump = 1;
-    const float decay = 0.9;
+    vec<double> activity_score;
+    double max_act_sc;
+    double bump = 1;
+    const float decay = 0.95;
+    Heap<VarOrderLt> order_heap_vsids{ VarOrderLt(activity_score) };
 
     /**
      * @brief checks 
@@ -120,11 +133,6 @@ class solver
     vec< vec< xlit_watch > > lineral_watches;
     //TODO change to vec< std::list< xlit_watch> > lineral_watches; (!)
     //should allow us to access contents more quickly!
-
-    /**
-     * @brief assignments_list[lt] contains all assignments with leading term lt
-     */
-    //vec< std::list< std::array<var_t,4> > > assignments_list;
 
     /**
      * @brief current assignments of vars; assignments[i] contains xlit with LT i
@@ -214,7 +222,9 @@ class solver
 
     inline bool pop_trail() noexcept {
       if (TRAIL.empty()) return false;
-      //store last_phase
+      //add ind back to heap
+      if(!order_heap_vsids.inHeap(TRAIL.back().ind)) order_heap_vsids.insert( TRAIL.back().ind );
+      //fix lineral_watches, alpha, alpha_dl and alpha_trail_pos
       switch(TRAIL.back().type) {
       case trail_t::GUESS:
       case trail_t::IMPLIED_UNIT:
@@ -225,6 +235,7 @@ class solver
       case trail_t::LEARNT_UNIT:
       case trail_t::LINERAL_IMPLIED_ALPHA:
       case trail_t::IMPLIED_ALPHA:
+        //store last_phase
         save_phase();
         alpha[TRAIL.back().ind] = bool3::None;
         alpha_dl[TRAIL.back().ind] = (var_t) -1;
@@ -242,7 +253,7 @@ class solver
     }
 
 
-    typedef std::pair<xsys,xsys> (solver::*dec_heu_t)() const;
+    typedef std::pair<xsys,xsys> (solver::*dec_heu_t)();
     typedef std::pair<var_t,xcls_watch> (solver::*ca_t)();
 
     void bump_score(const var_t& ind);
@@ -735,22 +746,22 @@ class solver
     /*
      * @brief branch on first vertex (i.e. vert at first position in L)
      */
-    std::pair< xsys, xsys > dh_vsids_UNFINISHED() const;
+    std::pair< xsys, xsys > dh_vsids();
 
     /*
      * @brief branch on ind that has the shortest watch_list
      */
-    std::pair< xsys, xsys > dh_shortest_wl() const;
+    std::pair< xsys, xsys > dh_shortest_wl();
 
     /*
      * @brief branch on ind that has the longest watch_list
      */
-    std::pair< xsys, xsys > dh_longest_wl() const;
+    std::pair< xsys, xsys > dh_longest_wl();
 
     /*
      * @brief branch on x[i] where i smallest ind not yet guessed!
      */
-    std::pair< xsys, xsys > dh_lex_LT() const;
+    std::pair< xsys, xsys > dh_lex_LT();
 
     //solve-main
     void solve(stats& s); //{ opt.ca = ca_alg::dpll; return cdcl_solve(s); };

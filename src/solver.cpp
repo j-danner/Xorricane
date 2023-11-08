@@ -69,11 +69,15 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     //init xlits
     for(const auto& [_,it] : _Lsys.get_pivot_poly_idx()) queue_implied_lineral(*it, -1);
 
-    // init activity_score
-    activity_score = vec<unsigned int>(opt.num_vars + 1, 1);
+    //init order_heap and activity_score
+    activity_score = vec<double>(opt.num_vars + 1, 1);
     for (var_t i = 0; i < opt.num_vars+1; i++) {
         activity_score[i] += watch_list[i].size();
     }
+    for(var_t i = 1; i<=opt.num_vars; ++i) {
+        order_heap_vsids.insert( i );
+    }
+    
 
     // init active_cls_stack
     active_cls_stack = vec<var_t>();
@@ -128,21 +132,29 @@ void solver::backtrack(const var_t& lvl) {
 };
 
 // decision heuristics
-std::pair<xsys, xsys> solver::dh_vsids_UNFINISHED() const {
-    var_t lt_max = 0;
-    unsigned int max_activity = 0;
-    for(size_t idx=1; idx<alpha.size(); ++idx) {
-        if(alpha[idx]==bool3::None && (activity_score[idx] > max_activity)) {
-            lt_max = idx; max_activity = activity_score[idx];
-        }
+std::pair<xsys, xsys> solver::dh_vsids() {
+    assert(!order_heap_vsids.empty());
+    var_t ind = 0;
+    while (ind==0 || (alpha[ind] != bool3::None && !order_heap_vsids.empty() )) {
+        ind = order_heap_vsids.removeMin();
     }
-    assert(lt_max!=0 && lt_max < (var_t)alpha.size());
-
-    xlit xi = xlit( lt_max, last_phase[lt_max]==bool3::True);
+    xlit xi = xlit( ind, last_phase[ind]==bool3::True);
     return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
+
+    //var_t lt_max = 0;
+    //unsigned int max_activity = 0;
+    //for(size_t idx=1; idx<alpha.size(); ++idx) {
+    //    if(alpha[idx]==bool3::None && (activity_score[idx] > max_activity)) {
+    //        lt_max = idx; max_activity = activity_score[idx];
+    //    }
+    //}
+    //assert(lt_max!=0 && lt_max < (var_t)alpha.size());
+
+    //xlit xi = xlit( lt_max, last_phase[lt_max]==bool3::True);
+    //return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
 };
 
-std::pair<xsys, xsys> solver::dh_shortest_wl() const {
+std::pair<xsys, xsys> solver::dh_shortest_wl() {
     //find unassigned variable that has the longest watch_list
     var_t lt_min = 0;
     size_t size_min = alpha.size();
@@ -157,7 +169,7 @@ std::pair<xsys, xsys> solver::dh_shortest_wl() const {
     return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
 }
 
-std::pair<xsys, xsys> solver::dh_longest_wl() const {
+std::pair<xsys, xsys> solver::dh_longest_wl() {
     //find unassigned variable that has the longest watch_list
     var_t lt_max = 0;
     size_t size_max = 0;
@@ -172,7 +184,7 @@ std::pair<xsys, xsys> solver::dh_longest_wl() const {
     return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
 }
 
-std::pair<xsys, xsys> solver::dh_lex_LT() const {
+std::pair<xsys, xsys> solver::dh_lex_LT() {
     var_t i = 1;
     while(alpha[i] != bool3::None) ++i;
     assert(i<alpha.size());
@@ -188,24 +200,35 @@ std::pair<xsys, xsys> solver::dh_lex_LT() const {
 void solver::bump_score(const var_t &ind) {
     assert(ind < activity_score.size());
     activity_score[ind] += bump;
+    max_act_sc = std::max(max_act_sc,  activity_score[ind]);
+
+    if(activity_score[ind] > 1e100) {
+        for (auto& v: activity_score) v *= 1e-100;
+        max_act_sc *= 1e-100;
+        bump *= 1e-100;
+    }
+
+    // Update order_heap with respect to new activity
+    if (order_heap_vsids.inHeap(ind)) {
+        order_heap_vsids.decrease(ind);
+    }
 };
 
 void solver::bump_score(const xlit &lit) {
     assert(lit.LT() < activity_score.size());
-    activity_score[lit.LT()] += bump;
+    bump_score(lit.LT());
 };
 
 void solver::bump_score(const xsys &new_xsys) {
     for (const auto &[lt, _] : new_xsys.get_pivot_poly_idx()) {
         assert(lt < activity_score.size());
-        activity_score[lt] += bump;
+        bump_score(lt);
     }
 };
 
 void solver::decay_score() {
-    for (auto &s : activity_score) {
-        s = ceil(s * decay); // TODO make more efficient?! (since result of mult first is float and then is casted back to unsigned int...)
-    }
+    //instead of actually decaying all scores; we increase the bump
+    bump *= (1.0 / decay);
 };
 
 xcls solver::get_last_reason() const {
@@ -603,7 +626,7 @@ void solver::dpll_solve(stats &s) {
     dec_heu_t decH = &solver::dh_lex_LT;
     switch (opt.dh) {
     case dec_heu::vsids:
-        decH = &solver::dh_vsids_UNFINISHED;
+        decH = &solver::dh_vsids;
         break;
     case dec_heu::lwl:
         decH = &solver::dh_longest_wl;
@@ -612,7 +635,7 @@ void solver::dpll_solve(stats &s) {
         decH = &solver::dh_lex_LT;
         break;
     case dec_heu::swl:
-        decH = &solver::dh_vsids_UNFINISHED;
+        decH = &solver::dh_vsids;
         break;
     default:
         assert(false);
@@ -731,7 +754,7 @@ void solver::solve(stats &s) {
     dec_heu_t decH = &solver::dh_lex_LT;
     switch (opt.dh) {
     case dec_heu::vsids:
-        decH = &solver::dh_vsids_UNFINISHED;
+        decH = &solver::dh_vsids;
         break;
     case dec_heu::lwl:
         decH = &solver::dh_longest_wl;
@@ -740,7 +763,7 @@ void solver::solve(stats &s) {
         decH = &solver::dh_lex_LT;
         break;
     case dec_heu::swl:
-        decH = &solver::dh_vsids_UNFINISHED;
+        decH = &solver::dh_vsids;
         break;
     default:
         assert(false);

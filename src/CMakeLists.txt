@@ -29,6 +29,9 @@ add_library(
     misc.hpp
     #hmaps
     robin_hood-3.11.5/robin_hood.h
+    #heap
+    order_heap/heap.h
+    order_heap/vec.h
 )
 
 #find openmp package
