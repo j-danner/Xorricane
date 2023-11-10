@@ -37,7 +37,7 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     xclss = vec<xcls_watch>(0);
     xclss.reserve(clss.size());
     
-    utility = vec<var_t>(0);
+    utility = vec<double>(0);
     utility.reserve(clss.size());
 
     // temporarily store clss in _xclss - before init of xclss we might want to reduce with pure literals in _L (!)
@@ -82,6 +82,11 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     // init active_cls_stack
     active_cls_stack = vec<var_t>();
     active_cls_stack.emplace_back(active_cls);
+
+    get_opts()->num_cls = active_cls + lineral_watches[0].size(); //fix actual number of clauses
+
+    //init restart params
+    update_restart_schedule(0);
 
     assert(assert_data_structs());
 };
@@ -408,7 +413,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
 
     // clean-up trail!
     while (!TRAIL.empty() && alpha_dl[TRAIL.back().ind] >= dl) { pop_trail(); }
-
+    
     VERB(70, "****");
     assert(false);
     return std::pair<var_t, xcls>(dl - 1, learnt_cls);
@@ -673,7 +678,6 @@ void solver::dpll_solve(stats &s) {
                 }
 
                 ///// BACKTRACKING /////
-                //auto [lvl, learnt_cls] = (this->*analyze)();
                 backtrack(dl-1);
                 VERB(101, to_str());
 
@@ -776,9 +780,10 @@ void solver::solve(stats &s) {
         analyze = &solver::analyze_dpll;
         break;
     case ca_alg::fuip:
-        //analyze = &solver::analyze_dpll;
-        analyze = &solver::analyze_exp;
+        analyze = &solver::analyze;
         break;
+    case ca_alg::fuip_opt:
+        analyze = &solver::analyze_exp;
     default: //should never be executed
         assert(false);
         analyze = &solver::analyze_exp;
@@ -803,6 +808,7 @@ void solver::solve(stats &s) {
                 VERB(25, "c " << std::to_string(dl) << " : "
                               << "conflict --> backtrack!")
                 ++s.no_confl;
+                ++confl_this_restart;
                 // conflict!
                 if (dl == 0) {
                     // return UNSAT
@@ -827,10 +833,7 @@ void solver::solve(stats &s) {
 
                 VERB(101, to_str());
                 //restart?
-                if(s.no_confl % restart_schedule == 0) {
-                    VERB(100, "c " << std::to_string(dl) << " : " << "xcls cleanup!")
-                    restart(s);
-                }
+                if( need_restart() ) { restart(s); }
             } else {
                 ++dl;
                 ++dl_count[dl];

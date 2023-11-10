@@ -74,6 +74,19 @@ int main(int argc, char const *argv[])
             throw std::runtime_error("invalid argument passed for parameter -ca");
         });
     
+    //restart opts
+    program.add_argument("-rh","--restart-heuristic")
+        .help("heuristic to schedule restarts, 'no' (no restarts), 'fixed' (restarts after fixed number of conflicts) or 'luby' (theoritcal optimal restart scheduling)")
+        .default_value(std::string("luby"))
+        .action([](const std::string& value) {
+            static const vec<std::string> choices = { "no", "fixed", "luby" };
+            if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
+                return value;
+            }
+            //arg invalid!
+            throw std::runtime_error("invalid argument passed for parameter -rh");
+        });
+    
     //jobs
     //program.add_argument("-j","--jobs")
     //    .help("parallel jobs (threads) to use (must NOT be larger than actual number of available threads!)")
@@ -140,6 +153,13 @@ int main(int argc, char const *argv[])
     if(ca_str=="no") ca = ca_alg::no;
     else if(ca_str=="dpll") ca = ca_alg::dpll;
     else if(ca_str=="1uip") ca = ca_alg::fuip;
+    
+    auto rh_str = program.get<std::string>("-rh");
+    restart_opt rh = restart_opt::luby;
+    if(rh_str=="no") rh = restart_opt::no;
+    else if(rh_str=="fixed") rh = restart_opt::fixed;
+    else if(rh_str=="luby") rh = restart_opt::luby;
+
 
     const bool only_gcp = program.is_used("-g");
     const std::string gcp_out = only_gcp ? program.get<std::string>("-g") : "";
@@ -168,7 +188,7 @@ int main(int argc, char const *argv[])
         assert( P.assert_data_stuct(p_xnf.num_vars) );
 
         //set upt options
-        options opts( p_xnf.num_vars, p_xnf.num_cls, dh, po, ca, jobs, verb, time_out, sol_count, P );
+        options opts( p_xnf.num_vars, p_xnf.num_cls, dh, po, ca, rh, jobs, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;

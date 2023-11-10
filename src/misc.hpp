@@ -151,6 +151,13 @@ enum class phase_opt { rand, save, save_inv };
  * fuip: first UIP conflict analysis
  */
 enum class ca_alg { no, dpll, fuip };
+/**
+ * @brief options for restart heuristic
+ * no: no restarts
+ * fixed: restart after a fixed number of conflicts
+ * luby: restarts based on paper 'Optimal Speedup of Las Vegas Algorithms' by Luby et al.
+ */
+enum class restart_opt { no, fixed, luby};
 
 /**
  * @brief struct that holds options for the various heuristic choices
@@ -164,6 +171,7 @@ struct options {
     phase_opt po = phase_opt::save;
 
     ca_alg ca = ca_alg::fuip;
+    restart_opt rst = restart_opt::luby;
     
     int jobs = omp_get_num_threads();
     
@@ -180,7 +188,7 @@ struct options {
     options(var_t n_vars) : num_vars(n_vars), num_cls(0) {};
     options(var_t n_vars, var_t n_cls) : num_vars(n_vars), num_cls(n_cls) {};
     options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
-    options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, reordering P_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, reordering P_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), rst(rst_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
 };
 
 

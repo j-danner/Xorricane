@@ -68,9 +68,8 @@ class solver
     /**
      * @brief utility[i] gives number of unit propagations of xclss[i] (with moving average)
      */
-    vec<var_t> utility;
-    const var_t util_cutoff = 5; //min utility to keep a clause on cleanup
-    const var_t restart_schedule = (var_t) -1;//2<<12; //number of conflicts between cleanups
+    vec<double> utility;
+    double util_cutoff; //min utility to keep a clause on cleanup
 
     /**
      * @brief watch_list[i] contains all idxs j s.t. xclss[j] watches indet i
@@ -708,11 +707,25 @@ class solver
       return i;
     }
 
+    const unsigned int confl_until_restart_default = 1<<14; //number of conflicts between restarts
+    unsigned int confl_until_restart = 0; //number of conflicts between restarts
+    /**
+     * @brief checks if a restart is needed
+     * @return true iff we should restart now
+     */
+    bool need_restart() const;
+
+    unsigned int confl_this_restart = 0; //number of conflicts since last restart
     /**
      * @brief restarts the solver; i.e. rm all assignments and backtracks to dl 0
      */
     void restart(stats& s);
 
+    /**
+     * @brief update params confl_unitl_restart according to restart heuristic; should be called after every call to restart()
+     */
+    void update_restart_schedule(const unsigned int& no_restarts);
+    
   public:
     /**
      * @brief Construct main solver object
