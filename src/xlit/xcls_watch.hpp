@@ -539,19 +539,24 @@ public:
       xlits[1] += rs_cls.get_unit();
     }
     // add xlits from rs_cls to this
-    if(rs_cls.deg() > 1) {
-      std::copy(rs_cls.xlits.begin() + 2, rs_cls.xlits.end(), std::back_inserter(xlits));
-      std::copy(rs_cls.xlit_dl_count0.begin() + 2, rs_cls.xlit_dl_count0.end(), std::back_inserter(xlit_dl_count0));
-      std::copy(rs_cls.xlit_dl_count1.begin() + 2, rs_cls.xlit_dl_count1.end(), std::back_inserter(xlit_dl_count1));
-
-      xlits.emplace_back(rs_cls.xlits[0] + rs_cls.shared_part);
-      xlit_dl_count0.emplace_back(rs_cls.xlit_dl_count0[0]);
-      xlit_dl_count1.emplace_back(rs_cls.xlit_dl_count1[0]);
+    if(rs_cls.deg() == 0) {
+      const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+      assert(ret == xcls_upd_ret::UNIT);
+      assert(is_unit(dl_count));
+      return ret;
     }
+    //now rs_cls.deg()>1
+    std::copy(rs_cls.xlits.begin() + 2, rs_cls.xlits.end(), std::back_inserter(xlits));
+    std::copy(rs_cls.xlit_dl_count0.begin() + 2, rs_cls.xlit_dl_count0.end(), std::back_inserter(xlit_dl_count0));
+    std::copy(rs_cls.xlit_dl_count1.begin() + 2, rs_cls.xlit_dl_count1.end(), std::back_inserter(xlit_dl_count1));
+
+    xlits.emplace_back(rs_cls.xlits[0] + rs_cls.shared_part);
+    xlit_dl_count0.emplace_back(rs_cls.xlit_dl_count0[0]);
+    xlit_dl_count1.emplace_back(rs_cls.xlit_dl_count1[0]);
+    
     const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
     assert(ret == xcls_upd_ret::UNIT);
     assert(is_unit(dl_count));
-    assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
     return ret;
   }
   
@@ -570,7 +575,153 @@ public:
    * @param dl currenct dl
    * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
    */
-  xcls_upd_ret init_unit(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl) {
+  xcls_upd_ret init_unit(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t idx_start_other_cls = (var_t) -1) {
+    if (deg() == 1) {
+      //reduce xlit[0]
+      xlits[0].reduce(alpha, alpha_dl, 0);
+      xlits[0].reduce(equiv_lits, equiv_lits_dl, 0, alpha);
+      //update watched variable
+      ws[0] = std::get<2>( xlits[0].get_watch_var(alpha_dl, alpha_trail_pos) );
+      ptr_cache[0] = ptr_(0, ws[0]);
+      assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
+      return xcls_upd_ret::UNIT;
+    }
+    assert(xlits.size()>1);
+    // distribute shared_part
+    xlits[0] += shared_part;
+    xlits[1] += shared_part;
+    shared_part.clear();
+
+    // reduce all xlits at dl 0
+    for (auto &l : xlits) {
+      l.reduce(alpha, alpha_dl, 0);
+      l.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
+    }
+
+    // re-order occuring indets with decreasing dl
+    std::set<var_t> tmp;
+    for (const auto &l : xlits) {
+      tmp.insert(l.get_idxs_().begin(), l.get_idxs_().end());
+    }
+    vec<var_t> idxs(tmp.begin(), tmp.end());
+    std::sort(idxs.begin(), idxs.end(),
+              [&alpha_dl, &alpha_trail_pos](const var_t &a, const var_t &b)
+              { return alpha_dl[a] > alpha_dl[b] || (alpha_dl[a] == alpha_dl[b] && alpha_trail_pos[a] > alpha_trail_pos[b]); });
+    // construct permutation maps
+    vec<var_t> perm(alpha.size());
+    vec<var_t> perm_inv(alpha.size());
+    for (var_t i = 0; i < idxs.size(); ++i) {
+      perm[idxs[i]] = i;
+      perm_inv[i] = idxs[i];
+    }
+
+    const var_t n_vars = idxs.size();
+    rci_t nrows = xlits.size();
+    rci_t ncols = n_vars+1;
+
+    mzd_t* M = mzd_init(nrows, ncols);
+    assert( mzd_is_zero(M) );
+
+    //fill with xlits
+    rci_t r = 0;
+    for(const auto& l : xlits) {
+        if(l.is_zero()) continue;
+        if(!l.has_constant()) {
+            mzd_write_bit(M, r, n_vars, 1);
+        }
+        for(const auto& i : l.get_idxs_()) {
+            assert(i>0);
+            assert(perm[i] < (var_t) ncols-1);
+            mzd_write_bit(M, r, perm[i], 1);
+        }
+        ++r;
+    }
+    assert(r == nrows);
+
+    //compute rref
+    const rci_t rank = mzd_echelonize_pluq(M, true); //should we use mzd_echelonize instead?
+    //read results
+    vec<xlit> xlits_; xlits_.reserve(rank);
+    for(rci_t r = 0; r<rank; ++r) {
+        vec<var_t> idxs;
+        for(rci_t c=0; (unsigned)c<n_vars; ++c) {
+            if( mzd_read_bit(M, r, c) ) idxs.push_back(c+1);
+        }
+        xlits_.emplace_back( std::move(idxs), (bool) !mzd_read_bit(M, r, n_vars), presorted::yes );
+    }
+    mzd_free(M);
+
+    //xlits_ must already be sorted w.r.t. lt!
+    assert( std::is_sorted(xlits_.begin(), xlits_.end(), [](const xlit &a, const xlit &b) { return a.LT() < b.LT(); }) );
+    //std::sort(xlits_.begin(), xlits_.end(), [](const xlit &a, const xlit &b) { return a.LT() < b.LT(); });
+
+    // set xlit_dl_count1, since all except the first xlits must be satisfied by assumption
+    for (var_t i = 1; i < xlits_.size(); ++i) {
+      const var_t lvl = alpha_dl[ perm_inv[xlits_[i].LT()-1] ];
+      if(lvl==(var_t)-1) { xlit_dl_count1[i] =  {0,0}; }
+      else { xlit_dl_count1[i] = {lvl, dl_count[lvl]}; }
+    }
+
+    if(xlits_.size()==0) {
+      xlits.clear();
+      xlits.emplace_back( std::move(xlit().add_one()) );
+      assert(is_unit(dl_count));
+      assigning_lvl = 0;
+      return xcls_upd_ret::UNIT;
+    }
+
+    // now watch the first two xlits as usual
+    var_t wl0 = perm_inv[xlits_[0].LT()-1];
+    var_t wl1 = xlits_.size() > 1 ? perm_inv[xlits_[1].LT()-1] : -1;
+
+    // translate xlits back AND recompute watched idxs
+    for (auto &l : xlits_) {
+      xlit_idxs.clear();
+      xlit_idxs.reserve(l.size());
+      for (const auto &v : l.get_idxs_()) { xlit_idxs.push_back( perm_inv[v-1] ); }
+      xlit xlit_(std::move(xlit_idxs), l.has_constant(), presorted::no);
+      l = std::move(xlit_);
+    }
+
+    // replace xlits with xlits_
+    std::swap(xlits_, xlits);
+
+    // resize xlit_dl_counts
+    xlit_dl_count0.resize(xlits.size());
+    xlit_dl_count1.resize(xlits.size());
+
+    assert(xlits.size()>0);
+
+    // recompute the indices at which wl0 and wl1 are stored
+    shared_part = xlits.size() > 1 ? xlits[0].shared_part(xlits[1]) : xlit();
+    xlits[0] += shared_part;
+    ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
+    ptr_cache[0] = ptr_(0, ws[0]);
+    if (xlits.size() == 1) {
+      assigning_lvl = xlits[0].get_assigning_lvl(alpha_dl);
+      return xcls_upd_ret::UNIT;
+    }
+
+    xlits[1] += shared_part;
+    ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
+    ptr_cache[1] = ptr_(1, ws[1]);
+
+    // ensure that xlits[1] becomes unit
+    swap_wl();
+
+    assert(get_wl0() != get_wl1());
+    assert(is_unit(dl_count));
+    assert(alpha[ptr_ws(0)] != bool3::None);
+
+    // check if clause needs any processing
+    assert(!is_active(dl_count));
+    assert(!is_sat(dl_count));
+
+    assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
+
+    return xcls_upd_ret::UNIT;
+  };
+  xcls_upd_ret init_unit_orig(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl) {
     if (deg() == 1) {
       //reduce xlit[0]
       xlits[0].reduce(alpha, alpha_dl, 0);
@@ -864,6 +1015,7 @@ public:
    * @param lin lineral to add to unit part
    */
   void add_to_unit(const xlit &lin, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl) {
+    assert(is_unit(dl_count));
     if(xlits.size()==1) {
       xlits[0] += lin;
     } else {
