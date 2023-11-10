@@ -782,8 +782,6 @@ void solver::solve(stats &s) {
     case ca_alg::fuip:
         analyze = &solver::analyze;
         break;
-    case ca_alg::fuip_opt:
-        analyze = &solver::analyze_exp;
     default: //should never be executed
         assert(false);
         analyze = &solver::analyze_exp;

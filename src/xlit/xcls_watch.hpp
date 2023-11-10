@@ -661,6 +661,7 @@ public:
       if(lvl==(var_t)-1) { xlit_dl_count1[i] =  {0,0}; }
       else { xlit_dl_count1[i] = {lvl, dl_count[lvl]}; }
     }
+    xlit_dl_count1[0] = {0,0};
 
     if(xlits_.size()==0) {
       xlits.clear();
@@ -1115,6 +1116,18 @@ public:
     if (!is_unit(dl_count) && alpha[ptr_ws(0)] != bool3::None)
       assert(eval0(alpha) || (!eval0(alpha) && !eval1(alpha)));
     // if( alpha[ ptr_ws(1) ] != bool3::None ) assert( !xlits[1].eval(alpha) );
+    if( dl_count[xlit_dl_count1[0].first] == xlit_dl_count1[0].second ) assert( !eval0(alpha) );
+    if( dl_count[xlit_dl_count0[0].first] == xlit_dl_count0[0].second ) assert( eval0(alpha) );
+
+    if(xlits.size() > 1) {
+      if( dl_count[xlit_dl_count1[1].first] == xlit_dl_count1[1].second ) assert( eval1(alpha) );
+      if( dl_count[xlit_dl_count0[1].first] == xlit_dl_count0[1].second ) assert( !eval1(alpha) );
+
+      for(var_t i = 2; i<xlits.size(); ++i) {
+        if( dl_count[xlit_dl_count1[i].first] == xlit_dl_count1[i].second ) assert( !xlits[i].eval(alpha) );
+        if( dl_count[xlit_dl_count0[i].first] == xlit_dl_count0[i].second ) assert( xlits[i].eval(alpha) );
+      }
+    }
 
     return assert_data_struct();
   };
