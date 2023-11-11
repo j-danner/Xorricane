@@ -443,30 +443,41 @@ std::pair<var_t, xcls_watch> solver::analyze_dpll() {
 
 
 void solver::restart(stats& s) {
+    VERB(50, "c restart")
     ++s.no_restarts;
+    confl_this_restart = 0;
 
     //go to dl 0
+    const unsigned int no_cls = xclss.size();
     backtrack(0);
 
+    //update util_cutoff -- TODO should we use quantiles?
+    double avg_util_redundant = 0;
+    for(var_t i=0; i<xclss.size(); ++i) {
+        if(!xclss[i].is_irredundant()) avg_util_redundant += utility[i];
+    }
+    avg_util_redundant /= active_cls;
+    util_cutoff = decay*avg_util_redundant;
     //rm 'useless' cls:
+    VERB(50, "c clean clause database")
     //mark clauses to be deleted
     for(var_t i=0; i<xclss.size(); ++i) {
-        if(utility[i] < util_cutoff && xclss[i].is_active(dl_count)) {
+        if(!xclss[i].is_irredundant() && utility[i] < util_cutoff && xclss[i].is_active(dl_count)) {
             xclss[i].mark_for_removal();
         }
     }
     assert( assert_data_structs() );
     //remove all clss marked for removal
     vec<xcls_watch> cpy; cpy.reserve(xclss.size());
-    vec<var_t> util_cpy = vec<var_t>(utility.size(), 0);
+    vec<double> util_cpy(utility.size(), 0);
     for(var_t i=0; i<xclss.size(); ++i) {
         if(!xclss[i].is_marked_for_removal()) {
             cpy.emplace_back(std::move(xclss[i]));
             util_cpy[i] = utility[i];
         }
     }
-    std::swap(cpy, xclss);
-    std::swap(util_cpy, utility);
+    xclss = std::move(cpy);
+    utility = std::move(util_cpy);
     //empty watchlists
     for(auto& wl : watch_list) wl.clear();
     //re-fill watchlists!
@@ -475,6 +486,11 @@ void solver::restart(stats& s) {
         watch_list[xclss[i].get_wl1()].emplace_back( i );
     }
     assert( assert_data_structs() );
+    
+    VERB(50, "c removing " + std::to_string( (double) (no_cls / xclss.size()) ) + "\% clauses.")
+
+    update_restart_schedule(s.no_restarts);
+    VERB(90, "c restart done")
 };
 
 xlit new_unit;
