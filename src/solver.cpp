@@ -440,7 +440,41 @@ std::pair<var_t, xcls_watch> solver::analyze_dpll() {
     return {dl>0 ? dl-1 : 0, std::move(learnt_cls) };
 };
 
+//code from CMS5!
+double luby(double y, int x) {
+    int size = 1;
+    int seq;
+    for(seq = 0 ; size < x + 1 ; seq++) {
+        size = 2 * size + 1;
+    }
 
+    while (size - 1 != x) {
+        size = (size - 1) >> 1;
+        seq--;
+        x = x % size;
+    }
+
+    return std::pow(y, seq);
+}
+
+bool solver::need_restart() const {
+    return confl_this_restart > confl_until_restart;
+};
+
+void solver::update_restart_schedule(const unsigned int &no_restarts) {
+    //update confl_until_restart
+    switch(get_const_opts()->rst) {
+        case restart_opt::no:
+            confl_until_restart = (unsigned int) -1;
+            break;
+        case restart_opt::fixed:
+            confl_until_restart = confl_until_restart_default;
+            break;
+        case restart_opt::luby:
+            confl_until_restart = luby(2, no_restarts) * confl_until_restart_default;
+            break;
+    }
+};
 
 void solver::restart(stats& s) {
     VERB(50, "c restart")
