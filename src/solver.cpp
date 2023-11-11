@@ -248,10 +248,6 @@ xcls solver::get_last_reason() const {
     return cls.to_xcls();
 };
 
-bool is_subspace(const xsys U, const xsys L) {
-    return !L.is_consistent() || (U+L == L);
-}
-
 xlit unit;
 std::pair<var_t, xcls_watch> solver::analyze_exp() {
     VERB(70, "**** analyzing conflict");
@@ -317,7 +313,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
         
         //get reason_cls
         assert(TRAIL.back().rs_cls_idx < xclss.size() && TRAIL.back().type == trail_t::IMPLIED_ALPHA);
-        const auto reason_cls = xclss[TRAIL.back().rs_cls_idx];
+        const auto& reason_cls = xclss[TRAIL.back().rs_cls_idx];
         VERB(70, "   * reason clause " + reason_cls.to_str() + " for UNIT " + reason_cls.get_unit().to_str() );
     #ifndef NDEBUG
         //ensure that reason cls is reason for provided alpha
@@ -330,6 +326,109 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
         pop_trail(); //remove from trail!
 
         learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+    }
+    // clean-up trail!
+    
+    VERB(70, "   * ");
+    VERB(70, "   * learnt clause is " + BOLD( learnt_cls.to_str() ) );
+    VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
+
+#ifndef NDEBUG
+    //print_assignments("    *");
+    //print_trail("    *");
+#endif
+
+    //TODO
+    //CLAUSE MINIMIZATION!
+
+    //find correct backtrack-lvl
+    const var_t b_lvl = learnt_cls.get_assigning_lvl();
+    if( dl < learnt_cls.size() && b_lvl == dl-1 ) {
+        VERB(50, "   * negated decisions lead to smaller learnt_cls and the same backtrack-level!");
+        //assert(false);
+        
+    }
+    
+    VERB(70, "****");
+    return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls);
+};
+
+std::pair<var_t, xcls_watch> solver::analyze() {
+    VERB(70, "**** analyzing conflict");
+#ifndef NDEBUG
+    print_assignments("    *");
+    print_trail("    *");
+#endif
+    assert( trails.back().back().ind == 0 ); //ensure last trail entry is a conflict & it comes from an actual clause
+
+    //go through trail of current dl -- skip over irrelevant parts
+    xcls_watch learnt_cls = (trails.back().back().type == trail_t::LINERAL_IMPLIED_ALPHA || trails.back().back().type == trail_t::LEARNT_UNIT) ? xcls_watch( lineral_watches[0][trails.back().back().rs_cls_idx], alpha_dl ) : xclss[ trails.back().back().rs_cls_idx ];
+    assert(learnt_cls.is_unit(dl_count));
+    VERB(70, "   * reason clause is   " + BOLD( learnt_cls.to_str() ) + " for UNIT " + learnt_cls.get_unit().to_str() );
+    bump_score( TRAIL.back().ind );
+    pop_trail(); //remove conflict from trail, i.e., now we should have alpha[0]==bool3:None
+    
+    //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
+    while( learnt_cls.get_assigning_lvl() == dl || learnt_cls.get_assigning_lvl() == (var_t) -1 ) {
+        assert(!TRAIL.empty());
+        VERB(70, "   * conflict clause is " + BOLD( learnt_cls.to_str() ) + "   --> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
+
+        unit = std::move(learnt_cls.get_unit());
+        unit.reduce(alpha);
+        unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
+        //if unit is still not 1, we need to resolve with reason clauses for equiv_lits which must reduce unit to 1 (!)
+      #ifdef USE_EQUIV
+        if(!unit.is_one()) {
+            //note: unit MUST reduce to 1 under equiv_lits
+          #ifndef NDEBUG
+            xlit unit_cpy = unit;
+            unit_cpy.reduce(equiv_lits);
+            unit_cpy.reduce(alpha);
+            assert(unit_cpy.is_one());
+          #endif
+            const auto reason_cls = xclss[equiv_lits[unit.LT()].reason];
+            VERB(70, "   * reason clause is   " + reason_cls.to_str() + " for EQUIVALENCE " + equiv_lits[unit.LT()].to_str(unit.LT()) );
+            //resolve!
+            learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl, opt.ca == ca_alg::fuip_opt );
+            continue;
+        }
+      #else
+        assert( unit.is_one() );
+      #endif
+        assert(!learnt_cls.to_xcls().is_zero());
+
+        //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
+        while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA && TRAIL.back().type != trail_t::LINERAL_IMPLIED_ALPHA && TRAIL.back().type != trail_t::LEARNT_UNIT ) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
+            pop_trail();
+        }
+        
+        //special case: TRAIL.back().type == trail_t::LINERAL_IMPLIED_ALPHA, which occurs only if the reason for the implied alpha is a unit clause, i.e., a lineral at dl 0:
+        if( TRAIL.back().type == trail_t::LINERAL_IMPLIED_ALPHA || TRAIL.back().type == trail_t::LEARNT_UNIT) {
+            assert(TRAIL.back().rs_cls_idx < lineral_watches[0].size());
+            VERB(70, "   * reason clause is   " + BOLD( lineral_watches[0][TRAIL.back().rs_cls_idx].to_str() ) );
+            const xlit& lin = lineral_watches[0][TRAIL.back().rs_cls_idx];
+            bump_score( TRAIL.back().ind );
+            pop_trail();
+            
+            learnt_cls.add_to_unit( lin, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl );
+            continue;
+        }
+        
+        //get reason_cls
+        assert(TRAIL.back().rs_cls_idx < xclss.size() && TRAIL.back().type == trail_t::IMPLIED_ALPHA);
+        const auto reason_cls = xclss[TRAIL.back().rs_cls_idx];
+        VERB(70, "   * reason clause is   " + BOLD( reason_cls.to_str() ) + " for UNIT " + reason_cls.get_unit().to_str() );
+    #ifndef NDEBUG
+        //ensure that reason cls is reason for provided alpha
+        xlit unit = reason_cls.get_unit();
+        unit.reduce(alpha);
+        unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
+        assert(unit.is_zero()); //unit MUST reduce to zero, as TRAIL is not yet popped
+    #endif
+        bump_score( TRAIL.back().ind );
+        pop_trail(); //remove from trail!
+
+        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl, opt.ca == ca_alg::fuip_opt);
     }
     // clean-up trail!
     
@@ -347,7 +446,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
 
     //find correct backtrack-lvl
     const var_t b_lvl = learnt_cls.get_assigning_lvl();
-    if( dl < learnt_cls.deg() && b_lvl == dl-1 ) {
+    if( dl < learnt_cls.size() && b_lvl == dl-1 ) {
         VERB(50, "   * negated decisions lead to smaller learnt_cls and the same backtrack-level!");
         //assert(false);
         
@@ -355,68 +454,6 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
     
     VERB(70, "****");
     return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls);
-};
-
-std::pair<var_t, xcls_watch> solver::analyze() {
-    VERB(70, "**** analyzing conflict");
-#ifndef NDEBUG
-    print_assignments("    *");
-    print_trail("    *");
-#endif
-    VERB(70, "   * conflict clause " + get_last_reason().to_str());
-
-    VERB(70, "   * trail in current dl");
-    //go through trail of current dl -- skip over irrelevant parts
-    std::set<var_t> relevant_lts;
-    xcls learnt_cls = get_last_reason();
-    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for ALPHA " + b3_to_str(alpha[TRAIL.back().ind]) );
-    //go through conflict clause, identify relevant reducers
-    for(const xlit& l : learnt_cls.get_ass_VS().get_xlits()) {
-        for(const auto& lt : l.support()) relevant_lts.insert(lt);
-    }
-    // rm from trail
-    pop_trail();
-
-    while (!TRAIL.empty() && alpha_dl[TRAIL.back().ind] >= dl) {
-        assert(lineral_watches[dl].back().get_reason() > opt.num_vars + 1 || xclss[lineral_watches[dl].back().get_reason()].is_unit(dl_count));
-        if (relevant_lts.contains(TRAIL.back().ind)) {
-            relevant_lts.erase(TRAIL.back().ind);
-            // get reason_UNIT clause
-            xcls r_cls = get_last_reason();
-            // update relevant_lts
-            for (const xlit &l : r_cls.get_ass_VS().get_xlits()) {
-                for (const auto &lt : l.support()) relevant_lts.insert(lt);
-            }
-            // const xcls_watch& cls = xclss[lineral_watches[dl].back().get_reason()];
-            // const cls_size_t u_idx = cls.get_unit_idx();
-            // std::move( cls.to_xlit(u_idx)+cls.orig_xlit(u_idx) );
-        
-            VERB(70, "   * reason clause " + r_cls.to_str() + " for UNIT " + b3_to_str( alpha[TRAIL.back().ind] ));
-            learnt_cls = sres_opt(r_cls, learnt_cls);
-            // rm from trail
-            pop_trail();
-            VERB(70, "   '----> resolution gives clause " + learnt_cls.to_str());
-            VERB(70, "   '----> gives with current assignments: " + learnt_cls.reduced(alpha).to_str());
-        } else {
-            // skipping implication, since its irrelevant!
-            VERB(70, " SKIPPING * reason clause " + get_last_reason().to_str() + " for ALPHA " + b3_to_str( alpha[TRAIL.back().ind] ));
-            // rm from trail
-            pop_trail();
-        }
-
-        // TODO stop conflict analysis as soon as learnt_cls with assignments up to prev dl reduces to XOR-lit
-        // meanwhile only check if it learnt_cls is a pure XOR-lit!
-        if (learnt_cls.deg() == 1) break;
-    }
-    VERB(70, "   * ");
-    VERB(70, "   * learnt clause is " + learnt_cls.to_str());
-
-    // clean-up trail!
-    while (!TRAIL.empty() && alpha_dl[TRAIL.back().ind] >= dl) { pop_trail(); }
-    
-    VERB(70, "****");
-    assert(false);
-    return std::pair<var_t, xcls>(dl - 1, learnt_cls);
 };
 
 std::pair<var_t, xcls_watch> solver::analyze_no_sres() { return analyze_dpll(); };
@@ -830,6 +867,7 @@ void solver::solve(stats &s) {
         analyze = &solver::analyze_dpll;
         break;
     case ca_alg::fuip:
+    case ca_alg::fuip_opt:
         analyze = &solver::analyze;
         break;
     default: //should never be executed

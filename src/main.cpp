@@ -63,10 +63,10 @@ int main(int argc, char const *argv[])
 
     //cdcl opts
     program.add_argument("-ca","--conflict-analysis")
-        .help("algorithm to use for conflict analysis, 'no' (means DPLL-solving), 'dpll' (means cdcl-implementation with DPLL-like learning (USE ONLY FOR DEBUGGING!)) or '1uip'")
+        .help("algorithm to use for conflict analysis, 'no' (means DPLL-solving), 'dpll' (means cdcl-implementation with DPLL-like learning (USE ONLY FOR DEBUGGING!)), '1uip', or '1uip+'")
         .default_value(std::string("1uip"))
         .action([](const std::string& value) {
-            static const vec<std::string> choices = { "no", "dpll", "1uip" };
+            static const vec<std::string> choices = { "no", "dpll", "1uip", "1uip+" };
             if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
                 return value;
             }
@@ -153,6 +153,7 @@ int main(int argc, char const *argv[])
     if(ca_str=="no") ca = ca_alg::no;
     else if(ca_str=="dpll") ca = ca_alg::dpll;
     else if(ca_str=="1uip") ca = ca_alg::fuip;
+    else if(ca_str=="1uip+") ca = ca_alg::fuip_opt;
     
     auto rh_str = program.get<std::string>("-rh");
     restart_opt rh = restart_opt::luby;

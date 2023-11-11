@@ -30,6 +30,8 @@
   #define VERB(lvl, msg)
 #endif
 
+#define BOLD(str) ("\x1b[1m"+str+"\x1b[0m")
+
 
 //type for variable numbering (must be unsigned; as (var_t)-1 must be bigger than all other values...)
 typedef uint_fast32_t var_t;
@@ -150,7 +152,7 @@ enum class phase_opt { rand, save, save_inv };
  * dpll: DPLL-style solving, but we add learnt clauses (should only be used for testing!)
  * fuip: first UIP conflict analysis
  */
-enum class ca_alg { no, dpll, fuip };
+enum class ca_alg { no, dpll, fuip, fuip_opt };
 /**
  * @brief options for restart heuristic
  * no: no restarts
@@ -175,7 +177,7 @@ struct options {
     
     int jobs = omp_get_num_threads();
     
-    int verb = 1;
+    int verb = 0;
 
     int timeout = 0;
 
