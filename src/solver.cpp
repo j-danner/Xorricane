@@ -103,8 +103,10 @@ void solver::backtrack(const var_t& lvl) {
     ///// --------------- /////
 
     // trail and assignments!
+  #ifndef NDEBUG
     print_trail();
     print_assignments();
+  #endif
 
     //undo unit linerals, revert assignments and alpha, and reset trail, reasons, queue
     while(dl>lvl) {
@@ -128,10 +130,12 @@ void solver::backtrack(const var_t& lvl) {
     //cleanup lineral_queue
     lineral_queue.clear();
 
+  #ifndef NDEBUG
     print_trail();
     print_assignments();
+  #endif
 
-    VERB(101, to_str());
+    VERB(201, to_str());
     VERB(90, "BACKTRACK end");
     assert(assert_data_structs());
 };
@@ -434,6 +438,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     
     VERB(70, "   * ");
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
+    VERB(90, "   * XNF " + learnt_cls.to_xnf_str() );
     VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
 
 #ifndef NDEBUG
@@ -695,7 +700,7 @@ void solver::GCP(stats &s) {
     }
     assert(lineral_queue.empty() || !no_conflict());
 
-    VERB(101, to_str());
+    VERB(201, to_str());
     VERB(90, "GCP end");
     assert(assert_data_structs());
 };
@@ -766,10 +771,10 @@ void solver::dpll_solve(stats &s) {
 
                 ///// BACKTRACKING /////
                 backtrack(dl-1);
-                VERB(101, to_str());
+                VERB(201, to_str());
 
                 add_new_guess( dec_stack.top() ); //add as 'guess', i.e., trail and reason stacks are ill-managed here, but that is irrelevant since we do not use those in the dpll-type solver!
-                VERB(101, to_str());
+                VERB(201, to_str());
                 // decay + bump scores of conflict clause!
                 //bump_score( dec_stack.top() );
                 dec_stack.pop();
@@ -910,14 +915,14 @@ void solver::solve(stats &s) {
                 auto [lvl, learnt_cls] = (this->*analyze)();
                 // backtrack
                 backtrack(lvl);
-                VERB(101, to_str());
+                VERB(201, to_str());
 
                 // add learnt_cls
                 add_learnt_cls( std::move(learnt_cls) );
                 // decay score
                 decay_score();
 
-                VERB(101, to_str());
+                VERB(201, to_str());
                 //restart?
                 if( need_restart() ) { restart(s); }
             } else {
@@ -966,7 +971,7 @@ void solver::solve(stats &s) {
                     auto [lvl, learnt_cls] = analyze_dpll();
                     // backtrack
                     backtrack(lvl);
-                    VERB(101, to_str());
+                    VERB(201, to_str());
                     // add learnt_cls
                     [[maybe_unused]] const var_t idx = add_learnt_cls( std::move(learnt_cls), false );
                     assert( idx>xclss.size() || xclss[idx].is_irredundant() );
