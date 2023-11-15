@@ -166,8 +166,8 @@ std::pair<xsys, xsys> solver::dh_vsids() {
 std::pair<xsys, xsys> solver::dh_shortest_wl() {
     //find unassigned variable that has the longest watch_list
     var_t lt_min = 0;
-    size_t size_min = alpha.size();
-    for(size_t idx=0; idx<watch_list.size(); ++idx) {
+    size_t size_min = xclss.size();
+    for(size_t idx=1; idx<watch_list.size(); ++idx) {
         if(alpha[idx]==bool3::None && (watch_list[idx].size() < size_min)) {
             lt_min = idx; size_min = watch_list[idx].size();
         }
@@ -182,7 +182,7 @@ std::pair<xsys, xsys> solver::dh_longest_wl() {
     //find unassigned variable that has the longest watch_list
     var_t lt_max = 0;
     size_t size_max = 0;
-    for(size_t idx=0; idx<watch_list.size(); ++idx) {
+    for(size_t idx=1; idx<watch_list.size(); ++idx) {
         if(alpha[idx]==bool3::None && (watch_list[idx].size() > size_max)) {
             lt_max = idx; size_max = watch_list[idx].size();
         }
@@ -732,7 +732,7 @@ void solver::dpll_solve(stats &s) {
         decH = &solver::dh_lex_LT;
         break;
     case dec_heu::swl:
-        decH = &solver::dh_vsids;
+        decH = &solver::dh_shortest_wl;
         break;
     default:
         assert(false);
@@ -859,7 +859,7 @@ void solver::solve(stats &s) {
         decH = &solver::dh_lex_LT;
         break;
     case dec_heu::swl:
-        decH = &solver::dh_vsids;
+        decH = &solver::dh_shortest_wl;
         break;
     default:
         assert(false);
