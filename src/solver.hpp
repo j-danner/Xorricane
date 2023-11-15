@@ -783,6 +783,9 @@ class solver
     void dpll_solve(stats& s);
     stats dpll_solve() { stats s; dpll_solve(s); return s; };
 
+    //find all solutions of xsys
+    void solve_L(const xsys& L, stats& s) const;
+
     var_t get_dl() const noexcept { return dl; };
     
     options* get_opts() { return &opt; };

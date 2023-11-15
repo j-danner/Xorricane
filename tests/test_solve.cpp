@@ -644,8 +644,8 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
 
         (slvr.get_opts())->verb = 70;
         (slvr.get_opts())->ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::dpll);
-        SECTION("ms 1-4"){
-            const auto sol_c = GENERATE(1,2,3,4);
+        SECTION("ms 1-5"){
+            const auto sol_c = GENERATE(1,2,3,4,5);
             (slvr.get_opts())->sol_count = sol_c;
 
             stats s = slvr.solve();
@@ -653,13 +653,13 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
             CHECK( (int) s.sols.size() == sol_c );
         }
     
-        SECTION("ms 5-6,all"){
-            const auto sol_c = GENERATE(5,6,-1);
+        SECTION("ms 6-7,all"){
+            const auto sol_c = GENERATE(6,7,-1);
             (slvr.get_opts())->sol_count = sol_c;
 
             stats s = slvr.solve();
             CHECK( check_sols(p_xnf.cls, s.sols) );
-            CHECK( (int) s.sols.size() == 5 );
+            CHECK( (int) s.sols.size() == 6 );
         }
     }
 
@@ -671,8 +671,8 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         (slvr_P.get_opts())->verb = 70;
         (slvr_P.get_opts())->ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::dpll);
 
-        SECTION("ms 1-4"){
-            const auto sol_c = GENERATE(1,2,3,4);
+        SECTION("ms 1-5"){
+            const auto sol_c = GENERATE(1,2,3,4,5);
             (slvr_P.get_opts())->sol_count = sol_c;
 
             stats s = slvr_P.solve();
@@ -682,12 +682,12 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
             CHECK( check_sols(p_xnf.cls, s.sols) );
         }
     
-        SECTION("ms 5-6,all"){
-            const auto sol_c = GENERATE(5,6,-1);
+        SECTION("ms 6-7,all"){
+            const auto sol_c = GENERATE(6,7,-1);
             (slvr_P.get_opts())->sol_count = sol_c;
 
             stats s = slvr_P.solve();
-            CHECK( (int) s.sols.size() == 5 );
+            CHECK( (int) s.sols.size() == 6 );
             CHECK( check_sols(p_xnf_P.cls, s.sols) );
             s.reorder_sols(P);
             CHECK( check_sols(p_xnf.cls, s.sols) );
@@ -696,12 +696,29 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
 }
 
 TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
-    auto fname = "../../benchmarks/generate_instances/enocoro_fa/eno_s4_mixed_quad.xnf";
+    
+    SECTION("linear system") {
+        auto fname = "../../benchmarks/instances/2xnfs/test34.xnf";
 
-    reordering P;
+        auto p_xnf = parse_file(fname);
+        auto slvr = solver(p_xnf);
+
+        (slvr.get_opts())->verb = 70;
+        (slvr.get_opts())->ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::dpll);
+        const int sol_c = GENERATE(0,1,2,3,4,5,6,7,-1);
+        (slvr.get_opts())->sol_count = sol_c;
+
+        stats s = slvr.solve();
+        CHECK( check_sols(p_xnf.cls, s.sols) );
+        CHECK( (int) s.sols.size() == ( (0<=sol_c && sol_c<=6) ? (sol_c==0 ? 1 : sol_c) : 6) );
+        std::set< vec<bool> > sols(s.sols.begin(), s.sols.end());
+        CHECK( sols.size()==s.sols.size() );
+    }
     
     SECTION("no gp") {
-        auto p_xnf = parse_file_gp(fname, P);
+        auto fname = "../../benchmarks/generate_instances/enocoro_fa/eno_s4_mixed_quad.xnf";
+
+        auto p_xnf = parse_file(fname);
         auto slvr = solver(p_xnf);
 
         (slvr.get_opts())->verb = 70;
@@ -711,10 +728,15 @@ TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
 
         stats s = slvr.solve();
         CHECK( check_sols(p_xnf.cls, s.sols) );
-        CHECK( (int) s.sols.size() == ( (0<=sol_c && sol_c<=16) ? (sol_c==0 ? 1 : sol_c) : 17) );
+        CHECK( (int) s.sols.size() == ( (0<=sol_c && sol_c<=16) ? (sol_c==0 ? 1 : sol_c) : 16) );
+        std::set< vec<bool> > sols(s.sols.begin(), s.sols.end());
+        CHECK( sols.size()==s.sols.size() );
     }
     
     SECTION("with gp") {
+        auto fname = "../../benchmarks/generate_instances/enocoro_fa/eno_s4_mixed_quad.xnf";
+
+        reordering P;
         P.insert(8,1);
         P.insert(7,2);
         P.insert(5,3);
@@ -734,7 +756,9 @@ TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
 
         stats s = slvr.solve();
         CHECK( check_sols(p_xnf.cls, s.sols) );
-        CHECK( (int) s.sols.size() == ( (0<=sol_c && sol_c<=16) ? (sol_c==0 ? 1 : sol_c) : 17) );
+        CHECK( (int) s.sols.size() == ( (0<=sol_c && sol_c<=16) ? (sol_c==0 ? 1 : sol_c) : 16) );
+        std::set< vec<bool> > sols(s.sols.begin(), s.sols.end());
+        CHECK( sols.size()==s.sols.size() );
     }
 }
 

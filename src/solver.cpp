@@ -765,7 +765,6 @@ void solver::dpll_solve(stats &s) {
                     s.sat = false;
                     s.end = std::chrono::steady_clock::now();
                     
-                    s.sols.emplace_back( vec<bool>() );
                     return;
                 }
 
@@ -812,14 +811,9 @@ void solver::dpll_solve(stats &s) {
                 //alpha[0] = bool3::True; //enforce backtracking!
                 add_implied_lineral(xlit(0, false), -1);
             } else {
-                s.sols.emplace_back( vec<bool>(opt.num_vars, false) );
-                L.solve( s.sols.back() );
+                solve_L(L, s);
 
-                s.sat = true;
-                s.finished = true;
                 if(s.sols.size() < get_const_opts()->sol_count) {
-                    s.print_sol(get_const_opts()->P);
-                    VERB(0, "c solutions found so far: "+std::to_string(s.sols.size()));
                     //proceed as if we are at a conflict
                     goto dpll_conflict;
                 }
@@ -906,7 +900,6 @@ void solver::solve(stats &s) {
                     s.finished = true;
                     s.sat = false;
                     
-                    s.sols.emplace_back( vec<bool>() );
                     return;
                 }
             
@@ -959,14 +952,9 @@ void solver::solve(stats &s) {
                 GCP(s);
                 if(no_conflict()) ++s.no_confl; //count as conflict here only if we do not need another conflict analysis
             } else {
-                s.sols.emplace_back( vec<bool>(opt.num_vars, false) );
-                L.solve( s.sols.back() );
+                solve_L(L, s);
 
-                s.sat = true;
-                s.finished = true;
                 if(s.sols.size() < get_const_opts()->sol_count) {
-                    s.print_sol(get_const_opts()->P);
-                    VERB(0, "c solutions found so far: "+std::to_string(s.sols.size()));
                     //add clause that prevents this solution in the future, i.e., avoid taking the same decisions again
                     auto [lvl, learnt_cls] = analyze_dpll();
                     // backtrack
@@ -986,6 +974,42 @@ void solver::solve(stats &s) {
         }
     }
 };
+
+
+void solver::solve_L(const xsys& L, stats& s) const {
+    //compute first sol
+    s.sols.emplace_back( vec<bool>(opt.num_vars, false) );
+    L.solve( s.sols.back() );
+   
+    s.sat = true;
+    s.finished = true;
+
+    if(s.sols.size()==get_const_opts()->sol_count || L.size()==get_const_opts()->num_vars) return;
+    //print sol
+    s.print_sol(get_const_opts()->P);
+    VERB(0, "c solutions found so far: "+std::to_string(s.sols.size()));
+
+    unsigned long long sol_ct = 1;
+    vec<var_t> non_pivots; non_pivots.reserve( alpha.size()-L.size() );
+    for(var_t idx=1; idx<alpha.size(); ++idx) {
+        if(!L.get_pivot_poly_idx().contains(idx)) non_pivots.emplace_back(idx);
+    }
+
+    while(s.sols.size()<opt.sol_count && sol_ct < (unsigned long long) (1 << non_pivots.size()) ) {
+        //compute next sol
+        s.sols.emplace_back( vec<bool>(opt.num_vars, false) );
+        for(var_t idx=0; idx<non_pivots.size(); ++idx) {
+            s.sols.back()[ non_pivots[idx]-1 ] = (sol_ct >> idx) & 1;
+        }
+        //fix other positions
+        L.solve( s.sols.back() );
+        
+        //print sol
+        s.print_sol(get_const_opts()->P);
+        VERB(0, "c solutions found so far: "+std::to_string(s.sols.size()));
+        ++sol_ct;
+    }
+}
 
 
 // overwrite to_str() func
