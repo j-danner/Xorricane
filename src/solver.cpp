@@ -984,11 +984,11 @@ void solver::solve_L(const xsys& L, stats& s) const {
     s.sat = true;
     s.finished = true;
 
-    if(s.sols.size()==get_const_opts()->sol_count || L.size()==get_const_opts()->num_vars) return;
     //print sol
     s.print_sol(get_const_opts()->P);
     VERB(0, "c solutions found so far: "+std::to_string(s.sols.size()));
 
+    if(s.sols.size()==get_const_opts()->sol_count || L.size()==get_const_opts()->num_vars) return;
     unsigned long long sol_ct = 1;
     vec<var_t> non_pivots; non_pivots.reserve( alpha.size()-L.size() );
     for(var_t idx=1; idx<alpha.size(); ++idx) {
