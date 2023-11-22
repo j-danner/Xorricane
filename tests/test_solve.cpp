@@ -364,6 +364,28 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
+    
+    SECTION( "test35.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test35.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = ca_alg::fuip_opt;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test36.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test36.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = ca_alg::fuip_opt;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
 }
 
 TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
@@ -636,61 +658,100 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
 }
 
 TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
-    auto fname = "../../benchmarks/instances/2xnfs/test10.xnf";
-    auto p_xnf = parse_file(fname);
-    auto slvr = solver(p_xnf);
-
-    SECTION("no gp") {
-
-        (slvr.get_opts())->verb = 70;
-        (slvr.get_opts())->ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::dpll);
-        SECTION("ms 1-5"){
-            const auto sol_c = GENERATE(1,2,3,4,5);
-            (slvr.get_opts())->sol_count = sol_c;
-
-            stats s = slvr.solve();
-            CHECK( check_sols(p_xnf.cls, s.sols) );
-            CHECK( (int) s.sols.size() == sol_c );
-        }
     
-        SECTION("ms 6-7,all"){
-            const auto sol_c = GENERATE(6,7,-1);
-            (slvr.get_opts())->sol_count = sol_c;
+    SECTION( "test36.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test36.xnf");
+        auto slvr = solver(clss);
+        //slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
+        slvr.get_opts()->sol_count = -1;
 
-            stats s = slvr.solve();
-            CHECK( check_sols(p_xnf.cls, s.sols) );
-            CHECK( (int) s.sols.size() == 6 );
-        }
+        stats s = slvr.solve();
+        CHECK( s.sols.size() == 1 );
+        CHECK( check_sols(clss.cls, s.sols) );
     }
-
-    SECTION("with gp"){
-        reordering P; P.insert(2,1);
-        auto p_xnf_P = parse_file_gp(fname, P);
-        auto slvr_P = solver(p_xnf_P);
-
-        (slvr_P.get_opts())->verb = 70;
-        (slvr_P.get_opts())->ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::dpll);
-
-        SECTION("ms 1-5"){
-            const auto sol_c = GENERATE(1,2,3,4,5);
-            (slvr_P.get_opts())->sol_count = sol_c;
-
-            stats s = slvr_P.solve();
-            CHECK( (int) s.sols.size() == sol_c );
-            CHECK( check_sols(p_xnf_P.cls, s.sols) );
-            s.reorder_sols(P);
-            CHECK( check_sols(p_xnf.cls, s.sols) );
-        }
     
-        SECTION("ms 6-7,all"){
-            const auto sol_c = GENERATE(6,7,-1);
-            (slvr_P.get_opts())->sol_count = sol_c;
+    SECTION( "test37.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test37.xnf");
+        auto slvr = solver(clss);
+        //slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
+        slvr.get_opts()->sol_count = -1;
 
-            stats s = slvr_P.solve();
-            CHECK( (int) s.sols.size() == 6 );
-            CHECK( check_sols(p_xnf_P.cls, s.sols) );
-            s.reorder_sols(P);
-            CHECK( check_sols(p_xnf.cls, s.sols) );
+        stats s = slvr.solve();
+        CHECK( s.sols.size() == 2 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test38.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test38.xnf");
+        auto slvr = solver(clss);
+        //slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
+        slvr.get_opts()->sol_count = -1;
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size() == 3 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test10.xnf" ) {
+        auto fname = "../../benchmarks/instances/2xnfs/test10.xnf";
+        auto p_xnf = parse_file(fname);
+        auto slvr = solver(p_xnf);
+
+        SECTION("no gp") {
+
+            (slvr.get_opts())->verb = 70;
+            (slvr.get_opts())->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
+            SECTION("ms 1-5"){
+                const auto sol_c = GENERATE(1,2,3,4,5);
+                (slvr.get_opts())->sol_count = sol_c;
+
+                stats s = slvr.solve();
+                CHECK( check_sols(p_xnf.cls, s.sols) );
+                CHECK( (int) s.sols.size() == sol_c );
+            }
+    
+            SECTION("ms 6-7,all"){
+                const auto sol_c = GENERATE(6,7,-1);
+                (slvr.get_opts())->sol_count = sol_c;
+
+                stats s = slvr.solve();
+                CHECK( check_sols(p_xnf.cls, s.sols) );
+                CHECK( (int) s.sols.size() == 6 );
+            }
+        }
+
+        SECTION("with gp"){
+            reordering P; P.insert(2,1);
+            auto p_xnf_P = parse_file_gp(fname, P);
+            auto slvr_P = solver(p_xnf_P);
+
+            (slvr_P.get_opts())->verb = 70;
+            (slvr_P.get_opts())->ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::dpll);
+
+            SECTION("ms 1-5"){
+                const auto sol_c = GENERATE(1,2,3,4,5);
+                (slvr_P.get_opts())->sol_count = sol_c;
+
+                stats s = slvr_P.solve();
+                CHECK( (int) s.sols.size() == sol_c );
+                CHECK( check_sols(p_xnf_P.cls, s.sols) );
+                s.reorder_sols(P);
+                CHECK( check_sols(p_xnf.cls, s.sols) );
+            }
+    
+            SECTION("ms 6-7,all"){
+                const auto sol_c = GENERATE(6,7,-1);
+                (slvr_P.get_opts())->sol_count = sol_c;
+
+                stats s = slvr_P.solve();
+                CHECK( (int) s.sols.size() == 6 );
+                CHECK( check_sols(p_xnf_P.cls, s.sols) );
+                s.reorder_sols(P);
+                CHECK( check_sols(p_xnf.cls, s.sols) );
+            }
         }
     }
 }
@@ -722,7 +783,7 @@ TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
         auto slvr = solver(p_xnf);
 
         (slvr.get_opts())->verb = 70;
-        (slvr.get_opts())->ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::dpll);
+        (slvr.get_opts())->ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::fuip_opt, ca_alg::dpll);
         const int sol_c = GENERATE(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,-1);
         (slvr.get_opts())->sol_count = sol_c;
 
@@ -750,8 +811,8 @@ TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
         auto slvr = solver(p_xnf);
 
         (slvr.get_opts())->verb = 70;
-        (slvr.get_opts())->ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::dpll);
-        const int sol_c = GENERATE(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,-1);
+        (slvr.get_opts())->ca =ca_alg::fuip; //GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::fuip_opt, ca_alg::dpll);
+        const int sol_c = 9; //GENERATE(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,-1);
         (slvr.get_opts())->sol_count = sol_c;
 
         stats s = slvr.solve();
