@@ -591,6 +591,7 @@ class solver
             if(r_cls.size()==0) { //r_cls has not yet been instantiated
               r_cls = l.get_reason()<xclss.size() ? xclss[l.get_reason()] : xcls_watch( std::move(xcls( std::move(l.plus_one()) )) );
             } else {
+              bump_score(l);
               //resolve cls
               if( l.get_reason() < xclss.size() ) {
                 const auto& r_cls2 = xclss[l.get_reason()];
@@ -613,7 +614,7 @@ class solver
                 VERB(85, "c");
               }
             }
-            assert( tmp.is_one() || r_cls.get_unit().reduced(alpha, alpha_dl, 0) == tmp.reduced(alpha, alpha_dl, 0) );
+            assert( tmp.is_one() || r_cls.to_xcls().get_ass_VS().reduce( tmp ).reduced(alpha, alpha_dl, 0).is_one() );
           }
           if( r_cls.get_assigning_lvl() < lvl ) {
             //early abort if r_cls is already assigning, i.e., already gives a conflict!
