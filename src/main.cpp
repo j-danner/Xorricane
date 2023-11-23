@@ -115,6 +115,7 @@ int main(int argc, char const *argv[])
     //guessing path input
     program.add_argument("-gp","--guessing-path")
         .help("path to file storing guessing path; each line contains exactly one number corr to the corresponding variable");
+        //undocumented: if var name is negative we first guess the ind to be false instead of true
 
 
     //max sols to compute

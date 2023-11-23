@@ -54,11 +54,12 @@ reordering parse_gp(const std::string& fname) {
         while (std::getline(file, line)) {
             if (line.length() == 0 || line[0] == 'c') continue; //ignore line
             auto words = split(line, " ");
-            const int val = stoi(words[0]);
+            const int val_ = stoi(words[0]);
+            const int val = std::abs(val_);
             assert(val>0);
 
             if(already_inserted.contains((var_t) val)) continue;
-            P.insert((var_t) val, idx);
+            P.insert((var_t) val, idx, val_ < 0);
             already_inserted.insert((var_t) val);
             ++idx;
         }

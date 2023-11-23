@@ -94,23 +94,26 @@ class reordering {
   //  robin_hood::unordered_flat_map<var_t,var_t> P;
   //#else
     std::unordered_map<var_t,var_t> P;
+    vec<bool> init_phase;
   //#endif
 
   public:
     reordering() {};
-    reordering(const reordering& o) : P(o.P) {};
-    reordering(reordering&& o) : P(std::move(o.P)) {};
+    reordering(const reordering& o) : P(o.P), init_phase(o.init_phase) {};
+    reordering(reordering&& o) : P(std::move(o.P)), init_phase(std::move(o.init_phase)) {};
 
-    std::size_t size() const noexcept { return P.size(); };
+    std::size_t size() const noexcept { return init_phase.size(); };
 
-    void insert(const var_t& ind, const var_t& pos) {
+    void insert(const var_t& ind, const var_t& pos, const bool phase = true) {
       if(at(pos)==ind) return;
       const auto P_ind = at(ind);
       const auto P_pos = at(pos);
       P[pos] = P_ind;
       P[ind] = P_pos;
+      init_phase.push_back(!phase);
     };
     const var_t& at(const var_t& ind) const noexcept { return P.contains(ind) ? P.at(ind) : ind; };
+    bool get_phase(const var_t& idx) const { return init_phase.at(idx); };
 
     bool assert_data_stuct(const var_t& n_vars) {
       std::set<var_t> tmp;

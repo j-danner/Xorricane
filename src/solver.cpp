@@ -30,6 +30,10 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl
     trails.reserve(opt_.num_vars+1);
     trails.emplace_back( std::list<trail_elem>() );
     last_phase = vec<bool3>(opt_.num_vars + 1, bool3::None);
+    //init last_phase according to init_phase of reordering:
+    for(var_t idx=0; idx<opt_.P.size(); ++idx) {
+        last_phase[idx+1] = to_bool3( opt_.P.get_phase(idx) );
+    }
 
     // vec of pure literals
     vec<xlit> _L = vec<xlit>();
