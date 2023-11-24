@@ -94,43 +94,56 @@ class reordering {
   //  robin_hood::unordered_flat_map<var_t,var_t> P;
   //#else
     std::unordered_map<var_t,var_t> P;
-    vec<bool> init_phase;
   //#endif
+    vec<bool> init_phase;
+    var_t pos = 0;
+  #ifndef NDEBUG
+    var_t max = 0;
+  #endif
 
   public:
     reordering() {};
-    reordering(const reordering& o) : P(o.P), init_phase(o.init_phase) {};
-    reordering(reordering&& o) : P(std::move(o.P)), init_phase(std::move(o.init_phase)) {};
+    reordering(const reordering& o) : P(o.P), init_phase(o.init_phase), pos(o.pos) {};
+    reordering(reordering&& o) : P(std::move(o.P)), init_phase(std::move(o.init_phase)), pos(o.pos) {};
 
-    std::size_t size() const noexcept { return init_phase.size(); };
+    std::size_t size() const noexcept { return pos; };
 
-    void insert(const var_t& ind, const var_t& pos, const bool phase = true) {
+    void insert(const var_t& ind, const bool3 phase = bool3::False) {
+      init_phase.push_back(phase == bool3::True);
+      ++pos;
+    #ifndef NDEBUG
+      max = std::max(std::max(pos, ind) , max);
+    #endif
       if(at(pos)==ind) return;
       const auto P_ind = at(ind);
       const auto P_pos = at(pos);
       P[pos] = P_ind;
       P[ind] = P_pos;
-      init_phase.push_back(!phase);
     };
     const var_t& at(const var_t& ind) const noexcept { return P.contains(ind) ? P.at(ind) : ind; };
-    bool get_phase(const var_t& idx) const { return init_phase.at(idx); };
+    bool get_phase(const var_t& idx) const { return init_phase[idx]; };
 
-    bool assert_data_stuct(const var_t& n_vars) {
+  #ifndef NDEBUG
+    bool assert_data_stuct() const {
       std::set<var_t> tmp;
-      for(var_t i=1; i<=n_vars; ++i) {
+      for(var_t i=1; i<=max; ++i) {
         var_t P_i = at(i);
-        assert(P_i <= n_vars && P_i > 0);
+        assert(0 < P_i && P_i <= max);
         tmp.insert( P_i );
       }
-      for(var_t i=1; i<=n_vars; ++i) {
+      for(var_t i=1; i<=max; ++i) {
         if( !tmp.contains(i) ) {
           std::cout << "c reordering: missing index " << i << std::endl;
         }
         assert(tmp.contains(i));
       }
-      assert( tmp.size() == n_vars );
+      assert( tmp.size() == max );
+      assert( size() == init_phase.size() );
       return true;
     };
+  #else
+    bool assert_data_struct() const { return true };
+  #endif
 };
 
 
@@ -192,6 +205,7 @@ struct options {
     options() : num_vars(0), num_cls(0) {};
     options(var_t n_vars) : num_vars(n_vars), num_cls(0) {};
     options(var_t n_vars, var_t n_cls) : num_vars(n_vars), num_cls(n_cls) {};
+    options(var_t n_vars, var_t n_cls, reordering P_) : num_vars(n_vars), num_cls(n_cls), P(P_) {};
     options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
     options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, reordering P_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), rst(rst_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
 };

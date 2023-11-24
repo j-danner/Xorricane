@@ -187,7 +187,7 @@ int main(int argc, char const *argv[])
     try {
         reordering P = parse_gp( gp_fname );
         parsed_xnf p_xnf = parse_file_gp( fname, P );
-        assert( P.assert_data_stuct(p_xnf.num_vars) );
+        assert( P.assert_data_stuct() );
 
         //set upt options
         options opts( p_xnf.num_vars, p_xnf.num_cls, dh, po, ca, rh, jobs, verb, time_out, sol_count, P );

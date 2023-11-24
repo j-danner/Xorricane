@@ -743,6 +743,14 @@ class solver
      * @param parsed_xnf pair of options and clauses, as returned by parse_file
      */
     solver(parsed_xnf& p_xnf) noexcept : solver(p_xnf.cls, options(p_xnf.num_vars, p_xnf.num_cls), 0) {};
+   
+    /**
+     * @brief Construct main solver object from parsed_xnf
+     * 
+     * @param parsed_xnf pair of options and clauses, as returned by parse_file
+     * @param P reordering of vars
+     */
+    solver(parsed_xnf& p_xnf, reordering& P) noexcept : solver(p_xnf.cls, options(p_xnf.num_vars, p_xnf.num_cls, P), 0) {};
 
     //copy ctor
     solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), active_cls_stack(o.active_cls_stack), activity_score(o.activity_score), dl_count(o.dl_count), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), lineral_queue(o.lineral_queue) { assert(assert_data_structs()); };

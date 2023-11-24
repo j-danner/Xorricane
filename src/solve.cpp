@@ -50,7 +50,6 @@ reordering parse_gp(const std::string& fname) {
     std::set<var_t> already_inserted;
     if(file.is_open()) {
         std::string line;
-        var_t idx = 1;
         while (std::getline(file, line)) {
             if (line.length() == 0 || line[0] == 'c') continue; //ignore line
             auto words = split(line, " ");
@@ -59,9 +58,8 @@ reordering parse_gp(const std::string& fname) {
             assert(val>0);
 
             if(already_inserted.contains((var_t) val)) continue;
-            P.insert((var_t) val, idx, val_ < 0);
+            P.insert((var_t) val, to_bool3(val_ < 0));
             already_inserted.insert((var_t) val);
-            ++idx;
         }
     }
 
