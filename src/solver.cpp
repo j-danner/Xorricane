@@ -7,7 +7,7 @@
 
 #include "solver.hpp"
 
-solver::solver(const vec< vec<xlit> >& clss, const options& opt_, const var_t dl_) noexcept : opt(opt_), dl(dl_) {
+solver::solver(const vec< vec<xlit> >& clss, const options& opt_) noexcept : opt(opt_) {
     #ifndef NDEBUG
         if(opt.verb==0) opt.verb = 100;
     #endif
