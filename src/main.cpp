@@ -190,11 +190,11 @@ int main(int argc, char const *argv[])
         assert( P.assert_data_struct() );
 
         //set upt options
-        options opts( p_xnf.num_vars, p_xnf.num_cls, dh, po, ca, rh, jobs, verb, time_out, sol_count, P );
+        options opts( dh, po, ca, rh, jobs, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;
-            std::string out = gcp_only(p_xnf.cls, opts, s);
+            std::string out = gcp_only(p_xnf.cls, p_xnf.num_vars, opts, s);
             if(out.size()>0) {
                 write_str(gcp_out, out);
                 return 0;
@@ -202,7 +202,7 @@ int main(int argc, char const *argv[])
             return 1; //gcp failed.
         }
 
-        return solve(p_xnf.cls, opts, s);
+        return solve(p_xnf.cls, p_xnf.num_vars, opts, s);
     } catch (std::exception &ex) {
         std::cout << "s INDEFINITE" << std::endl;
         return 1;

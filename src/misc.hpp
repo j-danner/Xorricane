@@ -182,8 +182,8 @@ enum class restart_opt { no, fixed, luby};
  * 
  */
 struct options {
-    var_t num_vars = 0;
-    var_t num_cls = 0;
+    //var_t num_vars = 0;
+    //var_t num_cls = 0;
 
     dec_heu dh = dec_heu::vsids;
     phase_opt po = phase_opt::save;
@@ -202,12 +202,10 @@ struct options {
     reordering P;
 
     //default settings
-    options() : num_vars(0), num_cls(0) {};
-    options(var_t n_vars) : num_vars(n_vars), num_cls(0) {};
-    options(var_t n_vars, var_t n_cls) : num_vars(n_vars), num_cls(n_cls) {};
-    options(var_t n_vars, var_t n_cls, reordering P_) : num_vars(n_vars), num_cls(n_cls), P(P_) {};
-    options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
-    options(var_t n_vars, var_t n_cls, dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, reordering P_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), po(po_), ca(ca_), rst(rst_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options() {};
+    options(reordering P_) : P(P_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_) : dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, reordering P_) : dh(dh_), po(po_), ca(ca_), rst(rst_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
 };
 
 

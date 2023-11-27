@@ -173,6 +173,8 @@ class solver
 
     std::deque<lineral_queue_elem> lineral_queue;
     
+    var_t get_num_vars() const { return alpha.size()-1; };
+    
     xcls get_last_reason() const;
 
     std::pair<var_t,xcls_watch> analyze();
@@ -937,16 +939,24 @@ class solver
      * @brief Construct main solver object
      * 
      * @param clss vector of xlit-vectors that represent the clauses
+     * @param num_vars number of variables
      * @param opt_ options for heuristics, also includes number of vars
      */
-    solver(const vec< vec<xlit> >& clss, const options& opt_) noexcept;
+    solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options& opt_) noexcept;
 
     /**
      * @brief Construct main solver object from parsed_xnf
      * 
      * @param parsed_xnf pair of options and clauses, as returned by parse_file
      */
-    solver(parsed_xnf& p_xnf) noexcept : solver(p_xnf.cls, options(p_xnf.num_vars, p_xnf.num_cls)) {};
+    solver(parsed_xnf& p_xnf) noexcept : solver(p_xnf.cls, p_xnf.num_vars, options()) {};
+    
+    /**
+     * @brief Construct main solver object from parsed_xnf
+     * 
+     * @param parsed_xnf pair of options and clauses, as returned by parse_file
+     */
+    solver(parsed_xnf& p_xnf, options& opt_) noexcept : solver(p_xnf.cls, p_xnf.num_vars, opt_) {};
    
     /**
      * @brief Construct main solver object from parsed_xnf
@@ -954,7 +964,7 @@ class solver
      * @param parsed_xnf pair of options and clauses, as returned by parse_file
      * @param P reordering of vars
      */
-    solver(parsed_xnf& p_xnf, reordering& P) noexcept : solver(p_xnf.cls, options(p_xnf.num_vars, p_xnf.num_cls, P)) {};
+    solver(parsed_xnf& p_xnf, reordering& P) noexcept : solver(p_xnf.cls, p_xnf.num_vars, options(P)) {};
 
     //copy ctor
     solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), active_cls_stack(o.active_cls_stack), activity_score(o.activity_score), dl_count(o.dl_count), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), lineral_queue(o.lineral_queue) { assert(assert_data_structs()); };

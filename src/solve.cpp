@@ -178,7 +178,7 @@ namespace {
 
 
 //main solving func; solves xnf using opts!
-int solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
+int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s) {
     //set number of omp jobs!
     omp_set_num_threads(opts.jobs > omp_get_max_threads() ? omp_get_max_threads() : opts.jobs);
 
@@ -186,7 +186,7 @@ int solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
     if(s.begin==std::chrono::steady_clock::time_point::min()) s.begin = std::chrono::steady_clock::now();
 
     //std::cout << to_str( xnf ) << std::endl;
-    auto sol = solver( xnf, opts );
+    auto sol = solver( xnf, num_vars, opts );
 
     //register interupt handler
     std::signal(SIGINT, signal_handler);
@@ -235,12 +235,12 @@ int solve(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
     }
 }
 
-stats solve(const vec< vec<xlit> >& xnf, const options& opts) {
-    stats s; solve(xnf, opts, s); return s;
+stats solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts) {
+    stats s; solve(xnf, num_vars, opts, s); return s;
 }
 
 //perform one gcp run
-std::string gcp_only(const vec< vec<xlit> >& xnf, const options& opts, stats& s) {
+std::string gcp_only(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s) {
     //set number of omp jobs!
     omp_set_num_threads(opts.jobs > omp_get_max_threads() ? omp_get_max_threads() : opts.jobs);
 
@@ -248,7 +248,7 @@ std::string gcp_only(const vec< vec<xlit> >& xnf, const options& opts, stats& s)
     s.begin = std::chrono::steady_clock::now();
 
     //std::cout << to_str( xnf ) << std::endl;
-    auto sol = solver( xnf, opts );
+    auto sol = solver( xnf, num_vars, opts );
 
     //register interupt handler
     std::signal(SIGINT, signal_handler);

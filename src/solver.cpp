@@ -7,29 +7,29 @@
 
 #include "solver.hpp"
 
-solver::solver(const vec< vec<xlit> >& clss, const options& opt_) noexcept : opt(opt_) {
+solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options& opt_) noexcept : opt(opt_) {
     #ifndef NDEBUG
         if(opt.verb==0) opt.verb = 100;
     #endif
 
     //init watch_list
-    watch_list.resize(opt_.num_vars+1);
-    L_watch_list.resize(opt_.num_vars+1);
+    watch_list.resize(num_vars+1);
+    L_watch_list.resize(num_vars+1);
     //assignments_list.resize(opt_.num_vars+1);
     
-    lineral_watches = vec<vec<xlit_watch>>(opt_.num_vars+1, vec<xlit_watch>() );
+    lineral_watches = vec<vec<xlit_watch>>(num_vars+1, vec<xlit_watch>() );
     
     // init assignments
-    alpha = vec<bool3>(opt_.num_vars + 1, bool3::None);
-    alpha_dl = vec<var_t>(opt_.num_vars + 1, (var_t) -1);
-    alpha_trail_pos = vec<var_t>(opt_.num_vars + 1, (var_t) -1);
-    equiv_lits = vec<equivalence>(opt_.num_vars+1);
-    equiv_lits_dl = vec<var_t>(opt_.num_vars+1, (var_t) -1);
-    dl_count = vec<dl_c_t>(opt_.num_vars+1, 1); 
+    alpha = vec<bool3>(num_vars + 1, bool3::None);
+    alpha_dl = vec<var_t>(num_vars + 1, (var_t) -1);
+    alpha_trail_pos = vec<var_t>(num_vars + 1, (var_t) -1);
+    equiv_lits = vec<equivalence>(num_vars+1);
+    equiv_lits_dl = vec<var_t>(num_vars+1, (var_t) -1);
+    dl_count = vec<dl_c_t>(num_vars+1, 1); 
     trails = vec< std::list<trail_elem> >();
-    trails.reserve(opt_.num_vars+1);
+    trails.reserve(num_vars+1);
     trails.emplace_back( std::list<trail_elem>() );
-    last_phase = vec<bool3>(opt_.num_vars + 1, bool3::None);
+    last_phase = vec<bool3>(num_vars + 1, bool3::None);
     //init last_phase according to init_phase of reordering:
     for(var_t idx=0; idx<opt_.P.size(); ++idx) {
         last_phase[idx+1] = to_bool3( opt_.P.get_phase(idx) );
@@ -74,11 +74,11 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_) noexcept : opt
     for(const auto& [_,it] : _Lsys.get_pivot_poly_idx()) queue_implied_lineral(*it, -1);
 
     //init order_heap and activity_score
-    activity_score = vec<double>(opt.num_vars + 1, 1);
-    for (var_t i = 0; i < opt.num_vars+1; i++) {
+    activity_score = vec<double>(num_vars + 1, 1);
+    for (var_t i = 0; i < num_vars+1; i++) {
         activity_score[i] += watch_list[i].size();
     }
-    for(var_t i = 1; i<=opt.num_vars; ++i) {
+    for(var_t i = 1; i<=num_vars; ++i) {
         order_heap_vsids.insert( i );
     }
     
@@ -86,8 +86,6 @@ solver::solver(const vec< vec<xlit> >& clss, const options& opt_) noexcept : opt
     // init active_cls_stack
     active_cls_stack = vec<var_t>();
     active_cls_stack.emplace_back(active_cls);
-
-    get_opts()->num_cls = active_cls + lineral_watches[0].size(); //fix actual number of clauses
 
     //init restart params
     update_restart_schedule(0);
@@ -982,7 +980,7 @@ void solver::solve(stats &s) {
 
 void solver::solve_L(const xsys& L, stats& s) const {
     //compute first sol
-    s.sols.emplace_back( vec<bool>(opt.num_vars, false) );
+    s.sols.emplace_back( vec<bool>(get_num_vars(), false) );
     L.solve( s.sols.back() );
    
     s.sat = true;
@@ -1004,7 +1002,7 @@ void solver::solve_L(const xsys& L, stats& s) const {
 
     while(s.sols.size()<opt.sol_count && sol_ct < (unsigned long long) (1 << non_pivots.size()) ) {
         //compute next sol
-        s.sols.emplace_back( vec<bool>(opt.num_vars, false) );
+        s.sols.emplace_back( vec<bool>(get_num_vars(), false) );
         for(var_t idx=0; idx<non_pivots.size(); ++idx) {
             s.sols.back()[ non_pivots[idx]-1 ] = (sol_ct >> idx) & 1;
         }
@@ -1045,7 +1043,7 @@ std::string solver::to_xnf_str() const noexcept {
     VERB(80, "c printing alpha assignment")
     if (alpha[0] != bool3::None) {
         VERB(85, "instance is UNSAT; print only empty clause.")
-        return "p xnf "+std::to_string(get_const_opts()->num_vars)+" 1\n 0\n";
+        return "p xnf "+std::to_string(get_num_vars())+" 1\n 0\n";
     }
     for(var_t i=1; i<alpha.size(); ++i) {
         if(alpha[i] == bool3::None) continue;
@@ -1081,7 +1079,7 @@ std::string solver::to_xnf_str() const noexcept {
         VERB(95, "c " + xclss_str.back());
     }
     //convert to one big string
-    std::string str = "p xnf "+std::to_string(get_const_opts()->num_vars)+" "+std::to_string(n_cls)+"\n";
+    std::string str = "p xnf "+std::to_string(get_num_vars())+" "+std::to_string(n_cls)+"\n";
     for(const auto &cls : xclss_str) {
         str += cls + "\n";
     }
