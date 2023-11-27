@@ -442,6 +442,206 @@ class solver
       return true;
     };
 
+
+    /**
+     * @brief get all implied alpha's from lineral assignments
+     */
+    inline void find_implied_alpha_from_linerals() {
+    #ifndef NDEBUG
+      //simple implementation
+      vec<xlit> lits; lits.reserve(lineral_watches.size());
+      for(const auto& l_dl : lineral_watches) {
+          for(const auto& l : l_dl) if(l.is_active(dl_count)) lits.emplace_back( l.to_xlit() );
+      }
+      xsys L_( std::move(lits) );
+      //return {L_,xcls_watch()};
+    #endif
+      //M4RI implementation
+      VERB(80, "c use M4RI to find implied alpha from linerals");
+
+      //(1) reduce watched linerals
+
+      //construct matrix only with occuring lits
+      vec<var_t> perm(alpha.size(), 0);
+      vec<var_t> perm_inv(alpha.size(), 0);
+      var_t n_wlins = 0;
+      for(const auto& l_dl : lineral_watches) {
+        for(const auto& l : l_dl) {
+          if(!l.is_active(dl_count)) continue;
+          for(const auto& v : l.get_idxs_()) perm[v] = 1;
+          ++n_wlins;
+        }
+      }
+      //apply alpha already? the following does not work, since if x1=0, x2=1 then the literal x1+x2 is omitted, despite resembling a conflict!
+      ////ignore all assigned values
+      //for(var_t i=0; i<alpha.size(); ++i) {
+      //  if(alpha[i]!=bool3::None) perm[i]=0;
+      //}
+      
+      //construct permutation maps
+      var_t idx = 0;
+      for (var_t i = 1; i < alpha.size(); ++i) { 
+        if(perm[i]==1) {
+          perm[i] = idx; perm_inv[idx] = i; ++idx;
+        }
+      }
+
+      const var_t n_vars = idx;
+      const rci_t nrows = n_wlins;
+      const rci_t ncols = n_vars+1;
+
+      mzd_t* M = mzd_init(nrows, ncols);
+      assert( mzd_is_zero(M) );
+
+      //fill with xlits
+      rci_t r = 0;
+      for(const auto& l_dl : lineral_watches) {
+        for(const auto& l : l_dl) {
+          //std::cout << l.to_str() << std::endl;
+          if(!l.is_active(dl_count)) continue;
+          if(l.has_constant()) {
+              mzd_write_bit(M, r, n_vars, 1);
+          }
+          for(const auto& i : l.get_idxs_()) {
+              assert(i>0); assert(perm[i] < (var_t) ncols-1);
+              mzd_write_bit(M, r, perm[i], 1);
+          }
+          ++r;
+        }
+      }
+      assert(r == nrows);
+      //store transposed version (required to compute reason clause for )
+      mzd_t* M_tr = r>0 ? mzd_transpose(NULL, M) : mzd_init(0,0);
+      //TODO not memory efficient! we should really use PLUQ or PLE decomposition below and work from there...
+      
+      //compute rref
+      const rci_t rank = mzd_echelonize_pluq(M, true); //should we use mzd_echelonize instead?
+      
+      //mzd_print(M);
+      //read results
+      std::list<xlit> xlits_;
+      vec<var_t> idxs;
+      for(rci_t r = 0; r<rank; ++r) {
+        idxs.clear();
+        for(rci_t c=0; (unsigned)c<n_vars; ++c) {
+            if( mzd_read_bit(M, r, c) ) idxs.push_back(perm_inv[c]);
+        }
+        if(idxs.size()==0 || (idxs.size()==1 && alpha[idxs[0]]!=to_bool3(mzd_read_bit(M,r,n_vars))) ) {
+          xlits_.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::yes );
+        }
+      }
+      VERB(80, "c reduction done.");
+      // (2) if pure assignment is contained in sys, construct reason cls!
+      if(xlits_.size()==0) {
+        VERB(80, "c no new alpha-assignments found!")
+        return;
+      }
+
+      VERB(80, "c found "+std::to_string(xlits_.size())+" new alpha assignments! resolving reason clauses...");
+      for(const auto& lit : xlits_) {
+        VERB(85, "c   `--> " + lit.to_str());
+      }
+      for(const auto& lit : xlits_) {
+        if(alpha[lit.LT()] == to_bool3(lit.has_constant())) continue;
+        VERB(80, "c constructing reason clause for "+lit.to_str());
+        //solve for M^T x = lit
+        //mzd_clear_bits(b, 0, 0, n_vars+1);
+        mzd_t* b = mzd_init(std::max(ncols,nrows), 1);
+        //set bits of b according to xlits_
+        if(lit.size()>0) mzd_write_bit(b, perm[lit.LT()],0, 1);
+        mzd_write_bit(b, n_vars, 0, lit.has_constant()); //uses that supp[0]==0
+        mzd_t* M_tr_cpy = mzd_copy(NULL, M_tr);
+
+        //find solution
+        //mzd_print(M);
+        //std::cout << std::endl;
+        //mzd_print(M_tr_cpy);
+        //std::cout << std::endl;
+        //mzd_print(b);
+        //std::cout << std::endl;
+      #ifndef NDEBUG
+        const auto ret = mzd_solve_left(M_tr_cpy, b, 0, true);
+        assert(ret == 0);
+      #else
+        mzd_solve_left(M_tr_cpy, b, 0, false); //skip check for inconsistency; a solution exists i.e. is found!
+      #endif
+        //mzd_print(b);
+        mzd_free(M_tr_cpy);
+        
+        for(var_t lvl=0; lvl<=dl; ++lvl) {
+          const auto& l_dl = lineral_watches[lvl];
+          for(var_t idx= 0; idx<l_dl.size(); ++idx) {
+            VERB(80, std::to_string(lvl) + ": " + l_dl[idx].to_str());
+          }
+        }
+        
+      #ifndef NDEBUG
+        xlit tmp;
+      #endif
+        r = 0;
+        //resolve cls to get true reason cls
+        xcls_watch r_cls;
+        for(var_t lvl=0; lvl<=dl; ++lvl) {
+          const auto& l_dl = lineral_watches[lvl];
+          VERB(90, "c processing linerals deduced on lvl "+std::to_string(lvl));
+          for(var_t idx= 0; idx<l_dl.size(); ++idx) {
+            const auto& l = l_dl[idx];
+            if(mzd_read_bit(b,r,0)) {
+            #ifndef NDEBUG
+              tmp += l;
+            #endif
+              if(lvl>0 && idx==0) {
+                //NOTE here we assume that the first lineral on every dl>0 comes from a guess; i.e. skip it for resolution!
+                r++;
+                continue;
+              } 
+              if(r_cls.size()==0) { //r_cls has not yet been instantiated
+                r_cls = l.get_reason()<xclss.size() ? xclss[l.get_reason()] : xcls_watch( std::move(xcls( std::move(l.plus_one()) )) );
+              } else {
+                bump_score(l);
+                //resolve cls
+                if( l.get_reason() < xclss.size() ) {
+                  const auto& r_cls2 = xclss[l.get_reason()];
+                  //add (unit of r_cls)+1 to r_cls2, and (unit of r_cls2)+1 to r_cls
+                  VERB(90, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
+                  r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+                  VERB(90, "c and get \nc   "+ BOLD(r_cls.to_str()));
+                #ifndef NDEBUG
+                  VERB(90, "c tmp = "+tmp.to_str());
+                #endif
+                  VERB(90, "c");
+                } else {
+                  assert(lvl == 0); //the reason cls should only be a unit clause if it was deduced at lvl 0 (!)
+                  VERB(90, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(l.to_str()));
+                  r_cls.add_to_unit( l, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl );
+                  VERB(90, "c and get \nc   "+ BOLD(r_cls.to_str()));
+                #ifndef NDEBUG
+                  VERB(90, "c tmp = "+tmp.to_str());
+                #endif
+                  VERB(90, "c");
+                }
+              }
+              assert( L_.reduce(tmp+lit).is_zero() );
+            }
+            //TODO can we do a cheap early abort?
+            if( r_cls.get_assigning_lvl() < lvl && r_cls.get_unit().reduced(alpha) == lit) {
+              assert( r_cls.get_unit().reduced(alpha) == lit );
+              goto finalize;
+            }
+            ++r;
+          }
+        }
+      finalize:
+        assert((tmp+lit).reduced(alpha).is_constant());
+        VERB(80, "c done, reason clause is "+r_cls.to_str()+" for assignment "+lit.to_str());
+        mzd_free(b);
+      }
+
+      mzd_free(M_tr);
+      mzd_free(M);
+    }
+
+
     /**
      * @brief triangulates watched linerals; i.e. updates them w.r.t. previous linearls and brings them in non-reduced row-echelon form
      */

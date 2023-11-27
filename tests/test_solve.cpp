@@ -386,6 +386,39 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         CHECK( s.sat == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
+    
+    SECTION( "test37.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test37.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = ca_alg::fuip_opt;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test38.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test38.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = ca_alg::fuip_opt;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test39.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test39.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = ca_alg::fuip_opt;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
 }
 
 TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
