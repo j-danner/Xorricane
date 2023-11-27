@@ -529,7 +529,7 @@ class solver
       
       //mzd_print(M);
       //read results
-      vec<xlit> xlits_; xlits_.reserve(rank);
+      std::list<xlit> xlits_;
       vec<var_t> idxs;
       for(rci_t r = 0; r<rank; ++r) {
         idxs.clear();
@@ -587,7 +587,11 @@ class solver
           #ifndef NDEBUG
             tmp += l;
           #endif
-            if(lvl>0 && idx==0) continue; //NOTE here we assume that the first lineral on every dl>0 comes from a guess; i.e. skip it for resolution!
+            if(lvl>0 && idx==0) {
+              //NOTE here we assume that the first lineral on every dl>0 comes from a guess; i.e. skip it for resolution!
+              r++;
+              continue;
+            } 
             if(r_cls.size()==0) { //r_cls has not yet been instantiated
               r_cls = l.get_reason()<xclss.size() ? xclss[l.get_reason()] : xcls_watch( std::move(xcls( std::move(l.plus_one()) )) );
             } else {
