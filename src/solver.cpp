@@ -168,7 +168,7 @@ std::pair<xsys, xsys> solver::dh_vsids() {
 std::pair<xsys, xsys> solver::dh_shortest_wl() {
     //find unassigned variable that has the longest watch_list
     var_t lt_min = 0;
-    size_t size_min = xclss.size();
+    size_t size_min = xclss.size() + 1;
     for(size_t idx=1; idx<watch_list.size(); ++idx) {
         if(alpha[idx]==bool3::None && (watch_list[idx].size() < size_min)) {
             lt_min = idx; size_min = watch_list[idx].size();
