@@ -124,7 +124,7 @@ class reordering {
     bool get_phase(const var_t& idx) const { return init_phase[idx]; };
 
   #ifndef NDEBUG
-    bool assert_data_stuct() const {
+    bool assert_data_struct() const {
       std::set<var_t> tmp;
       for(var_t i=1; i<=max; ++i) {
         var_t P_i = at(i);
@@ -142,7 +142,7 @@ class reordering {
       return true;
     };
   #else
-    bool assert_data_struct() const { return true };
+    bool assert_data_struct() const { return true; };
   #endif
 };
 

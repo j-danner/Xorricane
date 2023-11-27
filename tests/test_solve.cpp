@@ -429,7 +429,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         P.insert(4);
         P.insert(5);
         P.insert(3);
-        CHECK( P.assert_data_stuct() );
+        CHECK( P.assert_data_struct() );
         auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/test33.xnf", P);
         auto slvr_gp = solver(clss_gp, P);
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test33.xnf");
@@ -459,7 +459,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         P.insert(7);
         P.insert(8);
         P.insert(6);
-        CHECK( P.assert_data_stuct() );
+        CHECK( P.assert_data_struct() );
         auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/test33.xnf", P);
         auto slvr_gp = solver(clss_gp, P);
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test33.xnf");
@@ -487,7 +487,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         P.insert(11);
         P.insert(83);
         P.insert(74);
-        CHECK( P.assert_data_stuct() );
+        CHECK( P.assert_data_struct() );
         //auto P = parse_gp("gp");
         auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/flat/flat30-100.xnf", P);
         auto slvr_gp = solver(clss_gp, P);
@@ -511,7 +511,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
     SECTION( "test10.xnf" ) {
         reordering P;
         P.insert(1, bool3::True);
-        CHECK( P.assert_data_stuct() );
+        CHECK( P.assert_data_struct() );
         //auto P = parse_gp("gp");
         auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/test10.xnf", P);
         auto slvr_gp = solver(clss_gp, P);
@@ -536,7 +536,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         P.insert(2, bool3::True);
         P.insert(3, bool3::False);
         P.insert(4, bool3::True);
-        CHECK( P.assert_data_stuct() );
+        CHECK( P.assert_data_struct() );
         //auto P = parse_gp("gp");
         auto clss_gp = parse_file_gp("../../benchmarks/generate_instances/enocoro_fa/eno_s4_mixed_quad.xnf", P);
         auto slvr_gp = solver(clss_gp, P);
