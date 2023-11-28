@@ -398,14 +398,13 @@ class solver
     /**
      * @brief propagates lineral from queue until a new alpha is propagated or the queue is empty
      * 
-     * @return var_t idx of new lt; or 0 if no new alpha was propagated; conflict can be checked with no_conflict() (!)
+     * @return var_t idx of new lt; or -1 if no new alpha was propagated
      */
     inline var_t propagate_implied_lineral() {
       if(lineral_queue.empty()) return false;
       var_t new_lt = -1;
       while( (new_lt == (var_t) -1) && !lineral_queue.empty() ) {
         const auto& [lin, type, rs, lvl] = lineral_queue.front();
-        //TODO special handling if type is IMPLIED ALPHA or LINERAL IMPLIED ALPHA
         new_lt = add_implied_lineral(lin, rs, type, lvl);
         lineral_queue.pop_front();
       }
