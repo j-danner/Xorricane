@@ -986,6 +986,25 @@ class solver
     void GCP(stats& s);
 
     /**
+     * @brief performs linear algebra in-processing;
+     * @note only call this on dl 0!
+     * 
+     * @param s stats
+     * @return bool true iff new clauses were added, and new alpha assignments derived
+     */
+    bool initial_linalg_inprocessing(stats& s) {
+      assert(dl==0);
+      if( !need_linalg_inprocessing() ) return false;
+      ++s.no_linalg;
+      auto r_clss = find_implied_alpha_from_linerals();
+      for(auto& r_cls : r_clss) {
+        ++s.no_linalg_prop;
+        add_learnt_cls( std::move(r_cls), false);
+      }
+      return !r_clss.empty();
+    };
+
+    /**
      * @brief backtracks to dl
      */
     void backtrack(const var_t& lvl);

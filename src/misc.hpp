@@ -325,8 +325,10 @@ class stats {
     void print_gcp_info() {
       float total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
       std::cout << std::fixed << std::setprecision(3);
-      std::cout << "c px by upd  : " << new_px_upd << std::endl;
-      std::cout << "c Total time : " << total_time << " [s]" << std::endl;
+      std::cout << "c px by upd      : " << new_px_upd << std::endl;
+      std::cout << "c LA prop        : " << no_linalg << std::endl;
+      std::cout << "c LA efficiacy   : " << (double) no_linalg_prop/no_linalg << std::endl;
+      std::cout << "c Total time     : " << total_time << " [s]" << std::endl;
     };
     
     stats() {};

@@ -820,9 +820,6 @@ void solver::dpll_solve(stats &s) {
                     ++s.no_linalg_prop;
                     if(r_cls.get_assigning_lvl() < dl) {
                         backtrack( r_cls.get_assigning_lvl() );
-                        if(r_cls.get_assigning_lvl() > dl+1) {
-                            VERB(10, "c stop here!");
-                        }
                         add_learnt_cls( std::move(r_cls), false);
                         //backtrack dec_stack
                         while(dec_stack.size()>dl) dec_stack.pop();
