@@ -376,9 +376,9 @@ class solver
     inline bool queue_implied_lineral(const xlit& lin, const var_t& rs, const trail_t type = trail_t::IMPLIED_UNIT, const var_t lvl= -1) {
       assert(type==trail_t::IMPLIED_UNIT || type==trail_t::GUESS || type==trail_t::LEARNT_UNIT);
       //const var_t lvl = lvl_<xclss.size() ? xclss[rs].get_unit_at_lvl() : dl;
-      if(rs<xclss.size() && type!=trail_t::LEARNT_UNIT && (lvl<alpha.size() ? lvl !=xclss[rs].get_unit_at_lvl() : dl !=xclss[rs].get_unit_at_lvl())) {
-        VERB(10, "c queueing implied lineral at too high dl?!");
-      }
+      //if(rs<xclss.size() && type!=trail_t::LEARNT_UNIT && (lvl<alpha.size() ? lvl !=xclss[rs].get_unit_at_lvl() : dl !=xclss[rs].get_unit_at_lvl())) {
+      //  VERB(10, "c queueing implied lineral at too high dl?!");
+      //}
       if(lin.LT()==0) lineral_queue.emplace_front( lin, rs, type, lvl );
       else lineral_queue.emplace_back( lin, rs, type, lvl );
       return true;
@@ -982,6 +982,8 @@ class solver
     solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), active_cls_stack(o.active_cls_stack), activity_score(o.activity_score), dl_count(o.dl_count), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), lineral_queue(o.lineral_queue) { assert(assert_data_structs()); };
 
     ~solver() = default;
+
+    void remove_fixed_alpha(const var_t upd_lt);
     
     void GCP(stats& s);
 

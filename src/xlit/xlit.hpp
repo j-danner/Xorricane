@@ -172,6 +172,14 @@ class xlit
           return std::get<2>(get_watch_var(alpha_dl, alpha_trail_pos));
         }
 
+        inline bool rm(const var_t lt, const bool3 val) {
+          const auto pos = std::lower_bound(idxs.begin(), idxs.end(), lt);
+          if(pos==idxs.end() || *pos != lt) return false;
+          idxs.erase(pos);
+          if(val==bool3::True) p1^=true;
+          return true;
+        }
+
         bool eval(const vec<bool> &sol) const { bool out = !p1; for(const auto &i : idxs) out ^= sol[i-1]; return out; };
         bool eval(const vec<bool3> &sol) const { bool out = !p1; for(const auto &i : idxs) { assert(sol[i]!=bool3::None); out ^= (sol[i] == bool3::True); } return out; };
         bool partial_eval(const vec<bool3> &sol) const { bool out = !p1; for(const auto &i : idxs) { out ^= (sol[i] == bool3::True); } return out; };

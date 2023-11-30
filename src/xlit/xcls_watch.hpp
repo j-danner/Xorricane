@@ -419,15 +419,15 @@ public:
    * 
    * @param upd_lt literal to be removed
    * @param val value that is assigned to literal
-   * @return true iff upd_lt was removed
+   * @return true iff clause became inactive, i.e., SAT
    */
   bool rm(const var_t upd_lt, const bool3 val) {
     assert( !watches(upd_lt) );
     bool ret = false;
     //rm from unwatched xlits
-    ret |= shared_part.rm(upd_lt, val);
+    shared_part.rm(upd_lt, val);
     for(var_t idx=2; idx<xlits.size(); ++idx) {
-      ret |= xlits[idx].rm(upd_lt, val);
+      xlits[idx].rm(upd_lt, val);
       if(xlits[idx].is_zero()) {
         //now clause becomes SAT!
         //swap xlits[idx] and xlits[0]
@@ -435,21 +435,23 @@ public:
         //xlits[0].swap(xlits[idx]);
         //std::swap( xlit_dl_count1[0], xlit_dl_count1[idx] );
         SAT_dl_count = {0,1};
+        ret = true;
       } else if (xlits[idx].is_one()) {
-        //xlits[idx] can be ignored, remove!
+        //xlits[idx] can now be ignored, remove!
         //swap xlits[idx] and xlits.back()
+        xlits[idx].swap(xlits.back());
         std::swap( xlit_dl_count1.back(), xlit_dl_count1[idx] );
+        xlits.resize( xlits.size()-1 );
+        xlit_dl_count1.resize( xlit_dl_count1.size()-1 );
       }
     }
     //rm from xlits[0]
     if( xlits[0].rm(upd_lt, val) ) {
-      ret = true;
       //adapt ws[0]
       if(ptr_cache[0] > upd_lt) ws[0]--;
       assert(ptr_(0,ws[0]) == ptr_cache[0]);
     }
     if( xlits.size()>0 && xlits[1].rm(upd_lt, val) ) {
-      ret = true;
       //adapt ws[0]
       if(ptr_cache[1] > upd_lt) ws[1]--;
       assert(ptr_(1,ws[1]) == ptr_cache[1]);
@@ -1229,10 +1231,12 @@ public:
 
   bool assert_data_struct(const vec<bool3> &alpha, const vec<dl_c_t> &dl_count) const {
     assert(is_unit(dl_count) || is_sat(dl_count) || alpha[ptr_ws(0)] == bool3::None);
-    if (!is_unit(dl_count) && alpha[ptr_ws(0)] != bool3::None)
-    assert(eval0(alpha) || (!eval0(alpha) && !eval1(alpha)));
-    if( dl_count[SAT_dl_count.first] == SAT_dl_count.second ) {
-      assert( to_xcls().reduced(alpha).is_zero() );
+    if (!is_unit(dl_count) && alpha[ptr_ws(0)] != bool3::None) {
+      assert(is_sat(dl_count) || eval0(alpha) || (!eval0(alpha) && !eval1(alpha)));
+    }
+    if(is_sat(dl_count)) {
+      assert(dl_count[SAT_dl_count.first] == SAT_dl_count.second);
+      assert(to_xcls().reduced(alpha).is_zero());
     }
     // if( alpha[ ptr_ws(1) ] != bool3::None ) assert( !xlits[1].eval(alpha) );
     if( dl_count[xlit_dl_count1[0].first] == xlit_dl_count1[0].second ) assert( !eval0(alpha) );

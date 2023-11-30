@@ -405,6 +405,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
         while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA && TRAIL.back().type != trail_t::LINERAL_IMPLIED_ALPHA && TRAIL.back().type != trail_t::LEARNT_UNIT ) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
+            assert(!TRAIL.empty());
             pop_trail();
         }
         
@@ -571,10 +572,31 @@ void solver::restart(stats& s) {
     VERB(90, "c restart done")
 };
 
+void solver::remove_fixed_alpha(const var_t upd_lt) {
+    VERB(90, "remove_fixed_alpha start" );
+    VERB(90, to_str());
+    assert( alpha[upd_lt]!=bool3::None && alpha_dl[upd_lt]==0 );
+    const bool3 val = alpha[upd_lt];
+    //rm upd_lt from lineral_watches[0] (all other levels are empty!)
+    for(auto& lin_watch : lineral_watches[0]) {
+        if(lin_watch.is_active(dl_count) && !lin_watch.watches(upd_lt)) {
+            lin_watch.rm(upd_lt, val);
+        }
+    }
+    //rm upd_lt from xclss
+    for(auto& xcls_w : xclss) {
+        if(xcls_w.is_active(dl_count)) {
+            assert(!xcls_w.watches(upd_lt));
+            if( xcls_w.rm(upd_lt, val) ) decr_active_cls(&xcls_w - &xclss[0]);
+        }
+    }
+    VERB(90, "remove_fixed_alpha end" );
+    VERB(90, to_str());
+}
+
 xlit new_unit;
 //perform full GCP -- does not stop if conflict is found -- otherwise assert_data_struct will fail!
 void solver::GCP(stats &s) {
-    //first check for implied alphas
     s.no_gcp++;
     VERB(90, "GCP start");
     while(!lineral_queue.empty() && no_conflict()) {
@@ -620,16 +642,6 @@ void solver::GCP(stats &s) {
               const var_t rs = lineral_watches[lvl][i].get_reason();
               assert( rs < xclss.size() || lvl == 0 );
               queue_implied_alpha(lt, val, rs < xclss.size() ? rs : i, rs < xclss.size() ? trail_t::IMPLIED_ALPHA : trail_t::LINERAL_IMPLIED_ALPHA);
-              //trails[dl].emplace_back( lt, rs < xclss.size() ? trail_t::IMPLIED_ALPHA : trail_t::LINERAL_IMPLIED_ALPHA, rs < xclss.size() ? rs : i);
-              //alpha[lt] = val;
-              //alpha_dl[lt] = dl;
-              //alpha_trail_pos[lt] = (var_t) trails[dl].size();
-              //VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + lineral_watches[lvl][i].get_assigning_xlit(alpha).to_str() + " from UNIT " + lineral_watches[lvl][i].to_str() + ( (lineral_watches[lvl][i].get_reason()<xclss.size()) ? " with reason clause " + xclss[lineral_watches[lvl][i].get_reason()].to_str() : "") );
-              //update assignments
-              //if (!no_conflict()) {
-              //  VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
-              //  return; //quit propagation immediately at conflict!
-              //}
             }
             break;
           case xlit_upd_ret::UNIT:
@@ -693,12 +705,13 @@ void solver::GCP(stats &s) {
                 //assert(xclss[i].is_none(alpha));
                 assert(xclss[i].is_none(dl_count));
                 assert(xclss[i].is_active(dl_count));
-                //assert(xclss[i].is_active(alpha));
-                //update watch-list!
                 break;
             }
         }
         }
+        
+        //if we propagated on dl 0, remove all upd_lt from lineral_watches AND from xclss, so that they only occur in the watched clauses.
+        if(dl == 0) { remove_fixed_alpha(upd_lt); };
     }
     assert(lineral_queue.empty() || !no_conflict());
 

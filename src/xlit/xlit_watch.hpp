@@ -200,6 +200,26 @@ class xlit_watch : public xlit
     var_t get_reason() const { return reason_cls_idx; }
 
     /**
+     * @brief removes literal upd_lt from lineral, if is present
+     * 
+     * @param lt literal to be removed
+     * @param val value that is assigned to literal
+     * @return true iff upd_lt was removed
+     */
+    bool rm(const var_t lt, const bool3 val) {
+      assert( !watches(lt) );
+      const auto wl0 = idxs[ws[0]];
+      const auto wl1 = idxs[ws[1]];
+      if ( !xlit::rm(lt, val) ) return false;
+      //adapt ws[0] and ws[1] accordingly:
+      if(wl0 > lt) ws[0]--;
+      if(wl1 > lt) ws[1]--;
+      assert(idxs[ws[0]] == wl0);
+      assert(idxs[ws[1]] == wl1);
+      return true;
+    }
+
+    /**
      * @brief updates xlit_watch according to the new assigned literal new_lit, dl_count, dl and alpha.
      * 
      * @param new_lit literal that was newly assigned
@@ -228,14 +248,6 @@ class xlit_watch : public xlit
       //assert( assert_data_struct(alpha) ); //note: data structures might be 'violated' if gcp_queue is NOT empty, i.e., update is not yet finished...
 
       return {idxs[ws[0]], ws[0]==new_w ? xlit_upd_ret::ASSIGNING : xlit_upd_ret::UNIT};
-      //if(new_w == ws[1]) {
-      //  //if all literals are assigned, then the xlit is assigning; ws remains the same
-      //  return {idxs[ws[1]], xlit_upd_ret::ASSIGNING};
-      //} else {
-      //  //otherwise, update the watched literal
-      //  ws[1] = new_w;
-      //  return {idxs[ws[1]], xlit_upd_ret::UNIT};
-      //}
     };
 
     bool assert_data_struct(const vec<bool3>& alpha) const {
