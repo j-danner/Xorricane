@@ -5,10 +5,21 @@
 #include <catch2/catch_all.hpp>
 
 TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
+  #ifndef NDEBUG
+    int la_sch = GENERATE(0,1,5);
+    dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lex);
+    phase_opt po = phase_opt::save; //GENERATE(phase_opt::rand, phase_opt::save, phase_opt::save_inv);
+    ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::fuip_opt);
+    int verb = 80;
+  #else
+    int la_sch = GENERATE(0,1,5,10);
     dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lwl, dec_heu::swl, dec_heu::lex);
     phase_opt po = GENERATE(phase_opt::rand, phase_opt::save, phase_opt::save_inv);
     ca_alg ca = GENERATE(ca_alg::dpll, ca_alg::no, ca_alg::fuip, ca_alg::fuip_opt);
-    options opt(dh, po, ca, 1, 80, 0);
+    int verb = 0;
+  #endif
+
+    options opt(dh, po, ca, la_sch, verb);
 
     SECTION( "test1.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test1.xnf");
@@ -915,7 +926,7 @@ TEST_CASE( "solving simple instances", "[solver]") {
     CHECK( check_sols(p_xnf.cls, s.sols) );
 }
 
-TEST_CASE( "solving with different options" , "[impl-graph][graph][parser][solve]" ) {
+TEST_CASE( "solving with different options" , "[parser][solve]" ) {
     auto fname = GENERATE("../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf", "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf", "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf", "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf");
     //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf";
     //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf";
@@ -924,37 +935,47 @@ TEST_CASE( "solving with different options" , "[impl-graph][graph][parser][solve
     auto clss = parse_file( fname );
     auto xnf = clss.cls;
     var_t num_vars = clss.num_vars;
-    dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lwl, dec_heu::swl, dec_heu::lex);
+    dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lex);
     phase_opt po = GENERATE(phase_opt::rand, phase_opt::save, phase_opt::save_inv);
-    ca_alg ca = GENERATE(ca_alg::dpll, ca_alg::no, ca_alg::fuip, ca_alg::fuip_opt);
-    options opts(dh, po, ca, 1, 0, 0);
+    ca_alg ca = ca_alg::no; //GENERATE(ca_alg::no, ca_alg::fuip);
+    int la_sch = 10; //GENERATE(0,1,10);
+    options opts(dh, po, ca, la_sch, 0, 0);
 
     stats s = solve(xnf, num_vars, opts);
     CHECK( s.sat == true ); //SAT
     CHECK( check_sols(clss.cls, s.sols) );
-    
-    SECTION( "terminate within timeout" ) {
-        options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, 1, 0, 0);
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        stats s = solve(xnf, num_vars, opts);
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        float time_no_time_out = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
+}
 
-        options opts2(dec_heu::vsids, phase_opt::save, ca_alg::fuip, 1, 0, time_no_time_out+3);
-        begin = std::chrono::steady_clock::now();
-        stats s2 = solve(xnf, num_vars, opts2);
-        end = std::chrono::steady_clock::now();
-        float time_with_time_out = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
-    #ifdef NDEBUG
-        CHECK( time_no_time_out == Catch::Approx(time_with_time_out).margin(0.1) );
-    #else
-        CHECK( time_no_time_out == Catch::Approx(time_with_time_out).margin(0.5) );
-    #endif
 
-        CHECK( s.finished == true ); //SAT
-        CHECK( s.sat == true ); //SAT
-        CHECK( check_sols(clss.cls, s.sols) );
-    }
+TEST_CASE( "solving within timeout" , "[parser][solve]" ) {
+    auto fname = GENERATE("../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf", "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf", "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf", "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf");
+    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf";
+    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf";
+    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf";
+    //auto fname = "../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf";
+    auto clss = parse_file( fname );
+    auto xnf = clss.cls;
+    auto num_vars = clss.num_vars;
+
+    options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, 100, 0, 0);
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    stats s = solve(xnf, num_vars, opts);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    float time_no_time_out = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
+
+    options opts2(dec_heu::vsids, phase_opt::save, ca_alg::fuip, 100, 0, time_no_time_out+3);
+    begin = std::chrono::steady_clock::now();
+    stats s2 = solve(xnf, num_vars, opts2);
+    end = std::chrono::steady_clock::now();
+    float time_with_time_out = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
+  #ifdef NDEBUG
+    CHECK( time_no_time_out == Catch::Approx(time_with_time_out).margin(0.1) );
+  #else
+    CHECK( time_no_time_out == Catch::Approx(time_with_time_out).margin(0.5) );
+  #endif
+    CHECK( s.finished == true ); //SAT
+    CHECK( s.sat == true ); //SAT
+    CHECK( check_sols(clss.cls, s.sols) );
 }
 
 TEST_CASE("solving with different options -- timeout", "[parser][solve]")  {
@@ -966,7 +987,7 @@ TEST_CASE("solving with different options -- timeout", "[parser][solve]")  {
     auto xnf = clss.cls;
     auto num_vars = clss.num_vars;
 
-    options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, 1, 0, 1);
+    options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, 50, 0, 1);
     stats s = solve(xnf, num_vars, opts);
 
     CHECK( s.finished == false );

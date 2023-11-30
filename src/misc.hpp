@@ -182,14 +182,13 @@ enum class restart_opt { no, fixed, luby};
  * 
  */
 struct options {
-    //var_t num_vars = 0;
-    //var_t num_cls = 0;
-
     dec_heu dh = dec_heu::vsids;
     phase_opt po = phase_opt::save;
 
     ca_alg ca = ca_alg::fuip;
     restart_opt rst = restart_opt::luby;
+
+    int lin_alg_schedule = 0;
     
     int jobs = omp_get_num_threads();
     
@@ -204,8 +203,9 @@ struct options {
     //default settings
     options() {};
     options(reordering P_) : P(P_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, int jobs_, int verb_, int timeout_) : dh(dh_), po(po_), ca(ca_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, reordering P_) : dh(dh_), po(po_), ca(ca_), rst(rst_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int verb_, int timeout_=0) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), verb(verb_), timeout(timeout_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, reordering P_) : dh(dh_), po(po_), ca(ca_), rst(rst_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
 };
 
 
@@ -222,13 +222,11 @@ class stats {
 
     unsigned int no_dec = 0;
     unsigned int no_confl = 0;
-    unsigned int no_vert_upd = 0;
+    unsigned int no_linalg = 0;
+    unsigned int no_linalg_prop = 0;
     unsigned int no_restarts = 0;
-    unsigned int no_graph_upd = 0;
     unsigned int no_gcp = 0;
     unsigned int no_upd = 0;
-    unsigned int total_upd_no_v = 0;
-    unsigned int total_upd_xsys_size = 0;
     //newly learnt pure-xors via upd
     unsigned int new_px_upd = 0;
 
@@ -236,7 +234,6 @@ class stats {
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::time_point::min();
 
     void print_stats() const {
-      std::cout << "c v_upd     : " << no_vert_upd << std::endl;
       std::cout << "c restarts  : " << no_restarts << std::endl;
       std::cout << "c decisions : " << no_dec << std::endl;
       std::cout << "c conflicts : " << no_confl << std::endl;
@@ -246,16 +243,17 @@ class stats {
       float total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
       std::cout << std::fixed << std::setprecision(3);
 
-      std::cout << "c dec/sec    : "  << no_dec/total_time << std::endl;
-      std::cout << "c avg xsys size  : " << ((float) total_upd_xsys_size)/((float) no_gcp) << std::endl;
+      std::cout << "c dec/sec        : "  << no_dec/total_time << std::endl;
 
-      std::cout << "c px by upd  : " << new_px_upd << std::endl;
+      std::cout << "c px by upd      : " << new_px_upd << std::endl;
+      std::cout << "c LA prop        : " << no_linalg << std::endl;
+      std::cout << "c LA efficiacy   : " << (double) no_linalg_prop/no_linalg << std::endl;
       std::cout << "c " << std::endl;
 
-      std::cout << "c restarts   : " << no_restarts << std::endl;
-      std::cout << "c decisions  : " << no_dec << std::endl;
-      std::cout << "c conflicts  : " << no_confl << std::endl;
-      std::cout << "c Total time : " << total_time << " [s]" << std::endl;
+      std::cout << "c restarts       : " << no_restarts << std::endl;
+      std::cout << "c decisions      : " << no_dec << std::endl;
+      std::cout << "c conflicts      : " << no_confl << std::endl;
+      std::cout << "c Total time     : " << total_time << " [s]" << std::endl;
     }
     
     void reorder_sol(const reordering& P) {
@@ -333,10 +331,10 @@ class stats {
     
     stats() {};
     ~stats() { /*std::cout << "destroying stats!" << std::endl;*/ };
-    stats(stats& o) noexcept : finished(o.finished), sat(o.sat), sols(o.sols), no_dec(o.no_dec), no_confl(o.no_confl), no_vert_upd(o.no_vert_upd), no_restarts(o.no_restarts), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
+    stats(stats& o) noexcept : finished(o.finished), sat(o.sat), sols(o.sols), no_dec(o.no_dec), no_confl(o.no_confl), no_linalg(o.no_linalg), no_linalg_prop(o.no_linalg_prop), no_restarts(o.no_restarts), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
       cancelled.store( o.cancelled.load() );
     }
-    stats(stats&& o) noexcept : finished(std::move(o.finished)), sat(std::move(o.sat)), sols(std::move(o.sols)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_vert_upd(std::move(o.no_vert_upd)), no_restarts(std::move(o.no_restarts)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
+    stats(stats&& o) noexcept : finished(std::move(o.finished)), sat(std::move(o.sat)), sols(std::move(o.sols)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_linalg(std::move(o.no_linalg)), no_linalg_prop(std::move(o.no_linalg_prop)), no_restarts(std::move(o.no_restarts)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
       cancelled.store( o.cancelled.load() );
     }
     stats(unsigned int no_dec_, unsigned int no_confl_, const std::list<vec<bool>>& sols_) : sat(true), sols(sols_), no_dec(no_dec_), no_confl(no_confl_) {};
@@ -348,7 +346,8 @@ class stats {
       sols = o.sols;
       no_dec = o.no_dec;
       no_confl = o.no_confl;
-      no_vert_upd = o.no_vert_upd;
+      no_linalg = o.no_linalg;
+      no_linalg_prop = o.no_linalg_prop;
       no_restarts = o.no_restarts;
       no_gcp = o.no_gcp;
       no_upd = o.no_upd;

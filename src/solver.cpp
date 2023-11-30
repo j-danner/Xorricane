@@ -373,7 +373,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     VERB(70, "   * reason clause is   " + BOLD( learnt_cls.to_str() ) + " for UNIT " + learnt_cls.get_unit().to_str() );
     bump_score( TRAIL.back().ind );
     pop_trail(); //remove conflict from trail, i.e., now we should have alpha[0]==bool3:None
-    
+
     //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
     while( learnt_cls.get_assigning_lvl() == dl || learnt_cls.get_assigning_lvl() == (var_t) -1 ) {
         assert(!TRAIL.empty());
@@ -747,6 +747,15 @@ void solver::dpll_solve(stats &s) {
 
     // GCP -- before making decisions!
     GCP(s);
+    if( no_conflict() && need_linalg_inprocessing() ) {
+        ++s.no_linalg;
+        auto r_clss = find_implied_alpha_from_linerals();
+        for(auto& r_cls : r_clss) {
+            ++s.no_linalg_prop;
+            assert(r_cls.get_assigning_lvl() == dl);
+            add_learnt_cls( std::move(r_cls), false);
+        }
+    }
 
     while (true) {
         if (s.cancelled.load()) {
@@ -801,16 +810,41 @@ void solver::dpll_solve(stats &s) {
                 dec_stack.emplace( std::move(dec.second) );
             }
 
+            dpll_gcp:
             GCP(s);
+            //linear algebra on linerals
+            if( no_conflict() && need_linalg_inprocessing() ) {
+                ++s.no_linalg;
+                auto r_clss = find_implied_alpha_from_linerals();
+                for(auto& r_cls : r_clss) {
+                    ++s.no_linalg_prop;
+                    if(r_cls.get_assigning_lvl() < dl) {
+                        backtrack( r_cls.get_assigning_lvl() );
+                        if(r_cls.get_assigning_lvl() > dl+1) {
+                            VERB(10, "c stop here!");
+                        }
+                        add_learnt_cls( std::move(r_cls), false);
+                        //backtrack dec_stack
+                        while(dec_stack.size()>dl) dec_stack.pop();
+                        goto dpll_gcp;
+                    }
+                    add_learnt_cls( std::move(r_cls), false);
+                }
+                if(!r_clss.empty()) {
+                    goto dpll_gcp;
+                }
+            }
+
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
+            assert((var_t)dec_stack.size() == dl);
             assert(assert_data_structs());
         } else {
             //now active_cls == 0 AND no_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
             const auto [L,_] = get_assignments_xsys();
             if (!L.is_consistent()) {
-                //alpha[0] = bool3::True; //enforce backtracking!
+                //enforce backtracking!
                 add_implied_lineral(xlit(0, false), -1);
             } else {
                 solve_L(L, s);
@@ -882,7 +916,15 @@ void solver::solve(stats &s) {
 
     // GCP -- before making decisions!
     GCP(s);
-
+    if( no_conflict() && need_linalg_inprocessing() ) {
+        ++s.no_linalg;
+        auto r_clss = find_implied_alpha_from_linerals();
+        for(auto& r_cls : r_clss) {
+            ++s.no_linalg_prop;
+            assert(r_cls.get_assigning_lvl() == dl);
+            add_learnt_cls( std::move(r_cls), false);
+        }
+    }
 
     while (true) {
         if (s.cancelled.load()) {
@@ -941,6 +983,23 @@ void solver::solve(stats &s) {
 
             cdcl_gcp:
             GCP(s);
+            //linear algebra on linerals
+            if( no_conflict() && need_linalg_inprocessing() ) {
+                ++s.no_linalg;
+                auto r_clss = find_implied_alpha_from_linerals();
+                for(auto& r_cls : r_clss) {
+                    ++s.no_linalg_prop;
+                    if(r_cls.get_assigning_lvl() < dl) {
+                        backtrack( r_cls.get_assigning_lvl() );
+                        add_learnt_cls( std::move(r_cls), false);
+                        goto cdcl_gcp;
+                    }
+                    add_learnt_cls( std::move(r_cls), false);
+                }
+                if(!r_clss.empty()) {
+                    goto cdcl_gcp;
+                }
+            }
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);

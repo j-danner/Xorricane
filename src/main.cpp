@@ -123,7 +123,12 @@ int main(int argc, char const *argv[])
         .help("number of solutions to compute; -1 to compute all solutions")
         .default_value(1)
         .scan<'i', int>();
-
+    
+    //linalg-in-processing options
+    program.add_argument("-la","--lin-alg")
+        .help("schedule linear algebra in-processing after every i-th decision")
+        .default_value(0)
+        .scan<'i', int>();
 
     try {
         program.parse_args(argc, argv);
@@ -182,6 +187,7 @@ int main(int argc, char const *argv[])
     
     const int sol_count = program.get<int>("-ms");
     
+    auto lin_alg_schedule = program.get<int>("-la");
 
     //parse file
     try {
@@ -190,7 +196,7 @@ int main(int argc, char const *argv[])
         assert( P.assert_data_struct() );
 
         //set upt options
-        options opts( dh, po, ca, rh, jobs, verb, time_out, sol_count, P );
+        options opts( dh, po, ca, rh, lin_alg_schedule, jobs, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;
