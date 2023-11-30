@@ -845,6 +845,18 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
             }
         }
     }
+    
+    SECTION( "test40.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test40.xnf");
+        auto slvr = solver(clss);
+        //slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
+        slvr.get_opts()->sol_count = 2;
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size() == 2 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
 }
 
 TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {

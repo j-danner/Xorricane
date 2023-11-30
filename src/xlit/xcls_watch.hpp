@@ -794,7 +794,7 @@ public:
 
     xlits[1] += shared_part;
     ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), ptr_cache[1]));
-    if(xlits[1].get_idxs_()[ws[1]] != ptr_cache[1]) {
+    if(ws[1] >= xlits[1].size() || xlits[1].get_idxs_()[ws[1]] != ptr_cache[1]) {
       xlits[1].swap(shared_part);
       xlits[0].add_one();
       ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), ptr_cache[1]));
