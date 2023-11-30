@@ -6,12 +6,8 @@ mkdir build
 
 set -e #exit on error -- cleanup is then done by trap
 
-#set custom gcc-13 install
-export CXX=~/gcc13/bin/g++
-export CC=~/gcc13/bin/gcc
-
 cmake -DCMAKE_BUILD_TYPE=Release -S . -B _build
-VERBOSE=1 make -C _build xnf_cdcl_solver testing bench -j8 --no-print-directory
+VERBOSE=1 make -C _build xnf_cdcl_solver testing bench -j4 --no-print-directory
 
 rm -rf build
 mkdir build
