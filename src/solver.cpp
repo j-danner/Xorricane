@@ -833,12 +833,11 @@ void solver::dpll_solve(stats &s) {
                     ++s.no_linalg_prop;
                     if(r_cls.get_assigning_lvl() < dl) {
                         backtrack( r_cls.get_assigning_lvl() );
-                        add_learnt_cls( std::move(r_cls), false);
-                        //backtrack dec_stack
+                        add_new_guess( r_cls.get_unit() ); //add as 'guess', i.e., trail and reason stacks are ill-managed here, but that is irrelevant since we do not use those in the dpll-type solver!
                         while(dec_stack.size()>dl) dec_stack.pop();
                         goto dpll_gcp;
                     }
-                    add_learnt_cls( std::move(r_cls), false);
+                    add_new_guess( r_cls.get_unit() ); //add as 'guess', i.e., trail and reason stacks are ill-managed here, but that is irrelevant since we do not use those in the dpll-type solver!
                 }
                 if(!r_clss.empty()) {
                     goto dpll_gcp;
