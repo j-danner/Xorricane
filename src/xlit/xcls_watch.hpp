@@ -190,6 +190,16 @@ private:
       if (dl_count[xlit_dl_count1[new_i].first] == xlit_dl_count1[new_i].second)
         continue;
 
+      //rm xlits[new_i] if it is just one!
+      if(xlits[new_i].is_one()) {
+        xlits[new_i].swap(xlits.back());
+        std::swap(xlit_dl_count1[new_i], xlit_dl_count1.back());
+        xlits.resize( xlits.size()-1 );
+        xlit_dl_count1.resize( xlit_dl_count1.size()-1 );
+        continue;
+      }
+      assert(!xlits[new_i].is_zero());
+
       // find lit that was assigned at highest dl (req for proper backtracking!) -- or find unassigned lit!
       new_w = 0;
       var_t max_w = 0;
@@ -456,6 +466,8 @@ public:
       if(ptr_cache[1] > upd_lt) ws[1]--;
       assert(ptr_(1,ws[1]) == ptr_cache[1]);
     }
+
+    assert(assert_data_struct());
 
     return ret;
   }
