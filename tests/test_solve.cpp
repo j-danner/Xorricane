@@ -862,7 +862,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test41.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
-        slvr.get_opts()->ca = ca_alg::fuip_opt; //GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
+        slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
         slvr.get_opts()->sol_count = -1;
         slvr.get_opts()->lin_alg_schedule = 2;
 
@@ -875,10 +875,10 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test42.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
-        slvr.get_opts()->ca = ca_alg::no; //GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
+        slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
         slvr.get_opts()->sol_count = -1;
-        slvr.get_opts()->lin_alg_schedule = 40; //GENERATE(0,1,40);
-        slvr.get_opts()->dh = dec_heu::lex; //GENERATE(dec_heu::lex, dec_heu::vsids);
+        slvr.get_opts()->lin_alg_schedule = GENERATE(0,1,40);
+        slvr.get_opts()->dh = GENERATE(dec_heu::lex, dec_heu::vsids);
 
         stats s = slvr.solve();
         CHECK( s.sols.size() == 8 );

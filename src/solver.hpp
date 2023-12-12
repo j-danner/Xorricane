@@ -453,6 +453,7 @@ class solver
      * @brief decides whether a linear algebra in-processing step should be performed
      */
     bool need_linalg_inprocessing() {
+      if(opt.lin_alg_schedule==0) return false;
       ++ctr;
       ctr %= opt.lin_alg_schedule;
       return ctr == 0 && no_conflict();
