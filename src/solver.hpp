@@ -355,7 +355,7 @@ class solver
           assert( alpha[lt2]==val || alpha[lt2]==bool3::None );
           alpha[lt2] = val;
           alpha_dl[lt2] = dl;
-          assert(alpha_dl[lt2] == lineral_watches[dl].back().get_assigning_lvl(alpha_dl)); //TODO this should always be true!
+          assert(alpha_dl[lt2] == lineral_watches[lvl].back().get_assigning_lvl(alpha_dl)); //TODO this should always be true!
           VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + _reduced_lit.to_str() + " from UNIT " + lit.to_str() + ( type!=trail_t::LINERAL_IMPLIED_ALPHA && type!=trail_t::LEARNT_UNIT ? (rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") : (" with reason clause " + lineral_watches[0][rs].to_str()) ) );
           alpha_trail_pos[lt2] = (var_t) trails[lvl].size()-1;
           if(type!=trail_t::LINERAL_IMPLIED_ALPHA && rs<xclss.size()) xclss[rs].set_assigning_lvl(dl);
