@@ -442,6 +442,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     VERB(70, "   * ");
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
     VERB(90, "   * XNF " + learnt_cls.to_xnf_str() );
+    VERB(90, "   * XNF reordered " + learnt_cls.to_xnf_str(opt.P) );
     VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
 
 #ifndef NDEBUG

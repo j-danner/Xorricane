@@ -460,7 +460,6 @@ class solver
 
     /**
      * @brief get all implied alpha's from lineral assignments
-     * @note might backtrack some lvls!
      * 
      * @return list of reason clauses for new alpha assignments
      */
@@ -587,7 +586,7 @@ class solver
       //construct corresponding reason clauses
       idx = 0;
       for(const auto& lit : xlits_) {
-        VERB(80, "c constructing reason clause for "+lit.to_str());
+        VERB(95, "c constructing reason clause for "+lit.to_str());
         
       #ifndef NDEBUG
         xlit tmp;
@@ -597,7 +596,7 @@ class solver
         r = 0;
         for(var_t lvl=0; lvl<=dl; ++lvl) {
           const auto& l_dl = lineral_watches[lvl];
-          VERB(90, "c processing linerals deduced on lvl "+std::to_string(lvl));
+          VERB(95, "c processing linerals deduced on lvl "+std::to_string(lvl));
           for(var_t jdx= 0; jdx<l_dl.size(); ++jdx) {
             const auto& l = l_dl[jdx];
             if(mzd_read_bit(B,r,idx)) {
@@ -617,22 +616,22 @@ class solver
                 if( l.get_reason() < xclss.size() ) {
                   const auto& r_cls2 = xclss[l.get_reason()];
                   //add (unit of r_cls)+1 to r_cls2, and (unit of r_cls2)+1 to r_cls
-                  VERB(90, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
+                  VERB(95, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
                   r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
-                  VERB(90, "c and get \nc   "+ BOLD(r_cls.to_str()));
+                  VERB(95, "c and get \nc   "+ BOLD(r_cls.to_str()));
                 #ifndef NDEBUG
-                  VERB(90, "c tmp = "+tmp.to_str());
+                  VERB(95, "c tmp = "+tmp.to_str());
                 #endif
-                  VERB(90, "c");
+                  VERB(95, "c");
                 } else {
                   assert(lvl == 0 || opt.ca==ca_alg::no); //the reason cls should only be a unit clause if it was deduced at lvl 0 (!)
-                  VERB(90, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(l.to_str()));
+                  VERB(95, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(l.to_str()));
                   r_cls.add_to_unit( l, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl );
-                  VERB(90, "c and get \nc   "+ BOLD(r_cls.to_str()));
+                  VERB(95, "c and get \nc   "+ BOLD(r_cls.to_str()));
                 #ifndef NDEBUG
-                  VERB(90, "c tmp = "+tmp.to_str());
+                  VERB(95, "c tmp = "+tmp.to_str());
                 #endif
-                  VERB(90, "c");
+                  VERB(95, "c");
                 }
               }
               assert( L_.reduce(tmp+lit).is_zero() );
