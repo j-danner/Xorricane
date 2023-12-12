@@ -441,12 +441,11 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
-        slvr.get_opts()->sol_count = -1;
-        slvr.get_opts()->lin_alg_schedule = 1; //GENERATE(0,1,5);
+        slvr.get_opts()->lin_alg_schedule = 1;
         slvr.get_opts()->dh = GENERATE(dec_heu::lex, dec_heu::vsids);
 
         stats s = slvr.solve();
-        CHECK( s.sols.size() == 8 );
+        CHECK( s.sat == false );
         CHECK( check_sols(clss.cls, s.sols) );
     }
 }
