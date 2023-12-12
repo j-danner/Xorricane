@@ -769,6 +769,9 @@ void solver::dpll_solve(stats &s) {
             assert(r_cls.get_assigning_lvl() == dl);
             add_learnt_cls( std::move(r_cls), false);
         }
+        if(!r_clss.empty()) {
+            goto dpll_gcp;
+        }
     }
 
     while (true) {
@@ -933,6 +936,9 @@ void solver::solve(stats &s) {
             ++s.no_linalg_prop;
             assert(r_cls.get_assigning_lvl() == dl);
             add_learnt_cls( std::move(r_cls), false);
+        }
+        if(!r_clss.empty()) {
+            goto cdcl_gcp;
         }
     }
 
