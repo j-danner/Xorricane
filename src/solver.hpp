@@ -454,8 +454,8 @@ class solver
      */
     bool need_linalg_inprocessing() {
       ++ctr;
-      if(ctr == opt.lin_alg_schedule) ctr = 0;
-      return ctr == 0;
+      ctr %= opt.lin_alg_schedule;
+      return ctr == 0 && no_conflict();
     }
 
     /**
