@@ -143,29 +143,16 @@ void solver::backtrack(const var_t& lvl) {
 };
 
 // decision heuristics
-std::pair<xsys, xsys> solver::dh_vsids() {
+xlit solver::dh_vsids() {
     assert(!order_heap_vsids.empty());
     var_t ind = 0;
     while (ind==0 || (alpha[ind] != bool3::None && !order_heap_vsids.empty() )) {
         ind = order_heap_vsids.removeMin();
     }
-    xlit xi = xlit( ind, last_phase[ind]==bool3::True);
-    return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
-
-    //var_t lt_max = 0;
-    //unsigned int max_activity = 0;
-    //for(size_t idx=1; idx<alpha.size(); ++idx) {
-    //    if(alpha[idx]==bool3::None && (activity_score[idx] > max_activity)) {
-    //        lt_max = idx; max_activity = activity_score[idx];
-    //    }
-    //}
-    //assert(lt_max!=0 && lt_max < (var_t)alpha.size());
-
-    //xlit xi = xlit( lt_max, last_phase[lt_max]==bool3::True);
-    //return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
+    return xlit( ind, last_phase[ind]==bool3::True);
 };
 
-std::pair<xsys, xsys> solver::dh_shortest_wl() {
+xlit solver::dh_shortest_wl() {
     //find unassigned variable that has the longest watch_list
     var_t lt_min = 0;
     size_t size_min = xclss.size() + 1;
@@ -175,12 +162,10 @@ std::pair<xsys, xsys> solver::dh_shortest_wl() {
         }
     }
     assert(lt_min!=0 && lt_min < (var_t)alpha.size());
-
-    xlit xi = xlit( lt_min, last_phase[lt_min]==bool3::True);
-    return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
+    return xlit( lt_min, last_phase[lt_min]==bool3::True);
 }
 
-std::pair<xsys, xsys> solver::dh_longest_wl() {
+xlit solver::dh_longest_wl() {
     //find unassigned variable that has the longest watch_list
     var_t lt_max = 0;
     size_t size_max = 0;
@@ -191,28 +176,24 @@ std::pair<xsys, xsys> solver::dh_longest_wl() {
     }
     assert(lt_max!=0 && lt_max < (var_t)alpha.size());
 
-    xlit xi = xlit( lt_max, last_phase[lt_max]==bool3::True);
-    return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
+    return xlit( lt_max, last_phase[lt_max]==bool3::True);
 }
 
-std::pair<xsys, xsys> solver::dh_lex_LT() {
+xlit solver::dh_lex_LT() {
     var_t i = 1;
     while(alpha[i] != bool3::None) ++i;
     assert(i<alpha.size());
-    xlit xi = xlit( i, last_phase[i]==bool3::True);
-    return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
+    return xlit( i, last_phase[i]==bool3::True);
 };
 
 template<const solver::dec_heu_t dh>
-std::pair<xsys,xsys> solver::dh_gp() {
+xlit solver::dh_gp() {
     var_t idx = 0;
     while (idx < opt.P.size() && alpha[opt.P[idx]] != bool3::None) ++idx;
     if(idx == opt.P.size()) return (this->*dh)();
-    assert(alpha[opt.P[idx]] == bool3::None);
     const var_t i = opt.P[idx];
-    xlit xi = xlit(i, last_phase[i] == bool3::True);
-    assert(!xi.is_constant());
-    return std::make_pair(xsys(xi), xsys(xi.plus_one()));
+    assert(i>0 && alpha[i]==bool3::None);
+    return xlit(i, last_phase[i] == bool3::True);
 }
 
 
@@ -824,14 +805,12 @@ void solver::dpll_solve(stats &s) {
 
                 // make new decision!
                 // use decisions heuristic to find next decision!
-                std::pair<xsys, xsys> dec = (this->*decH)();
-                VERB(25, "c " << std::to_string(dl) << " : "
-                              << "decision " << std::to_string(s.no_dec) << " : " << std::to_string(dec.first.size()) << " or " << std::to_string(dec.second.size()) << " eqs")
+                xlit dec = (this->*decH)();
                 VERB(50, "c " << std::to_string(dl) << " : "
-                              << "decision " << std::to_string(s.no_dec) << " namely [" << dec.first.to_str() << "] or [" << dec.second.to_str() << "]")
-                add_new_guess(std::move(dec.first));
+                              << "decision " << std::to_string(s.no_dec) << " namely [" << dec.to_str() << "] or [" << dec.plus_one().to_str() << "]")
                 //construct alt system
-                dec_stack.emplace( std::move(dec.second) );
+                dec_stack.emplace( dec.plus_one() );
+                add_new_guess(std::move(dec));
             }
 
             dpll_gcp:
@@ -996,12 +975,10 @@ void solver::solve(stats &s) {
 
                 // make new decision!
                 // use decisions heuristic to find next decision!
-                std::pair<xsys, xsys> dec = (this->*decH)();
-                VERB(25, "c " << std::to_string(dl) << " : "
-                              << "decision " << std::to_string(s.no_dec) << " : " << std::to_string(dec.first.size()) << " or " << std::to_string(dec.second.size()) << " eqs")
+                xlit dec = (this->*decH)();
                 VERB(50, "c " << std::to_string(dl) << " : "
-                              << "decision " << std::to_string(s.no_dec) << " namely [" << dec.first.to_str() << "] or [" << dec.second.to_str() << "]")
-                add_new_guess(std::move(dec.first));
+                              << "decision " << std::to_string(s.no_dec) << " namely [" << dec.to_str() << "] or [" << dec.plus_one().to_str() << "]")
+                add_new_guess( std::move(dec) );
             }
 
             cdcl_gcp:

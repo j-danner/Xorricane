@@ -251,7 +251,7 @@ class solver
     }
 
 
-    typedef std::pair<xsys,xsys> (solver::*dec_heu_t)();
+    typedef xlit (solver::*dec_heu_t)();
     typedef std::pair<var_t,xcls_watch> (solver::*ca_t)();
 
     void bump_score(const var_t& ind);
@@ -1016,29 +1016,29 @@ class solver
     /**
      * @brief branch on first vertex (i.e. vert at first position in L)
      */
-    std::pair< xsys, xsys > dh_vsids();
+    xlit dh_vsids();
 
     /**
      * @brief branch on ind that has the shortest watch_list
      */
-    std::pair< xsys, xsys > dh_shortest_wl();
+    xlit dh_shortest_wl();
 
     /**
      * @brief branch on ind that has the longest watch_list
      */
-    std::pair< xsys, xsys > dh_longest_wl();
+    xlit dh_longest_wl();
 
     /**
      * @brief branch on x[i] where i smallest ind not yet guessed!
      */
-    std::pair< xsys, xsys > dh_lex_LT();
+    xlit dh_lex_LT();
     
     /**
      * @brief wrapper for dec_heu_t funcs to first guess according to guessing path
      * @note dh_gp<dh> also has type dec_heu_t
      */
     template<const dec_heu_t dh>
-    std::pair<xsys,xsys> dh_gp();
+    xlit dh_gp();
 
     //solve-main
     void solve(stats& s); //{ opt.ca = ca_alg::dpll; return cdcl_solve(s); };
