@@ -32,7 +32,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     last_phase = vec<bool3>(num_vars + 1, bool3::None);
     //init last_phase according to init_phase of guessing_path:
     for(var_t idx=0; idx<opt_.P.size(); ++idx) {
-        last_phase[idx+1] = to_bool3( opt_.P.get_phase(idx) );
+        last_phase[opt_.P[idx]] = to_bool3( opt_.P.get_phase(idx) );
     }
 
     // vec of pure literals

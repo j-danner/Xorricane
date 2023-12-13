@@ -519,6 +519,26 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         //check that after guessing_path sol of s_gp, we get a sol of original clss
         CHECK( s_gp.sols.front() == vec<bool>({false, true, false, true, true, true, true, false}) );
     }
+    
+    SECTION( "eno_s4_mixed_quad.xnf" ) {
+        guessing_path P;
+        P.insert(5, bool3::False);
+        P.insert(6, bool3::True);
+        P.insert(7, bool3::False);
+        P.insert(8, bool3::True);
+        CHECK( P.assert_data_struct() );
+        //auto P = parse_gp("gp");
+        auto clss_gp = parse_file("../../benchmarks/generate_instances/enocoro_fa/eno_s4_mixed_quad.xnf");
+        auto slvr_gp = solver(clss_gp, P);
+
+        stats s_gp = slvr_gp.solve();
+
+        CHECK( s_gp.sat == true ); //SAT!
+        CHECK( check_sols(clss_gp.cls, s_gp.sols) );
+
+        //check that after guessing_path sol of s_gp, we get a sol of original clss
+        CHECK( s_gp.sols.front() == vec<bool>({false, true, false, false, false, true, false, true}) );
+    }
 }
 
 TEST_CASE( "solving xnf test instances" , "[solver]" ) {

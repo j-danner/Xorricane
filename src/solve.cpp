@@ -58,7 +58,7 @@ guessing_path parse_gp(const std::string& fname) {
             assert(val>0);
 
             if(already_inserted.contains((var_t) val)) continue;
-            P.insert((var_t) val, to_bool3(val_ < 0));
+            P.insert((var_t) val, to_bool3(val_ > 0));
             already_inserted.insert((var_t) val);
         }
     }
