@@ -30,7 +30,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     trails.reserve(num_vars+1);
     trails.emplace_back( std::list<trail_elem>() );
     last_phase = vec<bool3>(num_vars + 1, bool3::None);
-    //init last_phase according to init_phase of reordering:
+    //init last_phase according to init_phase of guessing_path:
     for(var_t idx=0; idx<opt_.P.size(); ++idx) {
         last_phase[idx+1] = to_bool3( opt_.P.get_phase(idx) );
     }
@@ -199,13 +199,21 @@ std::pair<xsys, xsys> solver::dh_lex_LT() {
     var_t i = 1;
     while(alpha[i] != bool3::None) ++i;
     assert(i<alpha.size());
-    //xlit xi = xlit( std::move( vec<var_t>({i}) ), (last_phase[i]==bool3::True), true );
     xlit xi = xlit( i, last_phase[i]==bool3::True);
-    //xlit xi = xlit( (last_phase[i]==bool3::True) ? vec<var_t>({0,i}) : vec<var_t>({i}) );
-    //xlit xi = xlit( vec<var_t>({i}) );
     return std::pair<xsys, xsys>(xsys(xi), xsys(xi.plus_one()));
-    //return std::pair<xsys, xsys>(xsys(xi.plus_one()), xsys(xi));
 };
+
+template<const solver::dec_heu_t dh>
+std::pair<xsys,xsys> solver::dh_gp() {
+    var_t idx = 0;
+    while (idx < opt.P.size() && alpha[opt.P[idx]] != bool3::None) ++idx;
+    if(idx == opt.P.size()) return (this->*dh)();
+    assert(alpha[opt.P[idx]] == bool3::None);
+    const var_t i = opt.P[idx];
+    xlit xi = xlit(i, last_phase[i] == bool3::True);
+    assert(!xi.is_constant());
+    return std::make_pair(xsys(xi), xsys(xi.plus_one()));
+}
 
 
 void solver::bump_score(const var_t &ind) {
@@ -442,7 +450,6 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     VERB(70, "   * ");
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
     VERB(90, "   * XNF " + learnt_cls.to_xnf_str() );
-    VERB(90, "   * XNF reordered " + learnt_cls.to_xnf_str(opt.P) );
     VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
 
 #ifndef NDEBUG
@@ -739,16 +746,16 @@ void solver::dpll_solve(stats &s) {
     dec_heu_t decH = &solver::dh_lex_LT;
     switch (opt.dh) {
     case dec_heu::vsids:
-        decH = &solver::dh_vsids;
+        decH = (opt.P.size()>0) ? &solver::dh_gp<&solver::dh_vsids> : &solver::dh_vsids;
         break;
     case dec_heu::lwl:
-        decH = &solver::dh_longest_wl;
+        decH = (opt.P.size()>0) ? &solver::dh_gp<&solver::dh_longest_wl> : &solver::dh_longest_wl;
         break;
     case dec_heu::lex:
-        decH = &solver::dh_lex_LT;
+        decH = (opt.P.size()>0) ? &solver::dh_gp<&solver::dh_lex_LT> : &solver::dh_lex_LT;
         break;
     case dec_heu::swl:
-        decH = &solver::dh_shortest_wl;
+        decH = (opt.P.size()>0) ? &solver::dh_gp<&solver::dh_shortest_wl> : &solver::dh_shortest_wl;
         break;
     default:
         assert(false);
@@ -893,16 +900,16 @@ void solver::solve(stats &s) {
     dec_heu_t decH = &solver::dh_lex_LT;
     switch (opt.dh) {
     case dec_heu::vsids:
-        decH = &solver::dh_vsids;
+        decH = (opt.P.size()>0) ? &solver::dh_gp<&solver::dh_vsids> : &solver::dh_vsids;
         break;
     case dec_heu::lwl:
-        decH = &solver::dh_longest_wl;
+        decH = (opt.P.size()>0) ? &solver::dh_gp<&solver::dh_longest_wl> : &solver::dh_longest_wl;
         break;
     case dec_heu::lex:
-        decH = &solver::dh_lex_LT;
+        decH = (opt.P.size()>0) ? &solver::dh_gp<&solver::dh_lex_LT> : &solver::dh_lex_LT;
         break;
     case dec_heu::swl:
-        decH = &solver::dh_shortest_wl;
+        decH = (opt.P.size()>0) ? &solver::dh_gp<&solver::dh_shortest_wl> : &solver::dh_shortest_wl;
         break;
     default:
         assert(false);
@@ -1063,7 +1070,7 @@ void solver::solve_L(const xsys& L, stats& s) const {
 
     if(s.sols.size()<opt.sol_count) {
         //print sol
-        s.print_sol(get_const_opts()->P);
+        s.print_sol();
         VERB(0, "c solutions found so far: "+std::to_string(s.sols.size()));
     } else {
         return;
@@ -1085,7 +1092,7 @@ void solver::solve_L(const xsys& L, stats& s) const {
         L.solve( s.sols.back() );
         
         //print sol
-        s.print_sol(get_const_opts()->P);
+        s.print_sol();
         VERB(0, "c solutions found so far: "+std::to_string(s.sols.size()));
         ++sol_ct;
     }

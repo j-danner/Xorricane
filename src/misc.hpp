@@ -85,65 +85,32 @@ struct equivalence {};
 #endif
 
 /**
- * @brief class that handles reordering according to guessing path
+ * @brief class that handles stores guessing path
  */
-class reordering {
+class guessing_path {
   private:
-    //TODO use faster hashmap
-  //#ifdef NDEBUG
-  //  robin_hood::unordered_flat_map<var_t,var_t> P;
-  //#else
-    std::unordered_map<var_t,var_t> P;
-  //#endif
+    vec<var_t> P;
     vec<bool> init_phase;
-    var_t pos = 0;
-  #ifndef NDEBUG
-    var_t max = 0;
-  #endif
 
   public:
-    reordering() {};
-    reordering(const reordering& o) : P(o.P), init_phase(o.init_phase), pos(o.pos) {};
-    reordering(reordering&& o) : P(std::move(o.P)), init_phase(std::move(o.init_phase)), pos(o.pos) {};
+    guessing_path() {};
+    guessing_path(const guessing_path& o) : P(o.P), init_phase(o.init_phase) {};
+    guessing_path(guessing_path&& o) : P(std::move(o.P)), init_phase(std::move(o.init_phase)) {};
 
-    std::size_t size() const noexcept { return pos; };
+    std::size_t size() const noexcept { return P.size(); };
 
     void insert(const var_t& ind, const bool3 phase = bool3::False) {
-      init_phase.push_back(phase == bool3::True);
-      ++pos;
-    #ifndef NDEBUG
-      max = std::max(std::max(pos, ind) , max);
-    #endif
-      if(at(pos)==ind) return;
-      const auto P_ind = at(ind);
-      const auto P_pos = at(pos);
-      P[pos] = P_ind;
-      P[ind] = P_pos;
+      P.emplace_back(ind);
+      init_phase.emplace_back(phase);
     };
-    const var_t& at(const var_t& ind) const noexcept { return P.contains(ind) ? P.at(ind) : ind; };
     bool get_phase(const var_t& idx) const { return init_phase[idx]; };
 
-  #ifndef NDEBUG
+    var_t operator [](const var_t& idx) const { return P[idx]; };
+
     bool assert_data_struct() const {
-      std::set<var_t> tmp;
-      for(var_t i=1; i<=max; ++i) {
-        var_t P_i = at(i);
-        assert(0 < P_i && P_i <= max);
-        tmp.insert( P_i );
-      }
-      for(var_t i=1; i<=max; ++i) {
-        if( !tmp.contains(i) ) {
-          std::cout << "c reordering: missing index " << i << std::endl;
-        }
-        assert(tmp.contains(i));
-      }
-      assert( tmp.size() == max );
-      assert( size() == init_phase.size() );
+      assert(P.size() == init_phase.size());
       return true;
     };
-  #else
-    bool assert_data_struct() const { return true; };
-  #endif
 };
 
 
@@ -198,14 +165,14 @@ struct options {
 
     unsigned int sol_count = 1;
 
-    reordering P;
+    guessing_path P;
 
     //default settings
     options() {};
-    options(reordering P_) : P(P_) {};
+    options(guessing_path P_) : P(P_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int verb_, int timeout_=0) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), verb(verb_), timeout(timeout_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, reordering P_) : dh(dh_), po(po_), ca(ca_), rst(rst_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), rst(rst_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
 };
 
 
@@ -256,26 +223,6 @@ class stats {
       std::cout << "c Total time     : " << total_time << " [s]" << std::endl;
     }
     
-    void reorder_sol(const reordering& P) {
-      if(sols.size()==0) return;
-      vec<bool> Psol(sols.back());
-      for(var_t i=1; i <= sols.back().size(); ++i) {
-        Psol[i-1] = sols.back()[P.at(i)-1];
-      }
-      sols.back() = std::move(Psol);
-    }
-
-    void reorder_sols(const reordering& P) {
-      for(auto& sol : sols) {
-        if(sol.size()==0) return;
-        vec<bool> Psol(sol);
-        for(var_t i=1; i <= sol.size(); ++i) {
-          Psol[i-1] = sol[P.at(i)-1];
-        }
-        sol = std::move(Psol);
-      }
-    }
-
     /**
      * @brief print final solution
      */
@@ -287,30 +234,6 @@ class stats {
               std::cout << "v ";
               for (var_t i = 1; i <= sol.size(); i++) {
                   std::cout << (sol[i-1] ? "" : "-") << std::to_string( i ) << " ";
-              }
-              std::cout << "0" << std::endl;
-          } else {
-              std::cout << "s UNSATISFIABLE" << std::endl;
-          }
-      } else {
-              std::cout << "c timeout reached or interupted!" << std::endl;
-              std::cout << "s INDEFINITE" << std::endl;
-      }
-    };
-    
-    /**
-     * @brief print last sol of sols
-     * 
-     * @param reordering P that should be applied prior to printing
-     */
-    void print_sol(const reordering& P) const {
-      if(finished) {
-          const auto& sol = sols.back();
-          if(sat) {
-              std::cout << "s SATISFIABLE" << std::endl;
-              std::cout << "v ";
-              for (var_t i = 1; i <= sol.size(); i++) {
-                  std::cout << (sol[P.at(i)-1] ? "" : "-") << std::to_string( i ) << " ";
               }
               std::cout << "0" << std::endl;
           } else {

@@ -451,66 +451,9 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
 }
 
 TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
-    SECTION( "test33.xnf" ) {
-        reordering P;
-        P.insert(2);
-        P.insert(1);
-        P.insert(4);
-        P.insert(5);
-        P.insert(3);
-        CHECK( P.assert_data_struct() );
-        auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/test33.xnf", P);
-        auto slvr_gp = solver(clss_gp, P);
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test33.xnf");
-        auto slvr = solver(clss);
-
-        stats s_gp = slvr_gp.solve();
-        stats s = slvr.solve();
-
-        CHECK( s.sat == true ); //SAT!
-        CHECK( s_gp.sat == true ); //SAT!
-        CHECK( check_sols(clss.cls, s.sols) );
-        CHECK( check_sols(clss_gp.cls, s_gp.sols) );
-
-        //check that after reordering sol of s_gp, we get a sol of original clss
-        CHECK( !check_sols(clss.cls, s_gp.sols) );
-        s_gp.reorder_sols(P);
-        CHECK( check_sols(clss.cls, s_gp.sols) );
-    }
-    
-    SECTION( "test33.xnf II" ) {
-        reordering P;
-        P.insert(2);
-        P.insert(1);
-        P.insert(4);
-        P.insert(5);
-        P.insert(3);
-        P.insert(7);
-        P.insert(8);
-        P.insert(6);
-        CHECK( P.assert_data_struct() );
-        auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/test33.xnf", P);
-        auto slvr_gp = solver(clss_gp, P);
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test33.xnf");
-        auto slvr = solver(clss);
-
-        stats s_gp = slvr_gp.solve();
-        stats s = slvr.solve();
-
-        CHECK( s.sat == true ); //SAT!
-        CHECK( s_gp.sat == true ); //SAT!
-        CHECK( check_sols(clss.cls, s.sols) );
-        CHECK( check_sols(clss_gp.cls, s_gp.sols) );
-
-        //check that after reordering sol of s_gp, we get a sol of original clss
-        CHECK( !check_sols(clss.cls, s_gp.sols) );
-        s_gp.reorder_sols(P);
-        CHECK( check_sols(clss.cls, s_gp.sols) );
-    }
-    
     SECTION( "flat30-100.xnf" ) {
-        reordering P;
-        P.insert(2);
+        guessing_path P;
+        P.insert(2, bool3::True);
         P.insert(1);
         P.insert(10);
         P.insert(11);
@@ -518,7 +461,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         P.insert(74);
         CHECK( P.assert_data_struct() );
         //auto P = parse_gp("gp");
-        auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/flat/flat30-100.xnf", P);
+        auto clss_gp = parse_file("../../benchmarks/instances/2xnfs/flat/flat30-100.xnf");
         auto slvr_gp = solver(clss_gp, P);
         auto clss = parse_file("../../benchmarks/instances/2xnfs/flat/flat30-100.xnf");
         auto slvr = solver(clss);
@@ -531,18 +474,16 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         CHECK( check_sols(clss.cls, s.sols) );
         CHECK( check_sols(clss_gp.cls, s_gp.sols) );
 
-        //check that after reordering sol of s_gp, we get a sol of original clss
-        CHECK( !check_sols(clss.cls, s_gp.sols) );
-        s_gp.reorder_sols(P);
+        CHECK( s.sols.front() != s_gp.sols.front() );
         CHECK( check_sols(clss.cls, s_gp.sols) );
     }
     
     SECTION( "test10.xnf" ) {
-        reordering P;
+        guessing_path P;
         P.insert(1, bool3::True);
         CHECK( P.assert_data_struct() );
         //auto P = parse_gp("gp");
-        auto clss_gp = parse_file_gp("../../benchmarks/instances/2xnfs/test10.xnf", P);
+        auto clss_gp = parse_file("../../benchmarks/instances/2xnfs/test10.xnf");
         auto slvr_gp = solver(clss_gp, P);
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test10.xnf");
         auto slvr = solver(clss);
@@ -555,19 +496,19 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         CHECK( check_sols(clss.cls, s.sols) );
         CHECK( check_sols(clss_gp.cls, s_gp.sols) );
 
-        //check that after reordering sol of s_gp, we get a sol of original clss
+        //check that after guessing_path sol of s_gp, we get a sol of original clss
         CHECK( s.sols.front() != s_gp.sols.front() );
     }
     
     SECTION( "eno_s4_mixed_quad.xnf" ) {
-        reordering P;
+        guessing_path P;
         P.insert(1, bool3::False);
         P.insert(2, bool3::True);
         P.insert(3, bool3::False);
         P.insert(4, bool3::True);
         CHECK( P.assert_data_struct() );
         //auto P = parse_gp("gp");
-        auto clss_gp = parse_file_gp("../../benchmarks/generate_instances/enocoro_fa/eno_s4_mixed_quad.xnf", P);
+        auto clss_gp = parse_file("../../benchmarks/generate_instances/enocoro_fa/eno_s4_mixed_quad.xnf");
         auto slvr_gp = solver(clss_gp, P);
 
         stats s_gp = slvr_gp.solve();
@@ -575,7 +516,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         CHECK( s_gp.sat == true ); //SAT!
         CHECK( check_sols(clss_gp.cls, s_gp.sols) );
 
-        //check that after reordering sol of s_gp, we get a sol of original clss
+        //check that after guessing_path sol of s_gp, we get a sol of original clss
         CHECK( s_gp.sols.front() == vec<bool>({false, true, false, true, true, true, true, false}) );
     }
 }
@@ -828,8 +769,8 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         }
 
         SECTION("with gp"){
-            reordering P; P.insert(2);
-            auto p_xnf_P = parse_file_gp(fname, P);
+            guessing_path P; P.insert(2);
+            auto p_xnf_P = parse_file(fname);
             auto slvr_P = solver(p_xnf_P);
 
             (slvr_P.get_opts())->verb = 70;
@@ -842,7 +783,6 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
                 stats s = slvr_P.solve();
                 CHECK( (int) s.sols.size() == sol_c );
                 CHECK( check_sols(p_xnf_P.cls, s.sols) );
-                s.reorder_sols(P);
                 CHECK( check_sols(p_xnf.cls, s.sols) );
             }
     
@@ -853,7 +793,6 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
                 stats s = slvr_P.solve();
                 CHECK( (int) s.sols.size() == 6 );
                 CHECK( check_sols(p_xnf_P.cls, s.sols) );
-                s.reorder_sols(P);
                 CHECK( check_sols(p_xnf.cls, s.sols) );
             }
         }
@@ -940,7 +879,7 @@ TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
     SECTION("with gp") {
         auto fname = "../../benchmarks/generate_instances/enocoro_fa/eno_s4_mixed_quad.xnf";
 
-        reordering P;
+        guessing_path P;
         P.insert(8);
         P.insert(7);
         P.insert(5);
@@ -950,7 +889,7 @@ TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
         P.insert(2);
         P.insert(4);
      
-        auto p_xnf = parse_file_gp(fname, P);
+        auto p_xnf = parse_file(fname);
         auto slvr = solver(p_xnf);
 
         (slvr.get_opts())->verb = 70;

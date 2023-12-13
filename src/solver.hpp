@@ -974,9 +974,9 @@ class solver
      * @brief Construct main solver object from parsed_xnf
      * 
      * @param parsed_xnf pair of options and clauses, as returned by parse_file
-     * @param P reordering of vars
+     * @param P guessing_path of vars
      */
-    solver(parsed_xnf& p_xnf, reordering& P) noexcept : solver(p_xnf.cls, p_xnf.num_vars, options(P)) {};
+    solver(parsed_xnf& p_xnf, guessing_path& P) noexcept : solver(p_xnf.cls, p_xnf.num_vars, options(P)) {};
 
     //copy ctor
     solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), active_cls_stack(o.active_cls_stack), activity_score(o.activity_score), dl_count(o.dl_count), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), lineral_queue(o.lineral_queue) { assert(assert_data_structs()); };
@@ -1013,25 +1013,32 @@ class solver
 
 
     //decision heuristics
-    /*
+    /**
      * @brief branch on first vertex (i.e. vert at first position in L)
      */
     std::pair< xsys, xsys > dh_vsids();
 
-    /*
+    /**
      * @brief branch on ind that has the shortest watch_list
      */
     std::pair< xsys, xsys > dh_shortest_wl();
 
-    /*
+    /**
      * @brief branch on ind that has the longest watch_list
      */
     std::pair< xsys, xsys > dh_longest_wl();
 
-    /*
+    /**
      * @brief branch on x[i] where i smallest ind not yet guessed!
      */
     std::pair< xsys, xsys > dh_lex_LT();
+    
+    /**
+     * @brief wrapper for dec_heu_t funcs to first guess according to guessing path
+     * @note dh_gp<dh> also has type dec_heu_t
+     */
+    template<const dec_heu_t dh>
+    std::pair<xsys,xsys> dh_gp();
 
     //solve-main
     void solve(stats& s); //{ opt.ca = ca_alg::dpll; return cdcl_solve(s); };

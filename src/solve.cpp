@@ -37,8 +37,8 @@ std::vector< std::string > split(const std::string& str, const std::string& deli
     return out;
 }
 
-reordering parse_gp(const std::string& fname) {
-    reordering P;
+guessing_path parse_gp(const std::string& fname) {
+    guessing_path P;
 
     if(fname.size()==0) return P;
 
@@ -66,8 +66,7 @@ reordering parse_gp(const std::string& fname) {
     return P;
 }
 
-parsed_xnf parse_file(const std::string& fname) { reordering P; return parse_file_gp(fname, P); };
-parsed_xnf parse_file_gp(const std::string &fname, const reordering& P) {
+parsed_xnf parse_file(const std::string& fname) {
     var_t num_vars = 0;
     var_t num_cls = 0;
     
@@ -121,7 +120,7 @@ parsed_xnf parse_file_gp(const std::string &fname, const reordering& P) {
                         int v_ = stoi(v);
                         //std::cout << v << std::endl;
                         if (v_>0) {
-                            idxs.emplace_back( P.at((var_t) v_) );
+                            idxs.emplace_back( v_ );
                             if ((var_t) v_ > num_vars) {
                                 throw std::invalid_argument( "c provided clauses include larger vars than announced by header!" );
                             };
@@ -129,7 +128,7 @@ parsed_xnf parse_file_gp(const std::string &fname, const reordering& P) {
                             //not standardized (interpret '+0' as '-')
                             need_0 ^= true;
                         } else {
-                            idxs.emplace_back(  P.at((var_t) -v_) );
+                            idxs.emplace_back(  -v_ );
                             need_0 ^= true;
                         }
                     }

@@ -191,8 +191,8 @@ int main(int argc, char const *argv[])
 
     //parse file
     try {
-        reordering P = parse_gp( gp_fname );
-        parsed_xnf p_xnf = parse_file_gp( fname, P );
+        guessing_path P = parse_gp( gp_fname );
+        parsed_xnf p_xnf = parse_file( fname );
         assert( P.assert_data_struct() );
 
         //set upt options

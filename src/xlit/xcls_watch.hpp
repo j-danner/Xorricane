@@ -1037,21 +1037,6 @@ public:
     return out;
   };
 
-  std::string to_xnf_str(const reordering& P) const {
-    if (xlits.empty())
-      return "";
-    if (xlits.size() == 1)
-      return xlits[0].to_xnf_str();
-    std::string out;
-    out += (xlits[0] + shared_part).to_xnf_str(P) + " ";
-    out += (xlits[1] + shared_part).to_xnf_str(P) + " ";
-    for (var_t i = 2; i < xlits.size(); ++i) {
-      out += xlits[i].to_xnf_str(P) + " ";
-    }
-    out.erase(out.end() - 1);
-    return out;
-  };
-
 
   xcls to_xcls() const {
     vec<xlit> xlits_cpy(xlits.begin(), xlits.end());
