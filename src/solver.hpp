@@ -893,6 +893,7 @@ class solver
       }
       //update cls //TODO is init_unit rly needed here; shouldn't the clause already be initialized?
       VERB(90, "c adding new clause: " + BOLD(xclss[i].to_str()) + "  --> gives with current assignments: "+xclss[i].to_xcls().reduced(alpha).to_str());
+      if(learnt_cls) VERB(90, "c XNF : " + xclss[i].to_xnf_str());
       const auto ret = learnt_cls ? xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl) : xclss[i].init(alpha, alpha_dl, dl_count);
       //copied from GCP
       xlit new_unit;
