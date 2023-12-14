@@ -563,7 +563,7 @@ void solver::restart(stats& s) {
 
 void solver::remove_fixed_alpha(const var_t upd_lt) {
     VERB(90, "remove_fixed_alpha start" );
-    VERB(90, to_str());
+    VERB(95, to_str());
     assert( alpha[upd_lt]!=bool3::None && alpha_dl[upd_lt]==0 );
     const bool3 val = alpha[upd_lt];
     //rm upd_lt from lineral_watches[0] (all other levels are empty!)
@@ -580,7 +580,7 @@ void solver::remove_fixed_alpha(const var_t upd_lt) {
         }
     }
     VERB(90, "remove_fixed_alpha end" );
-    VERB(90, to_str());
+    VERB(95, to_str());
 }
 
 xlit new_unit;

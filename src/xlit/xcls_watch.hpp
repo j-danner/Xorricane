@@ -196,6 +196,8 @@ private:
         std::swap(xlit_dl_count1[new_i], xlit_dl_count1.back());
         xlits.resize( xlits.size()-1 );
         xlit_dl_count1.resize( xlit_dl_count1.size()-1 );
+        //repeat with same new_i
+        --new_i;
         continue;
       }
       assert(!xlits[new_i].is_zero());
@@ -213,7 +215,7 @@ private:
         xlits[new_i] += xlits[1]; xlits[new_i] += shared_part;
         xlits[new_i].add_one();
         // repeat with same new_i
-        new_i--;
+        --new_i;
         continue;
       }
       if (alpha[ptr_(new_i,new_w)] == bool3::None ) {
@@ -1266,8 +1268,10 @@ public:
   };
 
   bool eval(const vec<bool> &sol) const {
-    return std::any_of(xlits.begin(), xlits.end(), 
-        [&sol](const xlit l) { return l.eval(sol); });
+    return std::any_of(xlits.begin()+2, xlits.end(), 
+        [&sol](const xlit l) { return l.eval(sol); })
+        || !shared_part.eval(sol)^xlits[0].eval(sol)
+        || (xlits.size()>1 && !shared_part.eval(sol)^xlits[1].eval(sol));
   };
   
   void operator=(const xcls_watch &o) {
