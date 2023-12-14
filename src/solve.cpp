@@ -216,13 +216,11 @@ int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts
     s.end = std::chrono::steady_clock::now();
     if(opts.verb>0) s.print_final();
 
-    const bool check_sol_flag = opts.verb == 0 || !s.finished || !s.sat || check_sols(xnf, s.sols);
-    
     s.print_sol();
     if(opts.sol_count>1) std::cout << "c solutions found: "+std::to_string( std::count_if(s.sols.begin(),s.sols.end(), [](const vec<bool>& sol){ return sol.size()>0; } ) ) << std::endl;
-        
+    
     if(opts.verb > 0 && s.finished && s.sat) { //check sol!
-        if(check_sol_flag) {
+        if(check_sols(xnf, s.sols)) {
             std::cout << "c solution verified" << std::endl;
             return 0;
         } else {
