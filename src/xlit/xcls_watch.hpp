@@ -199,6 +199,10 @@ private:
         //repeat with same new_i
         --new_i;
         continue;
+      } else if(xlits[new_i].is_zero()) {
+        //leave watches untouched; but set SAT_dl_count s.t. clause is satisfied already at dl 0!
+        SAT_dl_count = {0, 1};
+        return {ptr_ws(0), xcls_upd_ret::SAT};
       }
       assert(!xlits[new_i].is_zero());
 

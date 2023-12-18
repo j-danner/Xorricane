@@ -1149,8 +1149,10 @@ std::string solver::to_xnf_str() const noexcept {
     bool solver::assert_data_structs() const noexcept { return true; };
 #else
     bool solver::assert_data_structs() const noexcept {
-        //sanity check on assignments_dl
+        //ensure that dl_count[0] is {0,1} as soon as solving started
+        assert( dl_count[1]==0 || dl_count[0]==1 );
         
+        //sanity check on alpha_dl
         for([[maybe_unused]] const auto lvl : alpha_dl) assert( lvl <= dl || lvl == (var_t) -1 );
 
         // check data structs of xclss

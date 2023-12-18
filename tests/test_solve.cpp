@@ -442,7 +442,15 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     SECTION( "test44.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test44.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->lin_alg_schedule = 1;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test45.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test45.xnf");
+        auto slvr = solver(clss);
 
         stats s = slvr.solve();
         CHECK( s.sat == true );
