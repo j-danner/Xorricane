@@ -64,7 +64,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     //reduce xclss with _L
     xsys _Lsys(_L);
     for(auto& cls : _xclss) {
-        cls.update_short(_Lsys); //TODO no full reduction?!
+        //cls.update_short(_Lsys); //TODO no full reduction?!
         init_and_add_xcls_watch( std::move(cls), false );
     }
 
