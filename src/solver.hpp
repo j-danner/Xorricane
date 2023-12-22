@@ -175,8 +175,6 @@ class solver
 
     var_t get_num_vars() const { return alpha.size()-1; };
     
-    xcls get_last_reason() const;
-
     std::pair<var_t,xcls_watch> analyze();
     std::pair<var_t,xcls_watch> analyze_exp();
     std::pair<var_t,xcls_watch> analyze_no_sres();
@@ -190,12 +188,12 @@ class solver
      * @return var_t idx of new clause; -1 if it was not added to clause database, i.e., cls was already a lineral
      */
     inline var_t add_learnt_cls(xcls_watch&& cls, const bool& redundant = true) {
-        if(cls.size()>=2) {
+        if(!cls.is_unit()) {
             const var_t i = add_xcls_watch( std::move(cls), redundant, true );
             utility[i]++;
             return i;
         } else {
-            assert(cls.size()<=1);
+            assert(cls.is_unit());
             add_new_lineral( cls.get_unit() );
             queue_implied_lineral( cls.get_unit(), lineral_watches[0].size()-1, trail_t::LEARNT_UNIT, cls.get_assigning_lvl() );
             return -1;
@@ -272,12 +270,33 @@ class solver
      * @param idx of xcls that became inactive
      */
     inline void decr_active_cls(const var_t& idx) {
+      assert(!xclss[idx].is_active(dl_count));
       if(!xclss[idx].is_irredundant()) return;
       //update curr val
       assert(active_cls>0);
       --active_cls;
       //update vals in active_cls_stack
-      for(var_t j = xclss[idx].get_inactive_lvl(dl_count)+1; j<active_cls_stack.size(); ++j) { assert(active_cls_stack[j]>0); --active_cls_stack[j]; }
+      for(var_t j = xclss[idx].get_inactive_lvl(dl_count)+1; j<active_cls_stack.size(); ++j) {
+        assert(active_cls_stack[j]>0);
+        --active_cls_stack[j];
+      }
+     #ifndef NDEBUG
+      //check if active_cls is updated to correct lvl!
+      auto dl_count_cpy = dl_count;
+      for(var_t lvl = dl; lvl>0; --lvl) {
+          ++dl_count_cpy[lvl];
+          xcls reduced = xclss[idx].to_xcls().reduced(alpha,alpha_dl,lvl-1);
+          if(xclss[idx].get_inactive_lvl(dl_count)<lvl) {
+            assert(!xclss[idx].is_active(dl_count_cpy));
+            assert(reduced.is_unit() || reduced.is_zero());
+          } else {
+            assert(xclss[idx].is_active(dl_count_cpy));
+            //NOTE: we do not know whether xclss[idx] is actually zero; it might
+            //      happen that an unwatched lineral is reduced to zero already on a lower dl!
+            //      Thus we cannot assume !reduced.is_unit() and !reduced.is_zero() (!)
+          }
+      }
+     #endif
     }
 
     xlit _reduced_lit;
@@ -572,17 +591,12 @@ class solver
         ++idx;
       }
       //solve for M^T x = B (i.e. xlits_)
-      //mzd_print(M_tr);
-      //std::cout << std::endl;
-      //mzd_print(B);
-      //std::cout << std::endl;
     #ifndef NDEBUG
       const auto ret = mzd_solve_left(M_tr, B, 0, true);
       assert(ret == 0);
     #else
       mzd_solve_left(M_tr, B, 0, false); //skip check for inconsistency; a solution exists i.e. is found!
     #endif
-      //mzd_print(B);
 
       //construct corresponding reason clauses
       idx = 0;
@@ -609,7 +623,7 @@ class solver
                 r++;
                 continue;
               } 
-              if(r_cls.size()==0) { //r_cls has not yet been instantiated
+              if(r_cls.is_zero()) { //r_cls has not yet been instantiated
                 r_cls = l.get_reason()<xclss.size() ? xclss[l.get_reason()] : xcls_watch( std::move(xcls( std::move(l.plus_one()) )) );
               } else {
                 bump_score(l);
@@ -671,7 +685,6 @@ class solver
           for(const auto& l : l_dl) if(l.is_active(dl_count)) lits.emplace_back( l.to_xlit() );
       }
       xsys L_( std::move(lits) );
-      //return {L_,xcls_watch()};
     #endif
 
       //M4RI implementation
@@ -810,7 +823,7 @@ class solver
               r++;
               continue;
             } 
-            if(r_cls.size()==0) { //r_cls has not yet been instantiated
+            if(r_cls.is_zero()) { //r_cls has not yet been instantiated
               r_cls = l.get_reason()<xclss.size() ? xclss[l.get_reason()] : xcls_watch( std::move(xcls( std::move(l.plus_one()) )) );
             } else {
               bump_score(l);
@@ -836,7 +849,7 @@ class solver
                 VERB(85, "c");
               }
             }
-            assert( tmp.is_one() || r_cls.to_xcls().get_ass_VS().reduce( tmp ).reduced(alpha, alpha_dl, 0).is_one() );
+            assert( L_.reduce(tmp).is_zero() ); //reduces to 0 instead of 1, as 1 is in L_
           }
           if( r_cls.get_assigning_lvl() < lvl ) {
             //early abort if r_cls is already assigning, i.e., already gives a conflict!

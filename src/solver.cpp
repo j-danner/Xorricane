@@ -127,7 +127,6 @@ void solver::backtrack(const var_t& lvl) {
     //VERB(90, "active_cls restored:   " + std::to_string(active_cls))
     //VERB(90, "active_cls recomputed: " + std::to_string(std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); })))
     assert(active_cls == (var_t) std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); }));
-    // revert assignments_xsys
 
     //cleanup lineral_queue
     lineral_queue.clear();
@@ -229,18 +228,6 @@ void solver::bump_score(const xsys &new_xsys) {
 void solver::decay_score() {
     //instead of actually decaying all scores; we increase the bump
     bump *= (1.0 / decay);
-};
-
-xcls solver::get_last_reason() const {
-    vec<xlit> lits = vec<xlit>();
-    // if the reason cls of the last learnt unit is 'out of range', i.e., last trail entry comes from guess, return empty reason-cls
-    if (lineral_watches[dl].back().get_reason() >= xclss.size()) {
-        lits.push_back( xlit(vec<var_t>({0})) );
-        return xcls(lits);
-    }
-    const xcls_watch &cls = xclss[ lineral_watches[dl].back().get_reason() ];
-    assert(cls.is_unit(dl_count));
-    return cls.to_xcls();
 };
 
 xlit unit;
@@ -649,7 +636,6 @@ void solver::GCP(stats &s) {
             }
             //assert(assert_data_structs());
             const var_t i = *it;
-            //is_active can only be used AFTER update! -- instead of is_active check if update has been performed by checking if upd_lt is watched
             assert(xclss[i].watches(upd_lt));
             if(!xclss[i].is_active(dl_count)) { ++it; continue; }
             const auto& [new_wl, ret] = xclss[i].update(upd_lt, alpha, alpha_dl, dl_count);
@@ -685,10 +671,6 @@ void solver::GCP(stats &s) {
                 if( queue_implied_lineral(new_unit, i) ) {
                     ++s.new_px_upd;
                 }
-                //if (!no_conflict()) { 
-                //    VERB(70, "UNSAT with conflict clause " + get_last_reason().to_str()); 
-                //    return; //quit propagation immediately at conflict!
-                //}
                 break;
             case xcls_upd_ret::NONE:
                 //assert(xclss[i].is_none(alpha));
@@ -701,6 +683,7 @@ void solver::GCP(stats &s) {
         
         //if we propagated on dl 0, remove all upd_lt from lineral_watches AND from xclss, so that they only occur in the watched clauses.
         if(dl == 0) { remove_fixed_alpha(upd_lt); };
+        assert(assert_data_structs());
     }
     assert(lineral_queue.empty() || !no_conflict());
 
@@ -800,6 +783,7 @@ void solver::dpll_solve(stats &s) {
                 trails.emplace_back( std::list<trail_elem>() );
                 ++s.no_dec;
                 // save active_cls count
+                assert(active_cls == (var_t) std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); }));
                 active_cls_stack.emplace_back(active_cls);
                 assert((var_t)active_cls_stack.size() == dl + 1);
 
@@ -970,6 +954,7 @@ void solver::solve(stats &s) {
                 trails.emplace_back( std::list<trail_elem>() );
                 ++s.no_dec;
                 // save active_cls count
+                assert(active_cls == (var_t) std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); }));
                 active_cls_stack.emplace_back(active_cls);
                 assert((var_t)active_cls_stack.size() == dl + 1);
 
@@ -1193,8 +1178,20 @@ std::string solver::to_xnf_str() const noexcept {
             ++idx;
         }
         
-        //check active_cls
+        //check active_cls -- on every dl!
         assert( active_cls == (var_t) std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch& xcls) { return xcls.is_active(dl_count) && xcls.is_irredundant(); }) );
+        auto dl_count_cpy = dl_count;
+        for(var_t lvl = dl; lvl>0; --lvl) {
+            ++dl_count_cpy[lvl];
+            //VERB(90, "active_cls on lvl " + std::to_string(lvl) + ":   " + std::to_string(active_cls_stack[lvl]));
+            //VERB(90, "active_cls recomputed on lvl " + std::to_string(lvl) + ": " + std::to_string(
+                std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls) { return xcls.is_active(dl_count_cpy) && xcls.is_irredundant(); })
+            ));
+            assert( !no_conflict() || active_cls_stack[lvl] == (var_t) 
+                std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch& xcls) { return xcls.is_active(dl_count_cpy) && xcls.is_irredundant(); })
+            );
+        }
+
 
         //check that trails[dl] contains exactly as many trail_t::IMPLIED_UNIT elements as there are xlit_watches in lineral_watches[dl]
         for(var_t lvl = 0; lvl<=dl; lvl++) {

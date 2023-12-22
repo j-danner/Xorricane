@@ -41,11 +41,11 @@ class xcls {
 
     xlit get_unit() const { assert(is_unit()); return assVS.get_non_zero_el().add_one(); };
 
-    xcls& reduced(const vec<xlit>& assignments) {
+    xcls& reduced(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl) {
       std::list<xlit> lits;
       for(const auto& l : assVS.get_xlits() ) {
         xlit l_(l);
-        l_.reduce(assignments);
+        l_.reduce(alpha, alpha_dl, lvl);
         if(!l_.is_zero()) lits.emplace_back( std::move(l_) );
       }
       assVS = xsys(lits);
@@ -61,16 +61,6 @@ class xcls {
       }
       assVS = xsys(lits);
       return *this;
-    };
-    
-    xcls update(const vec<xlit>& assignments) const {
-      vec<xlit> lits;
-      for(const auto& l : assVS.get_xlits() ) {
-        xlit l_(l);
-        l_.reduce(assignments);
-        if(!l_.is_zero()) lits.emplace_back( std::move(l_) );
-      }
-      return xcls( xsys(lits) );
     };
     
     xcls update(const xsys L) const {

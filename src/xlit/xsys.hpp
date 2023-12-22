@@ -14,7 +14,6 @@
 #else
 
   template<class K, class V>
-  //using pivot_map = std::unordered_map<K,V>;
   using pivot_map = std::map<K,V>;
 #endif
 
