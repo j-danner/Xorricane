@@ -540,12 +540,11 @@ public:
     // fix unit part ('resolving' part)
     xlits[ (size()==1) ? 0 : 1 ] += rs_cls.get_unit();
     const auto [lvl,_,__] = xlits[ (size()==1) ? 0 : 1 ].get_watch_var(alpha_dl, alpha_trail_pos);
+    //TODO do we need to set xlit_dl_count0 here at all?!
     if(lvl < dl_count.size()) {
       xlit_dl_count0[ (size()==1) ? 0 : 1 ] = {lvl, dl_count[lvl]};
     } else {
       xlit_dl_count0[ (size()==1) ? 0 : 1 ] = {0,0};
-      std::cout << "stop here!" << std::endl;
-      //TODO do we need to set xlit_dl_count0 here at all?!
     }
     // add xlits from rs_cls to this
     if(rs_cls.size() == 0) {
