@@ -55,6 +55,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
         //check if clause reduces to unit
         if (cls.deg() == 1) { // lin-eq!
             _L.emplace_back( cls.get_ass_VS().get_non_zero_el().add_one() );
+            _xclss.emplace_back( std::move(cls) );
         } else if (cls.is_zero()) {
             //ignore cls
         } else {
@@ -68,10 +69,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
         init_and_add_xcls_watch( std::move(cls), false );
     }
 
-    assert(active_cls == xclss.size());
-
-    //init xlits
-    for(const auto& [_,it] : _Lsys.get_pivot_poly_idx()) queue_implied_lineral(*it, -1);
+    assert(active_cls == xclss.size() - lineral_queue.size());
 
     //init order_heap and activity_score
     activity_score = vec<double>(num_vars + 1, 1);
@@ -277,7 +275,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
         assert(!learnt_cls.to_xcls().is_zero());
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
-        while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA && TRAIL.back().type != trail_t::LINERAL_IMPLIED_ALPHA && TRAIL.back().type != trail_t::LEARNT_UNIT ) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
+        while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
             pop_trail();
         }
         assert(TRAIL.back().type == trail_t::IMPLIED_ALPHA);
@@ -333,8 +331,6 @@ std::pair<var_t, xcls_watch> solver::analyze() {
 
     //go through trail of current dl -- skip over irrelevant parts
     xcls_watch learnt_cls = get_reason(TRAIL.back());
-    xcls_watch learnt_cls_orig = (trails.back().back().type == trail_t::LINERAL_IMPLIED_ALPHA || trails.back().back().type == trail_t::LEARNT_UNIT) ? xcls_watch( lineral_watches[0][trails.back().back().rs_cls_idxs.top()], alpha_dl ) : xclss[ trails.back().back().rs_cls_idxs.top() ];
-    assert( learnt_cls.to_str() == learnt_cls_orig.to_str() );
 
     assert(learnt_cls.is_unit(dl_count));
     VERB(70, "   * reason clause is   " + BOLD( learnt_cls.to_str() ) + " for UNIT " + learnt_cls.get_unit().to_str() );
@@ -371,7 +367,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
         assert(!learnt_cls.to_xcls().is_zero());
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
-        while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA && TRAIL.back().type != trail_t::LINERAL_IMPLIED_ALPHA && TRAIL.back().type != trail_t::LEARNT_UNIT ) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
+        while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
             assert(!TRAIL.empty());
             pop_trail();
         }
@@ -602,8 +598,8 @@ void solver::GCP(stats &s) {
               const auto [lt,val] = lineral_watches[lvl][i].get_assignment(alpha);
               assert(alpha[lt] == bool3::None);
               const var_t rs = lineral_watches[lvl][i].get_reason();
-              assert( rs < xclss.size() || lvl == 0 );
-              queue_implied_alpha(lt, val, rs < xclss.size() ? rs : i, rs < xclss.size() ? trail_t::IMPLIED_ALPHA : trail_t::LINERAL_IMPLIED_ALPHA);
+              assert(rs < xclss.size());
+              queue_implied_alpha(lt, val, rs, trail_t::IMPLIED_ALPHA);
             }
             break;
           case xlit_upd_ret::UNIT:
@@ -1227,10 +1223,8 @@ void solver::print_trail(std::string lead) const noexcept {
     switch(t) {
       case trail_t::EQUIV:                 return "NEW_EQUIV   ";
       case trail_t::IMPLIED_UNIT:          return "IMPL_UNIT   ";
-      case trail_t::LINERAL_IMPLIED_ALPHA: return "L_IMPL_ALPHA";
       case trail_t::IMPLIED_ALPHA:         return "IMPL_ALPHA  ";
       case trail_t::GUESS:                 return "GUESS       ";
-      case trail_t::LEARNT_UNIT:           return "LRNT_UNIT   ";
     }
     return "";
   };
@@ -1238,7 +1232,7 @@ void solver::print_trail(std::string lead) const noexcept {
   for(const auto& t_dl : trails) {
     var_t i = 0;
     for (const auto& t : t_dl) {
-        assert( (t.type!=trail_t::IMPLIED_ALPHA && t.type!=trail_t::LINERAL_IMPLIED_ALPHA) || alpha_dl[t.ind] == lvl );
+        assert( (t.type!=trail_t::IMPLIED_ALPHA) || alpha_dl[t.ind] == lvl );
         VERB(80, lead+" " + std::to_string(i) + " " + std::to_string(lvl) + " " + trail_t_to_str(t.type) + " " + "x" + std::to_string(t.ind) + " " + b3_to_str( alpha[t.ind] ));
         ++i;
     }

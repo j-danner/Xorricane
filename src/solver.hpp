@@ -22,16 +22,16 @@
 #define TRAIL trails.back()
 
 
-enum class trail_t { EQUIV, IMPLIED_UNIT, IMPLIED_ALPHA, LINERAL_IMPLIED_ALPHA, LEARNT_UNIT, GUESS };
+enum class trail_t { EQUIV, IMPLIED_UNIT, IMPLIED_ALPHA, GUESS };
 
 struct trail_elem {
   var_t ind;
   trail_t type;
-  std::stack<var_t> rs_cls_idxs;
+  std::list<var_t> rs_cls_idxs;
 
   trail_elem() : ind(0), type(trail_t::IMPLIED_UNIT), rs_cls_idxs({(var_t) -1}) {};
   trail_elem(const var_t& _ind, const trail_t& _type, const var_t& _rs_idx) : ind(_ind), type(_type), rs_cls_idxs({_rs_idx}) {};
-  trail_elem(const var_t& _ind, const trail_t& _type, const std::stack<var_t>& _rs) : ind(_ind), type(_type), rs_cls_idxs(_rs) {};
+  trail_elem(const var_t& _ind, const trail_t& _type, const std::list<var_t>& _rs) : ind(_ind), type(_type), rs_cls_idxs(_rs) {};
   trail_elem(const trail_elem& other) : ind(other.ind), type(other.type), rs_cls_idxs(other.rs_cls_idxs) {};
   trail_elem(trail_elem&& other) : ind(other.ind), type(other.type), rs_cls_idxs(other.rs_cls_idxs) {};
 };
@@ -189,16 +189,9 @@ class solver
      * @return var_t idx of new clause; -1 if it was not added to clause database, i.e., cls was already a lineral
      */
     inline var_t add_learnt_cls(xcls_watch&& cls, const bool& redundant = true) {
-        if(!cls.is_unit()) {
-            const var_t i = add_xcls_watch( std::move(cls), redundant, true );
-            utility[i]++;
-            return i;
-        } else {
-            assert(cls.is_unit());
-            add_new_lineral( cls.get_unit() );
-            queue_implied_lineral( cls.get_unit(), lineral_watches[0].size()-1, trail_t::LEARNT_UNIT, cls.get_assigning_lvl() );
-            return -1;
-        }
+      const var_t i = add_xcls_watch( std::move(cls), redundant, true );
+      utility[i]++;
+      return i;
     }
 
 
@@ -229,8 +222,6 @@ class solver
         lineral_watches[dl].pop_back(); //remove unit
         assert(!lineral_watches.empty());
         break;
-      case trail_t::LEARNT_UNIT:
-      case trail_t::LINERAL_IMPLIED_ALPHA:
       case trail_t::IMPLIED_ALPHA:
         //store last_phase
         save_phase();
@@ -251,10 +242,62 @@ class solver
 
     xcls_watch get_reason(const trail_elem& t) {
       assert(t.rs_cls_idxs.size()==1);
-      //if reason is just a lineral at dl 0
-      if(t.type == trail_t::LINERAL_IMPLIED_ALPHA || t.type == trail_t::LEARNT_UNIT) return xcls_watch( lineral_watches[0][t.rs_cls_idxs.top()], alpha_dl ) ;
-      //if reason has to be computed:
-      return xclss[ t.rs_cls_idxs.top() ];
+      return xclss[ t.rs_cls_idxs.back() ];
+      /*
+
+      VERB(95, "c constructing reason clause for "+lit.to_str());
+    #ifndef NDEBUG
+      xlit tmp;
+    #endif
+      //resolve cls to get true reason cls
+      xcls_watch r_cls;
+      rci_t r = 0;
+      for(const auto idx : t.rs_cls_idxs) {
+          #ifndef NDEBUG
+            tmp += l;
+          #endif
+            if(r_cls.is_zero()) { //r_cls has not yet been instantiated
+              r_cls = xclss[idx];
+            } else {
+              bump_score(l);
+              //resolve cls
+              if( l.get_reason() < xclss.size() ) {
+                const auto& r_cls2 = xclss[l.get_reason()];
+                //add (unit of r_cls)+1 to r_cls2, and (unit of r_cls2)+1 to r_cls
+                VERB(95, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
+                r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+                VERB(95, "c and get \nc   "+ BOLD(r_cls.to_str()));
+              #ifndef NDEBUG
+                VERB(95, "c tmp = "+tmp.to_str());
+              #endif
+                VERB(95, "c");
+              } else {
+                assert(lvl == 0 || opt.ca==ca_alg::no); //the reason cls should only be a unit clause if it was deduced at lvl 0 (!)
+                VERB(95, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(l.to_str()));
+                r_cls.add_to_unit( l, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl );
+                VERB(95, "c and get \nc   "+ BOLD(r_cls.to_str()));
+              #ifndef NDEBUG
+                VERB(95, "c tmp = "+tmp.to_str());
+              #endif
+                VERB(95, "c");
+              }
+            }
+            assert( L_.reduce(tmp+lit).is_zero() );
+          }
+        }
+        //TODO can we do a cheap early abort?
+        if( r_cls.get_assigning_lvl() < lvl && r_cls.get_unit().reduced(alpha) == lit) {
+          assert( r_cls.get_unit().reduced(alpha) == lit );
+          goto finalize;
+        }
+      }
+    finalize:
+      assert((tmp+lit).reduced(alpha).is_constant());
+      VERB(80, "c done, reason clause is "+r_cls.to_str()+" for assignment "+lit.to_str());
+      ++idx;
+      //add r_cls to r_clss
+      r_clss.emplace_back( std::move(r_cls) );
+      */
     }
 
 
@@ -325,7 +368,7 @@ class solver
         _reduced_lit.reduce(equiv_lits,equiv_lits_dl,lvl); //reduce equivalent variable
       }
       if(_reduced_lit.is_zero()) return -1; 
-      VERB(65, "c " + std::to_string(lvl) + " : new UNIT " + lit.to_str() + " ~> " + _reduced_lit.to_str() + (type!=trail_t::LINERAL_IMPLIED_ALPHA && type!=trail_t::LEARNT_UNIT ? (rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") : (" with reason clause " + lineral_watches[0][rs].to_str()) ) );
+      VERB(65, "c " + std::to_string(lvl) + " : new UNIT " + lit.to_str() + " ~> " + _reduced_lit.to_str() + (rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
       
       const var_t lt = _reduced_lit.LT();
       //TODO should we always reduce?! consider the following:
@@ -333,7 +376,7 @@ class solver
       //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
       // add to trail //TODO add in propoer position in trail!
 
-      if(type!=trail_t::IMPLIED_ALPHA && type!=trail_t::LINERAL_IMPLIED_ALPHA && type!=trail_t::LEARNT_UNIT) {
+      if(type!=trail_t::IMPLIED_ALPHA) {
         trails[lvl].emplace_back( lt, type, rs);
         const auto& l = lineral_watches[lvl].emplace_back( std::move(_reduced_lit), alpha, alpha_dl, lvl, dl_count, rs );
         assert( l.is_active(dl_count) );
@@ -353,9 +396,9 @@ class solver
           alpha[lt2] = val;
           alpha_dl[lt2] = lvl;
           assert(alpha_dl[lt2] == l.get_assigning_lvl(alpha_dl)); //TODO this should always be true!
-          VERB(70, "c " + std::to_string(lvl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + lit.to_str() + (type!=trail_t::LINERAL_IMPLIED_ALPHA ? (rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") : (" with reason clause " + lineral_watches[0][rs].to_str()) ) );
+          VERB(70, "c " + std::to_string(lvl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + lit.to_str() + (rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
           alpha_trail_pos[lt2] = (var_t) trails[lvl].size()-1;
-          if(rs<xclss.size() && type!=trail_t::LINERAL_IMPLIED_ALPHA && xclss[rs].get_assigning_lvl()!=lvl) {
+          if(rs<xclss.size() && xclss[rs].get_assigning_lvl()!=lvl) {
             xclss[rs].set_assigning_lvl(lvl);
           }
         } else if (l.is_equiv()) { //TODO update to check is_equiv for xlit_watches!!
@@ -374,7 +417,7 @@ class solver
 
         return val!=bool3::None ? lt2 : -1;
       } else {
-          //type now is either IMPLIED_ALPHA or LINERAL_IMPLIED_ALPHA or LEARNT_UNIT, i.e., we already knew that an alpha was implied!
+          //type now is IMPLIED_ALPHA, i.e., we already knew that an alpha was implied!
           assert( _reduced_lit.is_assigning() );
           const var_t lt2 = _reduced_lit.LT();
           const bool3 val = to_bool3( _reduced_lit.has_constant() );
@@ -384,9 +427,9 @@ class solver
           alpha[lt2] = val;
           alpha_dl[lt2] = dl;
           assert(alpha_dl[lt2] == lineral_watches[lvl].back().get_assigning_lvl(alpha_dl)); //TODO this should always be true!
-          VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + _reduced_lit.to_str() + " from UNIT " + lit.to_str() + ( type!=trail_t::LINERAL_IMPLIED_ALPHA && type!=trail_t::LEARNT_UNIT ? (rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") : (" with reason clause " + lineral_watches[0][rs].to_str()) ) );
+          VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + _reduced_lit.to_str() + " from UNIT " + lit.to_str() + (rs<xclss.size() ? " with reason clause " + xclss[rs].to_str() : "") );
           alpha_trail_pos[lt2] = (var_t) trails[lvl].size()-1;
-          if(type!=trail_t::LINERAL_IMPLIED_ALPHA && rs<xclss.size()) xclss[rs].set_assigning_lvl(dl);
+          if(rs<xclss.size()) xclss[rs].set_assigning_lvl(dl);
           return lt2;
       }
     };
@@ -402,9 +445,9 @@ class solver
      * @todo TODO change lin from 'const xlit&' to 'xlit&&' to save copying?
      */
     inline bool queue_implied_lineral(const xlit& lin, const var_t& rs, const trail_t type = trail_t::IMPLIED_UNIT, const var_t lvl= -1) {
-      assert(type==trail_t::IMPLIED_UNIT || type==trail_t::GUESS || type==trail_t::LEARNT_UNIT);
+      assert(type==trail_t::IMPLIED_UNIT || type==trail_t::GUESS);
       //const var_t lvl = lvl_<xclss.size() ? xclss[rs].get_unit_at_lvl() : dl;
-      //if(rs<xclss.size() && type!=trail_t::LEARNT_UNIT && (lvl<alpha.size() ? lvl !=xclss[rs].get_unit_at_lvl() : dl !=xclss[rs].get_unit_at_lvl())) {
+      //if(rs<xclss.size() && (lvl<alpha.size() ? lvl !=xclss[rs].get_unit_at_lvl() : dl !=xclss[rs].get_unit_at_lvl())) {
       //  VERB(10, "c queueing implied lineral at too high dl?!");
       //}
       if(lin.LT()==0) lineral_queue.emplace_front( lin, rs, type, lvl );
@@ -422,7 +465,7 @@ class solver
      * @return always true
      */
     inline bool queue_implied_alpha(const var_t& ind, const bool3& val, const var_t& rs, const trail_t type = trail_t::IMPLIED_ALPHA, const var_t lvl = -1) {
-      assert(type==trail_t::IMPLIED_ALPHA || type==trail_t::LINERAL_IMPLIED_ALPHA);
+      assert(type==trail_t::IMPLIED_ALPHA);
       if(ind==0) lineral_queue.emplace_front( xlit(ind, b3_to_bool(val)), rs, type, lvl );
       else lineral_queue.emplace_back( xlit(ind, b3_to_bool(val)), rs, type, lvl );
       return true;
@@ -959,7 +1002,7 @@ class solver
       }
       // add new cls to watch_lists
       watch_list[ (xclss.back().get_wl0()) ].emplace_back(i);
-      watch_list[ (xclss.back().get_wl1()) ].emplace_back(i);
+      if(xclss.back().size()>1) watch_list[ (xclss.back().get_wl1()) ].emplace_back(i);
       assert(assert_data_structs());
       return i;
     }

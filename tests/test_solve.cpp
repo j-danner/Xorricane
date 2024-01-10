@@ -46,8 +46,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     SECTION( "test3.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test3.xnf");
         auto slvr = solver(clss, opt);
-        //CHECK( slvr.to_str() == "x1+x5 x2+x5 x3+x5 x4+x5 1" );
-        CHECK( slvr.to_str() == "" );
+        CHECK( slvr.to_str() == "x1+x2+1; x1+x5; x2+x3+1; x3+x4+1; x4+x5;" );
     
         stats s = slvr.solve();
         CHECK( s.sat == false ); //UNSAT
@@ -383,7 +382,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     SECTION( "test35.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test35.xnf");
         auto slvr = solver(clss, opt);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
         CHECK( s.sat == true ); //SAT!
