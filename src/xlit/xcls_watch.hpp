@@ -483,7 +483,7 @@ public:
     // check if clause needs any processing
     if (!is_active(dl_count)) {
       assert(is_sat(dl_count) || is_unit(dl_count));
-      return xcls_upd_ret::SAT; // NOTE here it might also be a UNIT, but it did not become one by this update!
+      return is_sat(dl_count) ? xcls_upd_ret::SAT : xcls_upd_ret::UNIT; // NOTE here it might also be a UNIT, but it did not become one by this update!
     }
 
     // check if -- and which ws need to be updated
