@@ -27,12 +27,13 @@ enum class trail_t { EQUIV, IMPLIED_UNIT, IMPLIED_ALPHA, LINERAL_IMPLIED_ALPHA, 
 struct trail_elem {
   var_t ind;
   trail_t type;
-  var_t rs_cls_idx;
+  std::stack<var_t> rs_cls_idxs;
 
-  trail_elem() : ind(0), type(trail_t::IMPLIED_UNIT), rs_cls_idx(-1) {};
-  trail_elem(const var_t& _ind, const trail_t& _type, const var_t& _rs) : ind(_ind), type(_type), rs_cls_idx(_rs) {};
-  trail_elem(const trail_elem& other) : ind(other.ind), type(other.type), rs_cls_idx(other.rs_cls_idx) {};
-  trail_elem(trail_elem&& other) : ind(other.ind), type(other.type), rs_cls_idx(other.rs_cls_idx) {};
+  trail_elem() : ind(0), type(trail_t::IMPLIED_UNIT), rs_cls_idxs({(var_t) -1}) {};
+  trail_elem(const var_t& _ind, const trail_t& _type, const var_t& _rs_idx) : ind(_ind), type(_type), rs_cls_idxs({_rs_idx}) {};
+  trail_elem(const var_t& _ind, const trail_t& _type, const std::stack<var_t>& _rs) : ind(_ind), type(_type), rs_cls_idxs(_rs) {};
+  trail_elem(const trail_elem& other) : ind(other.ind), type(other.type), rs_cls_idxs(other.rs_cls_idxs) {};
+  trail_elem(trail_elem&& other) : ind(other.ind), type(other.type), rs_cls_idxs(other.rs_cls_idxs) {};
 };
 
 struct lineral_queue_elem {
@@ -246,6 +247,14 @@ class solver
       }
       TRAIL.pop_back();
       return true;
+    }
+
+    xcls_watch get_reason(const trail_elem& t) {
+      assert(t.rs_cls_idxs.size()==1);
+      //if reason is just a lineral at dl 0
+      if(t.type == trail_t::LINERAL_IMPLIED_ALPHA || t.type == trail_t::LEARNT_UNIT) return xcls_watch( lineral_watches[0][t.rs_cls_idxs.top()], alpha_dl ) ;
+      //if reason has to be computed:
+      return xclss[ t.rs_cls_idxs.top() ];
     }
 
 
@@ -860,6 +869,20 @@ class solver
         }
       }
       assert(tmp.is_one());
+    #ifdef USE_EQUIV
+      //since all watched linerals are reduced w.r.t. equiv lits, such equivalent literals may still be present in r_cls; i.e., we need to resolve with those!
+      //note: r_cls should be assigning!
+      while(r_cls.get_assigning_lvl()>dl) {
+        assert( equiv_lits[r_cls.get_wl1()].ind > 0 );
+        assert( equiv_lits[r_cls.get_wl1()].reason < xclss.size() );
+        const auto& r_cls2 = xclss[ equiv_lits[r_cls.get_wl1()].reason ];
+        //add (unit of r_cls)+1 to r_cls2, and (unit of r_cls2)+1 to r_cls
+        VERB(85, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
+        r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+        VERB(85, "c and get \nc   "+ BOLD(r_cls.to_str()));
+      }
+    #endif
+      assert(r_cls.get_assigning_lvl()<=dl);
 
     finalize:
       mzd_free(b);

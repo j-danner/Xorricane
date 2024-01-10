@@ -547,7 +547,7 @@ public:
       xlit_dl_count0[ (size()==1) ? 0 : 1 ] = {0,0};
     }
     // add xlits from rs_cls to this
-    if(rs_cls.size() == 0) {
+    if(rs_cls.size() == 1) {
       const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
       assert(ret == xcls_upd_ret::UNIT);
       assert(is_unit(dl_count));
@@ -1227,23 +1227,25 @@ public:
   void operator=(const xcls_watch &o) {
     xlits = o.xlits;
     shared_part = o.shared_part;
-    SAT_dl_count = o.SAT_dl_count;
     xlit_dl_count0 = o.xlit_dl_count0;
+    SAT_dl_count = o.SAT_dl_count;
     irredundant = o.irredundant;
     delete_on_cleanup = o.delete_on_cleanup;
+    assigning_lvl = o.assigning_lvl;
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
     ptr_cache[1] = o.ptr_cache[1];
   };
 
-  void operator=(const xcls_watch &&o) {
+  void operator=(xcls_watch &&o) {
     xlits = std::move(o.xlits);
     shared_part = std::move(o.shared_part);
-    SAT_dl_count = std::move(o.SAT_dl_count);
     xlit_dl_count0 = std::move(o.xlit_dl_count0);
+    SAT_dl_count = o.SAT_dl_count;
     irredundant = o.irredundant;
     delete_on_cleanup = o.delete_on_cleanup;
+    assigning_lvl = o.assigning_lvl;
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
