@@ -1181,12 +1181,12 @@ public:
   bool assert_data_struct() const {
     assert(xlit_dl_count0.size() == xlits.size());
     // sanity check to see whether ws[i] is actually contained in xlits[i]
-    assert(size()==0 || std::find(xlits[0].begin(), xlits[0].end(), ptr_ws(0)) != xlits[0].end());
+    assert(size()==0 || xlits[0].is_zero() || std::find(xlits[0].begin(), xlits[0].end(), ptr_ws(0)) != xlits[0].end());
     assert(size()<2 || std::find(xlits[1].begin(), xlits[1].end(), ptr_ws(1)) != xlits[1].end());
 
     assert(size()<2 || ptr_ws(0) != ptr_ws(1));
 
-    assert(size()==0 || !xlits[0].is_constant());
+    assert(size()==0 || (size()==1 && xlits[0].is_zero()) || !xlits[0].is_constant());
     assert(size()<2 || !xlits[1].is_constant());
 
     // check that xlits[0] and xlits[1] share no inds!
