@@ -29,12 +29,26 @@ class xlit_watch : public xlit
     /**
      * @brief index of reason clause
      */
-    var_t reason_cls_idx;
+    std::list<var_t> reason_cls_idxs;
 
   public:
     xlit_watch() {};
-    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<dl_c_t>& dl_count, const var_t& rs) noexcept : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); };
-    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<dl_c_t>& dl_count, const var_t& rs) noexcept : xlit(lit), dl_c({lvl, dl_count[lvl]}), reason_cls_idx(rs) { init(alpha, alpha_dl); }
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<dl_c_t>& dl_count) noexcept : xlit(lit), dl_c({lvl, dl_count[lvl]}), reason_cls_idxs({}) { init(alpha, alpha_dl, lvl); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<dl_c_t>& dl_count) noexcept : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}), reason_cls_idxs({}) { init(alpha, alpha_dl, lvl); };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<dl_c_t>& dl_count, const var_t& rs) noexcept : xlit(lit), dl_c({lvl, dl_count[lvl]}), reason_cls_idxs({rs}) { init(alpha, alpha_dl, lvl); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<dl_c_t>& dl_count, const var_t& rs) noexcept : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}), reason_cls_idxs({rs}) { 
+      init(alpha, alpha_dl, lvl);
+    };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<dl_c_t>& dl_count, const std::list<var_t>& rs) noexcept : xlit(lit), dl_c({lvl, dl_count[lvl]}), reason_cls_idxs(rs) { init(alpha, alpha_dl, lvl); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl, const vec<dl_c_t>& dl_count, const std::list<var_t>& rs) noexcept : xlit(std::move(lit)), dl_c({lvl, dl_count[lvl]}), reason_cls_idxs(rs) { init(alpha, alpha_dl, lvl); };
+    //copy ctor
+    xlit_watch(const xlit_watch& o) noexcept : xlit(o), dl_c(o.dl_c), reason_cls_idxs(o.reason_cls_idxs) {
+      ws[0] = o.ws[0]; ws[1]=o.ws[1]; ws[2]=o.ws[2];
+    }
+    //mv ctor
+    xlit_watch(xlit_watch&& o) noexcept : xlit(std::move(o)), dl_c(std::move(o.dl_c)), reason_cls_idxs(std::move(o.reason_cls_idxs)) {
+      std::swap(ws, o.ws);
+    }
 
     ~xlit_watch() = default;
     
@@ -78,6 +92,10 @@ class xlit_watch : public xlit
       assert( assert_data_struct(alpha) );
     }
 
+    void init(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t lvl) {
+      reduce(alpha, alpha_dl, lvl);
+      init(alpha, alpha_dl);
+    }
 
     /**
      * @brief return the watched literal
@@ -102,7 +120,7 @@ class xlit_watch : public xlit
      * @return true iff lt is watched
      */
     bool watches(const var_t& lt) const {
-      return idxs[ws[0]] == lt || idxs[ws[1]] == lt;
+      return !idxs.empty() && (idxs[ws[0]] == lt || idxs[ws[1]] == lt);
     };
 
 
@@ -197,7 +215,7 @@ class xlit_watch : public xlit
      * @brief returns the reason clause index
      * @return var_t reason clause index
      */
-    var_t get_reason() const { return reason_cls_idx; }
+    const std::list<var_t>& get_reason_idxs() const { return reason_cls_idxs; }
 
     /**
      * @brief removes literal upd_lt from lineral, if is present
@@ -207,6 +225,7 @@ class xlit_watch : public xlit
      * @return true iff upd_lt was removed
      */
     bool rm(const var_t lt, const bool3 val) {
+      if(idxs.empty()) return false;
       assert( !watches(lt) );
       const auto wl0 = idxs[ws[0]];
       const auto wl1 = idxs[ws[1]];
@@ -266,4 +285,20 @@ class xlit_watch : public xlit
       }
       return true;
     };
+
+    xlit_watch& operator=(xlit_watch&& other) noexcept {
+      std::swap(ws, other.ws);
+      dl_c = std::move(other.dl_c);
+      reason_cls_idxs = std::move(other.reason_cls_idxs);
+      xlit::operator=(other);
+      return *this;
+    }
+    
+    xlit_watch& operator=(const xlit_watch& other) noexcept {
+      ws[0] = other.ws[0]; ws[1] = other.ws[1]; ws[2] = other.ws[2];
+      dl_c = other.dl_c;
+      reason_cls_idxs = other.reason_cls_idxs;
+      xlit::operator=(other);
+      return *this;
+    }
 };

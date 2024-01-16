@@ -1154,7 +1154,7 @@ public:
    */
   inline var_t get_inactive_lvl(const vec<dl_c_t> &dl_count) const {
     assert(is_inactive(dl_count)); // implies is_unit(dl_count) OR is_sat(dl_count)
-    return is_unit(dl_count) ? xlit_dl_count0[0].first : SAT_dl_count.first;
+    return xlit_dl_count0.empty() ? 0 : (is_unit(dl_count) ?  xlit_dl_count0[0].first : SAT_dl_count.first);
   }
 
   inline void set_assigning_lvl(const var_t &lvl) {

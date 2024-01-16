@@ -17,7 +17,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     L_watch_list.resize(num_vars+1);
     //assignments_list.resize(opt_.num_vars+1);
     
-    lineral_watches = vec<vec<xlit_watch>>(num_vars+1, vec<xlit_watch>() );
+    lineral_watches = vec<std::list<xlit_watch>>(num_vars+1, std::list<xlit_watch>() );
     
     // init assignments
     alpha = vec<bool3>(num_vars + 1, bool3::None);
@@ -112,6 +112,7 @@ void solver::backtrack(const var_t& lvl) {
     while(dl>lvl) {
         while(!TRAIL.empty()) { pop_trail(); };
         trails.pop_back();
+        lineral_watches[dl].clear();
         assert(lineral_watches[dl].empty());
         //adapt dl
         --dl;
@@ -121,13 +122,13 @@ void solver::backtrack(const var_t& lvl) {
     }
     assert(dl==lvl);
 
+    //cleanup lineral_queue
+    lineral_queue.clear();
+
     // check active_cls count
     //VERB(90, "active_cls restored:   " + std::to_string(active_cls))
     //VERB(90, "active_cls recomputed: " + std::to_string(std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); })))
     assert(active_cls == (var_t) std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); }));
-
-    //cleanup lineral_queue
-    lineral_queue.clear();
 
   #ifndef NDEBUG
     print_trail();
@@ -295,7 +296,6 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
 
         learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
     }
-    // clean-up trail!
     
     VERB(70, "   * ");
     VERB(70, "   * learnt clause is " + BOLD( learnt_cls.to_str() ) );
@@ -566,44 +566,41 @@ void solver::GCP(stats &s) {
         //find new implied alphas! -- propagate to watched units
         auto it = L_watch_list[upd_lt].begin();
         while(it != L_watch_list[upd_lt].end()) {
-          const auto [lvl, i, dl_, dl_c] = *it;
-          //if assignments_watch[i] has been removed and possibly filled with another literal between adding it to this watch-list in the first place, we have to fix the watching scheme now!
-          if(i>=lineral_watches[lvl].size() || dl_count[dl_] != dl_c) {
+          const auto [lvl, lin, dl_c] = *it;
+          auto& lin_w = *lin;
+          //if lin_w has been removed and possibly, we have to fix the watching scheme now!
+          if(dl_count[lvl] != dl_c) {
               it = L_watch_list[upd_lt].erase( it );
               continue;
           }
-          assert(lineral_watches[lvl][i].watches(upd_lt));
+          assert(lin_w.watches(upd_lt));
           //skip if it is already assigned && it does not contradict alpha[i]
           //TODO optimize! i.e., offer a function that checks if it is was already assigned the last time it was checked! (use dl_count?!)
-          const auto& [lt,val] = lineral_watches[lvl][i].get_assignment(alpha);
+          const auto& [lt,val] = lin_w.get_assignment(alpha);
           if(val!=bool3::None && alpha[lt] == val) {
             ++it;
             continue;
           }
-          const auto& [new_wl, ret] = lineral_watches[lvl][i].update(upd_lt, alpha);
+          const auto& [new_wl, ret] = lin_w.update(upd_lt, alpha);
           //if watched-literal has changed, i.e., new_wl != 0; update watch-list
           if(new_wl != upd_lt) {
               //rm *it from current watch-list:
               it = L_watch_list[upd_lt].erase( it );
               //add i to newly watched literal:
-              L_watch_list[new_wl].push_back({lvl, i, dl_, dl_c});
+              L_watch_list[new_wl].push_back({lvl, lin, dl_c});
           } else {
               ++it;
           }
           switch (ret) {
           case xlit_upd_ret::ASSIGNING:
             {
-              assert( lineral_watches[lvl][i].is_assigning(alpha) );
+              assert( lin_w.is_assigning(alpha) );
               // update alpha
-              const auto [lt,val] = lineral_watches[lvl][i].get_assignment(alpha);
-              assert(alpha[lt] == bool3::None);
-              const var_t rs = lineral_watches[lvl][i].get_reason();
-              assert(rs < xclss.size());
-              queue_implied_alpha(lt, val, rs, trail_t::IMPLIED_ALPHA);
+              queue_implied_alpha(lin, dl);
             }
             break;
           case xlit_upd_ret::UNIT:
-              assert(!lineral_watches[lvl][i].is_assigning(alpha));
+              assert(!lin_w.is_assigning(alpha));
               break;
           }
         }
@@ -649,10 +646,10 @@ void solver::GCP(stats &s) {
                 decr_active_cls(i);
                 // NEW LIN-EQS
                 new_unit = std::move(xclss[i].get_unit());
-                // add to assignments
-                if( queue_implied_lineral(new_unit, i) ) {
-                    ++s.new_px_upd;
-                }
+                // add to lineral_watches
+                lineral_watches[dl].emplace_back( std::move(new_unit), alpha, alpha_dl, dl, dl_count, i );
+                queue_implied_lineral( std::prev(lineral_watches[dl].end()) );
+                ++s.new_px_upd;
                 break;
             case xcls_upd_ret::NONE:
                 //assert(xclss[i].is_none(alpha));
@@ -810,7 +807,8 @@ void solver::dpll_solve(stats &s) {
             const auto [L,_] = get_assignments_xsys();
             if (!L.is_consistent()) {
                 //enforce backtracking!
-                add_implied_lineral(xlit(0, false), -1);
+                lineral_watches[dl].emplace_back( xlit(0, false), alpha, alpha_dl, dl, dl_count );
+                add_implied_lineral(std::prev(lineral_watches[dl].end()), trail_t::GUESS, dl);
             } else {
                 solve_L(L, s);
 
@@ -1117,7 +1115,7 @@ std::string solver::to_xnf_str() const noexcept {
 #else
     bool solver::assert_data_structs() const noexcept {
         //ensure that dl_count[0] is {0,1} as soon as solving started
-        assert( dl_count[1]==0 || dl_count[0]==1 );
+        assert( dl_count.size()==1 || dl_count[1]==0 || dl_count[0]==1 );
         
         //sanity check on alpha_dl
         for([[maybe_unused]] const auto lvl : alpha_dl) assert( lvl <= dl || lvl == (var_t) -1 );
@@ -1141,9 +1139,9 @@ std::string solver::to_xnf_str() const noexcept {
             auto it = L_watch_list.begin();
             var_t idx = 0;
             while(it != L_watch_list.end()) {
-                for([[maybe_unused]] auto [lvl, i, dl_, dl_c] : *it) {
-                    assert( i>=lineral_watches[lvl].size() || dl_count[dl_]!=dl_c || lineral_watches[lvl][i].watches( idx ) || lineral_watches[lvl][i].to_xlit().is_one() || lineral_watches[lvl][i].to_xlit().is_zero() );
-                    assert( lvl == dl_ );
+                for([[maybe_unused]] auto [lvl, lin, dl_c] : *it) {
+                    const auto& lin_w = *lin;
+                    assert( dl_count[lvl]!=dl_c || lin_w.watches( idx ) || lin_w.to_xlit().is_one() || lin_w.to_xlit().is_zero() );
                 }
                 ++it; ++idx;
             }
@@ -1176,11 +1174,13 @@ std::string solver::to_xnf_str() const noexcept {
 
 
         //check that trails[dl] contains exactly as many trail_t::IMPLIED_UNIT elements as there are xlit_watches in lineral_watches[dl]
-        for(var_t lvl = 0; lvl<=dl; lvl++) {
-            assert( (var_t) std::count_if(trails[lvl].begin(), trails[lvl].end(), [&](const trail_elem& t) { return t.type==trail_t::IMPLIED_UNIT || t.type==trail_t::GUESS; }) == (var_t) lineral_watches[lvl].size() );
+        for(var_t lvl = 0; lvl<dl; lvl++) {
             for(const auto& [ind, type, rs] : trails[lvl]) {
                 assert( alpha[ind]==bool3::None || alpha_dl[ind]<=dl );
             }
+        }
+        for(const auto& [ind, type, rs] : trails[dl]) {
+            assert( alpha[ind]==bool3::None || alpha_dl[ind]<=dl );
         }
 
       #ifndef USE_EQUIV
