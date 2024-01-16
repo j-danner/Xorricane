@@ -332,7 +332,7 @@ class solver
         assert(active_cls_stack[j]>0);
         --active_cls_stack[j];
       }
-     #ifndef NDEBUG
+     #if !defined(NDEBUG) && DEBUG_SLOW
       //check if active_cls is updated to correct lvl!
       auto dl_count_cpy = dl_count;
       for(var_t lvl = dl; lvl>0; --lvl) {

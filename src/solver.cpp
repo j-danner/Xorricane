@@ -665,7 +665,7 @@ void solver::GCP(stats &s) {
         
         //if we propagated on dl 0, remove all upd_lt from lineral_watches AND from xclss, so that they only occur in the watched clauses.
         if(dl == 0) { remove_fixed_alpha(upd_lt); };
-        assert(assert_data_structs());
+        assert_slow(assert_data_structs());
     }
     assert(lineral_queue.empty() || !no_conflict());
 

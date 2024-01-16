@@ -43,7 +43,7 @@ class xsys
      * @note necessary to have the iterators point to the correct list as required in, e.g., cpy- and mv-ctor
      */
     inline void fix_pivot_poly_idx() {
-      assert( to_str() == xsys(xlits).to_str() );
+      assert_slow( to_str() == xsys(xlits).to_str() );
       pivot_poly_its.clear();
       for(auto it = xlits.begin(); it!=xlits.end(); ++it) {
         pivot_poly_its[ it->LT() ] = it;

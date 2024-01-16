@@ -22,6 +22,7 @@
 #include <boost/container/adaptive_pool.hpp>
 
 //#define USE_EQUIV
+//#define DEBUG_SLOW
 
 //verbosity output
 #ifdef VERBOSITY
@@ -31,6 +32,13 @@
 #endif
 
 #define BOLD(str) ("\x1b[1m"+str+"\x1b[0m")
+
+#if defined(DEBUG_SLOW) && !defined(NDEBUG)
+  #define assert_slow(expr) assert(expr)
+#else
+  #define assert_slow(expr) {}
+#endif
+
 
 
 //type for variable numbering (must be unsigned; as (var_t)-1 must be bigger than all other values...)
