@@ -602,7 +602,7 @@ class solver
       //TODO not memory efficient! we should really use PLUQ or PLE decomposition below and work from there...
       
       //compute rref
-      const rci_t rank = mzd_echelonize_pluq(M, true); //should we use mzd_echelonize instead?
+      const rci_t rank = mzd_echelonize_m4ri(M, true, 0); //should we use mzd_echelonize instead?
       
       //read results
       std::list<xlit> xlits_;
@@ -808,7 +808,7 @@ class solver
       //mzd_print(M);
 
       //compute rref
-      const rci_t rank = mzd_echelonize_pluq(M, true); //should we use mzd_echelonize instead?
+      const rci_t rank = mzd_echelonize_m4ri(M, true, 0); //should we use mzd_echelonize instead?
       
       //mzd_print(M);
       //read results

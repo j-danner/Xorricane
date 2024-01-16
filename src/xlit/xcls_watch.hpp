@@ -726,7 +726,7 @@ public:
     assert(r <= nrows); //reducing with alpha at dl 0 might reduce some xlits to 0
 
     //compute rref
-    const rci_t rank = mzd_echelonize_pluq(M, true); //should we use mzd_echelonize instead?
+    const rci_t rank = mzd_echelonize_m4ri(M, true, 0); //should we use mzd_echelonize instead?
     //read results
     vec<xlit> xlits_; xlits_.reserve(rank);
     for(rci_t r = 0; r<rank; ++r) {
@@ -893,7 +893,7 @@ public:
     assert(r <= nrows); //reducing with alpha at dl 0 might reduce some xlits to 0
 
     //compute rref
-    const rci_t rank = mzd_echelonize_pluq(M, true); //should we use mzd_echelonize instead?
+    const rci_t rank = mzd_echelonize_m4ri(M, true, 0); //should we use mzd_echelonize instead?
     //read results
     vec<xlit> xlits_; xlits_.reserve(rank);
     for(rci_t r = 0; r<rank; ++r) {

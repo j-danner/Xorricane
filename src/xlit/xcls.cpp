@@ -78,7 +78,7 @@ vec<xlit> intersectVS(const xsys& U, const xsys& W) {
     assert(r == nrows);
 
     //compute rref
-    const rci_t rank = mzd_echelonize_pluq(M, true);
+    const rci_t rank = mzd_echelonize_m4ri(M, true, 0);
     //read results
     vec<xlit> int_lits;
     r = rank-1;
