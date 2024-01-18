@@ -331,6 +331,7 @@ public:
     ptr_cache[1] = o.ptr_cache[1];
   };
 
+/*
   xcls_watch(const xlit_watch& lin, const vec<var_t>& alpha_dl) noexcept {
     irredundant = false;
     delete_on_cleanup = false;
@@ -347,6 +348,7 @@ public:
     ptr_cache[0] = lin.get_wl0();
     assigning_lvl = lin.get_assigning_lvl(alpha_dl);
   }
+*/
 
   xcls_watch(const xsys &lits) noexcept {
     assert(lits.dim() >= 1);
@@ -543,8 +545,8 @@ public:
     assert(size()>0);
     // fix unit part ('resolving' part)
     xlits[ (size()==1) ? 0 : 1 ] += rs_cls.get_unit();
+    //@todo do we need to set xlit_dl_count0 here at all?!
     const auto [lvl,_,__] = xlits[ (size()==1) ? 0 : 1 ].get_watch_var(alpha_dl, alpha_trail_pos);
-    //TODO do we need to set xlit_dl_count0 here at all?!
     if(lvl < dl_count.size()) {
       xlit_dl_count0[ (size()==1) ? 0 : 1 ] = {lvl, dl_count[lvl]};
     } else {
@@ -1015,7 +1017,6 @@ public:
     vec<xlit> xlits_cpy(xlits);
     if(size()>0) xlits_cpy[0] += shared_part;
     if(size()>1) xlits_cpy[1] += shared_part;
-    //return xcls( xsys( xlits_cpy ) );
     return xcls( std::move( xsys( std::move(xlits_cpy) ) ) );
   };
 
@@ -1126,7 +1127,9 @@ public:
    *
    * @return xlit unit that this clause was reduced to
    */
-  inline xlit get_unit() const { return xlits.size() > 1 ? (xlits[1] + shared_part).add_one() : (xlits.size() == 0 ? xlit().add_one() : xlits[0].plus_one()); };
+  inline xlit get_unit() const { 
+    return xlits.size() > 1 ? (xlits[1] + shared_part).add_one() : (xlits.size() == 0 ? xlit(0,false) : xlits[0].plus_one());
+  };
 
   inline bool unit_contains(const var_t &ind) const {
     return shared_part[ind] || (xlits.size() > 1 ? xlits[1][ind] : xlits[0][ind]);
@@ -1157,6 +1160,7 @@ public:
    * @return var_t lvl at which clause got inactive
    */
   inline var_t get_inactive_lvl(const vec<dl_c_t> &dl_count) const {
+    //@todo can't we get this information from the dl of the first watched lineralsss
     assert(is_inactive(dl_count)); // implies is_unit(dl_count) OR is_sat(dl_count)
     return xlit_dl_count0.empty() ? 0 : (is_unit(dl_count) ?  xlit_dl_count0[0].first : SAT_dl_count.first);
   }
@@ -1212,9 +1216,8 @@ public:
       assert(dl_count[SAT_dl_count.first] == SAT_dl_count.second);
       assert(to_xcls().reduced(alpha).is_zero());
     }
-    // if( alpha[ ptr_ws(1) ] != bool3::None ) assert( !xlits[1].eval(alpha) );
     if( size()>0 && dl_count[xlit_dl_count0[0].first] == xlit_dl_count0[0].second ) assert( !eval0(alpha) );
-    if( size()>1  && dl_count[xlit_dl_count0[1].first] == xlit_dl_count0[1].second ) assert( !eval1(alpha) || is_unit(dl_count) );
+    if( size()>1 && dl_count[xlit_dl_count0[1].first] == xlit_dl_count0[1].second ) assert( !eval1(alpha) || is_unit(dl_count) );
     for(var_t i = 2; i<xlits.size(); ++i) {
       if( dl_count[xlit_dl_count0[i].first] == xlit_dl_count0[i].second ) assert( xlits[i].eval(alpha) );
     }
@@ -1227,7 +1230,7 @@ public:
         || shared_part.eval(sol)^xlits[0].eval(sol)
         || (xlits.size()>1 && shared_part.eval(sol)^xlits[1].eval(sol));
   };
-  
+
   void operator=(const xcls_watch &o) {
     xlits = o.xlits;
     shared_part = o.shared_part;
