@@ -537,7 +537,7 @@ void solver::remove_fixed_alpha(const var_t upd_lt) {
     const bool3 val = alpha[upd_lt];
     //rm upd_lt from lineral_watches[0] (all other levels are empty!)
     for(auto& lin_watch : lineral_watches[0]) {
-        if(lin_watch.is_active(dl_count) && !lin_watch.watches(upd_lt)) {
+        if(lin_watch.is_active(alpha) && !lin_watch.watches(upd_lt)) {
             lin_watch.rm(upd_lt, val);
         }
     }
@@ -574,14 +574,8 @@ void solver::GCP(stats &s) {
               continue;
           }
           assert(lin_w.watches(upd_lt));
-          //skip if it is already assigned && it does not contradict alpha[i]
-          //TODO optimize! i.e., offer a function that checks if it is was already assigned the last time it was checked! (use dl_count?!)
-          const auto& [lt,val] = lin_w.get_assignment(alpha);
-          if(val!=bool3::None && alpha[lt] == val) {
-            ++it;
-            continue;
-          }
-          const auto& [new_wl, ret] = lin_w.update(upd_lt, alpha);
+          if(!lin_w.is_active(dl_count)) { ++it; continue; }
+          const auto& [new_wl, ret] = lin_w.update(upd_lt, alpha, dl, dl_count);
           //if watched-literal has changed, i.e., new_wl != 0; update watch-list
           if(new_wl != upd_lt) {
               //rm *it from current watch-list:
@@ -595,6 +589,7 @@ void solver::GCP(stats &s) {
           case xlit_upd_ret::ASSIGNING:
             {
               assert( lin_w.is_assigning(alpha) );
+              assert( !lin_w.is_active(alpha) );
               // update alpha
               queue_implied_alpha(lin, dl);
             }
@@ -647,7 +642,7 @@ void solver::GCP(stats &s) {
                 // NEW LIN-EQS
                 new_unit = std::move(xclss[i].get_unit());
                 // add to lineral_watches
-                lineral_watches[dl].emplace_back( std::move(new_unit), alpha, alpha_dl, dl, dl_count, i );
+                lineral_watches[dl].emplace_back( std::move(new_unit), alpha, alpha_dl, dl_count, i );
                 queue_implied_lineral( std::prev(lineral_watches[dl].end()) );
                 ++s.new_px_upd;
                 break;
@@ -707,11 +702,11 @@ void solver::dpll_solve(stats &s) {
     
     // stack for xsys that store alternative dec
     xsys new_xsys = xsys();
-    std::stack<xsys> dec_stack;
+    std::stack<xlit> dec_stack;
 
     // GCP -- before making decisions!
     GCP(s);
-    if( no_conflict() && need_linalg_inprocessing() ) {
+    if( no_conflict() ) {
         ++s.no_linalg;
         auto r_clss = find_implied_alpha_from_linerals();
         for(auto& r_cls : r_clss) {
@@ -750,7 +745,7 @@ void solver::dpll_solve(stats &s) {
                 backtrack(dl-1);
                 VERB(201, to_str());
 
-                add_new_guess( dec_stack.top() ); //add as 'guess', i.e., trail and reason stacks are ill-managed here, but that is irrelevant since we do not use those in the dpll-type solver!
+                add_new_guess( std::move(dec_stack.top()) ); //add as 'guess', i.e., trail and reason stacks are ill-managed here, but that is irrelevant since we do not use those in the dpll-type solver!
                 VERB(201, to_str());
                 // decay + bump scores of conflict clause!
                 //bump_score( dec_stack.top() );
@@ -779,7 +774,7 @@ void solver::dpll_solve(stats &s) {
             dpll_gcp:
             GCP(s);
             //linear algebra on linerals
-            if( no_conflict() && need_linalg_inprocessing() ) {
+            if( need_linalg_inprocessing() ) {
                 ++s.no_linalg;
                 auto r_clss = find_implied_alpha_from_linerals();
                 for(auto& r_cls : r_clss) {
@@ -807,7 +802,7 @@ void solver::dpll_solve(stats &s) {
             const auto [L,_] = get_assignments_xsys();
             if (!L.is_consistent()) {
                 //enforce backtracking!
-                lineral_watches[dl].emplace_back( xlit(0, false), alpha, alpha_dl, dl, dl_count );
+                lineral_watches[dl].emplace_back( xlit(0, false), alpha, alpha_dl, dl_count );
                 add_implied_lineral(std::prev(lineral_watches[dl].end()), trail_t::GUESS, dl);
             } else {
                 solve_L(L, s);
@@ -879,7 +874,7 @@ void solver::solve(stats &s) {
 
     // GCP -- before making decisions!
     GCP(s);
-    if( no_conflict() && need_linalg_inprocessing() ) {
+    if( no_conflict() ) {
         ++s.no_linalg;
         auto r_clss = find_implied_alpha_from_linerals();
         for(auto& r_cls : r_clss) {
@@ -949,7 +944,7 @@ void solver::solve(stats &s) {
             cdcl_gcp:
             GCP(s);
             //linear algebra on linerals
-            if( no_conflict() && need_linalg_inprocessing() ) {
+            if( need_linalg_inprocessing() ) {
                 ++s.no_linalg;
                 auto r_clss = find_implied_alpha_from_linerals();
                 for(auto& r_cls : r_clss) {
@@ -1079,7 +1074,7 @@ std::string solver::to_xnf_str() const noexcept {
     //add linear polys
     for(const auto& lw_dl : lineral_watches) {
         for(const auto& l : lw_dl) {
-            if(!l.is_active(dl_count)) continue;
+            if(!l.is_active(alpha)) continue;
             xlit lin = l.to_xlit();
             lin.reduce(alpha);
             if(lin.is_zero()) continue;

@@ -37,9 +37,9 @@ class xcls {
 
     bool is_zero() const { return assVS.get_pivot_poly_idx().contains(0) || assVS.size()==0; };
 
-    bool is_unit() const { return deg()==1; };
+    bool is_unit() const { return deg()<=1; };
 
-    xlit get_unit() const { assert(is_unit()); return assVS.get_non_zero_el().add_one(); };
+    xlit get_unit() const { assert(is_unit()); return deg()==1 ? assVS.get_non_zero_el().add_one() : xlit(0, false); };
 
     xcls& reduced(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl) {
       std::list<xlit> lits;
