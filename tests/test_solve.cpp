@@ -8,7 +8,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
   #ifndef NDEBUG
     int la_sch = GENERATE(0,1,5);
     dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lex);
-    phase_opt po = phase_opt::save; //GENERATE(phase_opt::rand, phase_opt::save, phase_opt::save_inv);
+    phase_opt po = GENERATE(phase_opt::rand, phase_opt::save, phase_opt::save_inv);
     ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::fuip_opt);
     int verb = 80;
   #else
@@ -378,16 +378,6 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         CHECK( s.sat == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
-
-    SECTION( "test35.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test35.xnf");
-        auto slvr = solver(clss, opt);
-        //slvr.get_opts()->verb = 90;
-
-        stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
-        CHECK( check_sols(clss.cls, s.sols) );
-    }
     
     SECTION( "test36.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test36.xnf");
@@ -470,6 +460,43 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
 
         stats s = slvr.solve();
         CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test49.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test49.xnf");
+        auto slvr = solver(clss);
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test50.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test50.xnf");
+        auto slvr = solver(clss);
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test51.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test51.xnf");
+        auto slvr = solver(clss);
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
+    SECTION( "test35.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test35.xnf");
+        auto slvr = solver(clss, opt);
+        slvr.get_opts()->verb = 95;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 }
@@ -708,7 +735,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     SECTION( "test1.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test1.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 100;
+        //slvr.get_opts()->verb = 100;
     
         stats s = slvr.solve();
         CHECK( s.sat == true );
@@ -718,6 +745,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     SECTION( "test2.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test2.xnf");
         auto slvr = solver(clss);
+        slvr.get_opts()->verb = 0;
     
         stats s = slvr.solve();
         CHECK( s.sat == true );
@@ -881,13 +909,27 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test42.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
-        slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
+        slvr.get_opts()->ca = ca_alg::no; //GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
         slvr.get_opts()->sol_count = -1;
-        slvr.get_opts()->lin_alg_schedule = GENERATE(0,1,40);
-        slvr.get_opts()->dh = GENERATE(dec_heu::lex, dec_heu::vsids);
+        slvr.get_opts()->lin_alg_schedule = 1; //GENERATE(0,1,40);
+        slvr.get_opts()->dh = dec_heu::lex; //GENERATE(dec_heu::lex, dec_heu::vsids);
 
         stats s = slvr.solve();
         CHECK( s.sols.size() == 8 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test51.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test51.xnf");
+        auto slvr = solver(clss);
+        //slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = ca_alg::fuip;
+        slvr.get_opts()->sol_count = -1;
+        slvr.get_opts()->lin_alg_schedule = 20;
+        slvr.get_opts()->dh = dec_heu::vsids;
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size() == 5 );
         CHECK( check_sols(clss.cls, s.sols) );
     }
 }
