@@ -181,6 +181,61 @@ struct options {
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int verb_, int timeout_=0) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), verb(verb_), timeout(timeout_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), rst(rst_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+
+    std::string to_str() const {
+      std::string str = "";
+
+      str += "c dec_heu: ";
+      switch(dec_heu(dh)) {
+        case dec_heu::vsids: str += "vsids"; break;
+        case dec_heu::lwl: str += "lwl"; break;
+        case dec_heu::lex: str += "lex"; break;
+        case dec_heu::swl: str += "swl"; break;
+      }
+      str += "\n";
+
+      str += "c phase_opt: ";
+      switch(phase_opt(po)) {
+        case phase_opt::rand: str += "rand"; break;
+        case phase_opt::save: str += "save"; break;
+        case phase_opt::save_inv: str += "save_inv"; break;
+      }
+      str += "\n";
+
+      str += "c ca_alg: ";
+      switch(ca_alg(ca)) {
+        case ca_alg::no: str += "no"; break;
+        case ca_alg::dpll: str += "dpll"; break;
+        case ca_alg::fuip: str += "fuip"; break;
+        case ca_alg::fuip_opt: str += "fuip_opt"; break;
+      }
+      str += "\n";
+
+      str += "c restart_opt: ";
+      switch(restart_opt(rst)) {
+        case restart_opt::no: str += "no"; break;
+        case restart_opt::fixed: str += "fixed"; break;
+        case restart_opt::luby: str += "luby"; break;
+      }
+      str += "\n";
+
+      str += "c lin_alg_schedule: " + std::to_string(lin_alg_schedule) + "\n";
+
+      str += "c jobs: " + std::to_string(jobs) + "\n";
+
+      str += "c verb: " + std::to_string(verb) + "\n";
+
+      str += "c timeout: " + std::to_string(timeout) + "\n";
+
+      str += "c sol_count: " + std::to_string(sol_count);
+
+      //str += "c guessing_path: ";
+      //for(var_t i = 0; i < P.size(); i++) {
+      //  str += std::to_string(P[i]) + (P.get_phase(i) ? "+1" : "-1") + " ";
+      //}
+
+      return str;
+    }
 };
 
 
