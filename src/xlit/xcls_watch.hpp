@@ -536,6 +536,10 @@ public:
   };
 
   xcls_upd_ret resolve(const xcls_watch &rs_cls, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const bool opt = false) {
+    if(size()==0) {
+      xlits.emplace_back( xlit(0, true) );
+      xlit_dl_count0.emplace_back( 0, dl_count[0] );
+    }
     assert(size()>0);
     // fix unit part ('resolving' part)
     xlits[ (size()==1) ? 0 : 1 ] += rs_cls.get_unit();
@@ -926,7 +930,7 @@ public:
     }
 
     // now watch the first two xlits as usual
-    const var_t wl0 = perm_inv[xlits_[0].LT()-1];
+    const var_t wl0 = !xlits_[0].is_constant() ? perm_inv[xlits_[0].LT()-1] : -1;
     const var_t wl1 = xlits_.size() > 1 ? perm_inv[xlits_[1].LT()-1] : -1;
 
     // translate xlits back AND recompute watched idxs
