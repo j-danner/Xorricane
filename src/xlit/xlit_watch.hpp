@@ -310,7 +310,6 @@ class xlit_watch : public xlit
      */
     bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count) {
       const bool ret = xlit::reduce(alpha);
-      //@todo only 'init' if necessary? (check before reduce-call?)
       if( ret ) init(alpha, alpha_dl, dl_count);
       assert(assert_data_struct(alpha));
       return ret;

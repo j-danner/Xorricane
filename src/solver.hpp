@@ -394,8 +394,7 @@ class solver
         #endif
       }
       if(lin->is_zero(alpha)) {
-        //@todo uncommenting this line leads to errors; why?
-        //if(lin->is_zero()) lineral_watches[ld].erase( lin );
+        if(lin->is_zero()) lineral_watches[dl].erase( lin );
         return -1;
       }
       
