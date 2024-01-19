@@ -591,7 +591,7 @@ void solver::GCP(stats &s) {
               assert( lin_w.is_assigning(alpha) );
               assert( !lin_w.is_active(alpha) );
               // update alpha
-              queue_implied_alpha(lin, dl);
+              queue_implied_alpha(lin);
             }
             break;
           case xlit_upd_ret::UNIT:
@@ -803,7 +803,7 @@ void solver::dpll_solve(stats &s) {
             if (!L.is_consistent()) {
                 //enforce backtracking!
                 lineral_watches[dl].emplace_back( xlit(0, false), alpha, alpha_dl, dl_count );
-                add_implied_lineral(std::prev(lineral_watches[dl].end()), trail_t::GUESS, dl);
+                add_implied_lineral(std::prev(lineral_watches[dl].end()), trail_t::GUESS);
             } else {
                 solve_L(L, s);
 

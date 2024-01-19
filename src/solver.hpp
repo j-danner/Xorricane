@@ -49,12 +49,11 @@ struct trail_elem {
 struct lineral_queue_elem {
   xlit_w_it lin;
   trail_t type;
-  var_t lvl;
 
-  lineral_queue_elem() : lin(), type(trail_t::IMPLIED_ALPHA), lvl(-1) {};
-  lineral_queue_elem(xlit_w_it _lin, const trail_t& _type, const var_t& _lvl) : lin(_lin), type(_type), lvl(_lvl) {};
-  lineral_queue_elem(const lineral_queue_elem& other) : lin(other.lin), type(other.type), lvl(other.lvl) {};
-  lineral_queue_elem(lineral_queue_elem&& other) : lin(other.lin), type(other.type), lvl(other.lvl) {}; 
+  lineral_queue_elem() : lin(), type(trail_t::IMPLIED_ALPHA) {};
+  lineral_queue_elem(xlit_w_it _lin, const trail_t& _type) : lin(_lin), type(_type) {};
+  lineral_queue_elem(const lineral_queue_elem& other) : lin(other.lin), type(other.type) {};
+  lineral_queue_elem(lineral_queue_elem&& other) : lin(other.lin), type(other.type) {}; 
 };
 
 struct watch_list_elem {
@@ -146,7 +145,6 @@ class solver
     /**
      * @brief current unit watches
      * @note lineral_watches[lvl] contains all units added in dl lvl; used as stack
-     * @todo change to vec< list< xlit_watch> > for faster (copy-free) insertion!
      */
     vec< std::list< xlit_watch > > lineral_watches;
 
@@ -337,7 +335,7 @@ class solver
     inline void add_new_guess(xlit&& l) {
       //update assignments
       lineral_watches[dl].emplace_back( std::move(l), alpha, alpha_dl, dl_count );
-      queue_implied_lineral( std::prev(lineral_watches[dl].end()), trail_t::GUESS, dl);
+      queue_implied_lineral( std::prev(lineral_watches[dl].end()), trail_t::GUESS);
     };
 
     /**
@@ -378,31 +376,26 @@ class solver
     /**
      * @brief adds new xlit to data structure if deduced at current dl; also reduces with current assignments to find new true/false assignments
      * 
-     * @param lit literal to be added
-     * @param rs idx of reason_UNIT clause
+     * @param lin iterator to xlit_watch in lineral_queue
+     * @param type tral_t of lineral specifying type of propagation
+     * @todo write seperate funcs for types: IMPLIED_UNIT, IMPLIED_ALPHA and GUESS
      * 
      * @return var_t ind>=0 iff alpha[ind] is now assigned; ind==-1 means no new alpha-assignment
      */
-    inline var_t add_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT, const var_t _lvl = -1) {
-      //TODO only push to trail if type is IMPLIED_ALPHA -- all others are ignored by analyze() anyways!
-      const var_t lvl = _lvl == (var_t) -1 ? dl : _lvl; //@todo is _lvl actually needed here?
+    inline var_t add_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT) {
       if(type==trail_t::IMPLIED_UNIT) {
-        VERB(65, "c " + std::to_string(lvl) + " : new UNIT " + lin->to_str() + " ~> " + lin->reduced(alpha).to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+        VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->reduced(alpha).to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
         lin->reduce(alpha, alpha_dl, dl_count);
         #ifdef USE_EQUIV
           //@todo implement reduce with equiv_lits
           if(!_reduced_lit.is_assigning()) {
-            _reduced_lit.reduce(equiv_lits,equiv_lits_dl,lvl); //reduce equivalent variable
+            _reduced_lit.reduce(equiv_lits,equiv_lits_dl,dl); //reduce equivalent variable
           }
         #endif
       }
-      if(type!=trail_t::IMPLIED_ALPHA && type!=trail_t::IMPLIED_UNIT) {
-        //lin is not yet watched, so we can update it directly //@todo is this init even necessary?
-        lin->init(alpha, alpha_dl, dl_count);
-      }
       if(lin->is_zero(alpha)) {
         //@todo uncommenting this line leads to errors; why?
-        //if(lin->is_zero()) lineral_watches[lvl].erase( lin );
+        //if(lin->is_zero()) lineral_watches[ld].erase( lin );
         return -1;
       }
       
@@ -414,12 +407,12 @@ class solver
       if(type!=trail_t::IMPLIED_ALPHA) {
         //lin->update_lit(std::move(_reduced_lit), alpha, alpha_dl);
         xlit_watch& l = *lin;
-        trails[lvl].emplace_back( l.LT(), type, lin); //TODO rm from trails?
+        trails[dl].emplace_back( l.LT(), type, lin); //TODO rm from trails?
         //if clause is active, i.e., not yet assigning add to watch lists; otherwise add assignment!
         if(l.is_active(alpha)) {
           // add to L_watch_list's -- if there is anything to watch
-          if(l.size()>0) L_watch_list[ l.get_wl0() ].emplace_back( lvl, lin, dl_count[lvl] );
-          if(l.size()>1) L_watch_list[ l.get_wl1() ].emplace_back( lvl, lin, dl_count[lvl] );
+          if(l.size()>0) L_watch_list[ l.get_wl0() ].emplace_back( dl, lin, dl_count[dl] );
+          if(l.size()>1) L_watch_list[ l.get_wl1() ].emplace_back( dl, lin, dl_count[dl] );
           //deal with new equivalence!
           if (l.is_equiv()) { //TODO update to check is_equiv for xlit_watches!!
         #ifdef USE_EQUIV
@@ -427,11 +420,11 @@ class solver
             equiv_lits[lt].set_ind( l.get_equiv_lit() );
             equiv_lits[lt].set_polarity( l.has_constant() );
             equiv_lits[lt].set_reason( rs );
-            equiv_lits_dl[lt] = lvl;
+            equiv_lits_dl[lt] = dl;
             assert( l.get_assigning_lvl(alpha_dl) == dl );
-            trails[lvl].emplace_back( lt, trail_t::EQUIV, &l );
-            VERB(65, "c " + std::to_string(lvl) + " : new EQUIV " + lineral_watches[lvl].back().to_str() )
-            if(rs<xclss.size()) xclss[rs].set_assigning_lvl(lvl);
+            trails[dl].emplace_back( lt, trail_t::EQUIV, &l );
+            VERB(65, "c " + std::to_string(dl) + " : new EQUIV " + lineral_watches[dl].back().to_str() )
+            if(rs<xclss.size()) xclss[rs].set_assigning_lvl(dl);
         #endif
           }
           return -1;
@@ -439,16 +432,16 @@ class solver
           //get alpha-assignment
           const auto [lt2,val] = l.get_assignment(alpha);
           assert(l.is_assigning(alpha) && val!=bool3::None);
-          trails[lvl].emplace_back( lt2, trail_t::IMPLIED_ALPHA, lin );
+          trails[dl].emplace_back( lt2, trail_t::IMPLIED_ALPHA, lin );
           assert( alpha[lt2]==val || alpha[lt2]==bool3::None );
-          VERB(70, "c " + std::to_string(lvl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + lin->to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+          VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + lin->to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
           alpha[lt2] = val;
-          alpha_dl[lt2] = lvl;
+          alpha_dl[lt2] = dl;
           assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), dl));
-          alpha_trail_pos[lt2] = (var_t) trails[lvl].size()-1;
+          alpha_trail_pos[lt2] = (var_t) trails[dl].size()-1;
           //@todo do we need to set assignling lvl for r_cls? do we even need assigning_lvl in xcls, or is it sufficient to store it with every lineral? NOTE: actually this WILL lead to errors later on! we MUST get assigning_lvl from watched linerals!!!
           for(auto& r_cls : lin->get_reason_idxs()) {
-            xclss[r_cls].set_assigning_lvl(lvl);
+            xclss[r_cls].set_assigning_lvl(dl);
           }
           return lt2;
         }
@@ -459,15 +452,15 @@ class solver
           //const var_t lt2 = lin->LT();
           //const bool3 val = to_bool3( lin->has_constant() );
           
-          trails[lvl].emplace_back( lt2, type, lin );
+          trails[dl].emplace_back( lt2, type, lin );
           assert( alpha[lt2]==bool3::None );
-          VERB(70, "c " + std::to_string(lvl) + " : new ALPHA " + lin->get_assigning_xlit(alpha).to_str() + " from UNIT " + lin->to_str() + " with reason clause " + get_reason(lin).to_str() );
+          VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + lin->get_assigning_xlit(alpha).to_str() + " from UNIT " + lin->to_str() + " with reason clause " + get_reason(lin).to_str() );
           alpha[lt2] = val;
-          alpha_dl[lt2] = lvl;
+          alpha_dl[lt2] = dl;
           assert(alpha_dl[lt2] == lin->get_assigning_lvl(alpha_dl));
-          alpha_trail_pos[lt2] = (var_t) trails[lvl].size()-1;
+          alpha_trail_pos[lt2] = (var_t) trails[dl].size()-1;
           for(auto r_idx : lin->get_reason_idxs()) {
-            xclss[r_idx].set_assigning_lvl(lvl);
+            xclss[r_idx].set_assigning_lvl(dl);
           }
           return lt2;
       }
@@ -480,14 +473,14 @@ class solver
      * @param rs rs_cls_idx of reason clause
      * @param type type of propagation (defaults to trail_t::IMPLIED_UNIT)
      */
-    inline void queue_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT, const var_t lvl= -1) {
+    inline void queue_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT) {
       assert(type==trail_t::IMPLIED_UNIT || type==trail_t::GUESS);
       //const var_t lvl = lvl_<xclss.size() ? xclss[rs].get_unit_at_lvl() : dl;
       //if(rs<xclss.size() && (lvl<alpha.size() ? lvl !=xclss[rs].get_unit_at_lvl() : dl !=xclss[rs].get_unit_at_lvl())) {
       //  VERB(10, "c queueing implied lineral at too high dl?!");
       //}
-      if(lin->LT()==0) lineral_queue.emplace_front( lin, type, lvl );
-      else lineral_queue.emplace_back( lin, type, lvl );
+      if(lin->LT()==0) lineral_queue.emplace_front( lin, type );
+      else lineral_queue.emplace_back( lin, type );
     }
     
     /**
@@ -498,15 +491,13 @@ class solver
      * @param rs rs_cls_idx of reason clause
      * @param type type of propagation (defaults to trail_t::NEW_ALPHA)
      */
-    inline void queue_implied_alpha(xlit_w_it lin, const var_t lvl) {
-      assert(lvl==dl);
-
+    inline void queue_implied_alpha(xlit_w_it lin) {
       const auto [lt,val] = lin->get_assignment(alpha);
       assert(alpha[lt] == bool3::None);
       assert(lin->get_reason_idxs().size()>0 && lin->get_reason_idxs().back() < xclss.size());
 
-      if(lt==0) lineral_queue.emplace_front( lin, trail_t::IMPLIED_ALPHA, lvl );
-      else lineral_queue.emplace_back( lin, trail_t::IMPLIED_ALPHA, lvl );
+      if(lt==0) lineral_queue.emplace_front( lin, trail_t::IMPLIED_ALPHA );
+      else lineral_queue.emplace_back( lin, trail_t::IMPLIED_ALPHA );
     }
 
     /**
@@ -516,8 +507,8 @@ class solver
      */
     inline var_t propagate_implied_lineral() {
       assert(!lineral_queue.empty());
-      auto& [lin, type, lvl] = lineral_queue.front();
-      var_t new_lt = add_implied_lineral(lin, type, lvl);
+      auto& [lin, type] = lineral_queue.front();
+      var_t new_lt = add_implied_lineral(lin, type);
       lineral_queue.pop_front();
       return new_lt;
     }
