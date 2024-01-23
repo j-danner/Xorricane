@@ -94,8 +94,6 @@ private:
 
     // ensure that xlits[0] and xlits[1] are non-empty
     assert(xlits[0].size() > 0 && xlits[1].size() > 0);
-    // if xlits[0] is empty: std::swap(xlits[0],shared_part); xlits[1].add_one();
-    // if xlits[1] is empty: std::swap(xlits[1],shared_part); xlits[0].add_one();
 
     // init ws
     ws[0] = 0;
@@ -266,10 +264,13 @@ private:
     }
     // if the above did not yet return, then all xlits (except xlits[1]) evaluate to 1 under alpha, i.e., we learn a unit clause!
     // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and xlits[0] evaluates to 1!)
+
+    //ensure that xlits[0] is the unit:
+    swap_wl();
     assert(!is_active(dl_count));
     assert(is_unit(dl_count));
     assert(assert_data_struct());
-    return {ptr_ws(0), xcls_upd_ret::UNIT};
+    return {ptr_ws(1), xcls_upd_ret::UNIT};
   };
 
   /**
@@ -324,24 +325,6 @@ public:
     ptr_cache[0] = o.ptr_cache[0];
     ptr_cache[1] = o.ptr_cache[1];
   };
-
-/*
-  xcls_watch(const xlit_watch& lin, const vec<var_t>& alpha_dl) noexcept {
-    irredundant = false;
-    delete_on_cleanup = false;
-    
-    xlits.emplace_back( lin );
-    xlits[0].add_one();
-    // init xlit_dl_count
-    xlit_dl_count0.emplace_back(0,0);
-    SAT_dl_count = {0,0};
-    
-    shared_part.clear();
-
-    ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), lin.get_wl0()));
-    ptr_cache[0] = lin.get_wl0();
-  }
-*/
 
   xcls_watch(const xsys &lits) noexcept {
     assert(lits.dim() >= 1);
@@ -433,6 +416,8 @@ public:
    */
   std::pair<var_t, xcls_upd_ret> update(const var_t &new_lit, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count) {
     // check if clause needs any processing
+    assert(is_active(dl_count));
+    //@todo rm dead code below
     if (!is_active(dl_count)) {
       assert(is_sat(dl_count) || is_unit(dl_count));
       return {new_lit, xcls_upd_ret::SAT}; // NOTE here it might also be a UNIT, but it did not become one by this update!
@@ -537,13 +522,13 @@ public:
     }
     assert(size()>0);
     // fix unit part ('resolving' part)
-    xlits[ (size()==1) ? 0 : 1 ] += rs_cls.get_unit();
+    xlits[0] += rs_cls.get_unit();
     //@todo do we need to set xlit_dl_count0 here at all?!
-    const auto [lvl,_,__] = xlits[ (size()==1) ? 0 : 1 ].get_watch_var(alpha_dl, alpha_trail_pos);
+    const auto [lvl,_,__] = xlits[0].get_watch_var(alpha_dl, alpha_trail_pos);
     if(lvl < dl_count.size()) {
-      xlit_dl_count0[ (size()==1) ? 0 : 1 ] = {lvl, dl_count[lvl]};
+      xlit_dl_count0[0] = {lvl, dl_count[lvl]};
     } else {
-      xlit_dl_count0[ (size()==1) ? 0 : 1 ] = {0,0};
+      xlit_dl_count0[0] = {0,0};
     }
     // add xlits from rs_cls to this
     if(rs_cls.size() == 1) {
@@ -553,13 +538,13 @@ public:
       assert( assert_data_struct(alpha, dl_count) );
       return ret;
     }
-    //now rs_cls.size()>1
+    //copy the remaining linerals
     std::copy(rs_cls.xlits.begin() + 2, rs_cls.xlits.end(), std::back_inserter(xlits));
     std::copy(rs_cls.xlit_dl_count0.begin() + 2, rs_cls.xlit_dl_count0.end(), std::back_inserter(xlit_dl_count0));
+    //copy 2nd lineral (which needs to be 'fixed' by the shared_part)
+    xlits.emplace_back(rs_cls.xlits[1] + rs_cls.shared_part);
+    xlit_dl_count0.emplace_back(rs_cls.xlit_dl_count0[1]);
 
-    xlits.emplace_back(rs_cls.xlits[0] + rs_cls.shared_part);
-    xlit_dl_count0.emplace_back(rs_cls.xlit_dl_count0[0]);
-    
     //const auto ret = init_unit_opt(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl, rs_cls.xlits.size());
     //const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
     const auto ret = opt ? init_unit_opt(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl, rs_cls.xlits.size()) : init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
@@ -803,12 +788,9 @@ public:
     }
     assert( ptr_cache[1] == ptr_(1, ws[1]));
 
-    // ensure that xlits[1] becomes unit
-    swap_wl();
-
     assert(get_wl0() != get_wl1());
     assert(is_unit(dl_count));
-    assert(alpha[ptr_ws(0)] != bool3::None);
+    assert(alpha[ptr_ws(1)] != bool3::None);
 
     // check if clause needs any processing
     assert(!is_active(dl_count));
@@ -949,12 +931,9 @@ public:
     ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
     ptr_cache[1] = ptr_(1, ws[1]);
 
-    // ensure that xlits[1] becomes unit
-    swap_wl();
-
     assert(get_wl0() != get_wl1());
     assert(is_unit(dl_count));
-    assert(alpha[ptr_ws(0)] != bool3::None);
+    assert(alpha[ptr_ws(1)] != bool3::None);
 
     // check if clause needs any processing
     assert(!is_active(dl_count));
@@ -1028,7 +1007,7 @@ public:
    * @return true iff xcls is evaluates to unit (including 1, i.e., unsat!)
    */
   inline bool is_unit(const vec<dl_c_t> &dl_count) const {
-    return !is_sat(dl_count) && (xlits.size()<=1 || dl_count[xlit_dl_count0[0].first] == xlit_dl_count0[0].second);
+    return !is_sat(dl_count) && (xlits.size()<=1 || dl_count[xlit_dl_count0[1].first] == xlit_dl_count0[1].second);
   }
   
   /**
@@ -1048,7 +1027,7 @@ public:
    * @return var_t lvl at which xcls is unit
    */
   var_t get_unit_at_lvl() const {
-    return xlits.size() <= 1 ? 0 : xlit_dl_count0[0].first;
+    return xlits.size() <= 1 ? 0 : xlit_dl_count0[1].first;
   }
 
 #ifndef NDEBUG
@@ -1066,7 +1045,7 @@ public:
    * @return var_t lvl at which xcls is unit and the unit is assigning
    */
   inline var_t get_assigning_lvl(const vec<var_t>& alpha_dl) const {
-    return xlits.empty() ? 0 : std::max(get_unit_at_lvl(), xlits[ (xlits.size() > 1 ? 1 : 0) ].get_assigning_lvl(alpha_dl));
+    return xlits.empty() ? 0 : std::max(get_unit_at_lvl(), xlits[0].get_assigning_lvl(alpha_dl));
   }
 
   inline bool is_inactive(const vec<dl_c_t> &dl_count) const {
@@ -1115,11 +1094,12 @@ public:
    */
   //@todo refactor: store unit in xlits[0] s.t. we only need to check for xlits.empty() (!)
   inline xlit get_unit() const { 
-    return xlits.size() > 1 ? (xlits[1] + shared_part).add_one() : (xlits.size() == 0 ? xlit(0,false) : xlits[0].plus_one());
+    //return xlits.size() > 1 ? (xlits[1] + shared_part).add_one() : (xlits.size() == 0 ? xlit(0,false) : xlits[0].plus_one());
+    return xlits.empty() ? xlit(0,false) : (xlits[0] + shared_part).add_one();
   };
 
   inline bool unit_contains(const var_t &ind) const {
-    return shared_part[ind] || (xlits.size() > 1 ? xlits[1][ind] : xlits[0][ind]);
+    return shared_part[ind] || xlits[0][ind];
   }
 
   /**
@@ -1131,11 +1111,8 @@ public:
    */
   void add_to_unit(const xlit &lin, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl) {
     assert(is_unit(dl_count));
-    if(xlits.size()==1) {
-      xlits[0] += lin;
-    } else {
-      xlits[1] += lin;
-    }
+    assert(!xlits.empty());
+    xlits[0] += lin;
     // re-init watches!
     init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
   }
@@ -1149,7 +1126,8 @@ public:
   inline var_t get_inactive_lvl(const vec<dl_c_t> &dl_count) const {
     //@todo can't we get this information from the dl of the first watched lineralsss
     assert(is_inactive(dl_count)); // implies is_unit(dl_count) OR is_sat(dl_count)
-    return xlit_dl_count0.empty() ? 0 : (is_unit(dl_count) ?  xlit_dl_count0[0].first : SAT_dl_count.first);
+    //return xlit_dl_count0.empty() ? 0 : (is_unit(dl_count) ?  xlit_dl_count0[1].first : SAT_dl_count.first);
+    return xlits.size()<=1 ? 0 : (is_sat(dl_count) ? SAT_dl_count.first : xlit_dl_count0[1].first);
   }
 
   /**

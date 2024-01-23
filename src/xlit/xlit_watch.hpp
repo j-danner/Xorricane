@@ -210,7 +210,6 @@ class xlit_watch : public xlit
      * @return var_t lvl at which the xlit became assigning
      */
     var_t get_assigning_lvl(const vec<var_t>& alpha_dl) const {
-      //return (idxs.size()==0 || alpha_dl[idxs[ws[0]]] == (var_t) -1) ? dl_c.first : std::max( alpha_dl[idxs[ws[0]]], dl_c.first );
       return (idxs.size()==0 || alpha_dl[get_wl0()] == (var_t) -1) ? 0 : alpha_dl[get_wl0()];
     };
 
