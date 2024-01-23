@@ -423,7 +423,6 @@ class solver
             assert( l.get_assigning_lvl(alpha_dl) == dl );
             trails[dl].emplace_back( lt, trail_t::EQUIV, &l );
             VERB(65, "c " + std::to_string(dl) + " : new EQUIV " + lineral_watches[dl].back().to_str() )
-            if(rs<xclss.size()) xclss[rs].set_assigning_lvl(dl);
         #endif
           }
           return -1;
@@ -438,10 +437,6 @@ class solver
           alpha_dl[lt2] = dl;
           assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), dl));
           alpha_trail_pos[lt2] = (var_t) trails[dl].size()-1;
-          //@todo do we need to set assignling lvl for r_cls? do we even need assigning_lvl in xcls, or is it sufficient to store it with every lineral? NOTE: actually this WILL lead to errors later on! we MUST get assigning_lvl from watched linerals!!!
-          for(auto& r_cls : lin->get_reason_idxs()) {
-            xclss[r_cls].set_assigning_lvl(dl);
-          }
           return lt2;
         }
       } else {
@@ -458,9 +453,6 @@ class solver
           alpha_dl[lt2] = dl;
           assert(alpha_dl[lt2] == lin->get_assigning_lvl(alpha_dl));
           alpha_trail_pos[lt2] = (var_t) trails[dl].size()-1;
-          for(auto r_idx : lin->get_reason_idxs()) {
-            xclss[r_idx].set_assigning_lvl(dl);
-          }
           return lt2;
       }
     };
@@ -732,7 +724,7 @@ class solver
             }
           }
           //@todo can we do a cheap early abort? is this cheap? (reduced and get_unit are not as cheap as we'd like!)
-          if( r_cls.get_assigning_lvl() < lvl && r_cls.get_unit().reduced(alpha) == lit) {
+          if( !r_cls.is_zero() && r_cls.get_assigning_lvl(alpha_dl) < lvl) {
             assert( r_cls.get_unit().reduced(alpha) == lit );
             goto finalize;
           }
@@ -930,7 +922,7 @@ class solver
             }
             assert( L_.reduce(tmp).is_zero() ); //reduces to 0 instead of 1, as 1 is in L_
           }
-          if( r_cls.get_assigning_lvl() < lvl ) {
+          if( !r_cls.is_zero() && r_cls.get_assigning_lvl(alpha_dl) < lvl ) {
             //early abort if r_cls is already assigning, i.e., already gives a conflict!
             assert( r_cls.get_unit().reduced(alpha).is_one() );
             goto finalize;
@@ -953,7 +945,7 @@ class solver
         VERB(85, "c and get \nc   "+ BOLD(r_cls.to_str()));
       }
     #endif
-      assert(r_cls.get_assigning_lvl()<=dl);
+      assert(r_cls.get_assigning_lvl(alpha_dl)<=dl);
 
     finalize:
       mzd_free(b);

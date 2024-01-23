@@ -246,7 +246,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
     pop_trail(); //remove conflict from trail, i.e., now we should have alpha[0]==bool3:None
     
     //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
-    while( learnt_cls.get_assigning_lvl() == dl || learnt_cls.get_assigning_lvl() == (var_t) -1 ) {
+    while( learnt_cls.get_assigning_lvl(alpha_dl) == dl || learnt_cls.get_assigning_lvl(alpha_dl) == (var_t) -1 ) {
         assert(!TRAIL.empty());
         VERB(70, "   * conflict clause is " + learnt_cls.to_str());
         VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
@@ -310,7 +310,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
     //CLAUSE MINIMIZATION!
 
     //find correct backtrack-lvl
-    const var_t b_lvl = learnt_cls.get_assigning_lvl();
+    const var_t b_lvl = learnt_cls.get_assigning_lvl(alpha_dl);
     if( dl < learnt_cls.size() && b_lvl == dl-1 ) {
         VERB(50, "   * negated decisions lead to smaller learnt_cls and the same backtrack-level!");
         //assert(false);
@@ -338,7 +338,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     pop_trail(); //remove conflict from trail, i.e., now we should have alpha[0]==bool3:None
 
     //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
-    while( learnt_cls.get_assigning_lvl() == dl || learnt_cls.get_assigning_lvl() == (var_t) -1 ) {
+    while( learnt_cls.get_assigning_lvl(alpha_dl) == dl || learnt_cls.get_assigning_lvl(alpha_dl) == (var_t) -1 ) {
         assert(!TRAIL.empty());
         VERB(70, "   * conflict clause is " + BOLD( learnt_cls.to_str() ) + "   --> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
         
@@ -411,7 +411,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     //CLAUSE MINIMIZATION!
 
     //find correct backtrack-lvl
-    const var_t b_lvl = learnt_cls.get_assigning_lvl();
+    const var_t b_lvl = learnt_cls.get_assigning_lvl(alpha_dl);
     if( dl < learnt_cls.size() && b_lvl == dl-1 ) {
         VERB(50, "   * negated decisions lead to smaller learnt_cls and the same backtrack-level!");
         //assert(false);
@@ -711,7 +711,7 @@ void solver::dpll_solve(stats &s) {
         auto r_clss = find_implied_alpha_from_linerals();
         for(auto& r_cls : r_clss) {
             ++s.no_linalg_prop;
-            assert(r_cls.get_assigning_lvl() == dl);
+            assert(r_cls.get_assigning_lvl(alpha_dl) == dl);
             add_learnt_cls( std::move(r_cls), false);
         }
         if(!r_clss.empty()) {
@@ -779,8 +779,8 @@ void solver::dpll_solve(stats &s) {
                 auto r_clss = find_implied_alpha_from_linerals();
                 for(auto& r_cls : r_clss) {
                     ++s.no_linalg_prop;
-                    if(r_cls.get_assigning_lvl() < dl) {
-                        backtrack( r_cls.get_assigning_lvl() );
+                    if(r_cls.get_assigning_lvl(alpha_dl) < dl) {
+                        backtrack( r_cls.get_assigning_lvl(alpha_dl) );
                         add_new_guess( r_cls.get_unit() ); //add as 'guess', i.e., trail and reason stacks are ill-managed here, but that is irrelevant since we do not use those in the dpll-type solver!
                         while(dec_stack.size()>dl) dec_stack.pop();
                         goto dpll_gcp;
@@ -879,7 +879,7 @@ void solver::solve(stats &s) {
         auto r_clss = find_implied_alpha_from_linerals();
         for(auto& r_cls : r_clss) {
             ++s.no_linalg_prop;
-            assert(r_cls.get_assigning_lvl() == dl);
+            assert(r_cls.get_assigning_lvl(alpha_dl) == dl);
             add_learnt_cls( std::move(r_cls), false);
         }
         if(!r_clss.empty()) {
@@ -949,8 +949,8 @@ void solver::solve(stats &s) {
                 auto r_clss = find_implied_alpha_from_linerals();
                 for(auto& r_cls : r_clss) {
                     ++s.no_linalg_prop;
-                    if(r_cls.get_assigning_lvl() < dl) {
-                        backtrack( r_cls.get_assigning_lvl() );
+                    if(r_cls.get_assigning_lvl(alpha_dl) < dl) {
+                        backtrack( r_cls.get_assigning_lvl(alpha_dl) );
                         add_learnt_cls( std::move(r_cls), false);
                         goto cdcl_gcp;
                     }
@@ -968,7 +968,7 @@ void solver::solve(stats &s) {
             //now active_cls == 0 AND no_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
             auto [L,r_cls] = get_assignments_xsys();
             if (!L.is_consistent()) {
-                backtrack( r_cls.get_assigning_lvl() );
+                backtrack( r_cls.get_assigning_lvl(alpha_dl) );
                 add_learnt_cls( std::move(r_cls), false );
                 GCP(s);
                 if(no_conflict()) ++s.no_confl; //count as conflict here only if we do not need another conflict analysis
@@ -1119,7 +1119,7 @@ std::string solver::to_xnf_str() const noexcept {
         for (var_t i = 0; i < xclss.size(); i++) {
             assert(xclss[i].assert_data_struct());
             //only check advanced conditions if lineral_queue is empty!
-            if(no_conflict() && lineral_queue.empty()) assert(xclss[i].assert_data_struct(alpha,dl_count));
+            if(no_conflict() && lineral_queue.empty()) assert(xclss[i].assert_data_struct(alpha, dl_count));
         }
         //check watch-lists
         {

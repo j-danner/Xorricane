@@ -67,12 +67,6 @@ private:
   bool delete_on_cleanup = false;
 
   /**
-   * @brief indicates the dl at which the cls is unit AND the unit is assigning!
-   * @note only changed externally AND when 'resolve' is called!
-   */
-  var_t assigning_lvl = (var_t)-1;
-
-  /**
    * @brief initializes shared_part, ws[0], ws[1] and ptr_cache
    * @note assumes that xlits are already set; wl_it must still be initiated!
    */
@@ -317,14 +311,14 @@ public:
     init();
   };
 
-  xcls_watch(const xcls_watch &o) noexcept : xlits(o.xlits), shared_part(o.shared_part), xlit_dl_count0(o.xlit_dl_count0), SAT_dl_count(o.SAT_dl_count), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup), assigning_lvl(o.assigning_lvl) {
+  xcls_watch(const xcls_watch &o) noexcept : xlits(o.xlits), shared_part(o.shared_part), xlit_dl_count0(o.xlit_dl_count0), SAT_dl_count(o.SAT_dl_count), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup) {
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
     ptr_cache[1] = o.ptr_cache[1];
   };
 
-  xcls_watch(xcls_watch &&o) noexcept : xlits(std::move(o.xlits)), shared_part(std::move(o.shared_part)), xlit_dl_count0(std::move(o.xlit_dl_count0)), SAT_dl_count(std::move(o.SAT_dl_count)), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup), assigning_lvl(std::move(o.assigning_lvl)) {
+  xcls_watch(xcls_watch &&o) noexcept : xlits(std::move(o.xlits)), shared_part(std::move(o.shared_part)), xlit_dl_count0(std::move(o.xlit_dl_count0)), SAT_dl_count(std::move(o.SAT_dl_count)), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup) {
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
@@ -346,7 +340,6 @@ public:
 
     ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), lin.get_wl0()));
     ptr_cache[0] = lin.get_wl0();
-    assigning_lvl = lin.get_assigning_lvl(alpha_dl);
   }
 */
 
@@ -557,6 +550,7 @@ public:
       const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
       assert(ret == xcls_upd_ret::UNIT);
       assert(is_unit(dl_count));
+      assert( assert_data_struct(alpha, dl_count) );
       return ret;
     }
     //now rs_cls.size()>1
@@ -598,7 +592,6 @@ public:
       //update watched variable
       ws[0] = std::get<2>( xlits[0].get_watch_var(alpha_dl, alpha_trail_pos) );
       ptr_cache[0] = ptr_(0, ws[0]);
-      assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
       return xcls_upd_ret::UNIT;
     }
     assert(xlits.size()>1);
@@ -669,7 +662,6 @@ public:
       }
       if(size()==0) {
         assert(is_unit(dl_count));
-        assigning_lvl = 0;
         return xcls_upd_ret::UNIT;
       }
       assert(!xlits[0].is_zero());
@@ -760,7 +752,6 @@ public:
       xlits.clear();
       xlit_dl_count0.resize(xlits.size());
       assert(is_unit(dl_count));
-      assigning_lvl = 0;
       return xcls_upd_ret::UNIT;
     }
 
@@ -800,7 +791,6 @@ public:
     ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), ptr_cache[0]));
     assert( ptr_cache[0] == ptr_(0, ws[0]) );
     if (xlits.size() == 1) {
-      assigning_lvl = xlits[0].get_assigning_lvl(alpha_dl);
       return xcls_upd_ret::UNIT;
     }
 
@@ -824,8 +814,6 @@ public:
     assert(!is_active(dl_count));
     assert(!is_sat(dl_count));
 
-    assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
-
     assert( assert_data_struct(alpha, dl_count) );
 
     return xcls_upd_ret::UNIT;
@@ -833,7 +821,6 @@ public:
 
   xcls_upd_ret init_unit(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl) {
     if(size()==0) {
-      assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
       return xcls_upd_ret::UNIT;
     }
     if (size() == 1) {
@@ -843,7 +830,6 @@ public:
       //update watched variable
       ws[0] = std::get<2>( xlits[0].get_watch_var(alpha_dl, alpha_trail_pos) );
       ptr_cache[0] = ptr_(0, ws[0]);
-      assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
       return xcls_upd_ret::UNIT;
     }
     assert(xlits.size()>1);
@@ -927,7 +913,6 @@ public:
       xlits.clear();
       xlit_dl_count0.resize(xlits.size());
       assert(is_unit(dl_count));
-      assigning_lvl = 0;
       return xcls_upd_ret::UNIT;
     }
 
@@ -957,7 +942,6 @@ public:
     ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
     ptr_cache[0] = ptr_(0, ws[0]);
     if (xlits.size() == 1) {
-      assigning_lvl = xlits[0].get_assigning_lvl(alpha_dl);
       return xcls_upd_ret::UNIT;
     }
 
@@ -975,8 +959,6 @@ public:
     // check if clause needs any processing
     assert(!is_active(dl_count));
     assert(!is_sat(dl_count));
-
-    assigning_lvl = std::max( get_unit_at_lvl(), compute_unit_assigning_lvl(alpha_dl) );
 
     return xcls_upd_ret::UNIT;
   };
@@ -1069,18 +1051,22 @@ public:
     return xlits.size() <= 1 ? 0 : xlit_dl_count0[0].first;
   }
 
+#ifndef NDEBUG
   var_t compute_unit_assigning_lvl(const vec<var_t>& alpha_dl) const {
     return xlits.size()==0 ? 0 : ( xlits.size() == 1 ? xlits[0].get_assigning_lvl(alpha_dl) : std::max( shared_part.get_assigning_lvl(alpha_dl), xlits[1].get_assigning_lvl(alpha_dl) ) );
   }
+#endif
 
   /**
    * @brief returns the lvl at which the xclss is unit AND the unit is assigning
    * @note requires that both is indeed the case!
    *
+   * @param alpha_dl dl of alpha-assignments
+   *
    * @return var_t lvl at which xcls is unit and the unit is assigning
    */
-  inline var_t get_assigning_lvl() const {
-    return assigning_lvl;
+  inline var_t get_assigning_lvl(const vec<var_t>& alpha_dl) const {
+    return xlits.empty() ? 0 : std::max(get_unit_at_lvl(), xlits[ (xlits.size() > 1 ? 1 : 0) ].get_assigning_lvl(alpha_dl));
   }
 
   inline bool is_inactive(const vec<dl_c_t> &dl_count) const {
@@ -1127,6 +1113,7 @@ public:
    *
    * @return xlit unit that this clause was reduced to
    */
+  //@todo refactor: store unit in xlits[0] s.t. we only need to check for xlits.empty() (!)
   inline xlit get_unit() const { 
     return xlits.size() > 1 ? (xlits[1] + shared_part).add_one() : (xlits.size() == 0 ? xlit(0,false) : xlits[0].plus_one());
   };
@@ -1163,10 +1150,6 @@ public:
     //@todo can't we get this information from the dl of the first watched lineralsss
     assert(is_inactive(dl_count)); // implies is_unit(dl_count) OR is_sat(dl_count)
     return xlit_dl_count0.empty() ? 0 : (is_unit(dl_count) ?  xlit_dl_count0[0].first : SAT_dl_count.first);
-  }
-
-  inline void set_assigning_lvl(const var_t &lvl) {
-    assigning_lvl = lvl;
   }
 
   /**
@@ -1238,7 +1221,6 @@ public:
     SAT_dl_count = o.SAT_dl_count;
     irredundant = o.irredundant;
     delete_on_cleanup = o.delete_on_cleanup;
-    assigning_lvl = o.assigning_lvl;
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
@@ -1252,7 +1234,6 @@ public:
     SAT_dl_count = o.SAT_dl_count;
     irredundant = o.irredundant;
     delete_on_cleanup = o.delete_on_cleanup;
-    assigning_lvl = o.assigning_lvl;
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
