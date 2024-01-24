@@ -97,7 +97,9 @@ void solver::backtrack(const var_t& lvl) {
     assert(lvl < dl);
     VERB(80, "c backtracking to dl " << lvl);
     ///// --------------- /////
-    if (dl - lvl > 1) VERB(80, "c " << std::to_string(dl) << " : BACKJUMPING BY MORE THAN ON LEVEL!");
+    if (dl - lvl > 1) {
+        VERB(80, "c " << std::to_string(dl) << " : BACKJUMPING BY MORE THAN ON LEVEL!");
+    }
     // update dl_count
     for(var_t dl_ = dl; dl_>lvl; dl_--) dl_count[dl_]++;
     ///// --------------- /////
@@ -385,7 +387,6 @@ std::pair<var_t, xcls_watch> solver::analyze() {
         if(!unit.is_zero()) {
             unit = reason_cls.get_unit();
             unit.reduce(equiv_lits, equiv_lits_dl, dl, alpha);
-            unit.reduce(alpha);
             unit.reduce(alpha);
         }
         assert(unit.is_zero()); //unit MUST reduce to zero, as TRAIL is not yet popped
@@ -707,14 +708,7 @@ void solver::dpll_solve(stats &s) {
     // GCP -- before making decisions!
     GCP(s);
     if( no_conflict() ) {
-        ++s.no_linalg;
-        auto r_clss = find_implied_alpha_from_linerals();
-        for(auto& r_cls : r_clss) {
-            ++s.no_linalg_prop;
-            assert(r_cls.get_assigning_lvl(alpha_dl) == dl);
-            add_learnt_cls( std::move(r_cls), false);
-        }
-        if(!r_clss.empty()) {
+        if( find_implied_alpha_from_linerals(s) ) {
             goto dpll_gcp;
         }
     }
@@ -775,19 +769,9 @@ void solver::dpll_solve(stats &s) {
             GCP(s);
             //linear algebra on linerals
             if( need_linalg_inprocessing() ) {
-                ++s.no_linalg;
-                auto r_clss = find_implied_alpha_from_linerals();
-                for(auto& r_cls : r_clss) {
-                    ++s.no_linalg_prop;
-                    if(r_cls.get_assigning_lvl(alpha_dl) < dl) {
-                        backtrack( r_cls.get_assigning_lvl(alpha_dl) );
-                        add_new_guess( r_cls.get_unit() ); //add as 'guess', i.e., trail and reason stacks are ill-managed here, but that is irrelevant since we do not use those in the dpll-type solver!
-                        while(dec_stack.size()>dl) dec_stack.pop();
-                        goto dpll_gcp;
-                    }
-                    add_new_guess( r_cls.get_unit() ); //add as 'guess', i.e., trail and reason stacks are ill-managed here, but that is irrelevant since we do not use those in the dpll-type solver!
-                }
-                if(!r_clss.empty()) {
+                if( find_implied_alpha_from_linerals(s) ) {
+                    //in case we did backtrack, fix dec_stack
+                    while(dec_stack.size()>dl) dec_stack.pop();
                     goto dpll_gcp;
                 }
             }
@@ -875,14 +859,7 @@ void solver::solve(stats &s) {
     // GCP -- before making decisions!
     GCP(s);
     if( no_conflict() ) {
-        ++s.no_linalg;
-        auto r_clss = find_implied_alpha_from_linerals();
-        for(auto& r_cls : r_clss) {
-            ++s.no_linalg_prop;
-            assert(r_cls.get_assigning_lvl(alpha_dl) == dl);
-            add_learnt_cls( std::move(r_cls), false);
-        }
-        if(!r_clss.empty()) {
+        if( find_implied_alpha_from_linerals(s) ) {
             goto cdcl_gcp;
         }
     }
@@ -945,18 +922,7 @@ void solver::solve(stats &s) {
             GCP(s);
             //linear algebra on linerals
             if( need_linalg_inprocessing() ) {
-                ++s.no_linalg;
-                auto r_clss = find_implied_alpha_from_linerals();
-                for(auto& r_cls : r_clss) {
-                    ++s.no_linalg_prop;
-                    if(r_cls.get_assigning_lvl(alpha_dl) < dl) {
-                        backtrack( r_cls.get_assigning_lvl(alpha_dl) );
-                        add_learnt_cls( std::move(r_cls), false);
-                        goto cdcl_gcp;
-                    }
-                    add_learnt_cls( std::move(r_cls), false);
-                }
-                if(!r_clss.empty()) {
+                if( find_implied_alpha_from_linerals(s) ) {
                     goto cdcl_gcp;
                 }
             }
