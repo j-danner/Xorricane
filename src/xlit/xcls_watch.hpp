@@ -524,12 +524,12 @@ public:
     // fix unit part ('resolving' part)
     xlits[0] += rs_cls.get_unit();
     //@todo do we need to set xlit_dl_count0 here at all?!
-    const auto [lvl,_,__] = xlits[0].get_watch_var(alpha_dl, alpha_trail_pos);
-    if(lvl < dl_count.size()) {
-      xlit_dl_count0[0] = {lvl, dl_count[lvl]};
-    } else {
-      xlit_dl_count0[0] = {0,0};
-    }
+    //const auto [lvl,_,__] = xlits[0].get_watch_var(alpha_dl, alpha_trail_pos);
+    //if(lvl < dl_count.size()) {
+    //  xlit_dl_count0[0] = {lvl, dl_count[lvl]};
+    //} else {
+    //  xlit_dl_count0[0] = {0,0};
+    //}
     // add xlits from rs_cls to this
     if(rs_cls.size() == 1) {
       const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
@@ -570,6 +570,8 @@ public:
    * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
    */
   xcls_upd_ret init_unit_opt(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t idx_start_other_cls) {
+    return init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+
     if (size() == 1) {
       //reduce xlit[0]
       xlits[0].reduce(alpha, alpha_dl, 0);
@@ -810,8 +812,13 @@ public:
       xlits[0].reduce(alpha, alpha_dl, 0);
       xlits[0].reduce(equiv_lits, equiv_lits_dl, 0, alpha);
       //update watched variable
-      ws[0] = std::get<2>( xlits[0].get_watch_var(alpha_dl, alpha_trail_pos) );
-      ptr_cache[0] = ptr_(0, ws[0]);
+      if(!xlits[0].is_constant()) {
+        ws[0] = std::get<2>( xlits[0].get_watch_var(alpha_dl, alpha_trail_pos) );
+        ptr_cache[0] = ptr_(0, ws[0]);
+      } else {
+        ws[0] = 0;
+        ptr_cache[0] = 0;
+      }
       return xcls_upd_ret::UNIT;
     }
     assert(xlits.size()>1);
@@ -1150,19 +1157,19 @@ public:
   bool assert_data_struct() const {
     assert(xlit_dl_count0.size() == xlits.size());
     // sanity check to see whether ws[i] is actually contained in xlits[i]
-    assert(size()==0 || xlits[0].is_zero() || std::find(xlits[0].begin(), xlits[0].end(), ptr_ws(0)) != xlits[0].end());
+    assert(size()==0 || xlits[0].is_constant() || std::find(xlits[0].begin(), xlits[0].end(), ptr_ws(0)) != xlits[0].end());
     assert(size()<2 || std::find(xlits[1].begin(), xlits[1].end(), ptr_ws(1)) != xlits[1].end());
 
     assert(size()<2 || ptr_ws(0) != ptr_ws(1));
 
-    assert(size()==0 || (size()==1 && xlits[0].is_zero()) || !xlits[0].is_constant());
-    assert(size()<2 || !xlits[1].is_constant());
+    assert(size()==0 || size()==1 || !xlits[0].is_constant());
+    assert(size()<2 || !xlits[0].is_constant());
 
     // check that xlits[0] and xlits[1] share no inds!
     assert(size()<2 || xlits[0].shared_part(xlits[1]).is_zero());
 
     // check ptr_cache
-    assert(size()==0 || ptr_cache[0] == ptr_(0, ws[0]));
+    assert(size()==0 || (size()==1 && xlits[0].is_constant()) || ptr_cache[0] == ptr_(0, ws[0]));
     assert(size()<2 || ptr_cache[1] == ptr_(1, ws[1]));
 
     return true;
