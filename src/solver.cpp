@@ -941,7 +941,7 @@ void solver::solve(stats &s) {
             } else {
                 solve_L(L, s);
 
-                if(s.sols.size() < get_const_opts()->sol_count) {
+                if(s.sols.size() < get_const_opts()->sol_count && dl>0) {
                     //add clause that prevents this solution in the future, i.e., avoid taking the same decisions again
                     auto [lvl, learnt_cls] = analyze_dpll();
                     // backtrack
