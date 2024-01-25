@@ -414,9 +414,9 @@ class solver
       //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
       // add to trail //TODO add in propoer position in trail!
 
+      xlit_watch& l = *lin;
       if(type!=trail_t::IMPLIED_ALPHA) {
         //lin->update_lit(std::move(_reduced_lit), alpha, alpha_dl);
-        xlit_watch& l = *lin;
         trails[dl].emplace_back( l.LT(), type, lin); //TODO rm from trails?
         //if clause is active, i.e., not yet assigning add to watch lists; otherwise add assignment!
         if(l.is_active(alpha)) {
@@ -424,48 +424,37 @@ class solver
           if(l.size()>0) L_watch_list[ l.get_wl0() ].emplace_back( dl, lin, dl_count[dl] );
           if(l.size()>1) L_watch_list[ l.get_wl1() ].emplace_back( dl, lin, dl_count[dl] );
           //deal with new equivalence!
-          if (l.is_equiv()) { //TODO update to check is_equiv for xlit_watches!!
         #ifdef USE_EQUIV
+          if (l.is_equiv()) { //TODO update to check is_equiv for xlit_watches!!
+            const var_t lt = l.LT();
             assert(lt < l.get_equiv_lit() ); //ensure that lt is smallest!
             equiv_lits[lt].set_ind( l.get_equiv_lit() );
             equiv_lits[lt].set_polarity( l.has_constant() );
-            equiv_lits[lt].set_reason( rs );
+            equiv_lits[lt].set_lin( lin );
             equiv_lits_dl[lt] = dl;
-            assert( l.get_assigning_lvl(alpha_dl) == dl );
-            trails[dl].emplace_back( lt, trail_t::EQUIV, &l );
+            assert( l.get_equiv_lvl(alpha_dl) <= dl );
+            trails[dl].emplace_back( lt, trail_t::EQUIV, lin );
             VERB(65, "c " + std::to_string(dl) + " : new EQUIV " + lineral_watches[dl].back().to_str() )
-        #endif
+            //if we are at dl 0, replace lt in all lineral_watches AND in all xclss with l.get_equiv_lit() (!)
+            //@todo
           }
+        #endif
           return -1;
-        } else {
+        }
+      }
+      //now l must be an alpha-assignment!
+      assert(l.is_assigning(alpha));
           //get alpha-assignment
           const auto [lt2,val] = l.get_assignment(alpha);
           assert(l.is_assigning(alpha) && val!=bool3::None);
           trails[dl].emplace_back( lt2, trail_t::IMPLIED_ALPHA, lin );
           assert( alpha[lt2]==val || alpha[lt2]==bool3::None );
-          VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + lin->to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+      VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + l.to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
           alpha[lt2] = val;
           alpha_dl[lt2] = dl;
           assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), dl));
           alpha_trail_pos[lt2] = (var_t) trails[dl].size()-1;
           return lt2;
-        }
-      } else {
-          //type now is IMPLIED_ALPHA, i.e., we already knew that an alpha was implied!
-          assert( lin->is_assigning(alpha) );
-          const auto& [lt2,val] = lin->get_assignment(alpha);
-          //const var_t lt2 = lin->LT();
-          //const bool3 val = to_bool3( lin->has_constant() );
-          
-          trails[dl].emplace_back( lt2, type, lin );
-          assert( alpha[lt2]==bool3::None );
-          VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + lin->get_assigning_xlit(alpha).to_str() + " from UNIT " + lin->to_str() + " with reason clause " + get_reason(lin).to_str() );
-          alpha[lt2] = val;
-          alpha_dl[lt2] = dl;
-          assert(!no_conflict() || alpha_dl[lt2] == lin->get_assigning_lvl(alpha_dl));
-          alpha_trail_pos[lt2] = (var_t) trails[dl].size()-1;
-          return lt2;
-      }
     };
 
     /**
