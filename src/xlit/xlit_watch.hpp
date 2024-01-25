@@ -214,8 +214,19 @@ class xlit_watch : public xlit
     var_t get_assigning_lvl(const vec<var_t>& alpha_dl) const {
       return (idxs.size()==0 || alpha_dl[get_wl0()] == (var_t) -1) ? 0 : alpha_dl[get_wl0()];
     };
-
+    
     /**
+     * @brief returns lvl at which the xlit became an equivalence. BEWARE: the lvl at which the literal was constructed might be higher than the equiv-level!
+     * @note assumes that xlit is an equivalence
+     * 
+     * @param alpha current bool3-assignment
+     * @param alpha_dl dl of alpha
+     * @return var_t lvl at which the xlit became assigning
+     */
+    var_t get_equiv_lvl([[maybe_unused]] const vec<var_t>& alpha_dl) const {
+      assert( xlit::is_equiv() );
+      return 0;
+    };
 
     /**
      * @brief returns list of xlit_watches whose reasones need to be resolved to get this lineral
@@ -326,6 +337,31 @@ class xlit_watch : public xlit
       assert(assert_data_struct(alpha));
       return ret;
     };
+    
+    bool reduce([[maybe_unused]] const vec<bool3>& alpha, [[maybe_unused]] const vec<var_t>& alpha_dl, [[maybe_unused]] const vec<dl_c_t>& dl_count, [[maybe_unused]] const vec<equivalence>& equiv_lits) {
+    #ifndef USE_EQUIV
+      return false;
+    #else
+      bool ret = false;
+      var_t offset = 0;
+      while(offset<idxs.size()) {
+          if( equiv_lits[ idxs[offset] ].is_active()) {
+              ret = true;
+              //reason_cls_idxs.insert( reason_cls_idxs.end(), equiv_lits[idxs[offset]].reason_lin->get_reason_idxs().begin(), equiv_lits[idxs[offset]].reason_lin->get_reason_idxs().end() );
+              reason_cls_idxs.emplace_back( equiv_lits[idxs[offset]].reason_lin );
+              assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
+              *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
+          } else {
+              ++offset;
+          }
+      }
+      //re-init watches if changes were made!
+      if( ret ) init(alpha, alpha_dl, dl_count);
+      assert(assert_data_struct(alpha));
+      return ret;
+    #endif
+    };
+
 
     xlit_watch& operator=(xlit_watch&& other) noexcept {
       std::swap(ws, other.ws);

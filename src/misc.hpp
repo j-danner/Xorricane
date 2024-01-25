@@ -21,7 +21,7 @@
 #include <boost/container/allocator.hpp>
 #include <boost/container/adaptive_pool.hpp>
 
-//#define USE_EQUIV
+#define USE_EQUIV
 //#define DEBUG_SLOW
 
 //verbosity output
@@ -67,25 +67,28 @@ inline bool b3_to_bool(const bool3 b) { assert(b!=bool3::None); return b==bool3:
 
 
 #ifdef USE_EQUIV
+class xlit_watch;
+
 /**
  * @brief structure for storing equivalence of vars; essentially a pair of ind and polarity
- * @todo bitpacking?
  */
 struct equivalence {
   var_t ind;
   bool polarity;
-  var_t reason;
+  std::list<xlit_watch>::iterator reason_lin;
 
-  equivalence() : ind(0), polarity(false), reason(-1) {};
+  equivalence() : ind(0), polarity(false) {};
   equivalence(const var_t _ind, const bool _polarity) : ind(_ind), polarity(_polarity) {};
   equivalence(const equivalence& other) : ind(other.ind), polarity(other.polarity) {};
-  equivalence(equivalence&& other) : ind(other.ind), polarity(other.polarity) {};
+  equivalence(equivalence&& other) : ind(other.ind), polarity(other.polarity), reason_lin(other.reason_lin) {};
   
   void set_ind(const var_t _ind) { ind = _ind; };
   void set_polarity(const bool _polarity) { polarity = _polarity; };
-  void set_reason(const var_t _reason) { reason = _reason; };
+  void set_lin(const std::list<xlit_watch>::iterator& reason_lin_) { reason_lin = reason_lin_; };
 
-  void clear() { ind = 0; polarity = false; reason = -1; };
+  bool is_active() const { return ind>0; };
+
+  void clear() { ind = 0; polarity = false; };
   std::string to_str(const var_t& idx) const { return "x" + std::to_string(idx) + "+x" + std::to_string(ind) + (polarity ? "+1" : ""); };
 };
 #else

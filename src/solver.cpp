@@ -96,20 +96,18 @@ void solver::backtrack(const var_t& lvl) {
     if(lvl == dl) return;
     assert(lvl < dl);
     VERB(80, "c backtracking to dl " << lvl);
-    ///// --------------- /////
     if (dl - lvl > 1) {
         VERB(80, "c " << std::to_string(dl) << " : BACKJUMPING BY MORE THAN ON LEVEL!");
     }
-    // update dl_count
-    for(var_t dl_ = dl; dl_>lvl; dl_--) dl_count[dl_]++;
-    ///// --------------- /////
-
+    
     // trail and assignments!
   #ifndef NDEBUG
     print_trail();
     print_assignments();
   #endif
 
+    // update dl_count
+    for(var_t dl_ = dl; dl_>lvl; dl_--) dl_count[dl_]++;
     //undo unit linerals, revert assignments and alpha, and reset trail, reasons, queue
     while(dl>lvl) {
         while(!TRAIL.empty()) { pop_trail(); };
@@ -255,26 +253,26 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
 
         unit = std::move(learnt_cls.get_unit());
         unit.reduce(alpha);
-        unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
-        //if unit is still not 1, we need to resolve with reason clauses for equiv_lits which must reduce unit to 1 (!)
-      #ifdef USE_EQUIV
-        if(!unit.is_one()) {
-            //note: unit MUST reduce to 1 under equiv_lits
-          #ifndef NDEBUG
-            xlit unit_cpy = unit;
-            unit_cpy.reduce(equiv_lits);
-            unit_cpy.reduce(alpha);
-            assert(unit_cpy.is_one());
-          #endif
-            const auto reason_cls = xclss[equiv_lits[unit.LT()].reason];
-            VERB(70, "   * reason clause " + reason_cls.to_str() + " for EQUIVALENCE " + equiv_lits[unit.LT()].to_str(unit.LT()) );
-            //resolve!
-            learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
-            continue;
-        }
-      #else
+      //#ifdef USE_EQUIV
+      //  unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
+      //  //if unit is still not 1, we need to resolve with reason clauses for equiv_lits which must reduce unit to 1 (!)
+      //  if(!unit.is_one()) {
+      //      //note: unit MUST reduce to 1 under equiv_lits
+      //    #ifndef NDEBUG
+      //      xlit unit_cpy = unit;
+      //      unit_cpy.reduce(equiv_lits);
+      //      unit_cpy.reduce(alpha);
+      //      assert(unit_cpy.is_one());
+      //    #endif
+      //      const auto reason_cls = get_reason(equiv_lits[unit.LT()].reason_lin);
+      //      VERB(70, "   * reason clause " + reason_cls.to_str() + " for EQUIVALENCE " + equiv_lits[unit.LT()].to_str(unit.LT()) );
+      //      //resolve!
+      //      learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+      //      continue;
+      //  }
+      //#else
         assert( unit.is_one() );
-      #endif
+      //#endif
         assert(!learnt_cls.to_xcls().is_zero());
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
@@ -296,7 +294,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
         bump_score( TRAIL.back().ind );
         pop_trail(); //remove from trail!
 
-        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count);
     }
     
     VERB(70, "   * ");
@@ -346,26 +344,29 @@ std::pair<var_t, xcls_watch> solver::analyze() {
         
         unit = std::move(learnt_cls.get_unit());
         unit.reduce(alpha);
-        unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
-        //if unit is still not 1, we need to resolve with reason clauses for equiv_lits which must reduce unit to 1 (!)
-      #ifdef USE_EQUIV
-        if(!unit.is_one()) {
-            //note: unit MUST reduce to 1 under equiv_lits
-          #ifndef NDEBUG
-            xlit unit_cpy = learnt_cls.get_unit();
-            unit_cpy.reduce(equiv_lits);
-            unit_cpy.reduce(alpha);
-            assert(unit_cpy.is_one());
-          #endif
-            const auto reason_cls = xclss[equiv_lits[unit.LT()].reason];
-            VERB(70, "   * reason clause is   " + reason_cls.to_str() + " for EQUIVALENCE " + equiv_lits[unit.LT()].to_str(unit.LT()) );
-            //resolve!
-            learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl, opt.ca == ca_alg::fuip_opt );
-            continue;
-        }
-      #else
-        assert( unit.is_one() );
-      #endif
+      //#ifdef USE_EQUIV
+      //  @todo remove this part?!
+      //  unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
+      //  //if unit is still not 1, we need to resolve with reason clauses for equiv_lits which must reduce unit to 1 (!)
+      //  if(!unit.is_one()) {
+      //      //note: unit MUST reduce to 1 under equiv_lits
+      //    #ifndef NDEBUG
+      //      xlit unit_cpy = learnt_cls.get_unit();
+      //      unit_cpy.reduce(equiv_lits);
+      //      unit_cpy.reduce(alpha);
+      //      unit_cpy.reduce(equiv_lits);
+      //      unit_cpy.reduce(alpha);
+      //      //assert(unit_cpy.is_one());
+      //    #endif
+      //      const auto reason_cls = get_reason(equiv_lits[unit.LT()].reason_lin);
+      //      VERB(70, "   * reason clause is   " + reason_cls.to_str() + " for EQUIVALENCE " + equiv_lits[unit.LT()].to_str(unit.LT()) );
+      //      //resolve!
+      //      learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl, opt.ca == ca_alg::fuip_opt );
+      //      continue;
+      //  }
+      //#else
+      //  assert( unit.is_one() );
+      //#endif
         assert(!learnt_cls.to_xcls().is_zero());
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
@@ -394,7 +395,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
         bump_score( TRAIL.back().ind );
         pop_trail(); //remove from trail!
 
-        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl, opt.ca == ca_alg::fuip_opt);
+        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, opt.ca == ca_alg::fuip_opt);
     }
     // clean-up trail!
     
@@ -532,9 +533,9 @@ void solver::restart(stats& s) {
 };
 
 void solver::remove_fixed_alpha(const var_t upd_lt) {
-    VERB(90, "remove_fixed_alpha start" );
-    VERB(95, to_str());
+    VERB(90, "c remove_fixed_alpha start" );
     assert( alpha[upd_lt]!=bool3::None && alpha_dl[upd_lt]==0 );
+    assert(dl==0);
     const bool3 val = alpha[upd_lt];
     //rm upd_lt from lineral_watches[0] (all other levels are empty!)
     for(auto& lin_watch : lineral_watches[0]) {
@@ -549,8 +550,36 @@ void solver::remove_fixed_alpha(const var_t upd_lt) {
             if( xcls_w.rm(upd_lt, val) ) decr_active_cls(&xcls_w - &xclss[0]);
         }
     }
-    VERB(90, "remove_fixed_alpha end" );
-    VERB(95, to_str());
+    VERB(90, "c remove_fixed_alpha end" );
+}
+
+void solver::remove_fixed_equiv([[maybe_unused]] const var_t idx) {
+  #ifdef USE_EQUIV
+    return;
+    //@todo think about best approach to do this!
+
+    VERB(90, "c remove_fixed_equiv start" );
+    assert(equiv_lits[idx].is_active());
+    assert(dl==0);
+    //rm upd_lt from lineral_watches[0] (all other levels are empty!)
+    for(xlit_w_it lin = lineral_watches[0].begin(); lin!=lineral_watches[0].end(); ++lin) {
+        if(lin->is_active(alpha) && !lin->is_equiv()) {
+            lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
+            //@todo fix watch-lists only where necessary!
+            if(lin->size()>0) L_watch_list[ lin->get_wl0() ].emplace_back( dl, lin, dl_count[dl] );
+            if(lin->size()>1) L_watch_list[ lin->get_wl1() ].emplace_back( dl, lin, dl_count[dl] );
+        }
+    }
+    //rm upd_lt from xclss
+    for(auto& xcls_w : xclss) {
+        if(xcls_w.is_active(dl_count)) {
+            //@todo
+            //assert(!xcls_w.watches(upd_lt));
+            //if( xcls_w.rm(upd_lt, val) ) decr_active_cls(&xcls_w - &xclss[0]);
+        }
+    }
+    VERB(90, "c remove_fixed_equiv end" );
+  #endif
 }
 
 xlit new_unit;

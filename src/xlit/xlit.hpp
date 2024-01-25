@@ -87,15 +87,16 @@ class xlit
          */
         bool reduce_short(const xsys& sys);
         bool reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t& lvl);
+        bool reduce(const vec<equivalence>& equiv_lits);
         bool reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl, const vec<bool3>& alpha);
         bool reduce(const vec<bool3>& alpha);
         bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl);
         bool reduce(const vec<xlit>& assignments);
-        bool reduce(const vec<equivalence>& equiv_lits);
-        bool reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl);
         xlit reduced(const vec<xlit>& assignments) const { xlit ret(*this); ret.reduce(assignments); return ret; };
         xlit reduced(const vec<bool3>& alpha) const { xlit ret(*this); ret.reduce(alpha); return ret; };
         xlit reduced(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl) const { xlit ret(*this); ret.reduce(alpha, alpha_dl, lvl); return ret; };
+        xlit reduced(const vec<equivalence>& equiv_lits) { xlit ret(*this); ret.reduce(equiv_lits); return ret;};
+        xlit reduced(const vec<bool3>& alpha, const vec<equivalence>& equiv_lits) const { xlit ret(*this); ret.reduce(alpha); ret.reduce(equiv_lits); ret.reduce(alpha); return ret; };
         vec<var_t> reducers(const vec<xlit>& assignments) const;
 
         inline vec<var_t> get_idxs() const { vec<var_t> r = idxs; if(p1){ r.insert(r.begin(), 0); } return r; };

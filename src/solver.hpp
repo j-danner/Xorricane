@@ -251,8 +251,10 @@ class solver
         break;
       case trail_t::EQUIV:
     #ifdef USE_EQUIV
+        assert(equiv_lits[TRAIL.back().ind].is_active());
         equiv_lits[TRAIL.back().ind].clear();
-        equiv_lits_dl[TRAIL.back().ind] = (var_t) -1;
+        equiv_lits_dl[TRAIL.back().ind] = (var_t) 0;
+        assert(!equiv_lits[TRAIL.back().ind].is_active());
     #endif
         break;
       }
@@ -305,7 +307,7 @@ class solver
       }
       //resolve with additional clause -- if required!
       if(idx != (var_t) -1) {
-          const auto& r_cls2 = xclss[idx];
+        const auto& r_cls2 = xclss[idx];
       #ifndef NDEBUG
         tmp += r_cls2.get_unit();
       #endif
@@ -424,14 +426,9 @@ class solver
      */
     inline var_t add_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT) {
       if(type==trail_t::IMPLIED_UNIT) {
-        VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->reduced(alpha).to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+        VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
         lin->reduce(alpha, alpha_dl, dl_count);
-        #ifdef USE_EQUIV
-          //@todo implement reduce with equiv_lits
-          if(!_reduced_lit.is_assigning()) {
-            _reduced_lit.reduce(equiv_lits,equiv_lits_dl,dl); //reduce equivalent variable
-          }
-        #endif
+        lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
       }
       if(lin->is_zero(alpha)) {
         if(lin->is_zero()) lineral_watches[dl].erase( lin );
@@ -463,9 +460,10 @@ class solver
             equiv_lits_dl[lt] = dl;
             assert( l.get_equiv_lvl(alpha_dl) <= dl );
             trails[dl].emplace_back( lt, trail_t::EQUIV, lin );
-            VERB(65, "c " + std::to_string(dl) + " : new EQUIV " + lineral_watches[dl].back().to_str() )
+            VERB(65, "c " + std::to_string(dl) + " : new EQUIV " + lin->to_str() )
             //if we are at dl 0, replace lt in all lineral_watches AND in all xclss with l.get_equiv_lit() (!)
             //@todo
+            if(dl==0) remove_fixed_equiv(lt);
           }
         #endif
           return -1;
@@ -473,17 +471,17 @@ class solver
       }
       //now l must be an alpha-assignment!
       assert(l.is_assigning(alpha));
-          //get alpha-assignment
-          const auto [lt2,val] = l.get_assignment(alpha);
-          assert(l.is_assigning(alpha) && val!=bool3::None);
-          trails[dl].emplace_back( lt2, trail_t::IMPLIED_ALPHA, lin );
-          assert( alpha[lt2]==val || alpha[lt2]==bool3::None );
+      //get alpha-assignment
+      const auto [lt2,val] = l.get_assignment(alpha);
+      assert(l.is_assigning(alpha) && val!=bool3::None);
+      trails[dl].emplace_back( lt2, trail_t::IMPLIED_ALPHA, lin );
+      assert( alpha[lt2]==val || alpha[lt2]==bool3::None );
+      alpha[lt2] = val;
+      alpha_dl[lt2] = dl;
+      assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), dl));
+      alpha_trail_pos[lt2] = (var_t) trails[dl].size()-1;
       VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + l.to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
-          alpha[lt2] = val;
-          alpha_dl[lt2] = dl;
-          assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), dl));
-          alpha_trail_pos[lt2] = (var_t) trails[dl].size()-1;
-          return lt2;
+      return lt2;
     };
 
     /**
@@ -907,16 +905,16 @@ class solver
       //@todo i think we can remove this part, right?
       //since all watched linerals are reduced w.r.t. equiv lits, such equivalent literals may still be present in r_cls; i.e., we need to resolve with those!
       //note: r_cls should be assigning!
-      while(r_cls.get_assigning_lvl()>dl) {
-        assert(false);
-        assert( equiv_lits[r_cls.get_wl1()].ind > 0 );
-        assert( equiv_lits[r_cls.get_wl1()].reason < xclss.size() );
-        const auto& r_cls2 = xclss[ equiv_lits[r_cls.get_wl1()].reason ];
-        //add (unit of r_cls)+1 to r_cls2, and (unit of r_cls2)+1 to r_cls
-        VERB(85, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
-        r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
-        VERB(85, "c and get \nc   "+ BOLD(r_cls.to_str()));
-      }
+      //assert(false);
+      //while(r_cls.get_assigning_lvl()>dl) {
+      //  assert( equiv_lits[r_cls.get_wl1()].ind > 0 );
+      //  assert( equiv_lits[r_cls.get_wl1()].reason < xclss.size() );
+      //  const auto& r_cls2 = xclss[ equiv_lits[r_cls.get_wl1()].reason ];
+      //  //add (unit of r_cls)+1 to r_cls2, and (unit of r_cls2)+1 to r_cls
+      //  VERB(85, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
+      //  r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+      //  VERB(85, "c and get \nc   "+ BOLD(r_cls.to_str()));
+      //}
     #endif
       assert(!r_cls_idxs.empty());
 
@@ -963,7 +961,7 @@ class solver
       //update cls //TODO is init_unit rly needed here; shouldn't the clause already be initialized?
       VERB(90, "c adding new clause: " + BOLD(xclss[i].to_str()) + "  --> gives with current assignments: "+xclss[i].to_xcls().reduced(alpha).to_str());
       if(learnt_cls) VERB(90, "c XNF : " + xclss[i].to_xnf_str());
-      const auto ret = learnt_cls ? xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl) : xclss[i].init(alpha, alpha_dl, dl_count);
+      const auto ret = learnt_cls ? xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count) : xclss[i].init(alpha, alpha_dl, dl_count);
       //copied from GCP
       switch (ret) {
       case xcls_upd_ret::SAT:
@@ -1054,6 +1052,8 @@ class solver
     ~solver() = default;
 
     void remove_fixed_alpha(const var_t upd_lt);
+
+    void remove_fixed_equiv(const var_t idx);
     
     void GCP(stats& s);
 

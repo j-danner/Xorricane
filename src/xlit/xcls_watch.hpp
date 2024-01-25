@@ -515,7 +515,7 @@ public:
     return xcls_upd_ret::UNIT;
   };
 
-  xcls_upd_ret resolve(const xcls_watch &rs_cls, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const bool opt = false) {
+  xcls_upd_ret resolve(const xcls_watch &rs_cls, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const bool opt = false) {
     if(size()==0) {
       xlits.emplace_back( xlit(0, true) );
       xlit_dl_count0.emplace_back( 0, dl_count[0] );
@@ -532,7 +532,7 @@ public:
     //}
     // add xlits from rs_cls to this
     if(rs_cls.size() == 1) {
-      const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+      const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
       assert(ret == xcls_upd_ret::UNIT);
       assert(is_unit(dl_count));
       assert( assert_data_struct(alpha, dl_count) );
@@ -545,9 +545,9 @@ public:
     xlits.emplace_back(rs_cls.xlits[1] + rs_cls.shared_part);
     xlit_dl_count0.emplace_back(rs_cls.xlit_dl_count0[1]);
 
-    //const auto ret = init_unit_opt(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl, rs_cls.xlits.size());
-    //const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
-    const auto ret = opt ? init_unit_opt(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl, rs_cls.xlits.size()) : init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+    //const auto ret = init_unit_opt(alpha, alpha_dl, alpha_trail_pos, dl_count, rs_cls.xlits.size());
+    //const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
+    const auto ret = opt ? init_unit_opt(alpha, alpha_dl, alpha_trail_pos, dl_count, rs_cls.xlits.size()) : init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
     assert(ret == xcls_upd_ret::UNIT);
     assert(is_unit(dl_count));
     assert( assert_data_struct(alpha, dl_count) );
@@ -569,13 +569,12 @@ public:
    * @param dl currenct dl
    * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
    */
-  xcls_upd_ret init_unit_opt(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t idx_start_other_cls) {
-    return init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+  xcls_upd_ret init_unit_opt(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const var_t idx_start_other_cls) {
+    return init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
 
     if (size() == 1) {
       //reduce xlit[0]
       xlits[0].reduce(alpha, alpha_dl, 0);
-      xlits[0].reduce(equiv_lits, equiv_lits_dl, 0, alpha);
       //update watched variable
       ws[0] = std::get<2>( xlits[0].get_watch_var(alpha_dl, alpha_trail_pos) );
       ptr_cache[0] = ptr_(0, ws[0]);
@@ -590,7 +589,6 @@ public:
     // reduce all xlits at dl 0
     for (auto &l : xlits) {
       l.reduce(alpha, alpha_dl, 0);
-      l.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
     }
 
     if(idx_start_other_cls < xlits.size()) {
@@ -803,14 +801,13 @@ public:
     return xcls_upd_ret::UNIT;
   };
 
-  xcls_upd_ret init_unit(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl) {
+  xcls_upd_ret init_unit(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
     if(size()==0) {
       return xcls_upd_ret::UNIT;
     }
     if (size() == 1) {
       //reduce xlit[0]
       xlits[0].reduce(alpha, alpha_dl, 0);
-      xlits[0].reduce(equiv_lits, equiv_lits_dl, 0, alpha);
       //update watched variable
       if(!xlits[0].is_constant()) {
         ws[0] = std::get<2>( xlits[0].get_watch_var(alpha_dl, alpha_trail_pos) );
@@ -830,7 +827,6 @@ public:
     // reduce all xlits at dl 0
     for (auto &l : xlits) {
       l.reduce(alpha, alpha_dl, 0);
-      l.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
     }
 
     // re-order occuring indets with decreasing dl
@@ -1116,12 +1112,12 @@ public:
    *
    * @param lin lineral to add to unit part
    */
-  void add_to_unit(const xlit &lin, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl) {
+  void add_to_unit(const xlit &lin, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
     assert(is_unit(dl_count));
     assert(!xlits.empty());
     xlits[0] += lin;
     // re-init watches!
-    init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
+    init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
   }
 
   /**
