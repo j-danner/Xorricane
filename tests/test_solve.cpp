@@ -10,7 +10,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lex);
     phase_opt po = GENERATE(phase_opt::rand, phase_opt::save, phase_opt::save_inv);
     ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::fuip_opt);
-    int verb = 80;
+    int verb = 95;
   #else
     int la_sch = GENERATE(0,1,5,10);
     dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lwl, dec_heu::swl, dec_heu::lex);
@@ -471,6 +471,34 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         CHECK( s.sat == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
+    
+    SECTION( "test52.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test52.xnf");
+        auto slvr = solver(clss);
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test53.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test53.xnf");
+        auto slvr = solver(clss);
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
+    SECTION( "test54.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test54.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 120;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
 
     SECTION( "test35.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test35.xnf");
@@ -911,6 +939,20 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
 
         stats s = slvr.solve();
         CHECK( s.sols.size() == 5 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test52.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test52.xnf");
+        auto slvr = solver(clss);
+        //slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = ca_alg::fuip;
+        slvr.get_opts()->sol_count = -1;
+        slvr.get_opts()->lin_alg_schedule = 0;
+        slvr.get_opts()->dh = dec_heu::lex;
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size() == 1 );
         CHECK( check_sols(clss.cls, s.sols) );
     }
 }
