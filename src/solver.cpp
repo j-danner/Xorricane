@@ -1178,23 +1178,38 @@ std::string solver::to_xnf_str() const noexcept {
 void solver::print_trail(std::string lead) const noexcept {
   VERB(80, lead);
   VERB(80, lead+" trail");
-  VERB(80, lead+" pos dl type unit");
+  VERB(80, lead+" dl pos type unit");
 
-  const auto trail_t_to_str = [](const trail_t& t) {
+  const auto to_string = [](var_t i, var_t width) {
+    std::stringstream ss;
+    ss.width(width);
+    ss << std::left << i;
+    return ss.str();
+  };
+  
+  const auto trail_t_to_str = [](const trail_t& t) -> std::string {
     switch(t) {
-      case trail_t::EQUIV:                 return "NEW_EQUIV   ";
-      case trail_t::IMPLIED_UNIT:          return "IMPL_UNIT   ";
-      case trail_t::IMPLIED_ALPHA:         return "IMPL_ALPHA  ";
-      case trail_t::GUESS:                 return "GUESS       ";
+      case trail_t::EQUIV:         return "EQUIV ";
+      case trail_t::IMPLIED_UNIT:  return "UNIT  ";
+      case trail_t::IMPLIED_ALPHA: return BOLD("ALPHA ");
+      case trail_t::GUESS:         return BOLD("GUESS ");
     }
     return "";
   };
+
+  var_t w = std::to_string(alpha.size()).length();
+
   var_t lvl = 0;
   for(const auto& t_dl : trails) {
     var_t i = 0;
+    VERB(80, lead+" " + to_string(i,w));
     for (const auto& t : t_dl) {
         assert( (t.type!=trail_t::IMPLIED_ALPHA) || alpha_dl[t.ind] == lvl );
-        VERB(80, lead+" " + std::to_string(i) + " " + std::to_string(lvl) + " " + trail_t_to_str(t.type) + " " + "x" + std::to_string(t.ind) + " " + b3_to_str( alpha[t.ind] ));
+        if(t.type==trail_t::IMPLIED_UNIT) {
+            VERB(80, lead+" " + to_string(lvl,w) + " " + to_string(i,w) + " " + trail_t_to_str(t.type) + " " + "x" + to_string(t.ind,w) + " " + " from " + get_reason(t).to_str() );
+        } else {
+            VERB(80, lead+" " + to_string(lvl,w) + " " + to_string(i,w) + " " + trail_t_to_str(t.type) + " " + "x" + to_string(t.ind,w) + " " + " from " + t.lin->to_str());
+        }
         ++i;
     }
     ++lvl;
