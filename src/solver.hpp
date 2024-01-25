@@ -8,6 +8,7 @@
 #include <memory>
 #include <array>
 #include <m4ri/m4ri.h>
+#include <sstream>
 
 #include "solve.hpp"
 #include "misc.hpp"
