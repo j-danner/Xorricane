@@ -428,7 +428,7 @@ class solver
         lin->reduce(alpha, alpha_dl, dl_count);
         if(opt.eq) lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
       }
-      if(lin->is_zero(alpha)) {
+      if(lin->is_zero(alpha)) { //@todo can we always erase?
         if(lin->is_zero()) lineral_watches[dl].erase( lin );
         return -1;
       }
@@ -488,11 +488,6 @@ class solver
      * @param type type of propagation (defaults to trail_t::IMPLIED_UNIT)
      */
     inline void queue_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT) {
-      assert(type==trail_t::IMPLIED_UNIT || type==trail_t::GUESS);
-      //const var_t lvl = lvl_<xclss.size() ? xclss[rs].get_unit_at_lvl() : dl;
-      //if(rs<xclss.size() && (lvl<alpha.size() ? lvl !=xclss[rs].get_unit_at_lvl() : dl !=xclss[rs].get_unit_at_lvl())) {
-      //  VERB(10, "c queueing implied lineral at too high dl?!");
-      //}
       if(lin->LT()==0) lineral_queue.emplace_front( lin, type );
       else lineral_queue.emplace_back( lin, type );
     }
@@ -506,7 +501,7 @@ class solver
      * @param type type of propagation (defaults to trail_t::NEW_ALPHA)
      */
     inline void queue_implied_alpha(xlit_w_it lin) {
-      const auto [lt,val] = lin->get_assignment(alpha);
+      const auto lt = lin->is_constant() ? 0 : lin->get_wl1();
       assert(alpha[lt] == bool3::None);
 
       if(lt==0) lineral_queue.emplace_front( lin, trail_t::IMPLIED_ALPHA );
@@ -558,7 +553,7 @@ class solver
      * 
      * @return list of reason clauses for new alpha assignments
      */
-    bool find_implied_alpha_from_linerals(stats& s) {
+    bool find_implications_from_linerals(stats& s) {
       ++s.no_linalg;
     #ifndef NDEBUG
       vec<xlit> lits; lits.reserve(lineral_watches.size());
@@ -634,15 +629,19 @@ class solver
         for(rci_t c=0; (unsigned)c<n_vars; ++c) {
             if( mzd_read_bit(M, r, c) ) idxs.push_back(perm_inv[c]);
         }
-        if(idxs.size()==1 && alpha[idxs[0]]!=to_bool3(mzd_read_bit(M,r,n_vars)) ) {
-          xlits_.emplace_back( idxs[0], (bool) mzd_read_bit(M, r, n_vars) );
-        }
         if(idxs.size()==0) {
           //we got 1, i.e., we have a conflict; all other alpha assignments can be ignored
           assert(xlits_.size()==0);
           assert(mzd_read_bit(M,r,n_vars));
           xlits_.emplace_back( 0, false );
           break;
+        }
+        if(idxs.size()==1 && alpha[idxs[0]]!=to_bool3(mzd_read_bit(M,r,n_vars)) ) {
+          xlits_.emplace_back( idxs[0], (bool) mzd_read_bit(M, r, n_vars) );
+        }
+        if(idxs.size()==2 && equiv_lits[idxs[0]].ind==0 && opt.eq) {
+          assert(idxs[0] < idxs[1]);
+          xlits_.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::yes );
         }
       }
       mzd_free(M);
@@ -655,12 +654,12 @@ class solver
       }
 
       mzd_t* B = mzd_init(std::max(ncols,nrows), xlits_.size());
-      VERB(80, "c found "+std::to_string(xlits_.size())+" new alpha assignments!");
+      VERB(80, "c found "+std::to_string(xlits_.size())+" new alpha assignments and equivs");
       idx = 0;
       for(const auto& lit : xlits_) {
         VERB(85, "c   `--> " + lit.to_str());
         //set bits of b according to xlits_
-        if(lit.size()>0) mzd_write_bit(B, perm[lit.LT()], idx, 1);
+        for(const auto& jdx : lit.get_idxs_()) mzd_write_bit(B, perm[jdx], idx, 1);
         mzd_write_bit(B, n_vars, idx, lit.has_constant()); //uses that supp[0]==0
         ++idx;
       }
@@ -724,17 +723,18 @@ class solver
         assert((tmp+lit).reduced(alpha).is_zero());
         ++idx;
         //add lineral to lineral_watches
+        const bool equiv = lit.is_equiv();
         lineral_watches[resolving_lvl].emplace_back( std::move(lit), alpha, alpha_dl, dl_count, std::move(r_cls_idxs) );
         //backtrack if necessary!
         if(resolving_lvl < dl) {
           backtrack(resolving_lvl);
           assert(resolving_lvl==dl);
-          queue_implied_alpha( std::prev(lineral_watches[dl].end()));
+          queue_implied_lineral( std::prev(lineral_watches[dl].end()), equiv ? trail_t::IMPLIED_UNIT : trail_t::IMPLIED_ALPHA);
           //return immediately
           break;
         }
         assert(resolving_lvl==dl);
-        queue_implied_alpha( std::prev(lineral_watches[dl].end()));
+        queue_implied_lineral( std::prev(lineral_watches[dl].end()), equiv ? trail_t::IMPLIED_UNIT : trail_t::IMPLIED_ALPHA);
       }
 
       mzd_free(B);
@@ -1048,7 +1048,7 @@ class solver
     bool initial_linalg_inprocessing(stats& s) {
       assert(dl==0);
       if( !need_linalg_inprocessing() ) return false;
-      return find_implied_alpha_from_linerals(s);
+      return find_implications_from_linerals(s);
     };
 
     /**

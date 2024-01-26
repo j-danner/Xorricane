@@ -269,7 +269,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
         //ensure that reason cls is reason for provided alpha
         xlit unit = reason_cls.get_unit();
         unit.reduce(alpha);
-        unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
+        unit.reduce(equiv_lits, equiv_lits_dl, 0);
         assert(unit.is_zero()); //unit MUST reduce to zero, as TRAIL is not yet popped
     #endif
         bump_score( TRAIL.back().ind );
@@ -342,11 +342,11 @@ std::pair<var_t, xcls_watch> solver::analyze() {
         //ensure that reason cls is reason for provided alpha
         unit = reason_cls.get_unit();
         unit.reduce(alpha);
-        unit.reduce(equiv_lits, equiv_lits_dl, dl, alpha);
+        unit.reduce(equiv_lits, equiv_lits_dl, dl);
         unit.reduce(alpha);
         if(!unit.is_zero()) {
             unit = reason_cls.get_unit();
-            unit.reduce(equiv_lits, equiv_lits_dl, dl, alpha);
+            unit.reduce(equiv_lits, equiv_lits_dl, dl);
             unit.reduce(alpha);
         }
         assert(unit.is_zero()); //unit MUST reduce to zero, as TRAIL is not yet popped
@@ -694,7 +694,7 @@ void solver::dpll_solve(stats &s) {
     // GCP -- before making decisions!
     GCP(s);
     if( no_conflict() ) {
-        if( find_implied_alpha_from_linerals(s) ) {
+        if( find_implications_from_linerals(s) ) {
             goto dpll_gcp;
         }
     }
@@ -755,7 +755,7 @@ void solver::dpll_solve(stats &s) {
             GCP(s);
             //linear algebra on linerals
             if( need_linalg_inprocessing() ) {
-                if( find_implied_alpha_from_linerals(s) ) {
+                if( find_implications_from_linerals(s) ) {
                     //in case we did backtrack, fix dec_stack
                     while(dec_stack.size()>dl) dec_stack.pop();
                     goto dpll_gcp;
@@ -845,7 +845,7 @@ void solver::solve(stats &s) {
     // GCP -- before making decisions!
     GCP(s);
     if( no_conflict() ) {
-        if( find_implied_alpha_from_linerals(s) ) {
+        if( find_implications_from_linerals(s) ) {
             goto cdcl_gcp;
         }
     }
@@ -908,7 +908,7 @@ void solver::solve(stats &s) {
             GCP(s);
             //linear algebra on linerals
             if( need_linalg_inprocessing() ) {
-                if( find_implied_alpha_from_linerals(s) ) {
+                if( find_implications_from_linerals(s) ) {
                     goto cdcl_gcp;
                 }
             }
@@ -1131,7 +1131,7 @@ std::string solver::to_xnf_str() const noexcept {
         }
 
         //ensure that equiv_lits_dl is 'empty'
-        if(!opts->eq) for(const auto& lvl : equiv_lits_dl) assert(lvl==(var_t)-1);
+        if(!opt.eq) for(const auto& lvl : equiv_lits_dl) assert(lvl==(var_t)-1);
 
         // check solution! (for rand-10-20.xnf) -- may help in debugging!
         /*
