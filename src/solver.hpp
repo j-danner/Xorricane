@@ -428,7 +428,7 @@ class solver
         lin->reduce(alpha, alpha_dl, dl_count);
         if(opt.eq) lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
       }
-      if(lin->is_zero(alpha)) { //@todo can we always erase?
+      if(lin->is_zero(alpha)) {
         if(lin->is_zero()) lineral_watches[dl].erase( lin );
         return -1;
       }
@@ -459,7 +459,6 @@ class solver
             trails[dl].emplace_back( lt, trail_t::EQUIV, lin );
             VERB(65, "c " + std::to_string(dl) + " : new EQUIV " + lin->to_str() )
             //if we are at dl 0, replace lt in all lineral_watches AND in all xclss with l.get_equiv_lit() (!)
-            //@todo
             if(dl==0) remove_fixed_equiv(lt);
           }
           return -1;

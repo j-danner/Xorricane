@@ -417,7 +417,6 @@ public:
   std::pair<var_t, xcls_upd_ret> update(const var_t &new_lit, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count) {
     // check if clause needs any processing
     assert(is_active(dl_count));
-    //@todo rm dead code below
     if (!is_active(dl_count)) {
       assert(is_sat(dl_count) || is_unit(dl_count));
       return {new_lit, xcls_upd_ret::SAT}; // NOTE here it might also be a UNIT, but it did not become one by this update!
@@ -1095,7 +1094,6 @@ public:
    *
    * @return xlit unit that this clause was reduced to
    */
-  //@todo refactor: store unit in xlits[0] s.t. we only need to check for xlits.empty() (!)
   inline xlit get_unit() const { 
     //return xlits.size() > 1 ? (xlits[1] + shared_part).add_one() : (xlits.size() == 0 ? xlit(0,false) : xlits[0].plus_one());
     return xlits.empty() ? xlit(0,false) : (xlits[0] + shared_part).add_one();
@@ -1127,9 +1125,7 @@ public:
    * @return var_t lvl at which clause got inactive
    */
   inline var_t get_inactive_lvl(const vec<dl_c_t> &dl_count) const {
-    //@todo can't we get this information from the dl of the first watched lineralsss
     assert(is_inactive(dl_count)); // implies is_unit(dl_count) OR is_sat(dl_count)
-    //return xlit_dl_count0.empty() ? 0 : (is_unit(dl_count) ?  xlit_dl_count0[1].first : SAT_dl_count.first);
     return xlits.size()<=1 ? 0 : (is_sat(dl_count) ? SAT_dl_count.first : xlit_dl_count0[1].first);
   }
 
