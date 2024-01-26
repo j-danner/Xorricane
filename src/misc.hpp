@@ -21,7 +21,6 @@
 #include <boost/container/allocator.hpp>
 #include <boost/container/adaptive_pool.hpp>
 
-#define USE_EQUIV
 //#define DEBUG_SLOW
 
 //verbosity output
@@ -66,7 +65,6 @@ inline std::string b3_to_str(const bool3 b) { return b==bool3::None ? "None" : (
 inline bool b3_to_bool(const bool3 b) { assert(b!=bool3::None); return b==bool3::True ? true : false; };
 
 
-#ifdef USE_EQUIV
 class xlit_watch;
 
 /**
@@ -91,9 +89,6 @@ struct equivalence {
   void clear() { ind = 0; polarity = false; };
   std::string to_str(const var_t& idx) const { return "x" + std::to_string(idx) + "+x" + std::to_string(ind) + (polarity ? "+1" : ""); };
 };
-#else
-struct equivalence {};
-#endif
 
 /**
  * @brief class that handles stores guessing path
@@ -133,6 +128,7 @@ class guessing_path {
  * swl: choose variable with shortest watch list
  */
 enum class dec_heu { vsids, lwl, lex, swl };
+
 /**
  * @brief options for phase selection
  * rand: use random phases
@@ -140,6 +136,7 @@ enum class dec_heu { vsids, lwl, lex, swl };
  * save_inv: use oppositve phase from last run
  */
 enum class phase_opt { rand, save, save_inv };
+
 /**
  * @brief options for conflict analysis
  * no: no conflict analysis --> DPLL solving
@@ -147,6 +144,7 @@ enum class phase_opt { rand, save, save_inv };
  * fuip: first UIP conflict analysis
  */
 enum class ca_alg { no, dpll, fuip, fuip_opt };
+
 /**
  * @brief options for restart heuristic
  * no: no restarts
@@ -166,6 +164,8 @@ struct options {
     ca_alg ca = ca_alg::fuip;
     restart_opt rst = restart_opt::luby;
 
+    bool eq = true;
+
     int lin_alg_schedule = 0;
     
     int jobs = omp_get_num_threads();
@@ -183,7 +183,7 @@ struct options {
     options(guessing_path P_) : P(P_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int verb_, int timeout_=0) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), verb(verb_), timeout(timeout_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), rst(rst_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, bool eq_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), rst(rst_), eq(eq_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
 
     std::string to_str() const {
       std::string str = "";

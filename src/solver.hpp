@@ -250,12 +250,10 @@ class solver
         alpha_trail_pos[TRAIL.back().ind] = (var_t) -1;
         break;
       case trail_t::EQUIV:
-    #ifdef USE_EQUIV
         assert(equiv_lits[TRAIL.back().ind].is_active());
         equiv_lits[TRAIL.back().ind].clear();
         equiv_lits_dl[TRAIL.back().ind] = (var_t) 0;
         assert(!equiv_lits[TRAIL.back().ind].is_active());
-    #endif
         break;
       }
       TRAIL.pop_back();
@@ -428,7 +426,7 @@ class solver
       if(type==trail_t::IMPLIED_UNIT) {
         VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
         lin->reduce(alpha, alpha_dl, dl_count);
-        lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
+        if(opt.eq) lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
       }
       if(lin->is_zero(alpha)) {
         if(lin->is_zero()) lineral_watches[dl].erase( lin );
@@ -450,8 +448,7 @@ class solver
           if(l.size()>0) L_watch_list[ l.get_wl0() ].emplace_back( dl, lin, dl_count[dl] );
           if(l.size()>1) L_watch_list[ l.get_wl1() ].emplace_back( dl, lin, dl_count[dl] );
           //deal with new equivalence!
-        #ifdef USE_EQUIV
-          if (l.is_equiv()) { //TODO update to check is_equiv for xlit_watches!!
+          if (l.is_equiv() && opt.eq) {
             const var_t lt = l.LT();
             assert(lt < l.get_equiv_lit() ); //ensure that lt is smallest!
             equiv_lits[lt].set_ind( l.get_equiv_lit() );
@@ -465,7 +462,6 @@ class solver
             //@todo
             if(dl==0) remove_fixed_equiv(lt);
           }
-        #endif
           return -1;
         }
       }
@@ -901,21 +897,6 @@ class solver
         }
       }
       assert(tmp.is_one());
-    #ifdef USE_EQUIV
-      //@todo i think we can remove this part, right?
-      //since all watched linerals are reduced w.r.t. equiv lits, such equivalent literals may still be present in r_cls; i.e., we need to resolve with those!
-      //note: r_cls should be assigning!
-      //assert(false);
-      //while(r_cls.get_assigning_lvl()>dl) {
-      //  assert( equiv_lits[r_cls.get_wl1()].ind > 0 );
-      //  assert( equiv_lits[r_cls.get_wl1()].reason < xclss.size() );
-      //  const auto& r_cls2 = xclss[ equiv_lits[r_cls.get_wl1()].reason ];
-      //  //add (unit of r_cls)+1 to r_cls2, and (unit of r_cls2)+1 to r_cls
-      //  VERB(85, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
-      //  r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
-      //  VERB(85, "c and get \nc   "+ BOLD(r_cls.to_str()));
-      //}
-    #endif
       assert(!r_cls_idxs.empty());
 
       mzd_free(b);
@@ -995,7 +976,7 @@ class solver
       return i;
     }
 
-    const unsigned int confl_until_restart_default = 1<<14; //number of conflicts between restarts
+    const unsigned int confl_until_restart_default = 1<<7; //number of conflicts between restarts
     unsigned int confl_until_restart = 0; //number of conflicts between restarts
     /**
      * @brief checks if a restart is needed

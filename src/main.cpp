@@ -90,6 +90,12 @@ int main(int argc, char const *argv[])
             throw std::runtime_error("invalid argument passed for parameter -rh");
         });
     
+    //equiv opts
+    program.add_argument("-no-eq","--no-equivalent-literal-tracking")
+        .help("deactivate tracking of equivalent literals")
+        .flag();
+    
+    
     //jobs
     //program.add_argument("-j","--jobs")
     //    .help("parallel jobs (threads) to use (must NOT be larger than actual number of available threads!)")
@@ -169,7 +175,8 @@ int main(int argc, char const *argv[])
     if(rh_str=="no") rh = restart_opt::no;
     else if(rh_str=="fixed") rh = restart_opt::fixed;
     else if(rh_str=="luby") rh = restart_opt::luby;
-
+    
+    bool eq = !program.is_used("-no-eq");
 
     const bool only_gcp = program.is_used("-g");
     const std::string gcp_out = only_gcp ? program.get<std::string>("-g") : "";
@@ -199,7 +206,7 @@ int main(int argc, char const *argv[])
         assert( P.assert_data_struct() );
 
         //set upt options
-        options opts( dh, po, ca, rh, lin_alg_schedule, jobs, verb, time_out, sol_count, P );
+        options opts( dh, po, ca, rh, eq, lin_alg_schedule, jobs, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;

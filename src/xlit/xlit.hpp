@@ -63,7 +63,7 @@ class xlit
         inline bool is_constant() const { return idxs.empty(); };
 
         inline bool3 as_bool3() const { return (size()!=1 && !is_one()) ? bool3::None : (has_constant() ? bool3::True : bool3::False); };
-        inline bool is_equiv() const { return size()==2; };
+        inline bool is_equiv() const { return size()==2; }; //@todo implement this for xlit_watches!
         inline bool is_assigning() const { return size()<=1; };
 
         inline bool has_constant() const { return p1; };
@@ -88,7 +88,7 @@ class xlit
         bool reduce_short(const xsys& sys);
         bool reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t& lvl);
         bool reduce(const vec<equivalence>& equiv_lits);
-        bool reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl, const vec<bool3>& alpha);
+        bool reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl);
         bool reduce(const vec<bool3>& alpha);
         bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl);
         bool reduce(const vec<xlit>& assignments);

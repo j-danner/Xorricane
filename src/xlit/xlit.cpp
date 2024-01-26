@@ -146,10 +146,7 @@ bool xlit::reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl
     return ret;
 };
 
-bool xlit::reduce([[maybe_unused]] const vec<equivalence>& equiv_lits) {
-  #ifndef USE_EQUIV
-    return false;
-  #else
+bool xlit::reduce(const vec<equivalence>& equiv_lits) {
     bool ret = false;
     var_t offset = 0;
     while(offset<idxs.size()) {
@@ -162,17 +159,12 @@ bool xlit::reduce([[maybe_unused]] const vec<equivalence>& equiv_lits) {
         }
     }
     return ret;
-  #endif
 };
 
-bool xlit::reduce([[maybe_unused]] const vec<equivalence>& equiv_lits, [[maybe_unused]] const vec<var_t>& equiv_lits_dl, [[maybe_unused]] const var_t& lvl, [[maybe_unused]] const vec<bool3>& alpha) {
-  #ifndef USE_EQUIV
-    return false;
-  #else
+bool xlit::reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl) {
     bool ret = false;
     var_t offset = 0;
     while(offset<idxs.size()) {
-        //if( equiv_lits[ idxs[offset] ].ind>0 && equiv_lits_dl[ idxs[offset] ] <= lvl && ( alpha[ idxs[offset] ] == bool3::None || alpha[ equiv_lits[ idxs[offset] ].ind ] != bool3::None ) ) {
         if( equiv_lits[ idxs[offset] ].ind>0 && equiv_lits_dl[ idxs[offset] ] <= lvl ) {
             ret = true;
             assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
@@ -182,7 +174,6 @@ bool xlit::reduce([[maybe_unused]] const vec<equivalence>& equiv_lits, [[maybe_u
         }
     }
     return ret;
-  #endif
 };
 
 vec<var_t> xlit::support() const {

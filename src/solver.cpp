@@ -253,26 +253,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
 
         unit = std::move(learnt_cls.get_unit());
         unit.reduce(alpha);
-      //#ifdef USE_EQUIV
-      //  unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
-      //  //if unit is still not 1, we need to resolve with reason clauses for equiv_lits which must reduce unit to 1 (!)
-      //  if(!unit.is_one()) {
-      //      //note: unit MUST reduce to 1 under equiv_lits
-      //    #ifndef NDEBUG
-      //      xlit unit_cpy = unit;
-      //      unit_cpy.reduce(equiv_lits);
-      //      unit_cpy.reduce(alpha);
-      //      assert(unit_cpy.is_one());
-      //    #endif
-      //      const auto reason_cls = get_reason(equiv_lits[unit.LT()].reason_lin);
-      //      VERB(70, "   * reason clause " + reason_cls.to_str() + " for EQUIVALENCE " + equiv_lits[unit.LT()].to_str(unit.LT()) );
-      //      //resolve!
-      //      learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
-      //      continue;
-      //  }
-      //#else
         assert( unit.is_one() );
-      //#endif
         assert(!learnt_cls.to_xcls().is_zero());
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
@@ -344,29 +325,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
         
         unit = std::move(learnt_cls.get_unit());
         unit.reduce(alpha);
-      //#ifdef USE_EQUIV
-      //  @todo remove this part?!
-      //  unit.reduce(equiv_lits, equiv_lits_dl, 0, alpha);
-      //  //if unit is still not 1, we need to resolve with reason clauses for equiv_lits which must reduce unit to 1 (!)
-      //  if(!unit.is_one()) {
-      //      //note: unit MUST reduce to 1 under equiv_lits
-      //    #ifndef NDEBUG
-      //      xlit unit_cpy = learnt_cls.get_unit();
-      //      unit_cpy.reduce(equiv_lits);
-      //      unit_cpy.reduce(alpha);
-      //      unit_cpy.reduce(equiv_lits);
-      //      unit_cpy.reduce(alpha);
-      //      //assert(unit_cpy.is_one());
-      //    #endif
-      //      const auto reason_cls = get_reason(equiv_lits[unit.LT()].reason_lin);
-      //      VERB(70, "   * reason clause is   " + reason_cls.to_str() + " for EQUIVALENCE " + equiv_lits[unit.LT()].to_str(unit.LT()) );
-      //      //resolve!
-      //      learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl, opt.ca == ca_alg::fuip_opt );
-      //      continue;
-      //  }
-      //#else
-      //  assert( unit.is_one() );
-      //#endif
+        assert( unit.is_one() );
         assert(!learnt_cls.to_xcls().is_zero());
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
@@ -554,7 +513,6 @@ void solver::remove_fixed_alpha(const var_t upd_lt) {
 }
 
 void solver::remove_fixed_equiv([[maybe_unused]] const var_t idx) {
-  #ifdef USE_EQUIV
     return;
     //@todo think about best approach to do this!
 
@@ -579,7 +537,6 @@ void solver::remove_fixed_equiv([[maybe_unused]] const var_t idx) {
         }
     }
     VERB(90, "c remove_fixed_equiv end" );
-  #endif
 }
 
 xlit new_unit;
@@ -1173,10 +1130,8 @@ std::string solver::to_xnf_str() const noexcept {
             assert( alpha[ind]==bool3::None || alpha_dl[ind]<=dl );
         }
 
-      #ifndef USE_EQUIV
         //ensure that equiv_lits_dl is 'empty'
-        for(const auto& lvl : equiv_lits_dl) assert(lvl==(var_t)-1);
-      #endif
+        if(!opts->eq) for(const auto& lvl : equiv_lits_dl) assert(lvl==(var_t)-1);
 
         // check solution! (for rand-10-20.xnf) -- may help in debugging!
         /*

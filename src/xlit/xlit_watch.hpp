@@ -157,7 +157,7 @@ class xlit_watch : public xlit
     /**
      * @brief returns the equivalent lit, if this is an equivalence
      */
-    var_t get_equiv_lit() const { return xlit::is_equiv() ? ( get_wl0()==LT() ? get_wl1() : get_wl0() ) : 0; }
+    var_t get_equiv_lit() const { return is_equiv() ? ( get_wl0()==LT() ? get_wl1() : get_wl0() ) : 0; }
 
     /**
      * @brief get assigning xlit
@@ -224,9 +224,20 @@ class xlit_watch : public xlit
      * @return var_t lvl at which the xlit became assigning
      */
     var_t get_equiv_lvl([[maybe_unused]] const vec<var_t>& alpha_dl) const {
-      assert( xlit::is_equiv() );
+      assert( is_equiv() );
       return 0;
     };
+
+    
+    /**
+     * @brief checks whether lineral is an equivalence
+     * 
+     * @return true iff lineral is an equivalence
+     * @todo also check if lineral BECAME an equivalence! (watch three positions in idxs!)
+     */
+    bool is_equiv() const {
+      return xlit::is_equiv();
+    }
 
     /**
      * @brief returns list of xlit_watches whose reasones need to be resolved to get this lineral
@@ -338,10 +349,7 @@ class xlit_watch : public xlit
       return ret;
     };
     
-    bool reduce([[maybe_unused]] const vec<bool3>& alpha, [[maybe_unused]] const vec<var_t>& alpha_dl, [[maybe_unused]] const vec<dl_c_t>& dl_count, [[maybe_unused]] const vec<equivalence>& equiv_lits) {
-    #ifndef USE_EQUIV
-      return false;
-    #else
+    bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
       bool ret = false;
       var_t offset = 0;
       while(offset<idxs.size()) {
@@ -359,7 +367,6 @@ class xlit_watch : public xlit
       if( ret ) init(alpha, alpha_dl, dl_count);
       assert(assert_data_struct(alpha));
       return ret;
-    #endif
     };
 
 
