@@ -66,7 +66,7 @@ guessing_path parse_gp(const std::string& fname) {
     return P;
 }
 
-parsed_xnf parse_file(const std::string& fname) {
+parsed_xnf parse_file(std::istream& file) {
     var_t num_vars = 0;
     var_t num_cls = 0;
     
@@ -74,72 +74,64 @@ parsed_xnf parse_file(const std::string& fname) {
     vec< xlit > cl;
     vec< var_t > idxs;
 
-    std::ifstream file(fname);
-    if ( file.fail() ) {
-        std::cout << "c file \'" << fname << "\' not found!" << std::endl; //TODO do proper error handling, i.e., throw exception?!
-        throw std::runtime_error("file not found!");
-    }
-    if (file.is_open()) {
-        std::string line;
-        while (std::getline(file, line)) {
-            if (line.length() == 0 || line[0] == 'c') continue; //ignore line
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.length() == 0 || line[0] == 'c') continue; //ignore line
 
-            auto words = split(line, " ");
-            if (words[0] == "p") {
-                if (words[1] != "xnf") {
-                    std::cout << "c parser: file-format specified as \'" << words[1] << "\' continuing as if it were " << "\'xnf\'" << "." << std::endl;
-                }
-                if (words.size()<4) {
-                    std::cout << "c parser: file-format incorrectly specified. Should be \'p xnf n m\' where n is the number of variables and m the number of clauses." << std::endl;
-                }
-                num_vars = stoi(words[2]);
-                num_cls = stoi(words[3]);
-            } else {
-                //line contains clause
-                cl.clear();
-
-                //check if clause is in XOR-clause notation or XNF-notation!
-                if(words[0] == "x") {
-                    //convert to XNF-notation:
-                    words[0] = std::accumulate( std::next(words.begin(),2), std::prev(words.end()), words[1], [](std::string a, std::string b) { return a + "+" + b; });
-                    words[1] = "0";
-                    words.resize(2);
-                }
-
-                for (size_t i = 0; i < words.size(); i++)
-                {
-                    //check if clause is terminated:
-                    if (words[i]=="0" || words[i]=="\0") {
-                        break;
-                    }
-                    //otherwise read xlit
-                    auto lit = split(words[i], "+");
-                    idxs.clear();
-                    bool need_0 = true;
-                    for (auto &&v : lit) {
-                        int v_ = stoi(v);
-                        //std::cout << v << std::endl;
-                        if (v_>0) {
-                            idxs.emplace_back( v_ );
-                            if ((var_t) v_ > num_vars) {
-                                throw std::invalid_argument( "c provided clauses include larger vars than announced by header!" );
-                            };
-                        } else if (v_==0) {
-                            //not standardized (interpret '+0' as '-')
-                            need_0 ^= true;
-                        } else {
-                            idxs.emplace_back(  -v_ );
-                            need_0 ^= true;
-                        }
-                    }
-                    
-                    if (idxs.size() > 0) cl.emplace_back( std::move(idxs), need_0, presorted::no );
-                }
-                //add clause to cls
-                if (cl.size() > 0) cls.emplace_back( std::move(cl) );
+        auto words = split(line, " ");
+        if (words[0] == "p") {
+            if (words[1] != "xnf") {
+                std::cout << "c parser: file-format specified as \'" << words[1] << "\' continuing as if it were " << "\'xnf\'" << "." << std::endl;
             }
+            if (words.size()<4) {
+                std::cout << "c parser: file-format incorrectly specified. Should be \'p xnf n m\' where n is the number of variables and m the number of clauses." << std::endl;
+            }
+            num_vars = stoi(words[2]);
+            num_cls = stoi(words[3]);
+        } else {
+            //line contains clause
+            cl.clear();
+
+            //check if clause is in XOR-clause notation or XNF-notation!
+            if(words[0] == "x") {
+                //convert to XNF-notation:
+                words[0] = std::accumulate( std::next(words.begin(),2), std::prev(words.end()), words[1], [](std::string a, std::string b) { return a + "+" + b; });
+                words[1] = "0";
+                words.resize(2);
+            }
+
+            for (size_t i = 0; i < words.size(); i++)
+            {
+                //check if clause is terminated:
+                if (words[i]=="0" || words[i]=="\0") {
+                    break;
+                }
+                //otherwise read xlit
+                auto lit = split(words[i], "+");
+                idxs.clear();
+                bool need_0 = true;
+                for (auto &&v : lit) {
+                    int v_ = stoi(v);
+                    //std::cout << v << std::endl;
+                    if (v_>0) {
+                        idxs.emplace_back( v_ );
+                        if ((var_t) v_ > num_vars) {
+                            throw std::invalid_argument( "c provided clauses include larger vars than announced by header!" );
+                        };
+                    } else if (v_==0) {
+                        //not standardized (interpret '+0' as '-')
+                        need_0 ^= true;
+                    } else {
+                        idxs.emplace_back(  -v_ );
+                        need_0 ^= true;
+                    }
+                }
+                
+                if (idxs.size() > 0) cl.emplace_back( std::move(idxs), need_0, presorted::no );
+            }
+            //add clause to cls
+            if (cl.size() > 0) cls.emplace_back( std::move(cl) );
         }
-        file.close();
     }
 
     if( cls.size() != num_cls) {
@@ -148,6 +140,23 @@ parsed_xnf parse_file(const std::string& fname) {
     }
     
     return parsed_xnf(num_vars, num_cls, cls);
+}
+
+
+parsed_xnf parse_file(const std::string& fname) {
+    std::istream file(NULL);
+    if(fname!=" ") {
+        std::ifstream file(fname);
+        if ( file.fail() || !file.is_open() ) {
+            std::cout << "c file \'" << fname << "\' not found!" << std::endl; //TODO do proper error handling, i.e., throw exception?!
+            throw std::runtime_error("file not found!");
+        }
+        const auto p_xnf = parse_file( file );
+        file.close();
+        return p_xnf;
+    } else {
+        return parse_file( std::cin );
+    }
 }
 
 

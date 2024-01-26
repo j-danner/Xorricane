@@ -1,4 +1,5 @@
 #include "solve.hpp"
+#include <unistd.h>
 
 #include "argparse/argparse.hpp"
 
@@ -31,8 +32,10 @@ int main(int argc, char const *argv[])
     
     //add args:
     //fname
-    program.add_argument("fname")
-        .help("path to 2xnf-instance");
+    if(isatty(STDIN_FILENO)) {
+        program.add_argument("fname")
+            .help("path to 2xnf-instance");
+    }
 
     //dec_heu
     program.add_argument("-dh","--decision-heuristic")
@@ -109,7 +112,7 @@ int main(int argc, char const *argv[])
 
     //gcp-out
     program.add_argument("-g","--gcp-out")
-        .help("applies GCP once and prints result givn fname")
+        .help("applies GCP once and outputs result")
         .default_value(std::string("out.xnf"));
     
     //guessing path input
@@ -139,7 +142,7 @@ int main(int argc, char const *argv[])
     }
 
     //parse string-input to 
-    auto fname = program.get<std::string>("fname");
+    auto fname = isatty(STDIN_FILENO) ? program.get<std::string>("fname") : " ";
 
     auto dh_str = program.get<std::string>("-dh");
     dec_heu dh = dec_heu::lwl;
