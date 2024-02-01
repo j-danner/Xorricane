@@ -154,6 +154,14 @@ enum class ca_alg { no, dpll, fuip, fuip_opt };
 enum class restart_opt { no, fixed, luby};
 
 /**
+ * @brief options for initial propagation of non-forcing linerals
+ * no: no propagation
+ * nbu: 'no blow up'; only propagate if lineral's size does not 'blow up'
+ * full: full propagation, i.e., reduction
+ */
+enum class initial_prop_opt { no, nbu, full};
+
+/**
  * @brief struct that holds options for the various heuristic choices
  * 
  */
@@ -163,6 +171,7 @@ struct options {
 
     ca_alg ca = ca_alg::fuip;
     restart_opt rst = restart_opt::luby;
+    initial_prop_opt ip = initial_prop_opt::no;
 
     bool eq = true;
 
@@ -183,7 +192,8 @@ struct options {
     options(guessing_path P_) : P(P_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int verb_, int timeout_=0) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), verb(verb_), timeout(timeout_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, bool eq_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), rst(rst_), eq(eq_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int lin_alg_schedule_, int verb_) : dh(dh_), po(po_), ca(ca_), rst(rst_), ip(ip_), eq(eq_), lin_alg_schedule(lin_alg_schedule_), verb(verb_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), rst(rst_), ip(ip_), eq(eq_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
 
     std::string to_str() const {
       std::string str = "";
@@ -219,6 +229,14 @@ struct options {
         case restart_opt::no: str += "no"; break;
         case restart_opt::fixed: str += "fixed"; break;
         case restart_opt::luby: str += "luby"; break;
+      }
+      str += "\n";
+      
+      str += "c initial_prop_opt: ";
+      switch(initial_prop_opt(ip)) {
+        case initial_prop_opt::no: str += "no"; break;
+        case initial_prop_opt::nbu: str += "nbu"; break;
+        case initial_prop_opt::full: str += "full"; break;
       }
       str += "\n";
 

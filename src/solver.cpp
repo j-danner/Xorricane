@@ -55,17 +55,22 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
         //check if clause reduces to unit
         if (cls.deg() == 1) { // lin-eq!
             _L.emplace_back( cls.get_ass_VS().get_non_zero_el().add_one() );
-            _xclss.emplace_back( std::move(cls) );
-        } else if (cls.is_zero()) {
-            //ignore cls
-        } else {
-            _xclss.emplace_back( std::move(cls) );
         }
+        if (!cls.is_zero()) _xclss.emplace_back( std::move(cls) );
     }
     //reduce xclss with _L
     xsys _Lsys(_L);
     for(auto& cls : _xclss) {
-        //cls.update_short(_Lsys); //TODO no full reduction?!
+        switch(opt.ip) {
+            case initial_prop_opt::no:
+                break;
+            case initial_prop_opt::nbu:
+                cls.update_short(_Lsys);
+                break;
+            case initial_prop_opt::full:
+                cls.update(_Lsys);
+                break;
+        }
         init_and_add_xcls_watch( std::move(cls), false );
     }
 

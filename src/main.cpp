@@ -90,9 +90,23 @@ int main(int argc, char const *argv[])
             throw std::runtime_error("invalid argument passed for parameter -rh");
         });
     
+    //initial reduction opts
+    program.add_argument("-ip","--initial-propagation")
+        .help("options for initial propagation, i.e., how non-forcing linerals are propagated in pre-processing, 'no' (no propagation), 'nbu' (only reduce if lineral's size does not blow up) or 'full' (full reduction of linerals)")
+        .default_value(std::string("no"))
+        .action([](const std::string& value) {
+            static const vec<std::string> choices = { "no", "nbu", "full" };
+            if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
+                return value;
+            }
+            //arg invalid!
+            throw std::runtime_error("invalid argument passed for parameter -ip");
+        });
+    
+    
     //equiv opts
     program.add_argument("-no-eq","--no-equivalent-literal-tracking")
-        .help("deactivate tracking of equivalent literals")
+        .help("deactivate tracking and usage of equivalent literals")
         .flag();
     
     
@@ -176,6 +190,12 @@ int main(int argc, char const *argv[])
     else if(rh_str=="fixed") rh = restart_opt::fixed;
     else if(rh_str=="luby") rh = restart_opt::luby;
     
+    auto ip_str = program.get<std::string>("-ip");
+    initial_prop_opt ip = initial_prop_opt::no;
+    if(ip_str=="no") ip = initial_prop_opt::no;
+    else if(ip_str=="nbu") ip = initial_prop_opt::nbu;
+    else if(ip_str=="full") ip = initial_prop_opt::full;
+    
     bool eq = !program.is_used("-no-eq");
 
     const bool only_gcp = program.is_used("-g");
@@ -206,7 +226,7 @@ int main(int argc, char const *argv[])
         assert( P.assert_data_struct() );
 
         //set upt options
-        options opts( dh, po, ca, rh, eq, lin_alg_schedule, jobs, verb, time_out, sol_count, P );
+        options opts( dh, po, ca, rh, ip, eq, lin_alg_schedule, jobs, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;
