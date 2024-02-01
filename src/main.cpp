@@ -34,12 +34,13 @@ int main(int argc, char const *argv[])
     //fname
     if(isatty(STDIN_FILENO)) {
         program.add_argument("fname")
-            .help("path to 2xnf-instance");
+            .help("path to 2xnf-instance")
+            .nargs(1);
     }
 
     //dec_heu
     program.add_argument("-dh","--decision-heuristic")
-        .help("decision heuristic; 'vsids', 'lwl' -- longest watch_list, 'lex' -- lexicographically first, 'swl'")
+        .help("decision heuristic; 'vsids', 'lwl' (longest watch list), 'swl' (shortest watch list), or 'lex' (lexicographical)")
         .default_value(std::string("vsids"))
         .action([](const std::string& value) {
             static const vec<std::string> choices = { "vsids", "lwl", "lex", "swl" };
@@ -48,11 +49,11 @@ int main(int argc, char const *argv[])
             }
             //arg invalid!
             throw std::runtime_error("invalid argument passed for parameter -dh");
-        });
+        }).nargs(1);
     
     //phase_opt
     program.add_argument("-po","--phase-options")
-        .help("phase options; 'save', 'save_inv', 'rand'")
+        .help("phase saving options; 'save', 'save_inv', 'rand'")
         .default_value(std::string("save"))
         .action([](const std::string& value) {
             static const vec<std::string> choices = { "save", "save_inv", "rand" };
@@ -61,12 +62,12 @@ int main(int argc, char const *argv[])
             }
             //arg invalid!
             throw std::runtime_error("invalid argument passed for parameter -po");
-        });
+        }).nargs(1);
 
 
     //cdcl opts
     program.add_argument("-ca","--conflict-analysis")
-        .help("algorithm to use for conflict analysis, 'no' (means DPLL-solving), 'dpll' (means cdcl-implementation with DPLL-like learning (USE ONLY FOR DEBUGGING!)), '1uip', or '1uip+'")
+        .help("algorithm to use for conflict analysis; 'no' (DPLL) or '1uip' (1UIP)")
         .default_value(std::string("1uip"))
         .action([](const std::string& value) {
             static const vec<std::string> choices = { "no", "dpll", "1uip", "1uip+" };
@@ -75,11 +76,11 @@ int main(int argc, char const *argv[])
             }
             //arg invalid!
             throw std::runtime_error("invalid argument passed for parameter -ca");
-        });
+        }).nargs(1);
     
     //restart opts
     program.add_argument("-rh","--restart-heuristic")
-        .help("heuristic to schedule restarts, 'no' (no restarts), 'fixed' (restarts after fixed number of conflicts) or 'luby' (theoritcal optimal restart scheduling)")
+        .help("heuristic to schedule restarts; 'no' (never), 'fixed' (after fixed number of conflicts) or 'luby' (theoritcal optimal)")
         .default_value(std::string("luby"))
         .action([](const std::string& value) {
             static const vec<std::string> choices = { "no", "fixed", "luby" };
@@ -88,11 +89,11 @@ int main(int argc, char const *argv[])
             }
             //arg invalid!
             throw std::runtime_error("invalid argument passed for parameter -rh");
-        });
+        }).nargs(1);
     
     //initial reduction opts
     program.add_argument("-ip","--initial-propagation")
-        .help("options for initial propagation, i.e., how non-forcing linerals are propagated in pre-processing, 'no' (no propagation), 'nbu' (only reduce if lineral's size does not blow up) or 'full' (full reduction of linerals)")
+        .help("initial propagation heuristic of non-forcing linerals; 'no' (no), 'nbu' (reduce if lineral's size does not blow up), or 'full' (full reduction)")
         .default_value(std::string("no"))
         .action([](const std::string& value) {
             static const vec<std::string> choices = { "no", "nbu", "full" };
@@ -101,43 +102,41 @@ int main(int argc, char const *argv[])
             }
             //arg invalid!
             throw std::runtime_error("invalid argument passed for parameter -ip");
-        });
+        }).nargs(1);
     
     
     //equiv opts
-    program.add_argument("-no-eq","--no-equivalent-literal-tracking")
+    program.add_argument("-no-eq","--no-equiv-lit")
         .help("deactivate tracking and usage of equivalent literals")
         .flag();
     
     
-    //jobs
-    //program.add_argument("-j","--jobs")
-    //    .help("parallel jobs (threads) to use (must NOT be larger than actual number of available threads!)")
-    //    .default_value(1)
-    //    .scan<'i', int>();
-        
     //verbosity
     #ifdef VERBOSITY
         program.add_argument("-vb", "--verb")
             .help("verbosity level (choose in 0-100)")
             .default_value(1)
-            .scan<'i', int>();
+            .scan<'i', int>()
+            .nargs(1);
     #endif
     
     //timeout
     program.add_argument("-t","--time-out")
         .help("timeout in seconds (negative to deactivate)")
         .default_value(-1)
-        .scan<'i', int>();
+        .scan<'i', int>()
+        .nargs(1);
 
     //gcp-out
     program.add_argument("-g","--gcp-out")
         .help("applies GCP once and outputs result")
-        .default_value(std::string("out.xnf"));
+        .default_value(std::string("out.xnf"))
+        .nargs(1);
     
     //guessing path input
     program.add_argument("-gp","--guessing-path")
-        .help("path to file storing guessing path; each line contains exactly one number corr to the corresponding variable");
+        .help("path to file storing guessing path; each line contains exactly one number corr to the corresponding variable")
+        .nargs(1);
         //undocumented: if var name is negative we first guess the ind to be false instead of true
 
 
@@ -145,13 +144,15 @@ int main(int argc, char const *argv[])
     program.add_argument("-ms", "--maxsol")
         .help("number of solutions to compute; -1 to compute all solutions")
         .default_value(1)
-        .scan<'i', int>();
+        .scan<'i', int>()
+        .nargs(1);
     
     //linalg-in-processing options
     program.add_argument("-la","--lin-alg")
         .help("schedule linear algebra in-processing after every i-th decision")
         .default_value(0)
-        .scan<'i', int>();
+        .scan<'i', int>()
+        .nargs(1);
 
     try {
         program.parse_args(argc, argv);
