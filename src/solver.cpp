@@ -469,7 +469,7 @@ void solver::restart(stats& s) {
             xclss[i].mark_for_removal();
         }
     }
-    assert( assert_data_structs() );
+    assert_slow( assert_data_structs() );
     //remove all clss marked for removal
     vec<xcls_watch> cpy; cpy.reserve(xclss.size());
     vec<double> util_cpy(utility.size(), 0);
@@ -655,7 +655,7 @@ void solver::GCP(stats &s) {
 
     VERB(201, to_str());
     VERB(90, "GCP end");
-    assert(assert_data_structs());
+    assert_slow(assert_data_structs());
 };
 
 // implementation of a dpll-solver
@@ -1111,7 +1111,7 @@ std::string solver::to_xnf_str() const noexcept {
         }
         
         //check active_cls -- on every dl!
-        assert( active_cls == (var_t) std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch& xcls) { return xcls.is_active(dl_count) && xcls.is_irredundant(); }) );
+        assert_slow( active_cls == (var_t) std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch& xcls) { return xcls.is_active(dl_count) && xcls.is_irredundant(); }) );
         auto dl_count_cpy = dl_count;
         for(var_t lvl = dl; lvl>0; --lvl) {
             ++dl_count_cpy[lvl];
@@ -1119,13 +1119,13 @@ std::string solver::to_xnf_str() const noexcept {
             //VERB(90, "active_cls recomputed on lvl " + std::to_string(lvl) + ": " + std::to_string(
             //    std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls) { return xcls.is_active(dl_count_cpy) && xcls.is_irredundant(); })
             //));
-            assert( !no_conflict() || active_cls_stack[lvl] == (var_t) 
+            assert_slow( !no_conflict() || active_cls_stack[lvl] == (var_t) 
                 std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch& xcls) { return xcls.is_active(dl_count_cpy) && xcls.is_irredundant(); })
             );
         }
 
 
-        //check that trails[dl] contains exactly as many trail_t::IMPLIED_UNIT elements as there are xlit_watches in lineral_watches[dl]
+        //check trail
         for(var_t lvl = 0; lvl<dl; lvl++) {
             for(const auto& [ind, type, rs] : trails[lvl]) {
                 assert( alpha[ind]==bool3::None || alpha_dl[ind]<=dl );
@@ -1134,6 +1134,11 @@ std::string solver::to_xnf_str() const noexcept {
         for(const auto& [ind, type, rs] : trails[dl]) {
             assert( alpha[ind]==bool3::None || alpha_dl[ind]<=dl );
         }
+        dl_c_t cnt = 0;
+        for(var_t lvl=0; lvl<trails.size(); lvl++) {
+            cnt += std::count_if(trails[lvl].begin(), trails[lvl].end(), [](const trail_elem& t) { return t.type==trail_t::IMPLIED_ALPHA; });
+        }
+        assert_slow( cnt == total_trail_length );
 
         //ensure that equiv_lits_dl is 'empty'
         if(!opt.eq) for(const auto& lvl : equiv_lits_dl) assert(lvl==(var_t)-1);

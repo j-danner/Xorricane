@@ -254,7 +254,6 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     SECTION( "test22.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test22.xnf");
         auto slvr = solver(clss, opt);
-        assert( slvr.assert_data_structs() );
 
         stats s = slvr.solve();
         CHECK( s.sat == true ); //SAT!

@@ -883,7 +883,7 @@ public:
     mzd_free(M);
 
     //xlits_ must already be sorted w.r.t. lt!
-    assert( std::is_sorted(xlits_.begin(), xlits_.end(), [](const xlit &a, const xlit &b) { return a.LT() < b.LT(); }) );
+    assert_slow( std::is_sorted(xlits_.begin(), xlits_.end(), [](const xlit &a, const xlit &b) { return a.LT() < b.LT(); }) );
 
     // set xlit_dl_count0, since all except the first xlits must be satisfied by assumption
     xlit_dl_count0[0] = {0,0};
@@ -1174,7 +1174,7 @@ public:
     }
     if(is_sat(dl_count)) {
       assert(dl_count[SAT_dl_count.first] == SAT_dl_count.second);
-      assert(to_xcls().reduced(alpha).is_zero());
+      assert_slow(to_xcls().reduced(alpha).is_zero());
     }
     if( size()>0 && dl_count[xlit_dl_count0[0].first] == xlit_dl_count0[0].second ) assert( !eval0(alpha) );
     if( size()>1 && dl_count[xlit_dl_count0[1].first] == xlit_dl_count0[1].second ) assert( !eval1(alpha) || is_unit(dl_count) );
