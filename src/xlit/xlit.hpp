@@ -156,17 +156,16 @@ class xlit
          * @return std::pair<var_t,var_t,var_t> tuple of max dl, trail pos and idx pos
          */
         inline std::tuple<var_t,var_t,var_t> get_watch_var(const vec<var_t>& alpha_dl, const vec<var_t>& alpha_trail_pos) const {
-          var_t max_dl = 0;
           var_t max_trail_pos = 0;
           var_t max_idx = 0;
           for(var_t i=0; i<idxs.size(); ++i) {
-            const var_t v = idxs[i];
-            if( alpha_dl[v] > max_dl || (alpha_dl[v] == max_dl && alpha_trail_pos[v]>max_trail_pos) ) { 
-              max_dl = alpha_dl[v]; max_trail_pos = alpha_trail_pos[v]; max_idx = i;
+            const var_t& v = idxs[i];
+            if(alpha_trail_pos[v]==(var_t)-1) return {-1,0,i};
+            if(alpha_trail_pos[v]>max_trail_pos) { 
+              max_trail_pos = alpha_trail_pos[v]; max_idx = i;
             }
-            if (alpha_dl[v]==(var_t)-1) return {-1,0,i};
           }
-          return {max_dl, max_trail_pos, max_idx};
+          return {alpha_dl[idxs[max_idx]], max_trail_pos, max_idx};
         }
 
         inline var_t get_watch_idx(const vec<var_t>& alpha_dl, const vec<var_t>& alpha_trail_pos) const {

@@ -29,6 +29,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     trails = vec< std::list<trail_elem> >();
     trails.reserve(num_vars+1);
     trails.emplace_back( std::list<trail_elem>() );
+    total_trail_length = 0;
     last_phase = vec<bool3>(num_vars + 1, bool3::None);
     //init last_phase according to init_phase of guessing_path:
     for(var_t idx=0; idx<opt_.P.size(); ++idx) {
@@ -604,7 +605,7 @@ void solver::GCP(stats &s) {
             const var_t i = *it;
             assert(xclss[i].watches(upd_lt));
             if(!xclss[i].is_active(dl_count)) { ++it; continue; }
-            const auto& [new_wl, ret] = xclss[i].update(upd_lt, alpha, alpha_dl, dl_count);
+            const auto& [new_wl, ret] = xclss[i].update(upd_lt, alpha, alpha_dl, alpha_trail_pos, dl_count);
             //if watched-literal has changed, i.e., new_wl != 0; update watch-list
             if(new_wl != upd_lt) {
                 //rm *it from current watch-list:

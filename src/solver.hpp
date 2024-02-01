@@ -164,10 +164,8 @@ class solver
     vec<var_t> alpha_dl;
     
     /**
-     * @brief alpha_trail_pos[i] indicates the position of the alpha-assignment in trails[alpha_dl[i]]
-     * @todo refactor trails to be a SINGLE stack; and alpha_trail_pos indicates the postiion in this single stack; 
-     *       would simplify code for determining the highest position in trail_stack + simplify filtration tracking?
-     * 
+     * @brief alpha_trail_pos[i] indicates the position of the alpha-assignment in trails[alpha_dl[i]], this value is unique!
+     * @note if i and j are assigned: alpha_trail_pos[i] > alpha_trails_pos[j]  -->  alpha_dl[i] >= alpha_dl[j];
      */
     vec<var_t> alpha_trail_pos;
 
@@ -187,6 +185,11 @@ class solver
      * @note trail[lvl] is the trail at level lvl
      */
     vec< std::list<trail_elem> > trails;
+
+    /**
+     * @brief total trail length up to dl-1
+     */
+    var_t total_trail_length = 0;
 
     std::deque<lineral_queue_elem> lineral_queue;
 
@@ -248,6 +251,7 @@ class solver
         alpha[TRAIL.back().ind] = bool3::None;
         alpha_dl[TRAIL.back().ind] = (var_t) -1;
         alpha_trail_pos[TRAIL.back().ind] = (var_t) -1;
+        --total_trail_length;
         break;
       case trail_t::EQUIV:
         assert(equiv_lits[TRAIL.back().ind].is_active());
@@ -474,7 +478,8 @@ class solver
       alpha[lt2] = val;
       alpha_dl[lt2] = dl;
       assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), dl));
-      alpha_trail_pos[lt2] = (var_t) trails[dl].size()-1;
+      alpha_trail_pos[lt2] = total_trail_length;
+      ++total_trail_length;
       VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + l.to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
       return lt2;
     };
@@ -915,7 +920,7 @@ class solver
     inline var_t init_and_add_xcls_watch(xcls&& cls, const bool& redundant) {
       assert( dl == 0 );
       xcls_watch cls_w( std::move(cls) );
-      cls_w.init(alpha, alpha_dl, dl_count);
+      cls_w.init(alpha, alpha_dl, alpha_trail_pos, dl_count);
       return add_xcls_watch( std::move(cls_w), redundant );
     }
 
@@ -941,7 +946,7 @@ class solver
       //update cls //TODO is init_unit rly needed here; shouldn't the clause already be initialized?
       VERB(90, "c adding new clause: " + BOLD(xclss[i].to_str()) + "  --> gives with current assignments: "+xclss[i].to_xcls().reduced(alpha).to_str());
       if(learnt_cls) VERB(90, "c XNF : " + xclss[i].to_xnf_str());
-      const auto ret = learnt_cls ? xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count) : xclss[i].init(alpha, alpha_dl, dl_count);
+      const auto ret = learnt_cls ? xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count) : xclss[i].init(alpha, alpha_dl, alpha_trail_pos, dl_count);
       //copied from GCP
       switch (ret) {
       case xcls_upd_ret::SAT:
@@ -1027,7 +1032,7 @@ class solver
     solver(parsed_xnf& p_xnf, guessing_path& P) noexcept : solver(p_xnf.cls, p_xnf.num_vars, options(P)) {};
 
     //copy ctor
-    solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), active_cls_stack(o.active_cls_stack), activity_score(o.activity_score), dl_count(o.dl_count), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), lineral_queue(o.lineral_queue) { assert(assert_data_structs()); };
+    solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), active_cls_stack(o.active_cls_stack), activity_score(o.activity_score), dl_count(o.dl_count), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), total_trail_length(o.total_trail_length), lineral_queue(o.lineral_queue) { assert(assert_data_structs()); };
 
     ~solver() = default;
 

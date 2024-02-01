@@ -44,6 +44,11 @@ private:
    * @brief xlit_dl_counts_0 tells in which dl the cls is 0, i.e., SAT
    */
   std::pair<var_t, dl_c_t> SAT_dl_count = {0,0};
+  
+  /**
+   * @brief assigned_pos of each @todo!
+   */
+  //std::map<var_t,std::list<var_t>> xlit_filtration_pos0;
 
   /**
    * @brief literal watches; offset into idxs-sets of xlits[0] and xlits[1]
@@ -103,14 +108,14 @@ private:
     assert(get_wl0() != get_wl1());
   }
 
-  var_t ptr_(const cls_size_t &i, const var_t val) const {
+  inline var_t ptr_(const cls_size_t &i, const var_t val) const {
     if(val == 0 && xlits[i].size()==0) return 0;
     assert(val < xlits[i].size());
     // return xlits[i].get_idxs_().at(val);
     return xlits[i].get_idxs_()[val];
   }
 
-  const var_t &ptr_ws(const cls_size_t &i) const {
+  inline const var_t &ptr_ws(const cls_size_t &i) const {
     assert(ptr_(i, ws[i]) == ptr_cache[i]);
     return ptr_cache[i];
   }
@@ -123,7 +128,7 @@ private:
    * @param dl_count current dl_count
    * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
    */
-  std::pair<var_t, xcls_upd_ret> advance(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count) {
+  std::pair<var_t, xcls_upd_ret> advance(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
     assert(alpha[ptr_ws(0)] != bool3::None);
 
     // TODO shorter & cleaner impl with c++20 ranges?
@@ -160,15 +165,21 @@ private:
     // now shared_part can also be evaluated --> xlits[0]+shared_part can be evaluated!
     if (xlits[0].eval(alpha) ^ shared_part.eval(alpha)) {
       // xlits[0]+shared_part evaluates to 1
-      // corresponding lineral is 0 --> xclause does not need to be watched any longer!
+      // corresponding lineral is 1 --> clause does not need to be watched any longer!
       // do not change watches!
       SAT_dl_count = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
       assert(!is_active(dl_count)); // clause is no longer active!
       assert(assert_data_struct());
       return {ptr_ws(0), xcls_upd_ret::SAT};
     }
-    // now xlits[0]+shared_part evaluates to 1 under alpha, i.e., we check whether a different xlit can be watched.
+    // now xlits[0]+shared_part evaluates to 0 under alpha, i.e., we check whether a different lineral can be watched.
     xlit_dl_count0[0] = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
+    //@todo add filtration information here!
+    //if(xlit_filtration_pos0.contains(alpha_trail_pos[ptr_ws(0)])) {
+    //  xlit_filtration_pos0[alpha_trail_pos[ptr_ws(0)]].push_back(0);
+    //} else {
+    //  xlit_filtration_pos0.insert( {alpha_trail_pos[ptr_ws(0)], {0}});
+    //}
 
     // note that xlits[0] and xlits[1] are always the xlits that are watched, i.e., start search from xlits[2] (!)
     cls_size_t new_i = 2;
@@ -186,6 +197,7 @@ private:
         xlit_dl_count0.resize( xlit_dl_count0.size()-1 );
         //repeat with same new_i
         --new_i;
+        //@todo update filtration information here!
         continue;
       } else if(xlits[new_i].is_one()) {
         //leave watches untouched; but set SAT_dl_count s.t. clause is satisfied already at dl 0!
@@ -194,11 +206,11 @@ private:
       }
       assert(!xlits[new_i].is_one());
 
-      // find lit that was assigned at highest dl (req for proper backtracking!) -- or find unassigned lit!
+      // find lit that was assigned at highest trail_pos (req for proper backtracking!) -- or find unassigned lit!
       new_w = 0;
       var_t max_w = 0;
       while (new_w < (var_t)xlits[new_i].size() && alpha[ptr_(new_i, new_w)] != bool3::None) {
-        if (alpha_dl[ptr_(new_i, new_w)] > alpha_dl[ptr_(new_i, max_w)]) max_w = new_w;
+        if(alpha_trail_pos[ptr_(new_i, new_w)] > alpha_trail_pos[ptr_(new_i, max_w)]) max_w = new_w;
         ++new_w;
       }
       new_w = ( new_w == (var_t)xlits[new_i].size() ) ? max_w : new_w;
@@ -414,7 +426,7 @@ public:
    * @param dl current dl
    * @return var_t,xcls_upd_ret upd_ret is SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t is the new-watched literal (or the same if unchanged!)
    */
-  std::pair<var_t, xcls_upd_ret> update(const var_t &new_lit, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count) {
+  std::pair<var_t, xcls_upd_ret> update(const var_t &new_lit, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
     // check if clause needs any processing
     assert(is_active(dl_count));
     if (!is_active(dl_count)) {
@@ -429,7 +441,7 @@ public:
     assert(ptr_ws(0) == new_lit);
 
     // advance ws[0]
-    const auto [new_w, upd] = advance(alpha, alpha_dl, dl_count);
+    const auto [new_w, upd] = advance(alpha, alpha_dl, alpha_trail_pos, dl_count);
     assert(is_sat(dl_count) || is_unit(dl_count) || ptr_ws(0) != new_lit);
     assert(watches(new_w));
     assert(assert_data_struct());
@@ -458,7 +470,7 @@ public:
    * @param dl_count current dl_count
    * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
    */
-  xcls_upd_ret init(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<dl_c_t> &dl_count) {
+  xcls_upd_ret init(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
     // check if clause needs any processing
     if (!is_active(dl_count)) {
       assert(is_sat(dl_count) || is_unit(dl_count));
@@ -476,7 +488,7 @@ public:
         return xcls_upd_ret::UNIT;
     }
 
-    [[maybe_unused]] const auto [new_w, _] = advance(alpha, alpha_dl, dl_count);
+    [[maybe_unused]] const auto [new_w, _] = advance(alpha, alpha_dl, alpha_trail_pos, dl_count);
     assert(is_sat(dl_count) || is_unit(dl_count) || ptr_ws(0) == new_w);
     assert(watches(new_w));
     assert(assert_data_struct());
@@ -484,7 +496,7 @@ public:
     if (alpha[get_wl0()] == bool3::None) {
       swap_wl(); // if one of the watched literals is unassigned, ensure it is wl1
 
-      advance(alpha, alpha_dl, dl_count);
+      advance(alpha, alpha_dl, alpha_trail_pos, dl_count);
       assert(is_sat(dl_count) || is_unit(dl_count) || ptr_ws(0) == new_w);
       assert(watches(new_w));
       assert(assert_data_struct());
@@ -499,6 +511,7 @@ public:
         // esnure we watch the variable with hightest dl!
         const var_t new_w = std::distance(xlits[0].begin(), std::max_element(xlits[0].begin(), xlits[0].end(), 
                                                                               [&](const auto &a, const auto &b) { return alpha_dl[a] < alpha_dl[b]; }));
+                                                                            //@todo change to alpha_trail_pos?
         ws[0] = new_w;
         ptr_cache[0] = ptr_(0, ws[0]);
         std::swap(xlit_dl_count0[0], xlit_dl_count0[new_i]);
@@ -575,7 +588,7 @@ public:
       //reduce xlit[0]
       xlits[0].reduce(alpha, alpha_dl, 0);
       //update watched variable
-      ws[0] = std::get<2>( xlits[0].get_watch_var(alpha_dl, alpha_trail_pos) );
+      ws[0] = xlits[0].get_watch_idx(alpha_dl, alpha_trail_pos);
       ptr_cache[0] = ptr_(0, ws[0]);
       return xcls_upd_ret::UNIT;
     }
@@ -600,10 +613,9 @@ public:
       tmp.push_back(idx_start_other_cls);
       std::sort(tmp.begin(), tmp.end(),
                 [&alpha_dl, &alpha_trail_pos, this](const var_t a, const var_t b)
-                { const auto [a_dl, a_apos, a_] = xlits[a].get_watch_var(alpha_dl, alpha_trail_pos);
-                  const auto [b_dl, b_apos, b_] = xlits[b].get_watch_var(alpha_dl, alpha_trail_pos);
-                  return a_dl > b_dl || 
-                    (a_dl == b_dl && a_apos > b_apos);
+                { const auto& [a_dl, a_apos, a_] = xlits[a].get_watch_var(alpha_dl, alpha_trail_pos);
+                  const auto& [b_dl, b_apos, b_] = xlits[b].get_watch_var(alpha_dl, alpha_trail_pos);
+                  return a_apos > b_apos;
                 });
       vec<var_t> pos; pos.reserve(xlits.size());
       for(var_t i=0; i<xlits.size(); ++i) pos.push_back(i);
@@ -675,7 +687,7 @@ public:
     vec<var_t> idxs(tmp.begin(), tmp.end());
     std::sort(idxs.begin(), idxs.end(),
               [&alpha_dl, &alpha_trail_pos](const var_t &a, const var_t &b)
-              { return alpha_dl[a] > alpha_dl[b] || (alpha_dl[a] == alpha_dl[b] && alpha_trail_pos[a] > alpha_trail_pos[b]); });
+              { return alpha_trail_pos[a] > alpha_trail_pos[b]; });
     // construct permutation maps
     vec<var_t> perm(alpha.size());
     vec<var_t> perm_inv(alpha.size());
@@ -809,7 +821,7 @@ public:
       xlits[0].reduce(alpha, alpha_dl, 0);
       //update watched variable
       if(!xlits[0].is_constant()) {
-        ws[0] = std::get<2>( xlits[0].get_watch_var(alpha_dl, alpha_trail_pos) );
+        ws[0] = xlits[0].get_watch_idx(alpha_dl, alpha_trail_pos);
         ptr_cache[0] = ptr_(0, ws[0]);
       } else {
         ws[0] = 0;
@@ -835,8 +847,8 @@ public:
     }
     vec<var_t> idxs(tmp.begin(), tmp.end());
     std::sort(idxs.begin(), idxs.end(),
-              [&alpha_dl, &alpha_trail_pos](const var_t &a, const var_t &b)
-              { return alpha_dl[a] > alpha_dl[b] || (alpha_dl[a] == alpha_dl[b] && alpha_trail_pos[a] > alpha_trail_pos[b]); });
+              [&alpha_trail_pos](const var_t &a, const var_t &b)
+              { return alpha_trail_pos[a] > alpha_trail_pos[b]; });
     // construct permutation maps
     vec<var_t> perm(alpha.size());
     vec<var_t> perm_inv(alpha.size());
