@@ -180,9 +180,9 @@ class xlit
           return true;
         }
 
-        bool eval(const vec<bool> &sol) const { bool out = !p1; for(const auto &i : idxs) out ^= sol[i-1]; return out; };
-        bool eval(const vec<bool3> &sol) const { bool out = !p1; for(const auto &i : idxs) { assert(sol[i]!=bool3::None); out ^= (sol[i] == bool3::True); } return out; };
-        bool partial_eval(const vec<bool3> &sol) const { bool out = !p1; for(const auto &i : idxs) { out ^= (sol[i] == bool3::True); } return out; };
+        inline bool eval(const vec<bool> &sol) const { bool out = !p1; for(const auto &i : idxs) out ^= sol[i-1]; return out; };
+        inline bool eval(const vec<bool3> &sol) const { bool out = !p1; for(const auto &i : idxs) { assert(sol[i]!=bool3::None); out ^= (sol[i] == bool3::True); } return out; };
+        inline bool partial_eval(const vec<bool3> &sol) const { bool out = !p1; for(const auto &i : idxs) { out ^= (sol[i] == bool3::True); } return out; };
         void solve(vec<bool>& sol_) const { if(LT()>0) { sol_[LT()-1] = eval(sol_) ? sol_[LT()-1] : !sol_[LT()-1]; } };
 };
 

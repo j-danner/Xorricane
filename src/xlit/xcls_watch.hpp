@@ -1197,8 +1197,8 @@ public:
     return assert_data_struct();
   };
 
-  bool eval(const vec<bool> &sol) const {
-    return std::any_of(xlits.begin()+2, xlits.end(), [&sol](const xlit l) { return !l.eval(sol); })
+  inline bool eval(const vec<bool> &sol) const {
+    return std::any_of(xlits.begin()+2, xlits.end(), [&sol](const xlit& l) { return !l.eval(sol); })
         || shared_part.eval(sol)^xlits[0].eval(sol)
         || (xlits.size()>1 && shared_part.eval(sol)^xlits[1].eval(sol));
   };
