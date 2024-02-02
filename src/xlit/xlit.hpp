@@ -18,7 +18,9 @@ enum class presorted { yes, no };
 //sparse implementation of a xor-literal
 class xlit
 {
-    protected:
+    friend class xlit_watch;
+
+    private:
         bool p1;
         //sparse repr of literal
         vec< var_t > idxs; /**<  List of sorted indices of the terms. */
