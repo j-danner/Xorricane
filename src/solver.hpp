@@ -689,12 +689,11 @@ class solver
       #ifdef DEBUG_SLOW
         r=0;
         for(var_t lvl=0; lvl<=dl; ++lvl) {
-          const auto& l_dl = lineral_watches[lvl];
+          auto& l_dl = lineral_watches[lvl];
           //check solution:
           for(xlit_w_it l_it = l_dl.begin(); l_it != l_dl.end() && r < B->nrows; ++l_it, ++r) {
-            const auto& l = *l_it;
             if(!mzd_read_bit(B,r,idx)) continue;
-            tmp += l;
+            tmp += *l_it;
           }
         }
         assert(L_.reduce(tmp+lit).is_zero());
