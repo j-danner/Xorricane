@@ -20,6 +20,9 @@ enum class xcls_upd_ret {
   NONE
 };
 
+#define WLIN0 xlits[idx[0]]
+#define WLIN1 xlits[idx[1]]
+
 // watch xcls
 class xcls_watch
 {
@@ -31,7 +34,7 @@ private:
   // TODO would it be better to store xlits NOT as objects of class xlit, but as UNSORTED vecs of var_t's ??
 
   /**
-   * @brief shared part of xlits[0] and xlits[1]
+   * @brief shared part of WLIN0 and WLIN1
    */
   xlit shared_part;
 
@@ -44,14 +47,25 @@ private:
    * @brief xlit_dl_counts_0 tells in which dl the cls is 0, i.e., SAT
    */
   std::pair<var_t, dl_c_t> SAT_dl_count = {0,0};
+
+  /**
+   * @brief number of non-zero xlits
+   */
+  var_t num_nz_xlits = 0;
   
   /**
    * @brief assigned_pos of each @todo!
    */
   //std::map<var_t,std::list<var_t>> xlit_filtration_pos0;
+  //std::map<var_t,var_t> //this map changes with every swap!
 
   /**
-   * @brief literal watches; offset into idxs-sets of xlits[0] and xlits[1]
+   * @brief lineral watches; offset into xlits
+   */
+  lit_watch idx[2];
+
+  /**
+   * @brief literal watches; offset into idxs-sets of WLIN0 and WLIN1
    */
   lit_watch ws[2];
 
@@ -79,33 +93,40 @@ private:
     // init xlit_dl_counts
     xlit_dl_count0.resize(xlits.size(), {0, 0});
 
+    //assumes that all linerals are non-zero!
+    num_nz_xlits = xlits.size();
 
     if (xlits.size() == 0) {
       shared_part.clear();
       return;
     } else if (xlits.size() == 1) {
+      idx[0] = 0;
       ws[0] = 0;
-      ptr_cache[0] = ptr_(0, ws[0]);
+      ptr_cache[0] = ptr_(idx[0], ws[0]);
       shared_part.clear();
       return;
     }
-
     assert(xlits.size() > 1);
+    idx[0] = 0;
+    idx[1] = 1;
+
     // init shared
-    shared_part = xlits[0].shared_part(xlits[1]);
-    // rm shared part from xlits[0] and xlits[1]
-    xlits[0] += shared_part;
-    xlits[1] += shared_part;
+    shared_part = WLIN0.shared_part(WLIN1);
+    // rm shared part from WLIN0 and WLIN1
+    WLIN0 += shared_part;
+    WLIN1 += shared_part;
 
-    // ensure that xlits[0] and xlits[1] are non-empty
-    assert(xlits[0].size() > 0 && xlits[1].size() > 0);
+    // ensure that WLIN0 and WLIN1 are non-empty
+    assert(WLIN0.size() > 0 && WLIN1.size() > 0);
 
-    // init ws
+    // init ws/idx
     ws[0] = 0;
     ws[1] = 0;
-    ptr_cache[0] = ptr_(0, ws[0]);
-    ptr_cache[1] = ptr_(1, ws[1]);
+    ptr_cache[0] = ptr_(idx[0], ws[0]);
+    ptr_cache[1] = ptr_(idx[1], ws[1]);
     assert(get_wl0() != get_wl1());
+
+    assert_slow(assert_data_struct());
   }
 
   inline var_t ptr_(const cls_size_t &i, const var_t val) const {
@@ -116,7 +137,8 @@ private:
   }
 
   inline const var_t &ptr_ws(const cls_size_t &i) const {
-    assert(ptr_(i, ws[i]) == ptr_cache[i]);
+    assert(i==0 || i==1);
+    assert(ptr_(idx[i], ws[i]) == ptr_cache[i]);
     return ptr_cache[i];
   }
 
@@ -137,34 +159,34 @@ private:
 
     // advance iterator as long as there is another unassigned idx to point to
     auto new_w = ws[0];
-    while ((new_w < (var_t)xlits[0].size()) && (alpha[ptr_(0, new_w)] != bool3::None)) { ++new_w; }
-    if (new_w == (var_t)xlits[0].size()) /*wrap around end if necessary */ new_w = 0;
-    while ((alpha[ptr_(0, new_w)] != bool3::None) && (new_w != ws[0])) { ++new_w; }
+    while ((new_w < (var_t)WLIN0.size()) && (alpha[ptr_(idx[0], new_w)] != bool3::None)) { ++new_w; }
+    if (new_w == (var_t)WLIN0.size()) /*wrap around end if necessary */ new_w = 0;
+    while ((alpha[ptr_(idx[0], new_w)] != bool3::None) && (new_w != ws[0])) { ++new_w; }
     // advancing done; now new_w points to ws[0] or at an unassigned idx -- or again to ws[0] (!)
 
     if (new_w != ws[0]) {
-      assert(alpha[ptr_(0, new_w)] == bool3::None);
+      assert(alpha[ptr_(idx[0], new_w)] == bool3::None);
       ws[0] = new_w;
-      ptr_cache[0] = ptr_(0, ws[0]);
+      ptr_cache[0] = ptr_(idx[0], ws[0]);
       assert(assert_data_struct());
       return {ptr_ws(0), xcls_upd_ret::NONE};
     }
-    // now xlits[0] is constant under alpha! ...i.e. check shared part
+    // now WLIN0 is constant under alpha! ...i.e. check shared part
     new_w = 0;
     while ((new_w < (var_t)shared_part.size()) && (alpha[shared_part.get_idxs_()[new_w]] != bool3::None)) ++new_w;
     if (new_w != (var_t)shared_part.size()) {
       // lit in shared_part can be watched!
-      // rewrite xlits[1]:
-      xlits[0].swap(shared_part);
+      // rewrite WLIN1:
+      WLIN0.swap(shared_part);
       ws[0] = new_w;
-      ptr_cache[0] = ptr_(0, ws[0]);
+      ptr_cache[0] = ptr_(idx[0], ws[0]);
       assert(assert_data_struct());
       return {ptr_ws(0), xcls_upd_ret::NONE};
     }
 
-    // now shared_part can also be evaluated --> xlits[0]+shared_part can be evaluated!
-    if (xlits[0].eval(alpha) ^ shared_part.eval(alpha)) {
-      // xlits[0]+shared_part evaluates to 1
+    // now shared_part can also be evaluated --> WLIN0+shared_part can be evaluated!
+    if (WLIN0.eval(alpha) ^ shared_part.eval(alpha)) {
+      // WLIN0+shared_part evaluates to 1
       // corresponding lineral is 1 --> clause does not need to be watched any longer!
       // do not change watches!
       SAT_dl_count = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
@@ -172,8 +194,8 @@ private:
       assert(assert_data_struct());
       return {ptr_ws(0), xcls_upd_ret::SAT};
     }
-    // now xlits[0]+shared_part evaluates to 0 under alpha, i.e., we check whether a different lineral can be watched.
-    xlit_dl_count0[0] = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
+    // now WLIN0+shared_part evaluates to 0 under alpha, i.e., we check whether a different lineral can be watched.
+    xlit_dl_count0[idx[0]] = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
     //@todo add filtration information here!
     //if(xlit_filtration_pos0.contains(alpha_trail_pos[ptr_ws(0)])) {
     //  xlit_filtration_pos0[alpha_trail_pos[ptr_ws(0)]].push_back(0);
@@ -181,9 +203,10 @@ private:
     //  xlit_filtration_pos0.insert( {alpha_trail_pos[ptr_ws(0)], {0}});
     //}
 
-    // note that xlits[0] and xlits[1] are always the xlits that are watched, i.e., start search from xlits[2] (!)
-    cls_size_t new_i = 2;
+    // note that WLIN0 and WLIN1 are always the xlits that are watched, i.e., start search from xlits[2] (!)
+    cls_size_t new_i = 0;
     for (; new_i < xlits.size(); ++new_i) {
+      if(new_i==idx[0] || new_i==idx[1]) continue;
       assert(new_i < ( 1 << (CHAR_BIT * sizeof(cls_size_t)) ) );
       // skip xlits which evaluate to 1 in current search tree
       if (dl_count[xlit_dl_count0[new_i].first] == xlit_dl_count0[new_i].second)
@@ -191,12 +214,14 @@ private:
 
       //rm xlits[new_i] if it is just zero!
       if(xlits[new_i].is_zero()) {
-        xlits[new_i].swap(xlits.back());
-        std::swap(xlit_dl_count0[new_i], xlit_dl_count0.back());
-        xlits.resize( xlits.size()-1 );
-        xlit_dl_count0.resize( xlit_dl_count0.size()-1 );
-        //repeat with same new_i
-        --new_i;
+        //@todo can we just ignore this xlit? -- swapping makes everything break!
+        //--num_nz_xlits;
+        //xlits[new_i].swap(xlits.back());
+        //std::swap(xlit_dl_count0[new_i], xlit_dl_count0.back());
+        //xlits.resize( xlits.size()-1 );
+        //xlit_dl_count0.resize( xlit_dl_count0.size()-1 );
+        ////repeat with same new_i
+        //--new_i;
         //@todo update filtration information here!
         continue;
       } else if(xlits[new_i].is_one()) {
@@ -214,44 +239,44 @@ private:
         ++new_w;
       }
       new_w = ( new_w == (var_t)xlits[new_i].size() ) ? max_w : new_w;
-      if (ptr_(new_i, new_w) == ptr_ws(1) || ( xlits[new_i][ptr_ws(1)] && (xlits[1][ptr_(new_i,new_w)] || shared_part[ptr_(new_i,new_w)]) ) ) {
-        //add xlits[1] to xlits[new_i] to eliminate shared part in xlits[new_i]
-        xlits[new_i] += xlits[1];
+      if (ptr_(new_i, new_w) == ptr_ws(1) || ( xlits[new_i][ptr_ws(1)] && (WLIN1[ptr_(new_i,new_w)] || shared_part[ptr_(new_i,new_w)]) ) ) {
+        //add WLIN1 to xlits[new_i] to eliminate shared part in xlits[new_i]
+        xlits[new_i] += WLIN1;
         xlits[new_i] += shared_part;
+        //fix num_nz_xlits if we made xlits[new_i] to 0!
+        num_nz_xlits -= xlits[new_i].is_zero() ? 1 : 0;
         // repeat with same new_i
         --new_i;
         continue;
       }
       if (alpha[ptr_(new_i,new_w)] == bool3::None ) {
-        //if ptr_(new_i,new_w) AND ptr_(1,ws[1]) both are in shared part of xlits[1] AND xlits[new_i]; rewrite xlits[new_i] and start over
+        //if ptr_(new_i,new_w) AND ptr_(idx[1],ws[1]) both are in shared part of WLIN1 AND xlits[new_i]; rewrite xlits[new_i] and start over
         // new xlit to be watched found --> change watched xlit and return SAT
         const auto wl0 = ptr_(new_i, new_w);
         const auto wl1 = ptr_ws(1);
-        xlits[0] += shared_part;
-        xlits[1] += shared_part;
-        xlits[0].swap(xlits[new_i]); // ensures that no iterators are invalidated
-        // fix dl_count vals
-        std::swap(xlit_dl_count0[0], xlit_dl_count0[new_i]);
+        WLIN0 += shared_part;
+        WLIN1 += shared_part;
+        idx[0] = new_i;
         // fix shared_parts && update ws[0] and ws[1] accordingly!
-        shared_part = xlits[0].shared_part(xlits[1]);
-        xlits[0] += shared_part;
-        xlits[1] += shared_part;
+        shared_part = WLIN0.shared_part(WLIN1);
+        WLIN0 += shared_part;
+        WLIN1 += shared_part;
         // fix ws[0] AND ws[1]!
-        ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
-        //if ptr_(0,ws[0]) is NOT wl0, then we need to rewrite xlits[0]
-        if(ws[0] >= xlits[0].size() || ptr_(0,ws[0])!=wl0 ) {
-          xlits[0].swap(shared_part);
-          assert( xlits[1][wl1] );
-          ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
+        ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), wl0));
+        //if ptr_(idx[0],ws[0]) is NOT wl0, then we need to rewrite WLIN0
+        if(ws[0] >= WLIN0.size() || ptr_(idx[0],ws[0])!=wl0 ) {
+          WLIN0.swap(shared_part);
+          assert( WLIN1[wl1] );
+          ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), wl0));
         }
-        ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
-        if(ws[1] >= xlits[1].size() || ptr_(1,ws[1])!=wl1 ) {
-          xlits[1].swap(shared_part);
-          assert( xlits[0][wl0] );
-          ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
+        ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), wl1));
+        if(ws[1] >= WLIN1.size() || ptr_(idx[1],ws[1])!=wl1 ) {
+          WLIN1.swap(shared_part);
+          assert( WLIN0[wl0] );
+          ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), wl1));
         }
-        ptr_cache[0] = ptr_(0, ws[0]);
-        ptr_cache[1] = ptr_(1, ws[1]);
+        ptr_cache[0] = ptr_(idx[0], ws[0]);
+        ptr_cache[1] = ptr_(idx[1], ws[1]);
         assert(ptr_cache[0] == wl0 && ptr_cache[1] == wl1);
         assert(is_active(dl_count));
         return {ptr_ws(0), xcls_upd_ret::NONE};
@@ -274,10 +299,10 @@ private:
         assert( dl_assigned <= alpha_dl[ptr_ws(0)] );
       }
     }
-    // if the above did not yet return, then all xlits (except xlits[1]) evaluate to 1 under alpha, i.e., we learn a unit clause!
-    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and xlits[0] evaluates to 1!)
+    // if the above did not yet return, then all xlits (except WLIN1) evaluate to 1 under alpha, i.e., we learn a unit clause!
+    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and WLIN0 evaluates to 1!)
 
-    //ensure that xlits[0] is the unit:
+    //ensure that WLIN0 is the unit:
     swap_wl();
     assert(!is_active(dl_count));
     assert(is_unit(dl_count));
@@ -289,22 +314,24 @@ private:
    * @brief swap watched literals
    */
   void swap_wl() {
-    xlits[0].swap(xlits[1]);
+    std::swap(idx[0], idx[1]);
     std::swap(ws[0], ws[1]);
     std::swap(ptr_cache[0], ptr_cache[1]);
-    std::swap(xlit_dl_count0[0], xlit_dl_count0[1]);
   }
 
 public:
   xcls_watch() noexcept {
+    num_nz_xlits = 1;
+    idx[0] = 0; idx[1] = 0;
     ws[0] = 0; ws[1] = 0;
     ptr_cache[0] = 0; ptr_cache[1] = 0;
     xlits.emplace_back( xlit().add_one() );
     xlit_dl_count0.resize(1, {0,0});
+    assert(assert_data_struct());
   };
 
   xcls_watch(const xlit &l1, const xlit &l2) noexcept : xlits(vec<xlit>({l1, l2})), xlit_dl_count0({{0,0},{0,0}}) {
-    xlits[0].add_one(); xlits[1].add_one();
+    WLIN0.add_one(); WLIN1.add_one();
     assert(!l1.is_one() && !l1.is_zero());
     assert(!l2.is_one() && !l2.is_zero());
     init();
@@ -320,11 +347,13 @@ public:
     for (auto lit : cl.get_ass_VS().get_xlits()) {
       xlits.emplace_back(std::move(lit));
     }
-    xlit_dl_count0.resize(xlits.size(), {0,0});
     init();
   };
 
   xcls_watch(const xcls_watch &o) noexcept : xlits(o.xlits), shared_part(o.shared_part), xlit_dl_count0(o.xlit_dl_count0), SAT_dl_count(o.SAT_dl_count), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup) {
+    num_nz_xlits = o.num_nz_xlits;
+    idx[0] = o.idx[0];
+    idx[1] = o.idx[1];
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
@@ -332,16 +361,17 @@ public:
   };
 
   xcls_watch(xcls_watch &&o) noexcept : xlits(std::move(o.xlits)), shared_part(std::move(o.shared_part)), xlit_dl_count0(std::move(o.xlit_dl_count0)), SAT_dl_count(std::move(o.SAT_dl_count)), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup) {
+    num_nz_xlits = o.num_nz_xlits;
+    idx[0] = o.idx[0];
+    idx[1] = o.idx[1];
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
     ptr_cache[1] = o.ptr_cache[1];
   };
 
-  xcls_watch(const xsys &lits) noexcept {
+  xcls_watch(const xsys &lits) noexcept : xlits(lits.get_xlits().begin(), lits.get_xlits().end()) {
     assert(lits.dim() >= 1);
-    xlits = vec<xlit>(lits.get_xlits().begin(), lits.get_xlits().end());
-    xlit_dl_count0.resize(xlits.size(), {0,0});
     init();
   };
 
@@ -355,10 +385,10 @@ public:
    *
    * @param alpha current bool3-assignments
    *
-   * @return true iff alpha( xlits[0]+shared_part ) = 0
+   * @return true iff alpha( WLIN0+shared_part ) = 0
    */
   bool eval0(const vec<bool3> &alpha) const {
-    return xlits[0].eval(alpha) ^ shared_part.eval(alpha);
+    return WLIN0.eval(alpha) ^ shared_part.eval(alpha);
   }
 
   /**
@@ -366,10 +396,10 @@ public:
    *
    * @param alpha current bool3-assignments
    *
-   * @return true iff alpha( xlits[1]+shared_part ) = 0
+   * @return true iff alpha( WLIN1+shared_part ) = 0
    */
   bool eval1(const vec<bool3> &alpha) const {
-    return xlits[1].eval(alpha) ^ shared_part.eval(alpha);
+    return WLIN1.eval(alpha) ^ shared_part.eval(alpha);
   }
   
   /**
@@ -384,31 +414,34 @@ public:
     bool ret = false;
     //rm from unwatched xlits
     shared_part.rm(upd_lt, val);
-    for(var_t idx=2; idx<xlits.size(); ++idx) {
-      xlits[idx].rm(upd_lt, val);
-      if(xlits[idx].is_one()) {
+    for(var_t j=0; j<xlits.size(); ++j) {
+      if(j==idx[0] || j==idx[1]) continue;
+      if( !xlits[j].rm(upd_lt, val) ) continue;
+      if(xlits[j].is_one()) {
         //now clause becomes SAT!
         SAT_dl_count = {0,1};
         ret = true;
-      } else if (xlits[idx].is_zero()) {
-        //xlits[idx] can now be ignored, remove!
-        //swap xlits[idx] and xlits.back()
-        xlits[idx].swap(xlits.back());
-        std::swap( xlit_dl_count0.back(), xlit_dl_count0[idx] );
-        xlits.pop_back();
-        xlit_dl_count0.pop_back();
+      } else if (xlits[j].is_zero()) {
+        //xlits[j] can now be ignored, remove!
+        //swap xlits[j] and xlits.back()
+        //@todo what to do here, should we remove 0s? and how?
+        --num_nz_xlits;
+        //xlits[j].swap(xlits.back());
+        //std::swap( xlit_dl_count0.back(), xlit_dl_count0[j] );
+        //xlits.pop_back();
+        //xlit_dl_count0.pop_back();
       }
     }
-    //rm from xlits[0]
-    if( xlits[0].rm(upd_lt, val) ) {
+    //rm from WLIN0
+    if( WLIN0.rm(upd_lt, val) ) {
       //adapt ws[0]
       if(ptr_cache[0] > upd_lt) ws[0]--;
-      assert(ptr_(0,ws[0]) == ptr_cache[0]);
+      assert(ptr_(idx[0],ws[0]) == ptr_cache[0]);
     }
-    if( xlits.size()>0 && xlits[1].rm(upd_lt, val) ) {
+    if( xlits.size()>0 && WLIN1.rm(upd_lt, val) ) {
       //adapt ws[0]
       if(ptr_cache[1] > upd_lt) ws[1]--;
-      assert(ptr_(1,ws[1]) == ptr_cache[1]);
+      assert(ptr_(idx[1],ws[1]) == ptr_cache[1]);
     }
 
     assert(assert_data_struct());
@@ -448,7 +481,7 @@ public:
 
     // assert correct return value!
     if (upd == xcls_upd_ret::NONE) {
-      // assert( is_none(alpha) ); //leads to error: it might be SAT but ONLY after all updates have been performed! (i.e. if xlits[0] AND xlits[1] needs an update!)
+      // assert( is_none(alpha) ); //leads to error: it might be SAT but ONLY after all updates have been performed! (i.e. if WLIN0 AND WLIN1 needs an update!)
       assert(is_none(dl_count));
       return {new_w, upd};
     } else if (upd == xcls_upd_ret::SAT) {
@@ -507,14 +540,14 @@ public:
         // ensure we watch the lineral with highest dl!
         const var_t new_i = std::distance(xlit_dl_count0.begin(), std::max_element(xlit_dl_count0.begin(), xlit_dl_count0.end(),
                                                                               [](const auto &a, const auto &b) { return a.first < b.first; }));
-        xlits[0].swap(xlits[new_i]); // ensures that no iterators are invalidated
+        idx[0] = new_i;
         // esnure we watch the variable with hightest dl!
-        const var_t new_w = std::distance(xlits[0].begin(), std::max_element(xlits[0].begin(), xlits[0].end(), 
+        const var_t new_w = std::distance(WLIN0.begin(), std::max_element(WLIN0.begin(), WLIN0.end(), 
                                                                               [&](const auto &a, const auto &b) { return alpha_dl[a] < alpha_dl[b]; }));
                                                                             //@todo change to alpha_trail_pos?
         ws[0] = new_w;
-        ptr_cache[0] = ptr_(0, ws[0]);
-        std::swap(xlit_dl_count0[0], xlit_dl_count0[new_i]);
+        ptr_cache[0] = ptr_(idx[0], ws[0]);
+        std::swap(xlit_dl_count0[idx[0]], xlit_dl_count0[new_i]);
       }
     }
 
@@ -531,16 +564,18 @@ public:
     if(size()==0) {
       xlits.emplace_back( xlit(0, true) );
       xlit_dl_count0.emplace_back( 0, dl_count[0] );
+      ws[0] = 0;
+      idx[0] = 0;
     }
     assert(size()>0);
     // fix unit part ('resolving' part)
-    xlits[0] += rs_cls.get_unit();
+    WLIN0 += rs_cls.get_unit();
     //@todo do we need to set xlit_dl_count0 here at all?!
-    //const auto [lvl,_,__] = xlits[0].get_watch_var(alpha_dl, alpha_trail_pos);
+    //const auto [lvl,_,__] = WLIN0.get_watch_var(alpha_dl, alpha_trail_pos);
     //if(lvl < dl_count.size()) {
-    //  xlit_dl_count0[0] = {lvl, dl_count[lvl]};
+    //  xlit_dl_count0[idx[0]] = {lvl, dl_count[lvl]};
     //} else {
-    //  xlit_dl_count0[0] = {0,0};
+    //  xlit_dl_count0[idx[0]] = {0,0};
     //}
     // add xlits from rs_cls to this
     if(rs_cls.size() == 1) {
@@ -550,12 +585,22 @@ public:
       assert( assert_data_struct(alpha, dl_count) );
       return ret;
     }
+    if(size()==1) {
+      //now xlits will get at least one additional lineral! ...so we need to init idx[1]! -- the precise value does in fact not matter it is just used once within init_unit() to distribute the shared part
+      assert(shared_part.is_zero());
+      assert(idx[0]==0);
+      idx[1] = 1;
+    }
     //copy the remaining linerals
-    std::copy(rs_cls.xlits.begin() + 2, rs_cls.xlits.end(), std::back_inserter(xlits));
-    std::copy(rs_cls.xlit_dl_count0.begin() + 2, rs_cls.xlit_dl_count0.end(), std::back_inserter(xlit_dl_count0));
+    for(var_t i=0; i<rs_cls.size(); ++i) {
+      if(i==rs_cls.idx[0] || i==rs_cls.idx[1]) continue;
+      xlits.emplace_back( rs_cls.xlits[i] );
+      xlit_dl_count0.emplace_back( rs_cls.xlit_dl_count0[i] );
+    }
     //copy 2nd lineral (which needs to be 'fixed' by the shared_part)
-    xlits.emplace_back(rs_cls.xlits[1] + rs_cls.shared_part);
-    xlit_dl_count0.emplace_back(rs_cls.xlit_dl_count0[1]);
+    xlits.emplace_back(rs_cls.xlits[rs_cls.idx[1]] + rs_cls.shared_part);
+    xlit_dl_count0.emplace_back(rs_cls.xlit_dl_count0[rs_cls.idx[1]]);
+    
 
     //const auto ret = init_unit_opt(alpha, alpha_dl, alpha_trail_pos, dl_count, rs_cls.xlits.size());
     //const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
@@ -586,17 +631,21 @@ public:
 
     if (size() == 1) {
       //reduce xlit[0]
-      xlits[0].reduce(alpha, alpha_dl, 0);
+      WLIN0.reduce(alpha, alpha_dl, 0);
       //update watched variable
-      ws[0] = xlits[0].get_watch_idx(alpha_dl, alpha_trail_pos);
-      ptr_cache[0] = ptr_(0, ws[0]);
+      ws[0] = WLIN0.get_watch_idx(alpha_dl, alpha_trail_pos);
+      ptr_cache[0] = ptr_(idx[0], ws[0]);
       return xcls_upd_ret::UNIT;
     }
     assert(xlits.size()>1);
     // distribute shared_part
-    xlits[0] += shared_part;
-    xlits[1] += shared_part;
+    WLIN0 += shared_part;
+    WLIN1 += shared_part;
     shared_part.clear();
+      
+    //reset idx
+    idx[0] = 0;
+    idx[1] = 1;
 
     // reduce all xlits at dl 0
     for (auto &l : xlits) {
@@ -623,7 +672,6 @@ public:
       {
         var_t idx = 0;
         xlits[idx].swap(xlits[pos[tmp[idx]]]);
-        std::swap(xlit_dl_count0[idx], xlit_dl_count0[pos[tmp[idx]]]);
         std::swap(pos[0], pos[tmp[idx]]);
       
         idx = 1;
@@ -643,16 +691,16 @@ public:
         xlits.pop_back();
         xlit_dl_count0.pop_back();
       }
-      if(xlits.size()>1 && xlits[1].is_zero()) {
+      if(xlits.size()>1 && WLIN1.is_zero()) {
         //swap into last position and shorten clauses!
-        xlits.back().swap(xlits[1]);
-        std::swap(xlit_dl_count0[1], xlit_dl_count0.back());
+        xlits.back().swap(WLIN1);
+        std::swap(xlit_dl_count0[idx[1]], xlit_dl_count0.back());
         xlits.pop_back();
         xlit_dl_count0.pop_back();
       }
-      if(xlits[0].is_zero()) {
-        if(size()>1) xlits.back().swap(xlits[1]);
-        if(size()>1) std::swap(xlit_dl_count0[1], xlit_dl_count0.back());
+      if(WLIN0.is_zero()) {
+        if(size()>1) xlits.back().swap(WLIN1);
+        if(size()>1) std::swap(xlit_dl_count0[idx[1]], xlit_dl_count0.back());
         xlits.pop_back();
         xlit_dl_count0.pop_back();
       }
@@ -660,14 +708,14 @@ public:
         assert(is_unit(dl_count));
         return xcls_upd_ret::UNIT;
       }
-      assert(!xlits[0].is_zero());
-      const auto [lvl_unit, alpha_t_pos_unit, idx_unit] = xlits[0].get_watch_var(alpha_dl, alpha_trail_pos);
-      ptr_cache[0] = xlits[0].get_idxs_()[idx_unit];
+      assert(!WLIN0.is_zero());
+      const auto [lvl_unit, alpha_t_pos_unit, idx_unit] = WLIN0.get_watch_var(alpha_dl, alpha_trail_pos);
+      ptr_cache[0] = WLIN0.get_idxs_()[idx_unit];
 
       if(size()==1) goto finalize;
 
-      const auto [lvl, alpha_t_pos, idx] = xlits[1].get_watch_var(alpha_dl, alpha_trail_pos);
-      ptr_cache[1] = xlits[1].get_idxs_()[idx];
+      const auto [lvl, alpha_t_pos, idx_] = WLIN1.get_watch_var(alpha_dl, alpha_trail_pos);
+      ptr_cache[1] = WLIN1.get_idxs_()[idx_];
 
       if(ptr_cache[0]==ptr_cache[1] || lvl_unit==lvl) goto full_reduction;
       if(std::count_if(xlit_dl_count0.begin(), xlit_dl_count0.end(), [&lvl](const std::pair<var_t,dl_c_t> lvl_dlc){ return lvl_dlc.first >= lvl; }) > 1) goto full_reduction;
@@ -737,7 +785,7 @@ public:
     assert( std::is_sorted(xlits_.begin(), xlits_.end(), [](const xlit &a, const xlit &b) { return a.LT() < b.LT(); }) );
 
     // set xlit_dl_count0, since all except the first xlits must be satisfied by assumption
-    xlit_dl_count0[0] = {0,0};
+    xlit_dl_count0[idx[0]] = {0,0};
     for (var_t i = 1; i < xlits_.size(); ++i) {
       const var_t lvl = alpha_dl[ perm_inv[xlits_[i].LT()-1] ];
       assert( lvl<=alpha.size());
@@ -782,22 +830,22 @@ public:
     finalize:
 
     // recompute the indices at which wl0 and wl1 are stored
-    shared_part = xlits.size() > 1 ? xlits[0].shared_part(xlits[1]) : xlit();
-    xlits[0] += shared_part;
-    ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), ptr_cache[0]));
-    assert( ptr_cache[0] == ptr_(0, ws[0]) );
+    shared_part = xlits.size() > 1 ? WLIN0.shared_part(WLIN1) : xlit();
+    WLIN0 += shared_part;
+    ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), ptr_cache[0]));
+    assert( ptr_cache[0] == ptr_(idx[0], ws[0]) );
     if (xlits.size() == 1) {
       return xcls_upd_ret::UNIT;
     }
 
-    xlits[1] += shared_part;
-    ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), ptr_cache[1]));
-    if(ws[1] >= xlits[1].size() || xlits[1].get_idxs_()[ws[1]] != ptr_cache[1]) {
-      xlits[1].swap(shared_part);
-      ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), ptr_cache[1]));
-      xlit_dl_count0[1] = { alpha_dl[ptr_cache[1]], dl_count[ alpha_dl[ptr_cache[1]] ] };
+    WLIN1 += shared_part;
+    ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), ptr_cache[1]));
+    if(ws[1] >= WLIN1.size() || WLIN1.get_idxs_()[ws[1]] != ptr_cache[1]) {
+      WLIN1.swap(shared_part);
+      ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), ptr_cache[1]));
+      xlit_dl_count0[idx[1]] = { alpha_dl[ptr_cache[1]], dl_count[ alpha_dl[ptr_cache[1]] ] };
     }
-    assert( ptr_cache[1] == ptr_(1, ws[1]));
+    assert( ptr_cache[1] == ptr_(idx[1], ws[1]));
 
     assert(get_wl0() != get_wl1());
     assert(is_unit(dl_count));
@@ -816,24 +864,31 @@ public:
     if(size()==0) {
       return xcls_upd_ret::UNIT;
     }
-    if (size() == 1) {
+    if(size() == 1) {
+      assert(idx[0] == 0);
       //reduce xlit[0]
-      xlits[0].reduce(alpha, alpha_dl, 0);
+      WLIN0.reduce(alpha, alpha_dl, 0);
       //update watched variable
-      if(!xlits[0].is_constant()) {
-        ws[0] = xlits[0].get_watch_idx(alpha_dl, alpha_trail_pos);
-        ptr_cache[0] = ptr_(0, ws[0]);
+      if(!WLIN0.is_constant()) {
+        ws[0] = WLIN0.get_watch_idx(alpha_dl, alpha_trail_pos);
+        ptr_cache[0] = ptr_(idx[0], ws[0]);
       } else {
         ws[0] = 0;
         ptr_cache[0] = 0;
       }
+      num_nz_xlits = xlits[0].is_zero() ? 0 : 1;
       return xcls_upd_ret::UNIT;
     }
     assert(xlits.size()>1);
+    assert(idx[0] < xlits.size() && idx[1] < xlits.size());
     // distribute shared_part
-    xlits[0] += shared_part;
-    xlits[1] += shared_part;
+    WLIN0 += shared_part;
+    WLIN1 += shared_part;
     shared_part.clear();
+    
+    //reset idx
+    idx[0] = 0;
+    idx[1] = 1;
 
     // reduce all xlits at dl 0
     for (auto &l : xlits) {
@@ -898,7 +953,7 @@ public:
     assert_slow( std::is_sorted(xlits_.begin(), xlits_.end(), [](const xlit &a, const xlit &b) { return a.LT() < b.LT(); }) );
 
     // set xlit_dl_count0, since all except the first xlits must be satisfied by assumption
-    xlit_dl_count0[0] = {0,0};
+    xlit_dl_count0[idx[0]] = {0,0};
     for (var_t i = 1; i < xlits_.size(); ++i) {
       const var_t lvl = alpha_dl[ perm_inv[xlits_[i].LT()-1] ];
       assert( lvl<=alpha.size());
@@ -907,8 +962,9 @@ public:
 
     if(xlits_.size()==0) {
       xlits.clear();
-      xlit_dl_count0.resize(xlits.size());
+      xlit_dl_count0.clear();
       assert(is_unit(dl_count));
+      num_nz_xlits = 0;
       return xcls_upd_ret::UNIT;
     }
 
@@ -926,6 +982,7 @@ public:
 
     // replace xlits with xlits_
     xlits = std::move(xlits_);
+    num_nz_xlits = xlits.size();
 
     // resize xlit_dl_count0
     xlit_dl_count0.resize(xlits.size());
@@ -933,17 +990,17 @@ public:
     assert(xlits.size()>0);
 
     // recompute the indices at which wl0 and wl1 are stored
-    shared_part = xlits.size() > 1 ? xlits[0].shared_part(xlits[1]) : xlit();
-    xlits[0] += shared_part;
-    ws[0] = std::distance(xlits[0].get_idxs_().begin(), std::lower_bound(xlits[0].get_idxs_().begin(), xlits[0].get_idxs_().end(), wl0));
-    ptr_cache[0] = ptr_(0, ws[0]);
+    shared_part = xlits.size() > 1 ? WLIN0.shared_part(WLIN1) : xlit();
+    WLIN0 += shared_part;
+    ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), wl0));
+    ptr_cache[0] = ptr_(idx[0], ws[0]);
     if (xlits.size() == 1) {
       return xcls_upd_ret::UNIT;
     }
 
-    xlits[1] += shared_part;
-    ws[1] = std::distance(xlits[1].get_idxs_().begin(), std::lower_bound(xlits[1].get_idxs_().begin(), xlits[1].get_idxs_().end(), wl1));
-    ptr_cache[1] = ptr_(1, ws[1]);
+    WLIN1 += shared_part;
+    ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), wl1));
+    ptr_cache[1] = ptr_(idx[1], ws[1]);
 
     assert(get_wl0() != get_wl1());
     assert(is_unit(dl_count));
@@ -961,12 +1018,13 @@ public:
       return "1";
     if (xlits.size() == 1) {
       assert(shared_part.is_zero());
-      return xlits[0].plus_one().to_str();
+      return WLIN0.plus_one().to_str();
     }
     std::string out;
-    out += (xlits[0] + shared_part).plus_one().to_str() + " ";
-    out += (xlits[1] + shared_part).plus_one().to_str() + " ";
-    for (var_t i = 2; i < xlits.size(); ++i) {
+    out += (WLIN0 + shared_part).plus_one().to_str() + " ";
+    out += (WLIN1 + shared_part).plus_one().to_str() + " ";
+    for (var_t i = 0; i < xlits.size(); ++i) {
+      if(i==idx[0] || i==idx[1]) continue;
       out += xlits[i].plus_one().to_str() + " ";
     }
     out.erase(out.end() - 1);
@@ -977,11 +1035,12 @@ public:
     if (xlits.empty())
       return "";
     if (xlits.size() == 1)
-      return xlits[0].plus_one().to_xnf_str();
+      return WLIN0.plus_one().to_xnf_str();
     std::string out;
-    out += (xlits[0] + shared_part).plus_one().to_xnf_str() + " ";
-    out += (xlits[1] + shared_part).plus_one().to_xnf_str() + " ";
-    for (var_t i = 2; i < xlits.size(); ++i) {
+    out += (WLIN0 + shared_part).plus_one().to_xnf_str() + " ";
+    out += (WLIN1 + shared_part).plus_one().to_xnf_str() + " ";
+    for (var_t i = 0; i < xlits.size(); ++i) {
+      if(i==idx[0] || i==idx[1]) continue;
       out += xlits[i].plus_one().to_xnf_str() + " ";
     }
     out.erase(out.end() - 1);
@@ -1021,7 +1080,7 @@ public:
    * @return true iff xcls is evaluates to unit (including 1, i.e., unsat!)
    */
   inline bool is_unit(const vec<dl_c_t> &dl_count) const {
-    return !is_sat(dl_count) && (xlits.size()<=1 || dl_count[xlit_dl_count0[1].first] == xlit_dl_count0[1].second);
+    return !is_sat(dl_count) && (xlits.size()<=1 || dl_count[xlit_dl_count0[idx[1]].first] == xlit_dl_count0[idx[1]].second);
   }
   
   /**
@@ -1030,7 +1089,7 @@ public:
    * @return true iff xcls is a unit
    */
   inline bool is_unit() const {
-    assert( size()<=1 || xlits[0]!=xlits[1] ); //either size is small OR we have two distinct linerals
+    assert( size()<=1 || WLIN0!=WLIN1 ); //either size is small OR we have two distinct linerals
     return size()<=1;
   }
 
@@ -1040,13 +1099,13 @@ public:
    *
    * @return var_t lvl at which xcls is unit
    */
-  var_t get_unit_at_lvl() const {
-    return xlits.size() <= 1 ? 0 : xlit_dl_count0[1].first;
+  inline var_t get_unit_at_lvl() const {
+    return num_nz_xlits <= 1 ? 0 : xlit_dl_count0[idx[1]].first;
   }
 
 #ifndef NDEBUG
   var_t compute_unit_assigning_lvl(const vec<var_t>& alpha_dl) const {
-    return xlits.size()==0 ? 0 : ( xlits.size() == 1 ? xlits[0].get_assigning_lvl(alpha_dl) : std::max( shared_part.get_assigning_lvl(alpha_dl), xlits[1].get_assigning_lvl(alpha_dl) ) );
+    return xlits.size()==0 ? 0 : ( xlits.size() == 1 ? WLIN0.get_assigning_lvl(alpha_dl) : std::max( shared_part.get_assigning_lvl(alpha_dl), WLIN1.get_assigning_lvl(alpha_dl) ) );
   }
 #endif
 
@@ -1059,7 +1118,7 @@ public:
    * @return var_t lvl at which xcls is unit and the unit is assigning
    */
   inline var_t get_assigning_lvl(const vec<var_t>& alpha_dl) const {
-    return xlits.empty() ? 0 : std::max(get_unit_at_lvl(), xlits[0].get_assigning_lvl(alpha_dl));
+    return (num_nz_xlits==0) ? 0 : std::max(get_unit_at_lvl(), WLIN0.get_assigning_lvl(alpha_dl));
   }
 
   inline bool is_inactive(const vec<dl_c_t> &dl_count) const {
@@ -1107,25 +1166,25 @@ public:
    * @return xlit unit that this clause was reduced to
    */
   inline xlit get_unit() const { 
-    //return xlits.size() > 1 ? (xlits[1] + shared_part).add_one() : (xlits.size() == 0 ? xlit(0,false) : xlits[0].plus_one());
-    return xlits.empty() ? xlit(0,false) : (xlits[0] + shared_part).add_one();
+    //return xlits.size() > 1 ? (WLIN1 + shared_part).add_one() : (xlits.size() == 0 ? xlit(0,false) : WLIN0.plus_one());
+    return xlits.empty() ? xlit(0,false) : (WLIN0 + shared_part).add_one();
   };
 
   inline bool unit_contains(const var_t &ind) const {
-    return shared_part[ind] || xlits[0][ind];
+    return shared_part[ind] || WLIN0[ind];
   }
 
   /**
    * @brief adds the given literal to the unit of this clause
    * @note assumes that the clause is unit (i.e. is_unit(dl_count) is true)
-   * @note xlits[0] and xlits[1] may have shared parts! -- invalid state! (USE ONLY IN CONFLICT ANALYSIS)
+   * @note WLIN0 and WLIN1 may have shared parts! -- invalid state! (USE ONLY IN CONFLICT ANALYSIS)
    *
    * @param lin lineral to add to unit part
    */
   void add_to_unit(const xlit &lin, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
     assert(is_unit(dl_count));
-    assert(!xlits.empty());
-    xlits[0] += lin;
+    assert(idx[0] < xlits.size());
+    WLIN0 += lin;
     // re-init watches!
     init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
   }
@@ -1138,7 +1197,7 @@ public:
    */
   inline var_t get_inactive_lvl(const vec<dl_c_t> &dl_count) const {
     assert(is_inactive(dl_count)); // implies is_unit(dl_count) OR is_sat(dl_count)
-    return xlits.size()<=1 ? 0 : (is_sat(dl_count) ? SAT_dl_count.first : xlit_dl_count0[1].first);
+    return xlits.size()<=1 ? 0 : (is_sat(dl_count) ? SAT_dl_count.first : xlit_dl_count0[idx[1]].first);
   }
 
   /**
@@ -1150,31 +1209,35 @@ public:
   var_t size() const { return xlits.size(); };
 
 
-  bool is_zero() const { return (xlits.size()==1 && xlits[0].is_one()); };
+  bool is_zero() const { return (xlits.size()==1 && WLIN0.is_one()); };
 
   var_t LT(const cls_size_t i) const { return xlits[i].LT(); };
 
   const vec<xlit> &get_xlits() const { return xlits; };
 
-  xlit get_first() const { return (xlits[0] + shared_part).add_one(); };
+  xlit get_first() const { return (WLIN0 + shared_part).add_one(); };
 
   bool assert_data_struct() const {
     assert(xlit_dl_count0.size() == xlits.size());
     // sanity check to see whether ws[i] is actually contained in xlits[i]
-    assert(size()==0 || xlits[0].is_constant() || std::find(xlits[0].begin(), xlits[0].end(), ptr_ws(0)) != xlits[0].end());
-    assert(size()<2 || std::find(xlits[1].begin(), xlits[1].end(), ptr_ws(1)) != xlits[1].end());
+    assert(size()==0 || WLIN0.is_constant() || std::find(WLIN0.begin(), WLIN0.end(), ptr_ws(0)) != WLIN0.end());
+    assert(size()<2 || std::find(WLIN1.begin(), WLIN1.end(), ptr_ws(1)) != WLIN1.end());
 
     assert(size()<2 || ptr_ws(0) != ptr_ws(1));
 
-    assert(size()==0 || size()==1 || !xlits[0].is_constant());
-    assert(size()<2 || !xlits[0].is_constant());
+    assert(size()==0 || size()==1 || !WLIN0.is_constant());
+    assert(size()<2 || !WLIN0.is_constant());
 
-    // check that xlits[0] and xlits[1] share no inds!
-    assert(size()<2 || xlits[0].shared_part(xlits[1]).is_zero());
+    // check that WLIN0 and WLIN1 share no inds!
+    assert(size()<2 || WLIN0.shared_part(WLIN1).is_zero());
 
     // check ptr_cache
-    assert(size()==0 || (size()==1 && xlits[0].is_constant()) || ptr_cache[0] == ptr_(0, ws[0]));
-    assert(size()<2 || ptr_cache[1] == ptr_(1, ws[1]));
+    assert(size()==0 || (size()==1 && WLIN0.is_constant()) || ptr_cache[0] == ptr_(idx[0], ws[0]));
+    assert(size()<2 || ptr_cache[1] == ptr_(idx[1], ws[1]));
+
+    // check num_nz_xlits
+    assert( num_nz_xlits == (var_t) std::count_if(xlits.begin(), xlits.end(), [](const auto& l){ return !l.is_zero(); }) );
+
 
     return true;
   };
@@ -1188,28 +1251,26 @@ public:
       assert(dl_count[SAT_dl_count.first] == SAT_dl_count.second);
       assert_slow(to_xcls().reduced(alpha).is_zero());
     }
-    if( size()>0 && dl_count[xlit_dl_count0[0].first] == xlit_dl_count0[0].second ) assert( !eval0(alpha) );
-    if( size()>1 && dl_count[xlit_dl_count0[1].first] == xlit_dl_count0[1].second ) assert( !eval1(alpha) || is_unit(dl_count) );
-    for(var_t i = 2; i<xlits.size(); ++i) {
+    if( size()>0 && dl_count[xlit_dl_count0[idx[0]].first] == xlit_dl_count0[idx[0]].second ) assert( !eval0(alpha) );
+    if( size()>1 && dl_count[xlit_dl_count0[idx[1]].first] == xlit_dl_count0[idx[1]].second ) assert( !eval1(alpha) || is_unit(dl_count) );
+    for(var_t i = 0; i<xlits.size(); ++i) {
+      if(i==idx[0] || i==idx[1]) continue;
       if( dl_count[xlit_dl_count0[i].first] == xlit_dl_count0[i].second ) assert( xlits[i].eval(alpha) );
     }
 
     return assert_data_struct();
   };
 
-  inline bool eval(const vec<bool> &sol) const {
-    return std::any_of(xlits.begin()+2, xlits.end(), [&sol](const xlit& l) { return !l.eval(sol); })
-        || shared_part.eval(sol)^xlits[0].eval(sol)
-        || (xlits.size()>1 && shared_part.eval(sol)^xlits[1].eval(sol));
-  };
-
   void operator=(const xcls_watch &o) {
     xlits = o.xlits;
+    num_nz_xlits = o.num_nz_xlits;
     shared_part = o.shared_part;
     xlit_dl_count0 = o.xlit_dl_count0;
     SAT_dl_count = o.SAT_dl_count;
     irredundant = o.irredundant;
     delete_on_cleanup = o.delete_on_cleanup;
+    idx[0] = o.idx[0];
+    idx[1] = o.idx[1];
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
@@ -1218,11 +1279,14 @@ public:
 
   void operator=(xcls_watch &&o) {
     xlits = std::move(o.xlits);
+    num_nz_xlits = o.num_nz_xlits;
     shared_part = std::move(o.shared_part);
     xlit_dl_count0 = std::move(o.xlit_dl_count0);
     SAT_dl_count = o.SAT_dl_count;
     irredundant = o.irredundant;
     delete_on_cleanup = o.delete_on_cleanup;
+    idx[0] = o.idx[0];
+    idx[1] = o.idx[1];
     ws[0] = o.ws[0];
     ws[1] = o.ws[1];
     ptr_cache[0] = o.ptr_cache[0];
