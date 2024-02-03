@@ -6,11 +6,10 @@ add_library(
     xlit/xlit.hpp
     xlit/xlit.cpp
     xlit/xlit_watch.hpp
-    xlit/xlit_watch.cpp
     xlit/xcls.hpp
     xlit/xcls.cpp
     xlit/xcls_watch.hpp
-    xlit/xcls_watch.cpp
+    xlit/xcls_watch_resolver.hpp
     #xsys
     xlit/xsys.hpp
     xlit/xsys.cpp 
