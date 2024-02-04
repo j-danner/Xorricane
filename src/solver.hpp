@@ -17,6 +17,7 @@
 #include "xlit/xsys.hpp"
 #include "xlit/xcls.hpp"
 #include "xlit/xcls_watch.hpp"
+#include "xlit/xcls_watch_resolver.hpp"
 #include "order_heap/heap.h"
 
 
@@ -189,7 +190,7 @@ class solver
     /**
      * @brief total trail length up to dl-1
      */
-    var_t total_trail_length = 0;
+    var_t total_trail_length = 1;
 
     std::deque<lineral_queue_elem> lineral_queue;
 
@@ -281,17 +282,21 @@ class solver
       xlit tmp;
     #endif
       //resolve cls to get true reason cls
-      xcls_watch r_cls;
+      xcls_watch_resolver r_cls;
+      //xcls_watch r_cls;
 
       for(const auto& lin : rs_cls_idxs) {
-        const auto& r_cls2 = get_reason(lin);
-      #ifndef NDEBUG
-        tmp += r_cls2.get_unit();
-      #endif
         if(r_cls.is_zero()) { //r_cls has not yet been instantiated
-          r_cls = r_cls2;
+          r_cls = std::move(get_reason(lin));
           assert(r_cls.is_unit(dl_count));
+        #ifndef NDEBUG
+          tmp += r_cls.get_unit();
+        #endif
         } else {
+          const auto& r_cls2 = get_reason(lin);
+        #ifndef NDEBUG
+          tmp += r_cls2.get_unit();
+        #endif
           //resolve cls
           assert(r_cls2.is_unit(dl_count));
           //extend r_cls2 with (unit of r_cls)+1, and r_cls with (unit of r_cls2)+1
@@ -309,7 +314,7 @@ class solver
       }
       //resolve with additional clause -- if required!
       if(idx != (var_t) -1) {
-        const auto& r_cls2 = xclss[idx];
+        const xcls_watch& r_cls2 = xclss[idx];
       #ifndef NDEBUG
         tmp += r_cls2.get_unit();
       #endif
@@ -333,7 +338,8 @@ class solver
         }
       }
 
-      return r_cls;
+      return r_cls.finalize();
+      //return r_cls;
       //place r_cls into xclss
       //xclss.emplace_back( std::move(r_cls) );
       //utility.emplace_back( 0 );
@@ -347,7 +353,7 @@ class solver
       //return i;
     }
 
-    inline const xcls_watch get_reason(xlit_w_it lin) const {
+    inline xcls_watch get_reason(xlit_w_it lin) const {
       //@todo rm dead code!
       VERB(120, "c constructing reason clause for "+lin->to_str());
       //const var_t idx = get_reason( lin->get_reason_idxs() );
@@ -946,6 +952,7 @@ class solver
       VERB(90, "c adding new clause: " + BOLD(xclss[i].to_str()) + "  --> gives with current assignments: "+xclss[i].to_xcls().reduced(alpha).to_str());
       if(learnt_cls) VERB(90, "c XNF : " + xclss[i].to_xnf_str());
       const auto ret = learnt_cls ? xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count) : xclss[i].init(alpha, alpha_dl, alpha_trail_pos, dl_count);
+      //@todo write lightweight init_unit func if it is a learnt_cls!
       //copied from GCP
       switch (ret) {
       case xcls_upd_ret::SAT:

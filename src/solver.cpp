@@ -29,7 +29,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     trails = vec< std::list<trail_elem> >();
     trails.reserve(num_vars+1);
     trails.emplace_back( std::list<trail_elem>() );
-    total_trail_length = 0;
+    total_trail_length = 1;
     last_phase = vec<bool3>(num_vars + 1, bool3::None);
     //init last_phase according to init_phase of guessing_path:
     for(var_t idx=0; idx<opt_.P.size(); ++idx) {
@@ -317,7 +317,8 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     assert( trails.back().back().ind == 0 ); //ensure last trail entry is a conflict & it comes from an actual clause
 
     //go through trail of current dl -- skip over irrelevant parts
-    xcls_watch learnt_cls = get_reason(TRAIL.back());
+    xcls_watch_resolver learnt_cls = get_reason(TRAIL.back());
+    //xcls_watch learnt_cls = get_reason(TRAIL.back());
 
     assert(learnt_cls.is_unit(dl_count));
     VERB(70, "   * reason clause is   " + BOLD( learnt_cls.to_str() ) + " for UNIT " + learnt_cls.get_unit().to_str() );
@@ -357,10 +358,10 @@ std::pair<var_t, xcls_watch> solver::analyze() {
         }
         assert(unit.is_zero()); //unit MUST reduce to zero, as TRAIL is not yet popped
     #endif
+        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, opt.ca == ca_alg::fuip_opt);
+
         bump_score( TRAIL.back().ind );
         pop_trail(); //remove from trail!
-
-        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, opt.ca == ca_alg::fuip_opt);
     }
     // clean-up trail!
     
@@ -382,11 +383,11 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     if( dl < learnt_cls.size() && b_lvl == dl-1 ) {
         VERB(50, "   * negated decisions lead to smaller learnt_cls and the same backtrack-level!");
         //assert(false);
-        
     }
     
     VERB(70, "****");
-    return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls);
+    return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls.finalize());
+    //return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls);
 };
 
 std::pair<var_t, xcls_watch> solver::analyze_no_sres() { return analyze_dpll(); };
@@ -1077,7 +1078,7 @@ std::string solver::to_xnf_str() const noexcept {
         for (var_t i = 0; i < xclss.size(); i++) {
             assert(xclss[i].assert_data_struct());
             //only check advanced conditions if lineral_queue is empty!
-            if(no_conflict() && lineral_queue.empty()) assert(xclss[i].assert_data_struct(alpha, dl_count));
+            if(no_conflict() && lineral_queue.empty()) assert(xclss[i].assert_data_struct(alpha, alpha_trail_pos, dl_count));
         }
         //check watch-lists
         {
@@ -1135,7 +1136,7 @@ std::string solver::to_xnf_str() const noexcept {
         for(const auto& [ind, type, rs] : trails[dl]) {
             assert( alpha[ind]==bool3::None || alpha_dl[ind]<=dl );
         }
-        dl_c_t cnt = 0;
+        dl_c_t cnt = 1;
         for(var_t lvl=0; lvl<trails.size(); lvl++) {
             cnt += std::count_if(trails[lvl].begin(), trails[lvl].end(), [](const trail_elem& t) { return t.type==trail_t::IMPLIED_ALPHA; });
         }

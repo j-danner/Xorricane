@@ -18,7 +18,9 @@ enum class presorted { yes, no };
 //sparse implementation of a xor-literal
 class xlit
 {
-    protected:
+    friend class xlit_watch;
+
+    private:
         bool p1;
         //sparse repr of literal
         vec< var_t > idxs; /**<  List of sorted indices of the terms. */
@@ -63,7 +65,7 @@ class xlit
         inline bool is_constant() const { return idxs.empty(); };
 
         inline bool3 as_bool3() const { return (size()!=1 && !is_one()) ? bool3::None : (has_constant() ? bool3::True : bool3::False); };
-        inline bool is_equiv() const { return size()==2; }; //@todo implement this for xlit_watches!
+        inline bool is_equiv() const { return size()==2; };
         inline bool is_assigning() const { return size()<=1; };
 
         inline bool has_constant() const { return p1; };
@@ -153,23 +155,46 @@ class xlit
          * 
          * @param alpha_dl dl of current alpha assignments
          * @param alpha_trail_pos positions in trail of alpha ssignments
-         * @return std::pair<var_t,var_t,var_t> tuple of max dl, trail pos and idx pos
+         * @return std::tuple<var_t,var_t,var_t,var_t> tuple of var, var dl, trail pos and idx pos
          */
-        inline std::tuple<var_t,var_t,var_t> get_watch_var(const vec<var_t>& alpha_dl, const vec<var_t>& alpha_trail_pos) const {
-          var_t max_trail_pos = 0;
+        inline std::tuple<var_t,var_t,var_t,var_t> get_watch_tuple(const vec<var_t>& alpha_dl, const vec<var_t>& alpha_trail_pos) const {
+          if(idxs.empty()) return {-1, 0, 0, -1};
+          assert(!is_constant());
           var_t max_idx = 0;
+          var_t max_v = idxs[0];
+          var_t max_trail_pos = alpha_trail_pos[max_v];
           for(var_t i=0; i<idxs.size(); ++i) {
             const var_t& v = idxs[i];
-            if(alpha_trail_pos[v]==(var_t)-1) return {-1,0,i};
+            if(alpha_trail_pos[v]==(var_t)-1) return {v,-1,-1,i};
+            if(alpha_trail_pos[v]>max_trail_pos) { 
+              max_trail_pos = alpha_trail_pos[v]; max_idx = i; max_v = v;
+            }
+          }
+          return {max_v, alpha_dl[max_v], max_trail_pos, max_idx};
+        }
+        
+        /**
+         * @brief compute the dl, alpha trail pos and idx pos of the lineral on highest dl with maximal trail pos
+         * 
+         * @param alpha_trail_pos positions in trail of alpha ssignments
+         * @return std::pair<var_t,var_t> tuple of trail pos and idx pos
+         */
+        inline std::pair<var_t,var_t> get_watch_var(const vec<var_t>& alpha_trail_pos) const {
+          if(idxs.empty()) return {0,-1};
+          var_t max_idx = 0;
+          var_t max_trail_pos = alpha_trail_pos[idxs[0]];
+          for(var_t i=0; i<idxs.size(); ++i) {
+            const var_t& v = idxs[i];
+            if(alpha_trail_pos[v]==(var_t)-1) return {-1,i};
             if(alpha_trail_pos[v]>max_trail_pos) { 
               max_trail_pos = alpha_trail_pos[v]; max_idx = i;
             }
           }
-          return {alpha_dl[idxs[max_idx]], max_trail_pos, max_idx};
+          return {max_trail_pos, max_idx};
         }
 
-        inline var_t get_watch_idx(const vec<var_t>& alpha_dl, const vec<var_t>& alpha_trail_pos) const {
-          return std::get<2>(get_watch_var(alpha_dl, alpha_trail_pos));
+        inline var_t get_watch_idx(const vec<var_t>& alpha_trail_pos) const {
+          return get_watch_var(alpha_trail_pos).second;
         }
 
         inline bool rm(const var_t lt, const bool3 val) {
