@@ -282,8 +282,8 @@ class solver
       xlit tmp;
     #endif
       //resolve cls to get true reason cls
-      //xcls_watch_resolver r_cls;
-      xcls_watch r_cls;
+      xcls_watch_resolver r_cls;
+      //xcls_watch r_cls;
 
       for(const auto& lin : rs_cls_idxs) {
         if(r_cls.is_zero()) { //r_cls has not yet been instantiated
@@ -338,8 +338,8 @@ class solver
         }
       }
 
-      //return r_cls.finalize();
-      return r_cls;
+      return r_cls.finalize();
+      //return r_cls;
       //place r_cls into xclss
       //xclss.emplace_back( std::move(r_cls) );
       //utility.emplace_back( 0 );
@@ -952,6 +952,7 @@ class solver
       VERB(90, "c adding new clause: " + BOLD(xclss[i].to_str()) + "  --> gives with current assignments: "+xclss[i].to_xcls().reduced(alpha).to_str());
       if(learnt_cls) VERB(90, "c XNF : " + xclss[i].to_xnf_str());
       const auto ret = learnt_cls ? xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count) : xclss[i].init(alpha, alpha_dl, alpha_trail_pos, dl_count);
+      //@todo write lightweight init_unit func if it is a learnt_cls!
       //copied from GCP
       switch (ret) {
       case xcls_upd_ret::SAT:

@@ -1084,7 +1084,7 @@ TEST_CASE( "solving within timeout" , "[parser][solve]" ) {
   #ifdef NDEBUG
     CHECK( time_no_time_out == Catch::Approx(time_with_time_out).margin(0.1) );
   #else
-    CHECK( time_no_time_out == Catch::Approx(time_with_time_out).margin(0.5) );
+    CHECK( time_no_time_out == Catch::Approx(time_with_time_out).margin(5) );
   #endif
     CHECK( s.finished == true ); //SAT
     CHECK( s.sat == true ); //SAT

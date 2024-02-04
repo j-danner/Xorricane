@@ -317,8 +317,8 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     assert( trails.back().back().ind == 0 ); //ensure last trail entry is a conflict & it comes from an actual clause
 
     //go through trail of current dl -- skip over irrelevant parts
-    //xcls_watch_resolver learnt_cls = get_reason(TRAIL.back());
-    xcls_watch learnt_cls = get_reason(TRAIL.back());
+    xcls_watch_resolver learnt_cls = get_reason(TRAIL.back());
+    //xcls_watch learnt_cls = get_reason(TRAIL.back());
 
     assert(learnt_cls.is_unit(dl_count));
     VERB(70, "   * reason clause is   " + BOLD( learnt_cls.to_str() ) + " for UNIT " + learnt_cls.get_unit().to_str() );
@@ -386,8 +386,8 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     }
     
     VERB(70, "****");
-    //return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls.finalize());
-    return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls);
+    return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls.finalize());
+    //return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls);
 };
 
 std::pair<var_t, xcls_watch> solver::analyze_no_sres() { return analyze_dpll(); };
