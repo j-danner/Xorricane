@@ -145,6 +145,7 @@ class xlit_watch : public xlit
     /**
      * @brief get the first watched literal
      * @return the first watched literal
+     * @todo caching?!
      */
     var_t get_wl0() const { return idxs[ws[0]]; };
     
@@ -339,6 +340,7 @@ class xlit_watch : public xlit
      * @param alpha current alpha-assignments
      * @param alpha_dl dl of alpha-assignments
      * @return true iff inds were removed
+     * @todo lazy re-init -- we should be able to do this in one go with xlit::reduce!
      * 
      * @note if it returns true, may invalidate dl_c, i.e., is_assigning(dl_count) (!)
      */
@@ -349,21 +351,32 @@ class xlit_watch : public xlit
       return ret;
     };
     
+    /**
+     * @brief reduce with equiv_lits
+     * 
+     * @param alpha current alpha-assignments
+     * @param alpha_dl dl of alpha-assignments
+     * @param equiv_lits current equivalent literals
+     * @return true iff watches were changed
+     */
     bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
       bool ret = false;
       var_t offset = 0;
       while(offset<idxs.size()) {
           if( equiv_lits[ idxs[offset] ].is_active()) {
-              ret = true;
-              //reason_cls_idxs.insert( reason_cls_idxs.end(), equiv_lits[idxs[offset]].reason_lin->get_reason_idxs().begin(), equiv_lits[idxs[offset]].reason_lin->get_reason_idxs().end() );
+              //add reduction reasons
               reason_cls_idxs.emplace_back( equiv_lits[idxs[offset]].reason_lin );
+              //adapt watches if necessary!
+              ret |= (ws[0]==offset) || (ws[1]==offset);
+              if(ws[0] < offset && equiv_lits[ idxs[offset] ].ind < get_wl0()) { --ws[0]; }
+              if(ws[1] < offset && equiv_lits[ idxs[offset] ].ind < get_wl1()) { --ws[1]; }
               assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
               *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
           } else {
               ++offset;
           }
       }
-      //re-init watches if changes were made!
+      //re-init watches if watched literals were replaced!
       if( ret ) init(alpha, alpha_dl, dl_count);
       assert(assert_data_struct(alpha));
       return ret;
