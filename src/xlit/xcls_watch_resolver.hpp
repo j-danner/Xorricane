@@ -37,12 +37,12 @@ private:
   }
 
   inline bool filtration_add(const var_t& i) {
-    //@todo rewrite with 'lower_bound'
-    if(t_pos_to_idxs.contains(xlit_t_pos[i])) {
-      t_pos_to_idxs[xlit_t_pos[i]].push_back(i);
+    auto lb = t_pos_to_idxs.lower_bound(xlit_t_pos[i]);
+    if(lb->first == xlit_t_pos[i]) {
+      lb->second.push_back(i);
       return false;
     } else {
-      t_pos_to_idxs[xlit_t_pos[i]] = {i};
+      t_pos_to_idxs.emplace_hint(lb, xlit_t_pos[i], std::list<var_t>({i}));
       return true;
     }
   }
@@ -165,9 +165,7 @@ public:
           assert(i!=i0);
           xlits[i] += WLIN0;
           if(xlits[i].is_zero()) {
-            //remove_zero_lineral(i_);
             --num_nz_lins;
-            xlit_dl_count0[i] = {0,1}; //@todo do we need this?
             continue;
           }
           const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
@@ -199,9 +197,7 @@ public:
           assert(i!=i1);
           xlits[i] += WLIN1;
           if(xlits[i].is_zero()) {
-            //remove_zero_lineral(i_);
             --num_nz_lins;
-            xlit_dl_count0[i] = {0,1}; //@todo do we need this?
             continue;
           }
           const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
