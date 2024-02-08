@@ -217,31 +217,6 @@ public:
       assert( is_unit(dl_count) );
 
       return xcls_upd_ret::UNIT;
-
-      // add xlits from rs_cls to this
-      if(rs_cls.size() == 1) {
-        //no more lins to add!
-        //const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
-        //assert(ret == xcls_upd_ret::UNIT);
-        //assert(is_unit(dl_count));
-
-        assert( assert_data_struct() );
-        assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
-        return xcls_upd_ret::UNIT;
-      }
-      if(size()==1) {
-        //now xlits will get at least one additional lineral! ...so we need to init idx[1]! -- the precise value does in fact not matter it is just used once within init_unit() to distribute the shared part
-        assert(shared_part.is_zero());
-        assert(idx[0]==0);
-        idx[1] = 1;
-      }
-      //const auto ret = init_unit_opt(alpha, alpha_dl, alpha_trail_pos, dl_count, rs_cls.xlits.size());
-      //const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
-      const auto ret = opt ? init_unit_opt(alpha, alpha_dl, alpha_trail_pos, dl_count, rs_cls.xlits.size()) : init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
-      assert(ret == xcls_upd_ret::UNIT);
-      assert(is_unit(dl_count));
-      assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
-      return ret;
   };
 
 
