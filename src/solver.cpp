@@ -245,7 +245,7 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
     assert( trails.back().back().ind == 0 ); //ensure last trail entry is a conflict & it comes from an actual clause
 
     //go through trail of current dl -- skip over irrelevant parts
-    xcls_watch learnt_cls = get_reason(TRAIL.back());
+    xcls_watch_resolver learnt_cls = get_reason(TRAIL.back());
     assert(learnt_cls.is_unit(dl_count));
     VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + learnt_cls.get_unit().to_str() );
     bump_score( TRAIL.back().ind );
@@ -358,7 +358,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
         }
         assert(unit.is_zero()); //unit MUST reduce to zero, as TRAIL is not yet popped
     #endif
-        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count, opt.ca == ca_alg::fuip_opt);
+        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count);
 
         bump_score( TRAIL.back().ind );
         pop_trail(); //remove from trail!
