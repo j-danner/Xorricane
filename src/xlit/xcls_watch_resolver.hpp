@@ -88,7 +88,6 @@ public:
     }
 
     assert( xcls_watch::assert_data_struct() );
-    assert( xcls_watch::assert_data_struct() );
 
     return *this;
   }
