@@ -244,15 +244,29 @@ class xlit_watch : public xlit
      * @brief returns list of xlit_watches whose reasones need to be resolved to get this lineral
      * @return list< xlit_w_it > list of xlit_watches
      */
-    const std::list< xlit_w_it >& get_reason_idxs() const { return reason_cls_idxs; }
+    inline const std::list< xlit_w_it >& get_reason_idxs() const { return reason_cls_idxs; }
     
     /**
      * @brief returns the reason clause index, if this lineral was derived from an xcls_watch
      * @return var_t reason clause index
      */
-    const var_t& get_reason_idx() const { return reason_cls_idx; }
+    inline const var_t& get_reason_idx() const { return reason_cls_idx; }
 
-    void set_reason_idx(const var_t& idx) { reason_cls_idxs.clear(); reason_cls_idx = idx; }
+    /**
+     * @brief checks if there is a non-zero reason clause
+     * 
+     * @return true iff there is a non-zero reason clause
+     */
+    bool has_nz_reason_cls() const {
+      return !reason_cls_idxs.empty() || reason_cls_idx!=(var_t)-1;
+    }
+
+    /**
+     * @brief sets the reason_cls of the lineral to idx, i.e., clears the reason_cls_idxs and sets reason_cls_idx
+     * 
+     * @param idx index of reason_cls, i.e., xclss[idx] must be a unit clause and the unit is equiv to this
+     */
+    inline void set_reason_idx(const var_t& idx) { reason_cls_idxs.clear(); reason_cls_idx = idx; }
 
     /**
      * @brief removes literal upd_lt from lineral, if is present
@@ -261,7 +275,7 @@ class xlit_watch : public xlit
      * @param val value that is assigned to literal
      * @return true iff upd_lt was removed
      */
-    bool rm(const var_t lt, const bool3 val) {
+    inline bool rm(const var_t lt, const bool3 val) {
       if(idxs.empty()) return false;
       assert( !watches(lt) );
       const auto wl0 = idxs[ws[0]];
@@ -360,6 +374,17 @@ class xlit_watch : public xlit
      * @return true iff watches were changed
      */
     bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
+      //@todo! do both reductions in one go!
+      reduce(alpha, alpha_dl, dl_count);
+          //while(it != idxs.end()) {
+          //    if( alpha[*it] != bool3::None ) {
+          //        ret = true;
+          //        p1 ^= b3_to_bool(alpha[*it]);
+          //        it = idxs.erase(it);
+          //    } else {
+          //        ++it;
+          //    }
+          //}
       bool ret = false;
       var_t offset = 0;
       while(offset<idxs.size()) {

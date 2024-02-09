@@ -40,7 +40,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     vec<xlit> _L = vec<xlit>();
 
     xclss = vec<xcls_watch>(0);
-    xclss.reserve(clss.size());
+    xclss.reserve(2 * clss.size());
     
     utility = vec<double>(0);
     utility.reserve(clss.size());
@@ -109,7 +109,6 @@ void solver::backtrack(const var_t& lvl) {
     // trail and assignments!
   #ifndef NDEBUG
     print_trail();
-    print_assignments();
   #endif
 
     // update dl_count
@@ -138,7 +137,6 @@ void solver::backtrack(const var_t& lvl) {
 
   #ifndef NDEBUG
     print_trail();
-    print_assignments();
   #endif
 
     VERB(201, to_str());
@@ -239,7 +237,6 @@ xlit unit;
 std::pair<var_t, xcls_watch> solver::analyze_exp() {
     VERB(70, "**** analyzing conflict");
 #ifndef NDEBUG
-    print_assignments("    *");
     print_trail("    *");
 #endif
     assert( trails.back().back().ind == 0 ); //ensure last trail entry is a conflict & it comes from an actual clause
@@ -289,7 +286,6 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
     VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
 
 #ifndef NDEBUG
-    //print_assignments("    *");
     //print_trail("    *");
 #endif
 
@@ -311,7 +307,6 @@ std::pair<var_t, xcls_watch> solver::analyze_exp() {
 std::pair<var_t, xcls_watch> solver::analyze() {
     VERB(70, "**** analyzing conflict");
 #ifndef NDEBUG
-    print_assignments("    *");
     print_trail("    *");
 #endif
     assert( trails.back().back().ind == 0 ); //ensure last trail entry is a conflict & it comes from an actual clause
@@ -371,7 +366,6 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
 
 #ifndef NDEBUG
-    print_assignments("    *");
     print_trail("    *");
 #endif
 
@@ -395,7 +389,6 @@ std::pair<var_t, xcls_watch> solver::analyze_no_sres() { return analyze_dpll(); 
 std::pair<var_t, xcls_watch> solver::analyze_dpll() {
     VERB(60, "analyze_dpll called!")
 #ifndef NDEBUG
-    print_assignments("    *");
     print_trail("    *");
 #endif
     //return negation of last decision!
@@ -1174,7 +1167,8 @@ std::string solver::to_xnf_str() const noexcept {
 
 
 
-void solver::print_trail(std::string lead) const noexcept {
+//note: print_trail cannot be const as 'get_reason' lazily computes reasons, and once computed adds them to xclss (!)
+void solver::print_trail(std::string lead) noexcept {
   VERB(80, lead);
   VERB(80, lead+" trail");
   VERB(80, lead+" dl pos type unit");

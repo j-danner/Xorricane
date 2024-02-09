@@ -271,7 +271,7 @@ class solver
      * @param add_idx additional index to resolve with
      * @return var_t indedx position of new xcls_watch
      */
-    inline xcls_watch get_reason(const std::list<xlit_w_it>& rs_cls_idxs, const var_t idx = (var_t) -1) const {
+    inline xcls_watch get_reason(const std::list<xlit_w_it>& rs_cls_idxs, const var_t idx = (var_t) -1) {
     #ifndef NDEBUG
       vec<xlit> lits; lits.reserve(lineral_watches.size());
       for(const auto& l_dl : lineral_watches) {
@@ -287,7 +287,7 @@ class solver
 
       for(const auto& lin : rs_cls_idxs) {
         if(r_cls.is_zero()) { //r_cls has not yet been instantiated
-          r_cls = std::move(get_reason(lin));
+          r_cls = get_reason(lin);
           assert(r_cls.is_unit(dl_count));
         #ifndef NDEBUG
           tmp += r_cls.get_unit();
@@ -339,34 +339,40 @@ class solver
       }
 
       return r_cls.finalize();
-      //return r_cls;
-      //place r_cls into xclss
-      //xclss.emplace_back( std::move(r_cls) );
-      //utility.emplace_back( 0 );
-      //const var_t i = xclss.size()-1;
-      ////set redundancy
-      //xclss[i].set_redundancy(true);
-      ////update active_cls
-      ////update cls //TODO is init_unit rly needed here; shouldn't the clause already be initialized?
-      //VERB(120, "c adding new clause: " + BOLD(xclss[i].to_str()) + "  --> gives with current assignments: "+xclss[i].to_xcls().reduced(alpha).to_str());
-      //xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count, equiv_lits, equiv_lits_dl);
-      //return i;
     }
 
-    inline xcls_watch get_reason(xlit_w_it lin) const {
-      //@todo rm dead code!
+    xcls_watch zero_cls; //dummy clause to refer to when the reason clause is zero
+    inline xcls_watch& get_reason(xlit_w_it lin) {
       VERB(120, "c constructing reason clause for "+lin->to_str());
-      //const var_t idx = get_reason( lin->get_reason_idxs() );
-      ////adapt reason_cls_idx of lin
-      //lin->set_reason_idxs( idx );
-      //return xclss[idx];
-      const auto rs = get_reason( lin->get_reason_idxs(), lin->get_reason_idx() );
 
-      assert( rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits)+lin->to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero() );
-      return rs;
+      if(lin->get_reason_idxs().empty() && lin->get_reason_idx() != (var_t)-1) return xclss[lin->get_reason_idx()];
+      //ensure that xclss[0]
+      if(!lin->has_nz_reason_cls()) return zero_cls;
+
+      //construct reason clause
+      const auto rs = get_reason( lin->get_reason_idxs(), lin->get_reason_idx() );
+      assert_slow(!rs.is_zero());
+
+      //place rs into xclss
+      xclss.emplace_back( std::move(rs) );
+      utility.emplace_back( 0 );
+      const var_t i = xclss.size()-1;
+      //set redundancy
+      xclss[i].set_redundancy(true);
+      //update active_cls
+      //update cls //@todo is init_unit rly needed here; shouldn't the clause already be initialized?
+      xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
+      // add new cls to watch_lists
+      if(xclss.back().size()>0) watch_list[ (xclss.back().get_wl0()) ].emplace_back(i);
+      if(xclss.back().size()>1) watch_list[ (xclss.back().get_wl1()) ].emplace_back(i);
+      //adapt reason_cls_idx of lin
+      lin->set_reason_idx( i );
+      
+      assert(xclss[i].is_unit(dl_count) && (xclss[i].get_unit().reduced(alpha,equiv_lits)+lin->to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero());
+      return xclss[i];
     }
     
-    inline xcls_watch get_reason(const trail_elem& t) const {
+    inline xcls_watch& get_reason(const trail_elem& t) {
       return get_reason(t.lin);
     }
 
@@ -434,9 +440,9 @@ class solver
      */
     inline var_t add_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT) {
       if(type==trail_t::IMPLIED_UNIT) {
-        VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
-        lin->reduce(alpha, alpha_dl, dl_count);
+        VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->to_xlit().reduced(alpha,equiv_lits).to_str() + (type!=trail_t::GUESS  && lin->has_nz_reason_cls() && dl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
         if(opt.eq) lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
+        else lin->reduce(alpha, alpha_dl, dl_count);
       }
       if(lin->is_zero(alpha)) {
         if(lin->is_zero()) lineral_watches[dl].erase( lin );
@@ -486,7 +492,7 @@ class solver
       assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), dl));
       alpha_trail_pos[lt2] = total_trail_length;
       ++total_trail_length;
-      VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + l.to_str() + (type!=trail_t::GUESS ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+      VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + l.to_str() + (type!=trail_t::GUESS  && lin->has_nz_reason_cls() && dl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
       return lt2;
     };
 
@@ -561,7 +567,7 @@ class solver
      * @brief get all implied alpha's from lineral assignments
      * @note might backtrack if a propagation on a lower dl is noticed!
      * 
-     * @return list of reason clauses for new alpha assignments
+     * @return true iff a new forcing lineral/equivalence was found
      */
     bool find_implications_from_linerals(stats& s) {
       ++s.no_linalg;
@@ -712,21 +718,18 @@ class solver
         for(var_t lvl=0; lvl<=dl; ++lvl) {
           auto& l_dl = lineral_watches[lvl];
           if(l_dl.empty()) continue;
-          VERB(95, "c processing linerals deduced on lvl "+std::to_string(lvl));
           for(xlit_w_it l_it = l_dl.begin(); l_it != l_dl.end() && r < B->nrows; ++l_it, ++r) {
             if(!mzd_read_bit(B,r,idx)) continue;
-            const auto& l = *l_it;
           #ifndef NDEBUG
-            tmp += l;
-          #endif
-            if(lvl>0 && r==0) {
-              //NOTE here we assume that the first lineral on every dl>0 comes from a guess; i.e. skip it for resolution!
-              continue;
-            } 
-            bump_score(l);
-            resolving_lvl = lvl;
-            r_cls_idxs.emplace_back( l_it );
+            tmp += *l_it;
             assert( L_.reduce(tmp+lit).is_zero() );
+          #endif
+            resolving_lvl = lvl;
+            bump_score(*l_it);
+            //only add those l_it's which have a non-zero reason clause
+            if(l_it->has_nz_reason_cls()) {
+              r_cls_idxs.emplace_back( l_it );
+            }
           }
         }
         assert((tmp+lit).reduced(alpha).is_zero());
@@ -1116,7 +1119,6 @@ class solver
     solver& operator=(const solver& ig) = delete;
 
     bool assert_data_structs() const noexcept;
-    void print_assignments([[maybe_unused]] const std::string lead = "") const noexcept { return; };
-    void print_trail(std::string lead = "") const noexcept;
+    void print_trail(std::string lead = "") noexcept;
 
 };
