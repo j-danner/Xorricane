@@ -38,7 +38,7 @@ private:
 
   inline bool filtration_add(const var_t& i) {
     auto lb = t_pos_to_idxs.lower_bound(xlit_t_pos[i]);
-    if(lb->first == xlit_t_pos[i]) {
+    if(lb!=t_pos_to_idxs.end() && lb->first == xlit_t_pos[i]) {
       lb->second.push_back(i);
       return false;
     } else {
