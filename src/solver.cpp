@@ -471,6 +471,7 @@ void solver::restart(stats& s) {
             xclss[i].mark_for_removal();
         }
     }
+    VERB(50, "c rm clauses")
     assert_slow( assert_data_structs() );
     //remove all clss marked for removal
     vec<xcls_watch> cpy; cpy.reserve(xclss.size());
@@ -483,19 +484,20 @@ void solver::restart(stats& s) {
     }
     xclss = std::move(cpy);
     utility = std::move(util_cpy);
+    VERB(50, "c re-init watch_lists")
     //empty watchlists
     for(auto& wl : watch_list) wl.clear();
     //re-fill watchlists!
     for(var_t i=0; i<xclss.size(); ++i) {
-        watch_list[xclss[i].get_wl0()].emplace_back( i );
-        watch_list[xclss[i].get_wl1()].emplace_back( i );
+        if(xclss[i].size()>0) watch_list[xclss[i].get_wl0()].emplace_back( i );
+        if(xclss[i].size()>1) watch_list[xclss[i].get_wl1()].emplace_back( i );
     }
     assert( assert_data_structs() );
     
-    VERB(50, "c removing " + std::to_string( (double) (no_cls / xclss.size()) ) + "\% clauses.")
+    VERB(50, "c removed " + std::to_string( (double) (no_cls / xclss.size()) ) + "\% clauses.")
 
     update_restart_schedule(s.no_restarts);
-    VERB(90, "c restart done")
+    VERB(90, "c restart finished")
 };
 
 void solver::remove_fixed_alpha(const var_t upd_lt) {
@@ -529,10 +531,11 @@ void solver::remove_fixed_equiv([[maybe_unused]] const var_t idx) {
     //rm upd_lt from lineral_watches[0] (all other levels are empty!)
     for(xlit_w_it lin = lineral_watches[0].begin(); lin!=lineral_watches[0].end(); ++lin) {
         if(lin->is_active(alpha) && !lin->is_equiv()) {
-            lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
-            //@todo fix watch-lists only where necessary!
-            if(lin->size()>0) L_watch_list[ lin->get_wl0() ].emplace_back( dl, lin, dl_count[dl] );
-            if(lin->size()>1) L_watch_list[ lin->get_wl1() ].emplace_back( dl, lin, dl_count[dl] );
+            if( lin->reduce(alpha, alpha_dl, dl_count, equiv_lits) ) {
+                //watch-lists need to be fixed
+                if(lin->size()>0) L_watch_list[ lin->get_wl0() ].emplace_back( dl, lin, dl_count[dl] );
+                if(lin->size()>1) L_watch_list[ lin->get_wl1() ].emplace_back( dl, lin, dl_count[dl] );
+            }
         }
     }
     //rm upd_lt from xclss
