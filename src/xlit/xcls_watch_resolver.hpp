@@ -56,37 +56,69 @@ public:
   xcls_watch_resolver(xcls_watch &&rs_cls) : xcls_watch(std::move(rs_cls)) { init(); };
 
   /**
+   * @brief 
+   * 
+   */
+  void reduction(const var_t max_size, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+    for(auto it=t_pos_to_idxs.rbegin(); it!=t_pos_to_idxs.rend(); ++it) {
+      auto& [k,l] = *it;
+      if(l.size()<=max_size) continue;
+      const var_t i0 = l.front();
+      //@todo choose i0 in some clever way? i.e. shortest or similar?
+      l.pop_front();
+      //add first el in l to all others, re-evaluate xlit_t_pos, adapt xlit_dl_count0, AND add them back to t_pos_to_idxs
+      for(const var_t i : l) {
+        assert(i!=i0);
+        xlits[i] += xlits[i0];
+        if(xlits[i].is_zero()) {
+          --num_nz_lins;
+          continue;
+        }
+        const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
+        assert(v==(var_t)-1 || t_pos < t_pos_to_idxs.rbegin()->first);
+        xlit_t_pos[i] = t_pos;
+        xlit_dl_count0[i] = {dl, dl_count[dl]};
+        filtration_add(i);
+        assert(t_pos < k);
+      }
+      l.clear();
+      l.emplace_front( i0 );
+      assert(t_pos_to_idxs[k].size()<=max_size);
+    }
+    assert( std::all_of(t_pos_to_idxs.begin(), t_pos_to_idxs.end(), [max_size](const auto& k_l){ return k_l.second.size()<=max_size; }) );
+  }
+
+  /**
    * @brief call once when no more resolvents are computed.
    * @note recompute shared_parts to 'repair' xcls_watch data_struct
    */
-  xcls_watch& finalize() {
-    //rm zero linerals
+  xcls_watch finalize(const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+    assert(t_pos_to_idxs.size()>0);
+    //@heuristic choose good value!
+    var_t max_size = std::min(4, (int) (num_nz_lins / t_pos_to_idxs.size()) + 2 );
+    reduction(max_size, alpha_dl, alpha_trail_pos, dl_count);
+
+    //rm zero linerals -- this step breaks t_pos_to_idxs!
     for(var_t j=0; j<xlits.size(); ++j) {
       if(xlits[j].is_zero()) { xcls_watch::remove_zero_lineral(j); --j; }
     }
+    assert(num_nz_lins == xlits.size());
+    assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
+    assert( size()<2 || xlits[idx[1]][ptr_cache[1]] );
+    assert( size()<2 || ptr_cache[0]!=ptr_cache[1] );
 
     //recompute shared_part
     assert(shared_part.is_zero());
     if(xlits.size()<=1) return *this;
+    //from now on xlits.size()>1
 
-    shared_part = xlits.size() > 1 ? WLIN0.shared_part(WLIN1) : xlit();
+    shared_part = WLIN0.shared_part(WLIN1);
     WLIN0 += shared_part;
+    WLIN1 += shared_part;
+    if(!WLIN1[ptr_cache[1]]) WLIN1.swap(shared_part);
+    
     ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), ptr_cache[0]));
-    if(ws[0] >= WLIN0.size() || ptr_(idx[0],ws[0])!=ptr_cache[0] ) {
-      WLIN0.swap(shared_part);
-      assert( WLIN1[ptr_cache[0]] );
-      ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), ptr_cache[0]));
-    }
-
-    if (xlits.size() > 1) {
-      WLIN1 += shared_part;
-      ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), ptr_cache[1]));
-      if(ws[1] >= WLIN1.size() || ptr_(idx[1],ws[1])!=ptr_cache[1] ) {
-        WLIN1.swap(shared_part);
-        assert( WLIN1[ptr_cache[1]] );
-        ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), ptr_cache[1]));
-      }
-    }
+    ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), ptr_cache[1]));
 
     assert( xcls_watch::assert_data_struct() );
 
@@ -173,8 +205,7 @@ public:
             assert(v==(var_t)-1 || t_pos < t_pos_to_idxs.rbegin()->first);
             xlit_t_pos[i] = t_pos;
             xlit_dl_count0[i] = {dl, dl_count[dl]};
-            if(!xlits[i].is_zero())
-              filtration_add(i);
+            filtration_add(i);
           }
           l.clear();
           l.emplace_front( i0 );
@@ -208,8 +239,7 @@ public:
             assert(v==(var_t)-1 || t_pos < it->first);
             xlit_t_pos[i] = t_pos;
             xlit_dl_count0[i] = {dl, dl_count[dl]};
-            if(!xlits[i].is_zero()) 
-              filtration_add(i);
+            filtration_add(i);
           }
           l.clear();
           l.emplace_front( i1 );

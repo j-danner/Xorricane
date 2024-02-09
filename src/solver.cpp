@@ -233,75 +233,12 @@ void solver::decay_score() {
     bump *= (1.0 / decay);
 };
 
+#ifndef NDEBUG
 xlit unit;
+#endif
+
 std::pair<var_t, xcls_watch> solver::analyze_exp() {
-    VERB(70, "**** analyzing conflict");
-#ifndef NDEBUG
-    print_trail("    *");
-#endif
-    assert( trails.back().back().ind == 0 ); //ensure last trail entry is a conflict & it comes from an actual clause
-
-    //go through trail of current dl -- skip over irrelevant parts
-    xcls_watch_resolver learnt_cls = get_reason(TRAIL.back());
-    assert(learnt_cls.is_unit(dl_count));
-    VERB(70, "   * reason clause " + learnt_cls.to_str() + " for UNIT " + learnt_cls.get_unit().to_str() );
-    bump_score( TRAIL.back().ind );
-    pop_trail(); //remove conflict from trail, i.e., now we should have alpha[0]==bool3:None
-    
-    //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
-    while( learnt_cls.get_assigning_lvl(alpha_dl) == dl || learnt_cls.get_assigning_lvl(alpha_dl) == (var_t) -1 ) {
-        assert(!TRAIL.empty());
-        VERB(70, "   * conflict clause is " + learnt_cls.to_str());
-        VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
-
-        unit = std::move(learnt_cls.get_unit());
-        unit.reduce(alpha);
-        assert( unit.is_one() );
-        assert(!learnt_cls.to_xcls().is_zero());
-
-        //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
-        while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
-            pop_trail();
-        }
-        assert(TRAIL.back().type == trail_t::IMPLIED_ALPHA);
-        
-        //get reason_cls
-        const auto& reason_cls = get_reason(TRAIL.back());
-        VERB(70, "   * reason clause " + reason_cls.to_str() + " for UNIT " + reason_cls.get_unit().to_str() );
-    #ifndef NDEBUG
-        //ensure that reason cls is reason for provided alpha
-        xlit unit = reason_cls.get_unit();
-        unit.reduce(alpha);
-        unit.reduce(equiv_lits, equiv_lits_dl, 0);
-        assert(unit.is_zero()); //unit MUST reduce to zero, as TRAIL is not yet popped
-    #endif
-        bump_score( TRAIL.back().ind );
-        pop_trail(); //remove from trail!
-
-        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count);
-    }
-    
-    VERB(70, "   * ");
-    VERB(70, "   * learnt clause is " + BOLD( learnt_cls.to_str() ) );
-    VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
-
-#ifndef NDEBUG
-    //print_trail("    *");
-#endif
-
-    //TODO
-    //CLAUSE MINIMIZATION!
-
-    //find correct backtrack-lvl
-    const var_t b_lvl = learnt_cls.get_assigning_lvl(alpha_dl);
-    if( dl < learnt_cls.size() && b_lvl == dl-1 ) {
-        VERB(50, "   * negated decisions lead to smaller learnt_cls and the same backtrack-level!");
-        //assert(false);
-        
-    }
-    
-    VERB(70, "****");
-    return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls);
+    return analyze();
 };
 
 std::pair<var_t, xcls_watch> solver::analyze() {
@@ -322,17 +259,18 @@ std::pair<var_t, xcls_watch> solver::analyze() {
 
     //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
     while( learnt_cls.get_assigning_lvl(alpha_dl) == dl || learnt_cls.get_assigning_lvl(alpha_dl) == (var_t) -1 ) {
-        assert(!TRAIL.empty());
         VERB(70, "   * conflict clause is " + BOLD( learnt_cls.to_str() ) + "   --> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
         
+      #ifndef NDEBUG
         unit = std::move(learnt_cls.get_unit());
         unit.reduce(alpha);
         assert( unit.is_one() );
         assert(!learnt_cls.to_xcls().is_zero());
+      #endif
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
         while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
-            assert(!TRAIL.empty());
+            //@todo instead of unit_contains we should be able to use one of the watched literals, right?!
             pop_trail();
         }
         assert(TRAIL.back().type == trail_t::IMPLIED_ALPHA);
@@ -380,7 +318,7 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     }
     
     VERB(70, "****");
-    return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls.finalize());
+    return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls.finalize(alpha_dl, alpha_trail_pos, dl_count));
     //return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls);
 };
 
@@ -398,8 +336,9 @@ std::pair<var_t, xcls_watch> solver::analyze_dpll() {
     for(auto tr = trails.begin()+1; tr!=trails.end(); ++tr) {
         if(!tr->empty()) xlits.emplace_back( tr->front().ind, !b3_to_bool(alpha[tr->front().ind]) );
     }
-    xcls learnt_cls( std::move(xlits) );
+    xcls_watch learnt_cls( std::move(xcls(std::move(xlits))) );
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
+    learnt_cls.init_dpll(alpha, alpha_dl, alpha_trail_pos, dl_count);
 
     return {dl>0 ? dl-1 : 0, std::move(learnt_cls) };
 };
@@ -546,17 +485,22 @@ xlit new_unit;
 //perform full GCP -- does not stop if conflict is found -- otherwise assert_data_struct will fail!
 void solver::GCP(stats &s) {
     s.no_gcp++;
-    VERB(90, "GCP start");
+    VERB(90, "c GCP start");
     while(!lineral_queue.empty() && no_conflict()) {
-        const var_t upd_lt = propagate_implied_lineral();
+        if(s.cancelled.load()) {
+            VERB(10, "c cancelled");
+            return;
+        }
+        const var_t& upd_lt = propagate_implied_lineral();
+        VERB(120, "c new literal ready for propagation");
         if(upd_lt == (var_t) -1) continue; //nothing new to propagate!
         if(upd_lt == 0) { assert(!no_conflict()); continue; } //at conflict!
 
-        {
-        //find new implied alphas! -- propagate to watched units
+        VERB(120, "c updating lineral_watches");
+        //(1) find new implied alphas from watched linerals
         auto it = L_watch_list[upd_lt].begin();
         while(it != L_watch_list[upd_lt].end()) {
-          const auto [lvl, lin, dl_c] = *it;
+          const auto& [lvl, lin, dl_c] = *it;
           auto& lin_w = *lin;
           //if lin_w has been removed and possibly, we have to fix the watching scheme now!
           if(dl_count[lvl] != dl_c) {
@@ -577,40 +521,34 @@ void solver::GCP(stats &s) {
           }
           switch (ret) {
           case xlit_upd_ret::ASSIGNING:
-            {
               assert( lin_w.is_assigning(alpha) );
               assert( !lin_w.is_active(alpha) );
               // update alpha
               queue_implied_alpha(lin);
-            }
             break;
           case xlit_upd_ret::UNIT:
               assert(!lin_w.is_assigning(alpha));
               break;
           }
         }
-        }
 
-        {
-        auto it = watch_list[upd_lt].begin();
-        while(it != watch_list[upd_lt].end()) {
-            if (s.cancelled.load()) {
-                VERB(10, "c cancelled");
-                return;
-            }
+        VERB(120, "c updating clauses");
+        //(2) find new implied linerals from watched clauses
+        auto it2 = watch_list[upd_lt].begin();
+        while(it2 != watch_list[upd_lt].end()) {
             //assert(assert_data_structs());
-            const var_t i = *it;
+            const var_t& i = *it2;
             assert(xclss[i].watches(upd_lt));
-            if(!xclss[i].is_active(dl_count)) { ++it; continue; }
+            if(!xclss[i].is_active(dl_count)) { ++it2; continue; }
             const auto& [new_wl, ret] = xclss[i].update(upd_lt, alpha, alpha_dl, alpha_trail_pos, dl_count);
             //if watched-literal has changed, i.e., new_wl != 0; update watch-list
             if(new_wl != upd_lt) {
                 //rm *it from current watch-list:
-                it = watch_list[upd_lt].erase(it);
+                it2 = watch_list[upd_lt].erase(it2);
                 //add i to newly watched literal:
                 watch_list[new_wl].push_back(i);
             } else {
-                ++it;
+                ++it2;
             }
             switch (ret) {
             case xcls_upd_ret::SAT:
@@ -626,13 +564,11 @@ void solver::GCP(stats &s) {
                 assert(xclss[i].get_unit_at_lvl() == dl);
                 //assert(xclss[i].is_inactive(alpha));
                 //increase utility
-                utility[i]++;
+                ++utility[i];
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
-                // NEW LIN-EQS
-                new_unit = std::move(xclss[i].get_unit());
-                // add to lineral_watches
-                lineral_watches[dl].emplace_back( std::move(new_unit), alpha, alpha_dl, dl_count, i );
+                // new lineral
+                lineral_watches[dl].emplace_back( std::move(xclss[i].get_unit()), alpha, alpha_dl, dl_count, i );
                 queue_implied_lineral( std::prev(lineral_watches[dl].end()) );
                 ++s.new_px_upd;
                 break;
@@ -643,7 +579,6 @@ void solver::GCP(stats &s) {
                 break;
             }
         }
-        }
         
         //if we propagated on dl 0, remove all upd_lt from lineral_watches AND from xclss, so that they only occur in the watched clauses.
         if(dl == 0) { remove_fixed_alpha(upd_lt); };
@@ -652,7 +587,7 @@ void solver::GCP(stats &s) {
     assert(lineral_queue.empty() || !no_conflict());
 
     VERB(201, to_str());
-    VERB(90, "GCP end");
+    VERB(90, "c GCP end");
     assert_slow(assert_data_structs());
 };
 

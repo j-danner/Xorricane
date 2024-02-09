@@ -339,6 +339,8 @@ public:
     init();
   };
 
+  //@todo replace by 'default'?
+  //xcls_watch(const xcls_watch &o) noexcept = default;
   xcls_watch(const xcls_watch &o) noexcept : xlits(o.xlits), shared_part(o.shared_part), xlit_dl_count0(o.xlit_dl_count0), SAT_dl_count(o.SAT_dl_count), xlit_t_pos(o.xlit_t_pos), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup) {
     idx[0] = o.idx[0];
     idx[1] = o.idx[1];
@@ -570,6 +572,20 @@ public:
   };
 
   
+  //use only if all linerals are literals and pairwise distinct, and order w.r.t alpha_trail_pos!
+  void init_dpll([[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+    shared_part.clear();
+    for(var_t i=0; i<size(); ++i) {
+      const var_t& lt = xlits[i].LT();
+      xlit_t_pos[i] = alpha_trail_pos[ lt ];
+      xlit_dl_count0[i] = {alpha_dl[lt], dl_count[ alpha_dl[lt] ]};
+    }
+    if(size()>=1) { idx[0]=(size()-1); ptr_cache[0]=xlits[(size()-1)].LT(); };
+    if(size()>=2) { idx[1]=(size()-2); ptr_cache[1]=xlits[(size()-2)].LT(); };
+
+    assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
+  }
+
   //tmp vars
   vec<var_t> xlit_idxs;
 

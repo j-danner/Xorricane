@@ -283,7 +283,6 @@ class solver
     #endif
       //resolve cls to get true reason cls
       xcls_watch_resolver r_cls;
-      //xcls_watch r_cls;
 
       for(const auto& lin : rs_cls_idxs) {
         if(r_cls.is_zero()) { //r_cls has not yet been instantiated
@@ -338,7 +337,7 @@ class solver
         }
       }
 
-      return r_cls.finalize();
+      return r_cls.finalize(alpha_dl, alpha_trail_pos, dl_count);
     }
 
     xcls_watch zero_cls; //dummy clause to refer to when the reason clause is zero
@@ -359,9 +358,6 @@ class solver
       const var_t i = xclss.size()-1;
       //set redundancy
       xclss[i].set_redundancy(true);
-      //update active_cls
-      //update cls //@todo is init_unit rly needed here; shouldn't the clause already be initialized?
-      xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
       // add new cls to watch_lists
       if(xclss.back().size()>0) watch_list[ (xclss.back().get_wl0()) ].emplace_back(i);
       if(xclss.back().size()>1) watch_list[ (xclss.back().get_wl1()) ].emplace_back(i);
@@ -954,7 +950,7 @@ class solver
       //update cls //TODO is init_unit rly needed here; shouldn't the clause already be initialized?
       VERB(90, "c adding new clause: " + BOLD(xclss[i].to_str()) + "  --> gives with current assignments: "+xclss[i].to_xcls().reduced(alpha).to_str());
       if(learnt_cls) VERB(90, "c XNF : " + xclss[i].to_xnf_str());
-      const auto ret = learnt_cls ? xclss[i].init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count) : xclss[i].init(alpha, alpha_dl, alpha_trail_pos, dl_count);
+      const auto ret = learnt_cls ? xcls_upd_ret::UNIT : xclss[i].init(alpha, alpha_dl, alpha_trail_pos, dl_count);
       //@todo write lightweight init_unit func if it is a learnt_cls!
       //copied from GCP
       switch (ret) {
