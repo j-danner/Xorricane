@@ -11,6 +11,7 @@ private:
   /**
    * @brief maps t_pos to idxs of xlits, i.e., xlits[ t_pos_to_idxs[t_pos] ] = t_pos
    */
+  //@todo replace with 'https://www.codeproject.com/script/Articles/ViewDownloads.aspx?aid=27799' ?
   std::map<var_t, std::list<var_t> > t_pos_to_idxs;
 
   /**
@@ -92,7 +93,7 @@ public:
     return *this;
   }
 
-  xcls_upd_ret resolve(const xcls_watch &rs_cls, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+  xcls_upd_ret resolve(const xcls_watch &rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, [[maybe_unused]] const vec<dl_c_t> &dl_count) {
       assert( assert_data_struct() );
       assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
 
