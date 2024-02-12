@@ -14,6 +14,7 @@ class xcls {
     xcls() noexcept : assVS(xsys(xlit({0}))) {};
     xcls(const xsys& _assVS) noexcept : assVS(_assVS) {};
     xcls(xsys&& _assVS) noexcept : assVS(std::move(_assVS)) {};
+    xcls(xlit&& lin) noexcept { assVS = xsys( std::move( lin.add_one() ) ); };
     xcls(const vec<xlit>& lits_) noexcept {
       auto lits_p1(lits_);
       for(auto& l : lits_p1) l.add_one();
@@ -35,7 +36,7 @@ class xcls {
 
     var_t deg() const { return !is_zero() ? assVS.dim() : 0; };
 
-    bool is_zero() const { return assVS.get_pivot_poly_idx().contains(0) || assVS.size()==0; };
+    bool is_zero() const { return assVS.get_pivot_poly_idx().contains(0); };
 
     bool is_unit() const { return deg()<=1; };
 
@@ -63,17 +64,21 @@ class xcls {
       return *this;
     };
     
-    void update(const xsys L) {
+    bool update(const xsys& L) {
+      bool ret = false;
       for(const auto& l : L.get_xlits()) {
-        assVS.lt_update(l);
+        ret |= assVS.lt_update(l);
       }
+      return ret;
     };
     
     //only update if the result does not blow up the linerals!
-    void update_short(const xsys& L) {
+    bool update_short(const xsys& L) {
+      bool ret = false;
       for(const auto& l : L.get_xlits()) {
-        assVS.lt_update_short(l);
+        ret |= assVS.lt_update_short(l);
       }
+      return ret;
     };
 
     const xsys& get_ass_VS() const { return assVS; };
