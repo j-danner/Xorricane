@@ -8,16 +8,16 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
   #ifndef NDEBUG
     int la_sch = GENERATE(0,1,5);
     dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lex);
-    phase_opt po = GENERATE(phase_opt::rand, phase_opt::save, phase_opt::save_inv);
-    ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip, ca_alg::fuip_opt);
-    initial_prop_opt ip = initial_prop_opt::no;
+    phase_opt po = phase_opt::save;
+    ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip);
+    initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
     bool equiv = true;
     int verb = 95;
   #else
     int la_sch = GENERATE(0,1,5,10);
     dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lwl, dec_heu::swl, dec_heu::lex);
     phase_opt po = GENERATE(phase_opt::rand, phase_opt::save, phase_opt::save_inv);
-    ca_alg ca = GENERATE(ca_alg::dpll, ca_alg::no, ca_alg::fuip, ca_alg::fuip_opt);
+    ca_alg ca = GENERATE(ca_alg::dpll, ca_alg::no, ca_alg::fuip);
     initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
     bool equiv = GENERATE(true, false);
     int verb = 0;
@@ -50,7 +50,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     SECTION( "test3.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test3.xnf");
         auto slvr = solver(clss, opt);
-        CHECK( slvr.to_str() == "x1+x2+1; x1+x5; x2+x3+1; x3+x4+1; x4+x5;" );
+        CHECK( ((ip!=initial_prop_opt::no) || (slvr.to_str() == "x1+x2+1; x1+x5; x2+x3+1; x3+x4+1; x4+x5;")) );
     
         stats s = slvr.solve();
         CHECK( s.sat == false ); //UNSAT

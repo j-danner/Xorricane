@@ -62,15 +62,17 @@ class xsys
      * @brief updates xsyses LTs modulo l
      * 
      * @param l lit to reduce with
+     * @return true iff clause was changed
      */
-    void lt_update(const xlit& l);
+    bool lt_update(const xlit& l);
     
     /**
      * @brief updates xsyses LTs modulo l -- if every single reduction does not increase the size by more than 50% -- and the lineral has already a length > 3
      * 
      * @param l lit to reduce with
+     * @return true iff clause was changed
      */
-    void lt_update_short(const xlit& l);
+    bool lt_update_short(const xlit& l);
     
     inline xlit get_non_zero_el() const { return *(pivot_poly_its.begin()->second); };
 

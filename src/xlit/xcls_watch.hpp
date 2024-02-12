@@ -109,6 +109,8 @@ private:
     WLIN0 += shared_part;
     WLIN1 += shared_part;
 
+    if(WLIN0.size()==0) WLIN0.swap(shared_part);
+    if(WLIN1.size()==0) WLIN1.swap(shared_part);
     // ensure that WLIN0 and WLIN1 are non-empty
     assert(WLIN0.size() > 0 && WLIN1.size() > 0);
 
@@ -334,7 +336,7 @@ public:
     xlits = vec<xlit>();
     xlits.reserve(cl.deg());
     for (auto lit : cl.get_ass_VS().get_xlits()) {
-      xlits.emplace_back(std::move(lit));
+      if(!lit.is_zero()) xlits.emplace_back(std::move(lit));
     }
     init();
   };

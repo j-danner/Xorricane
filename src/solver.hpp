@@ -923,6 +923,7 @@ class solver
      */
     inline var_t init_and_add_xcls_watch(xcls&& cls, const bool& redundant) {
       assert( dl == 0 );
+      assert( !cls.is_zero() );
       xcls_watch cls_w( std::move(cls) );
       cls_w.init(alpha, alpha_dl, alpha_trail_pos, dl_count);
       return add_xcls_watch( std::move(cls_w), redundant );
