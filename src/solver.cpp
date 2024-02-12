@@ -510,10 +510,6 @@ void solver::GCP(stats &s) {
     s.no_gcp++;
     VERB(90, "c GCP start");
     while(!lineral_queue.empty() && no_conflict()) {
-        if(s.cancelled.load()) {
-            VERB(10, "c cancelled");
-            return;
-        }
         const var_t& upd_lt = propagate_implied_lineral();
         VERB(120, "c new literal ready for propagation");
         if(upd_lt == (var_t) -1) continue; //nothing new to propagate!
