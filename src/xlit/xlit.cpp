@@ -60,18 +60,16 @@ xlit tmp;
 bool xlit::reduce_short(const xsys& sys) {
     bool changed = false;
     auto prev_sz = size();
-    if(prev_sz <= 2) return false;
     //complexity to find correct update xlits: O( log( this.size() ) * sys.size() )
     for (const auto &[lt,row] : sys.get_pivot_poly_idx()) {
+        if(prev_sz <= 3) break;
         if( (*this)[lt] ) {
             tmp = *this + *row;
-            if(tmp.size() < 1.05 * prev_sz) {
+            if(tmp.size() < 1.50 * prev_sz) {
                 swap(tmp);
                 prev_sz = size();
                 changed = true;
-                if(prev_sz <= 2) return true;
             }
-            changed = true;
         }
     }
     return changed;

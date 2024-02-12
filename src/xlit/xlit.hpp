@@ -81,8 +81,9 @@ class xlit
         vec<var_t> support() const;
 
         bool reduce(const xsys& sys);
+
         /**
-         * @brief Reduces the lineral by the given system s.t. the lineral increases in size no more than (1.05)^(sys.size()); also does nothing when size()<=2.
+         * @brief Reduces the lineral by the given system s.t. the lineral increases in size no more than (1.50)^(sys.size()); also does nothing when size()<=3.
          * 
          * @param sys input xsys
          * @return true iff lineral was updated
