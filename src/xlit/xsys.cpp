@@ -65,50 +65,35 @@ void xsys::lt_update(const xlit& l) {
     }
 };
 
-//deprecated!
-void xsys::lt_update(const vec<xlit>& assignments) {
-    for(auto& l : xlits) l.reduce(assignments);
-    rref();
-};
-
-
-//deprecated!
-void xsys::lt_update(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t dl) {
-    for(auto& l : xlits) l.reduce(assignments, assignments_dl, dl);
-    rref();
-    return;
-
-    //pivot_map<var_t,var_t> ppi_cpy = pivot_poly_its;
-    //for(const auto& [lt,r_idx] : ppi_cpy) {
-    //    if(assignments[lt].is_zero() || assignments_dl[lt]>dl) continue;
-    //    //rm from pivot_poly_its, then reduce with assignments
-    //    pivot_poly_its.erase( lt );
-    //    //reduce with assignments as long as possible!
-    //    while( !assignments[ xlits[r_idx].LT() ].is_zero() && assignments_dl[xlits[r_idx].LT()] <= dl) {
-    //        // (1) reduce with assignments
-    //        while(!assignments[ xlits[r_idx].LT() ].is_zero() && assignments_dl[xlits[r_idx].LT()] <= dl) {
-    //            xlits[r_idx] += assignments[xlits[r_idx].LT()];
-    //        }
-    //        // (2) reduce with other eqs in xlits -- if they have same LT
-    //        const auto search = pivot_poly_its.find( xlits[r_idx].LT() );
-    //        if(search != pivot_poly_its.end()){ xlits[r_idx] += xlits[search->second]; }
-    //    }
-    //    //if non-zero, add back to pivot_poly_its
-    //    if(!xlits[r_idx].is_zero()) {
-    //        assert( !pivot_poly_its.contains(xlits[r_idx].LT()) );
-    //        pivot_poly_its[xlits[r_idx].LT()] = r_idx;
-    //    }
-    //}
-};
-
-void xsys::update(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t dl) {
-    for(auto& l : xlits) {
-        l.reduce(assignments, assignments_dl, dl);
+xlit tmp_lin;
+void xsys::lt_update_short(const xlit& l) {
+    //complexity to find correct update xlits: O( log( this.size() ) * sys.size() )
+    const auto search = pivot_poly_its.find( l.LT() );
+    if(search != pivot_poly_its.end()) {
+        const auto row = search->second;
+        auto prev_sz = row->size();
+        if(prev_sz <= 3) return;
+        //LT found -- start reduction!
+        tmp_lin.clear();
+        tmp_lin = *row + l;
+        //update row -- if short enough
+        if(tmp_lin.size() <= 1.50 * prev_sz) {
+            row->swap(tmp_lin);
+            prev_sz = row->size();
+        }
+        pivot_poly_its.erase( search );
+        //rm from pivot_poly_its, then reduce with other eqs
+        for (const auto &[lt,row_lt] : pivot_poly_its) {
+            if((*row)[lt]) {
+                *row += *row_lt;
+            }
+        }
+        //if non-zero, add back to pivot_poly_its
+        if(!(row->is_zero())) {
+            pivot_poly_its[row->LT()] = row;
+        }
     }
-    pivot_poly_its.clear();
-    rref();
 };
-
 
 xsys xsys::operator+(const xsys &other) const {
     xsys cpy(*this);

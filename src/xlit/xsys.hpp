@@ -66,23 +66,12 @@ class xsys
     void lt_update(const xlit& l);
     
     /**
-     * @brief updates xsyses LTs modulo l
+     * @brief updates xsyses LTs modulo l -- if every single reduction does not increase the size by more than 50% -- and the lineral has already a length > 3
      * 
-     * @param assignments to reduce with
+     * @param l lit to reduce with
      */
-    void lt_update(const vec<xlit>& assignments);
+    void lt_update_short(const xlit& l);
     
-    /**
-     * @brief updates xsyses LTs modulo l
-     * 
-     * @param assignments to reduce with
-     * @param assignments_dl dl of each assignment
-     * @param dl dl up to which assignments are considered
-     */
-    void lt_update(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t dl);
-    
-    void update(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t dl);
-
     inline xlit get_non_zero_el() const { return *(pivot_poly_its.begin()->second); };
 
     bool is_consistent() const { return pivot_poly_its.find(0) == pivot_poly_its.end(); };

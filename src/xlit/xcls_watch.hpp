@@ -339,6 +339,8 @@ public:
     init();
   };
 
+  //@todo replace by 'default'?
+  //xcls_watch(const xcls_watch &o) noexcept = default;
   xcls_watch(const xcls_watch &o) noexcept : xlits(o.xlits), shared_part(o.shared_part), xlit_dl_count0(o.xlit_dl_count0), SAT_dl_count(o.SAT_dl_count), xlit_t_pos(o.xlit_t_pos), irredundant(o.irredundant), delete_on_cleanup(o.delete_on_cleanup) {
     idx[0] = o.idx[0];
     idx[1] = o.idx[1];
@@ -569,74 +571,23 @@ public:
     return xcls_upd_ret::UNIT;
   };
 
-  xcls_upd_ret resolve(const xcls_watch &rs_cls, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const bool opt = false) {
-    if(size()==0) {
-      xlits.emplace_back( xlit(0, true) );
-      xlit_dl_count0.emplace_back( 0, dl_count[0] );
-      xlit_t_pos.emplace_back((var_t) -1);
-      ws[0] = 0;
-      idx[0] = 0;
+  
+  //use only if all linerals are literals and pairwise distinct, and order w.r.t alpha_trail_pos!
+  void init_dpll([[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+    shared_part.clear();
+    for(var_t i=0; i<size(); ++i) {
+      const var_t& lt = xlits[i].LT();
+      xlit_t_pos[i] = alpha_trail_pos[ lt ];
+      xlit_dl_count0[i] = {alpha_dl[lt], dl_count[ alpha_dl[lt] ]};
     }
-    assert(size()>0);
-    // fix unit part ('resolving' part)
-    WLIN0 += rs_cls.get_unit();
-    // add xlits from rs_cls to this
-    if(rs_cls.size() == 1) {
-      const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
-      assert(ret == xcls_upd_ret::UNIT);
-      assert(is_unit(dl_count));
-      assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
-      return ret;
-    }
-    if(size()==1) {
-      //now xlits will get at least one additional lineral! ...so we need to init idx[1]! -- the precise value does in fact not matter it is just used once within init_unit() to distribute the shared part
-      assert(shared_part.is_zero());
-      assert(idx[0]==0);
-      idx[1] = 1;
-    }
-    //copy the remaining linerals
-    xlits.reserve(size()+rs_cls.size());
-    xlit_dl_count0.reserve(size()+rs_cls.size());
-    xlit_t_pos.reserve(size()+rs_cls.size());
-    for(var_t i=0; i<rs_cls.size(); ++i) {
-      if(i==rs_cls.idx[0] || i==rs_cls.idx[1]) continue;
-      xlits.emplace_back( rs_cls.xlits[i] );
-      xlit_dl_count0.emplace_back( rs_cls.xlit_dl_count0[i] );
-      xlit_t_pos.emplace_back(rs_cls.xlit_t_pos[i]);
-    }
-    //copy 2nd lineral (which needs to be 'fixed' by the shared_part)
-    xlits.emplace_back(rs_cls.xlits[rs_cls.idx[1]] + rs_cls.shared_part);
-    xlit_dl_count0.emplace_back(rs_cls.xlit_dl_count0[rs_cls.idx[1]]);
-    xlit_t_pos.emplace_back(rs_cls.xlit_t_pos[rs_cls.idx[1]]);
-    
+    if(size()>=1) { idx[0]=(size()-1); ptr_cache[0]=xlits[(size()-1)].LT(); };
+    if(size()>=2) { idx[1]=(size()-2); ptr_cache[1]=xlits[(size()-2)].LT(); };
 
-    //const auto ret = init_unit_opt(alpha, alpha_dl, alpha_trail_pos, dl_count, rs_cls.size());
-    //const auto ret = init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
-    const auto ret = opt ? init_unit_opt(alpha, alpha_dl, alpha_trail_pos, dl_count, rs_cls.size()) : init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
-    assert(ret == xcls_upd_ret::UNIT);
-    assert(is_unit(dl_count));
     assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
-    return ret;
   }
-  
-  
+
   //tmp vars
   vec<var_t> xlit_idxs;
-
-  /**
-   * @brief inits this xcls_watch according to the current alpha, alpha_dl s.t. all invariants hold and it can be used with all other xcls_watches
-   * @note should only be used when new clauses are added! && the new clause is UNIT under the current assignments!
-   *
-   * @param alpha current bool3-assignment
-   * @param alpha_dl dl of alpha-assignments
-   * @param alpha_trail_pos trail_pos of alpha-assignments
-   * @param dl_count current dl_count
-   * @param dl currenct dl
-   * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
-   */
-  xcls_upd_ret init_unit_opt(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, [[maybe_unused]] const var_t idx_start_other_cls) {
-    return init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
-  };
 
   xcls_upd_ret init_unit(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
     if(size()==0) {

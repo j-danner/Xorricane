@@ -145,6 +145,7 @@ class xlit_watch : public xlit
     /**
      * @brief get the first watched literal
      * @return the first watched literal
+     * @todo caching?!
      */
     var_t get_wl0() const { return idxs[ws[0]]; };
     
@@ -243,15 +244,29 @@ class xlit_watch : public xlit
      * @brief returns list of xlit_watches whose reasones need to be resolved to get this lineral
      * @return list< xlit_w_it > list of xlit_watches
      */
-    const std::list< xlit_w_it >& get_reason_idxs() const { return reason_cls_idxs; }
+    inline const std::list< xlit_w_it >& get_reason_idxs() const { return reason_cls_idxs; }
     
     /**
      * @brief returns the reason clause index, if this lineral was derived from an xcls_watch
      * @return var_t reason clause index
      */
-    const var_t& get_reason_idx() const { return reason_cls_idx; }
+    inline const var_t& get_reason_idx() const { return reason_cls_idx; }
 
-    void set_reason_idx(const var_t& idx) { reason_cls_idxs.clear(); reason_cls_idx = idx; }
+    /**
+     * @brief checks if there is a non-zero reason clause
+     * 
+     * @return true iff there is a non-zero reason clause
+     */
+    bool has_nz_reason_cls() const {
+      return !reason_cls_idxs.empty() || reason_cls_idx!=(var_t)-1;
+    }
+
+    /**
+     * @brief sets the reason_cls of the lineral to idx, i.e., clears the reason_cls_idxs and sets reason_cls_idx
+     * 
+     * @param idx index of reason_cls, i.e., xclss[idx] must be a unit clause and the unit is equiv to this
+     */
+    inline void set_reason_idx(const var_t& idx) { reason_cls_idxs.clear(); reason_cls_idx = idx; }
 
     /**
      * @brief removes literal upd_lt from lineral, if is present
@@ -260,7 +275,7 @@ class xlit_watch : public xlit
      * @param val value that is assigned to literal
      * @return true iff upd_lt was removed
      */
-    bool rm(const var_t lt, const bool3 val) {
+    inline bool rm(const var_t lt, const bool3 val) {
       if(idxs.empty()) return false;
       assert( !watches(lt) );
       const auto wl0 = idxs[ws[0]];
@@ -339,6 +354,7 @@ class xlit_watch : public xlit
      * @param alpha current alpha-assignments
      * @param alpha_dl dl of alpha-assignments
      * @return true iff inds were removed
+     * @todo lazy re-init -- we should be able to do this in one go with xlit::reduce!
      * 
      * @note if it returns true, may invalidate dl_c, i.e., is_assigning(dl_count) (!)
      */
@@ -349,21 +365,43 @@ class xlit_watch : public xlit
       return ret;
     };
     
+    /**
+     * @brief reduce with equiv_lits
+     * 
+     * @param alpha current alpha-assignments
+     * @param alpha_dl dl of alpha-assignments
+     * @param equiv_lits current equivalent literals
+     * @return true iff watches were changed
+     */
     bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
+      //@todo! do both reductions in one go!
+      reduce(alpha, alpha_dl, dl_count);
+          //while(it != idxs.end()) {
+          //    if( alpha[*it] != bool3::None ) {
+          //        ret = true;
+          //        p1 ^= b3_to_bool(alpha[*it]);
+          //        it = idxs.erase(it);
+          //    } else {
+          //        ++it;
+          //    }
+          //}
       bool ret = false;
       var_t offset = 0;
       while(offset<idxs.size()) {
           if( equiv_lits[ idxs[offset] ].is_active()) {
-              ret = true;
-              //reason_cls_idxs.insert( reason_cls_idxs.end(), equiv_lits[idxs[offset]].reason_lin->get_reason_idxs().begin(), equiv_lits[idxs[offset]].reason_lin->get_reason_idxs().end() );
+              //add reduction reasons
               reason_cls_idxs.emplace_back( equiv_lits[idxs[offset]].reason_lin );
+              //adapt watches if necessary!
+              ret |= (ws[0]==offset) || (ws[1]==offset);
+              if(ws[0] < offset && equiv_lits[ idxs[offset] ].ind < get_wl0()) { --ws[0]; }
+              if(ws[1] < offset && equiv_lits[ idxs[offset] ].ind < get_wl1()) { --ws[1]; }
               assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
               *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
           } else {
               ++offset;
           }
       }
-      //re-init watches if changes were made!
+      //re-init watches if watched literals were replaced!
       if( ret ) init(alpha, alpha_dl, dl_count);
       assert(assert_data_struct(alpha));
       return ret;
