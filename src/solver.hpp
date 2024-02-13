@@ -271,7 +271,7 @@ class solver
      * @param add_idx additional index to resolve with
      * @return var_t indedx position of new xcls_watch
      */
-    inline xcls_watch get_reason(const std::list<xlit_w_it>& rs_cls_idxs, const var_t idx = (var_t) -1) {
+    inline xcls_watch get_reason_and_init(const std::list<xlit_w_it>& rs_cls_idxs, const var_t idx = (var_t) -1) {
     #ifndef NDEBUG
       vec<xlit> lits; lits.reserve(lineral_watches.size());
       for(const auto& l_dl : lineral_watches) {
@@ -286,13 +286,13 @@ class solver
 
       for(const auto& lin : rs_cls_idxs) {
         if(r_cls.is_zero()) { //r_cls has not yet been instantiated
-          r_cls = get_reason(lin);
+          r_cls = get_reason_and_init(lin);
           assert(r_cls.is_unit(dl_count));
         #ifndef NDEBUG
           tmp += r_cls.get_unit();
         #endif
         } else {
-          const auto& r_cls2 = get_reason(lin);
+          const auto& r_cls2 = get_reason_and_init(lin);
         #ifndef NDEBUG
           tmp += r_cls2.get_unit();
         #endif
@@ -340,8 +340,72 @@ class solver
       return r_cls.finalize(alpha_dl, alpha_trail_pos, dl_count);
     }
 
+    /**
+     * @brief construct reason cls by resolving list of xclss; new clause is added to xclss
+     * @note same as 'get_reason_and_init()', but const!
+     * 
+     * @param rs_cls_idxs list of linerals whose reasons to resolve
+     * @param add_idx additional index to resolve with
+     * @return var_t indedx position of new xcls_watch
+     */
+    inline xcls_watch get_reason(const std::list<xlit_w_it>& rs_cls_idxs, const var_t idx = (var_t) -1) const {
+    #ifndef NDEBUG
+    #ifdef DEBUG_SLOW
+      vec<xlit> lits; lits.reserve(lineral_watches.size());
+      for(const auto& l_dl : lineral_watches) {
+          for(const auto& l : l_dl) lits.emplace_back( l.to_xlit() );
+      }
+      xsys L_( std::move(lits) );
+
+      xlit tmp;
+    #endif
+    #endif
+      //resolve cls to get true reason cls
+      xcls_watch_resolver r_cls;
+
+      for(const auto& lin : rs_cls_idxs) {
+        if(r_cls.is_zero()) { //r_cls has not yet been instantiated
+          r_cls = get_reason(lin);
+          assert(r_cls.is_unit(dl_count));
+        } else {
+          const auto& r_cls2 = get_reason(lin);
+          //resolve cls
+          assert(r_cls2.is_unit(dl_count));
+          //extend r_cls2 with (unit of r_cls)+1, and r_cls with (unit of r_cls2)+1
+          VERB(120, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
+          r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count);
+          VERB(120, "c and get \nc   "+ BOLD(r_cls.to_str()));
+          VERB(120, "c");
+          assert_slow( !L_.is_consistent() || L_.reduce(tmp+r_cls2.get_unit()).is_zero() );
+          assert(r_cls.to_xcls().reduced(alpha).is_unit());
+          assert_slow( !L_.is_consistent() || L_.reduce( r_cls.to_xcls().reduced(alpha).get_unit()+tmp).is_constant() );
+        }
+      }
+      //resolve with additional clause -- if required!
+      if(idx != (var_t) -1) {
+        const xcls_watch& r_cls2 = xclss[idx];
+        if(r_cls.is_zero()) { //r_cls has not yet been instantiated
+          r_cls = r_cls2;
+          assert(r_cls.is_unit(dl_count));
+        } else {
+          //resolve cls
+          assert(r_cls2.is_unit(dl_count));
+          //extend r_cls2 with (unit of r_cls)+1, and r_cls with (unit of r_cls2)+1
+          VERB(120, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
+          r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count);
+          VERB(120, "c and get \nc   "+ BOLD(r_cls.to_str()));
+          VERB(120, "c");
+          assert_slow( !L_.is_consistent() || L_.reduce(tmp+r_cls2.get_unit()).is_zero() );
+          assert(r_cls.to_xcls().reduced(alpha).is_unit());
+          assert_slow( !L_.is_consistent() || L_.reduce( r_cls.to_xcls().reduced(alpha).get_unit()+tmp).is_constant() );
+        }
+      }
+
+      return r_cls.finalize(alpha_dl, alpha_trail_pos, dl_count);
+    }
+
     xcls_watch zero_cls; //dummy clause to refer to when the reason clause is zero
-    inline xcls_watch& get_reason(xlit_w_it lin) {
+    inline xcls_watch& get_reason_and_init(xlit_w_it lin) {
       VERB(120, "c constructing reason clause for "+lin->to_str());
 
       if(lin->get_reason_idxs().empty() && lin->get_reason_idx() != (var_t)-1) return xclss[lin->get_reason_idx()];
@@ -349,7 +413,7 @@ class solver
       if(!lin->has_nz_reason_cls()) return zero_cls;
 
       //construct reason clause
-      const auto rs = get_reason( lin->get_reason_idxs(), lin->get_reason_idx() );
+      const auto rs = get_reason_and_init( lin->get_reason_idxs(), lin->get_reason_idx() );
       assert_slow(!rs.is_zero());
 
       //place rs into xclss
@@ -364,17 +428,32 @@ class solver
       //adapt reason_cls_idx of lin
       lin->set_reason_idx( i );
       
-      assert(xclss[i].is_unit(dl_count) && (xclss[i].get_unit().reduced(alpha,equiv_lits)+lin->to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero());
+      assert_slow(xclss[i].is_unit(dl_count) && (xclss[i].get_unit().reduced(alpha,equiv_lits)+lin->to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero());
       return xclss[i];
     }
     
-    inline xcls_watch& get_reason(const trail_elem& t) {
+    inline xcls_watch get_reason(const xlit_w_it lin) const {
+      VERB(120, "c constructing reason clause for "+lin->to_str());
+
+      if(lin->get_reason_idxs().empty() && lin->get_reason_idx() != (var_t)-1) return xclss[lin->get_reason_idx()];
+      //ensure that xclss[0]
+      if(!lin->has_nz_reason_cls()) return zero_cls;
+
+      //construct reason clause
+      const auto rs = get_reason( lin->get_reason_idxs(), lin->get_reason_idx() );
+      
+      assert_slow(rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits)+lin->to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero());
+
+      return rs;
+    }
+    
+    inline xcls_watch& get_reason_and_init(const trail_elem& t) {
+      return get_reason_and_init(t.lin);
+    }
+    
+    inline xcls_watch get_reason(const trail_elem& t) const {
       return get_reason(t.lin);
     }
-
-    //@todo write get_reason_and_init(xlit_it lin)
-    //      that computes the reason clause and stores it in database
-    //      also changes lin->reason_idxs to point to this clause!
 
     typedef xlit (solver::*dec_heu_t)();
     typedef std::pair<var_t,xcls_watch> (solver::*ca_t)();
@@ -910,7 +989,7 @@ class solver
       mzd_free(b);
       mzd_free(M_tr);
 
-      return {L, get_reason(r_cls_idxs) };
+      return {L, get_reason_and_init(r_cls_idxs) };
     }
 
 
