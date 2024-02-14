@@ -46,7 +46,7 @@ typedef uint_fast32_t var_t;
 typedef uint_fast16_t dl_c_t; //change to something larger? this might overflow if we have dl > 65535... but in that case a solution is unlikely to be found anyways...
 
 //type for cls length
-typedef uint_fast8_t cls_size_t; //clauses with more than 256 linerals are impractical!
+typedef uint_fast16_t cls_size_t; //clauses with more than 65535 linerals are impractical!
 
 //select vector impl to use
 template<class T>
