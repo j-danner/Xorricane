@@ -1195,6 +1195,6 @@ class solver
     solver& operator=(const solver& ig) = delete;
 
     bool assert_data_structs() const noexcept;
-    void print_trail(std::string lead = "") noexcept;
+    void print_trail(std::string lead = "") const noexcept;
 
 };

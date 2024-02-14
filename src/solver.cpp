@@ -273,7 +273,6 @@ std::pair<var_t, xcls_watch> solver::analyze() {
 
     //go through trail of current dl -- skip over irrelevant parts
     xcls_watch_resolver learnt_cls = get_reason(TRAIL.back());
-    //xcls_watch learnt_cls = get_reason(TRAIL.back());
 
     assert(learnt_cls.is_unit(dl_count));
     VERB(70, "   * reason clause is   " + BOLD( learnt_cls.to_str() ) + " for UNIT " + learnt_cls.get_unit().to_str() );
@@ -1123,8 +1122,7 @@ std::string solver::to_xnf_str() const noexcept {
 
 
 
-//note: print_trail cannot be const as 'get_reason' lazily computes reasons, and once computed adds them to xclss (!)
-void solver::print_trail(std::string lead) noexcept {
+void solver::print_trail(std::string lead) const noexcept {
   VERB(80, lead);
   VERB(80, lead+" trail");
   VERB(80, lead+" dl pos type unit");
