@@ -12,7 +12,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip);
     initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
     bool equiv = true;
-    int verb = 95;
+    int verb = 0;
   #else
     int la_sch = GENERATE(0,1,5,10);
     dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lwl, dec_heu::swl, dec_heu::lex);
@@ -738,7 +738,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     SECTION( "test0.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test0.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 100;
+        slvr.get_opts()->verb = 0;
     
         stats s = slvr.solve();
         CHECK( s.sat == false ); //instance is UNSAT
@@ -747,7 +747,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     SECTION( "test1.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test1.xnf");
         auto slvr = solver(clss);
-        //slvr.get_opts()->verb = 100;
+        slvr.get_opts()->verb = 0;
     
         stats s = slvr.solve();
         CHECK( s.sat == true );
@@ -767,7 +767,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     SECTION( "test3.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test3.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 100;
+        slvr.get_opts()->verb = 0;
     
         stats s = slvr.solve();
         CHECK( s.sat == true );
@@ -777,13 +777,44 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     SECTION( "test4.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test4.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 100;
+        slvr.get_opts()->verb = 0;
     
         stats s = slvr.solve();
         CHECK( s.sat == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
+    SECTION( "test55.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test55.xnf");
+        options opt;
+        opt.verb = 80;
+        opt.ca = ca_alg::fuip;
+        opt.ip = initial_prop_opt::nbu;
+        opt.rst = restart_opt::no;
+        opt.dh = dec_heu::vsids;
+        opt.lin_alg_schedule = 0;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test56.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test56.xnf");
+        options opt;
+        opt.verb = 80;
+        opt.ca = ca_alg::fuip;
+        opt.ip = initial_prop_opt::nbu;
+        opt.rst = restart_opt::no;
+        opt.dh = dec_heu::vsids;
+        opt.lin_alg_schedule = 0;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
 }
 
 TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {

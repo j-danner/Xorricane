@@ -198,7 +198,6 @@ private:
     cls_size_t new_i = 0;
     for (; new_i < size(); ++new_i) {
       if(new_i==idx[0] || new_i==idx[1]) continue;
-      assert(new_i < ( 1 << (CHAR_BIT * sizeof(cls_size_t)) ) );
       // skip xlits which evaluate to 1 in current search tree
       if (dl_count[xlit_dl_count0[new_i].first] == xlit_dl_count0[new_i].second)
         continue;
@@ -400,7 +399,7 @@ public:
    * @param val value that is assigned to literal
    * @return true iff clause became inactive, i.e., SAT
    */
-  bool rm(const var_t upd_lt, const bool3 val) {
+  bool rm(const var_t upd_lt, const bool3 val, const vec<var_t>& alpha_trail_pos) {
     assert( !watches(upd_lt) );
     bool ret = false;
     //rm from unwatched xlits
@@ -417,6 +416,13 @@ public:
         remove_zero_lineral(j);
         //repeat removal with j-th xlit!
         --j;
+      } else {
+        //now xlits[j] is non-constant
+        //(potentially) fix xlit_t_pos[j]
+        if(xlit_t_pos[j]==alpha_trail_pos[upd_lt]) {
+          xlit_t_pos[j] = xlits[j].get_watch_var(alpha_trail_pos).first;
+          //assert(false);
+        }
       }
     }
     //rm from WLIN0
@@ -425,12 +431,19 @@ public:
       if(ptr_cache[0] > upd_lt) ws[0]--;
       assert(ptr_(idx[0],ws[0]) == ptr_cache[0]);
       assert(!WLIN0.is_zero());
+      if(xlit_t_pos[idx[0]]==alpha_trail_pos[upd_lt]) {
+        xlit_t_pos[idx[0]] = xlits[idx[0]].get_watch_var(alpha_trail_pos).first;
+      }
     }
+
     if( size()>0 && WLIN1.rm(upd_lt, val) ) {
       //adapt ws[0]
       if(ptr_cache[1] > upd_lt) ws[1]--;
       assert(ptr_(idx[1],ws[1]) == ptr_cache[1]);
       assert(!WLIN1.is_zero());
+      if(xlit_t_pos[idx[1]]==alpha_trail_pos[upd_lt]) {
+        xlit_t_pos[idx[1]] = xlits[idx[1]].get_watch_var(alpha_trail_pos).first;
+      }
     }
 
     assert(assert_data_struct());
@@ -969,6 +982,9 @@ public:
     // check ptr_cache
     assert(size()==0 || (size()==1 && WLIN0.is_constant()) || ptr_cache[0] == ptr_(idx[0], ws[0]));
     assert(size()<2 || ptr_cache[1] == ptr_(idx[1], ws[1]));
+
+    // check size of xlits
+    assert( xlits.size() < (1 << sizeof(cls_size_t)));
 
     return true;
   };

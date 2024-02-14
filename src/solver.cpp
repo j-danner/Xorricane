@@ -470,10 +470,12 @@ void solver::remove_fixed_alpha(const var_t upd_lt) {
     for(auto& xcls_w : xclss) {
         if(xcls_w.is_active(dl_count)) {
             assert(!xcls_w.watches(upd_lt));
-            if( xcls_w.rm(upd_lt, val) ) decr_active_cls(&xcls_w - &xclss[0]);
+            if( xcls_w.rm(upd_lt, val, alpha_trail_pos) ) decr_active_cls(&xcls_w - &xclss[0]);
+            assert( xcls_w.assert_data_struct(alpha, alpha_trail_pos, dl_count) );
         }
     }
     VERB(90, "c remove_fixed_alpha end" );
+    assert( assert_data_structs() );
 }
 
 void solver::remove_fixed_equiv([[maybe_unused]] const var_t idx) {
