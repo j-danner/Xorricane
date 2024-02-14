@@ -10,8 +10,9 @@ echo "profiling xnf_solver"
 #valgrind --tool=callgrind --dump-instr=yes build/xnf_cdcl_solver ../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n20-seed0.xnf -ca 1uip -t 60
 #valgrind --tool=callgrind --dump-instr=yes build/xnf_cdcl_solver ../benchmarks/instances/2xnfs/test35.xnf -ca 1uip -t 60
 #valgrind --tool=callgrind --dump-instr=yes build/xnf_cdcl_solver ../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n20-seed0.xnf -ca 1uip -rh luby -dh vsids -t 60
-#valgrind --tool=callgrind build/xnf_cdcl_solver ../benchmarks/instances/2xnfs/bivium/bivium-t150-g40.xnf -t 30
-valgrind --tool=callgrind build/xnf_cdcl_solver ../benchmarks/instances/2xnfs/rand/rand-20-60.xnf -dh lex -ca 1uip -rh no
+#valgrind --tool=callgrind build/xnf_cdcl_solver ../benchmarks/instances/2xnfs/bivium/bivium-t150-g40.xnf -t 30 -ca 1uip -rh luby -la 30
+#valgrind --tool=callgrind build/xnf_cdcl_solver ../benchmarks/instances/2xnfs/rand/rand-20-60.xnf -dh vsids -ca 1uip -rh luby
+valgrind --tool=callgrind build/xnf_cdcl_solver ../benchmarks/instances/2xnfs/rand/rand-20-60.xnf -dh vsids -ca 1uip -rh no -t 30
 #valgrind --tool=cachegrind build/xnf_cdcl_solver ../benchmarks/instances/2xnfs/rand/rand-20-60.xnf -dh lex -ca no -rh no
 
 kcachegrind callgrind.out.*
