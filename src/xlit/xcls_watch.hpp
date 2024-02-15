@@ -155,8 +155,10 @@ private:
     // advance iterator as long as there is another unassigned idx to point to
     auto new_w = ws[0];
     while ((new_w < (var_t)WLIN0.size()) && (alpha[ptr_(idx[0], new_w)] != bool3::None)) { ++new_w; }
-    if (new_w == (var_t)WLIN0.size()) /*wrap around end if necessary */ new_w = 0;
-    while ((alpha[ptr_(idx[0], new_w)] != bool3::None) && (new_w != ws[0])) { ++new_w; }
+    if (new_w == (var_t)WLIN0.size()) {
+      /*wrap around end if necessary */ new_w = 0;
+      while ((alpha[ptr_(idx[0], new_w)] != bool3::None) && (new_w != ws[0])) { ++new_w; }
+    }
     // advancing done; now new_w points to ws[0] or at an unassigned idx -- or again to ws[0] (!)
 
     if (new_w != ws[0]) {
@@ -215,15 +217,10 @@ private:
       }
       assert(!xlits[new_i].is_one());
 
-      // find lit that was assigned at highest trail_pos (req for proper backtracking!) -- or find unassigned lit!
-      new_w = 0;
-      var_t max_w = 0;
-      while (new_w < (var_t)xlits[new_i].size() && alpha[ptr_(new_i, new_w)] != bool3::None) {
-        if(alpha_trail_pos[ptr_(new_i, new_w)] > alpha_trail_pos[ptr_(new_i, max_w)]) max_w = new_w;
-        ++new_w;
-      }
-      new_w = ( new_w == (var_t)xlits[new_i].size() ) ? max_w : new_w;
-      if (ptr_(new_i, new_w) == ptr_ws(1) || ( xlits[new_i][ptr_ws(1)] && (WLIN1[ptr_(new_i,new_w)] || shared_part[ptr_(new_i,new_w)]) ) ) {
+      const auto& [v, dl_assigned, t_pos, _] = xlits[new_i].get_watch_tuple(alpha_dl, alpha_trail_pos);
+      new_w = _;
+
+      if (v == ptr_ws(1) || ( xlits[new_i][ptr_ws(1)] && (WLIN1[v] || shared_part[v]) ) ) {
         //add WLIN1 to xlits[new_i] to eliminate shared part in xlits[new_i]
         xlits[new_i] += WLIN1;
         xlits[new_i] += shared_part;
@@ -231,10 +228,10 @@ private:
         --new_i;
         continue;
       }
-      if (alpha[ptr_(new_i,new_w)] == bool3::None ) {
+      if (alpha[v] == bool3::None ) {
         //if ptr_(new_i,new_w) AND ptr_(idx[1],ws[1]) both are in shared part of WLIN1 AND xlits[new_i]; rewrite xlits[new_i] and start over
         // new xlit to be watched found --> change watched xlit and return SAT
-        const auto wl0 = ptr_(new_i, new_w);
+        const auto wl0 = v;
         const auto wl1 = ptr_ws(1);
         WLIN0 += shared_part;
         WLIN1 += shared_part;
@@ -264,7 +261,6 @@ private:
         return {ptr_ws(0), xcls_upd_ret::NONE};
       } else {
         // xlits[new_i] evaluates to a constant; this is only useful if xlits[new_i].eval(alpha) is 1, i.e., the clause is SAT
-        const var_t dl_assigned = alpha_dl[ptr_(new_i, new_w)];
         if(!xlits[new_i].eval(alpha)) {
           //note: we can leave all watches as they were!
           SAT_dl_count = {dl_assigned, dl_count[dl_assigned]};
@@ -278,9 +274,9 @@ private:
         // now xlits[new_i] evaluates to 0 --> choose different new_i
         xlit_dl_count0[new_i] = {dl_assigned, dl_count[dl_assigned]};
         //update t_pos information
-        xlit_t_pos[new_i] = alpha_trail_pos[ptr_(new_i, new_w)]; 
+        xlit_t_pos[new_i] = t_pos;
         assert_slow(xlit_t_pos[new_i] == xlits[new_i].get_watch_var(alpha_trail_pos).first);
-
+        
         assert( dl_assigned <= alpha_dl[ptr_ws(0)] );
       }
     }
