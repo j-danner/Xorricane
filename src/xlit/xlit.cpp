@@ -240,7 +240,7 @@ std::string xlit::to_full_str(var_t num_vars) const{
 
 xlit xlit::shared_part(const xlit& other) const {
   DIFF.clear(); // DIFF is declared global and static, this saves creating new DIFFs for each calling
-  std::set_intersection(std::execution::par, idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
+  std::set_intersection(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
   return xlit(DIFF, false, presorted::yes); //call ctor that does NOT sort DIFF
 };
 
@@ -248,7 +248,7 @@ xlit xlit::shared_part(const xlit& other) const {
 xlit xlit::operator+(const xlit &other) const {
     /* \warning we assume that both xlits have same num_vars (!) */
     DIFF.clear(); // DIFF is declared global and static, this saves creating new DIFFs for each calling
-    std::set_symmetric_difference(std::execution::par, idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
+    std::set_symmetric_difference(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
     //NOTE back_insterter might lead to repeated reallocations!
     //idxs = DIFF;
 
@@ -260,7 +260,7 @@ xlit& xlit::operator +=(const xlit& other) {
     if(other.size()==0) { p1^=other.p1; return *this; }
 
     DIFF.clear(); // DIFF is declared global and static, this saves creating new DIFFs for each calling
-    std::set_symmetric_difference(std::execution::par, idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
+    std::set_symmetric_difference(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
     std::swap(idxs, DIFF);
 
     p1 ^= other.p1;
