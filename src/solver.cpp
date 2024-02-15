@@ -521,33 +521,30 @@ void solver::GCP(stats &s) {
         auto it = L_watch_list[upd_lt].begin();
         while(it != L_watch_list[upd_lt].end()) {
           const auto& [lvl, lin, dl_c] = *it;
-          auto& lin_w = *lin;
-          //if lin_w has been removed and possibly, we have to fix the watching scheme now!
+          //if *lin might habe been removed and the watching scheme must now be fixed
           if(dl_count[lvl] != dl_c) {
               it = L_watch_list[upd_lt].erase( it );
               continue;
           }
-          assert(lin_w.watches(upd_lt));
-          if(!lin_w.is_active(dl_count)) { ++it; continue; }
-          const auto& [new_wl, ret] = lin_w.update(upd_lt, alpha, dl, dl_count);
+          assert(lin->watches(upd_lt));
+          if(!lin->is_active(dl_count)) { ++it; continue; }
+          const auto& [new_wl, ret] = lin->update(upd_lt, alpha, dl, dl_count);
           //if watched-literal has changed, i.e., new_wl != 0; update watch-list
           if(new_wl != upd_lt) {
-              //rm *it from current watch-list:
-              it = L_watch_list[upd_lt].erase( it );
-              //add i to newly watched literal:
-              L_watch_list[new_wl].push_back({lvl, lin, dl_c});
+              //mv *it from current watch-list to new watch-list + advance it
+              L_watch_list[new_wl].splice( L_watch_list[new_wl].end(), L_watch_list[upd_lt], it++ );
           } else {
               ++it;
           }
           switch (ret) {
           case xlit_upd_ret::ASSIGNING:
-              assert( lin_w.is_assigning(alpha) );
-              assert( !lin_w.is_active(alpha) );
+              assert( lin->is_assigning(alpha) );
+              assert( !lin->is_active(alpha) );
               // update alpha
               queue_implied_alpha(lin);
             break;
           case xlit_upd_ret::UNIT:
-              assert(!lin_w.is_assigning(alpha));
+              assert(!lin->is_assigning(alpha));
               break;
           }
         }
