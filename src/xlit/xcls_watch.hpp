@@ -1029,35 +1029,7 @@ public:
   };
 #endif
 
-  void operator=(const xcls_watch &o) {
-    xlits = o.xlits;
-    xlit_t_pos = o.xlit_t_pos;
-    shared_part = o.shared_part;
-    xlit_dl_count0 = o.xlit_dl_count0;
-    SAT_dl_count = o.SAT_dl_count;
-    irredundant = o.irredundant;
-    delete_on_cleanup = o.delete_on_cleanup;
-    idx[0] = o.idx[0];
-    idx[1] = o.idx[1];
-    ws[0] = o.ws[0];
-    ws[1] = o.ws[1];
-    ptr_cache[0] = o.ptr_cache[0];
-    ptr_cache[1] = o.ptr_cache[1];
-  };
+  constexpr xcls_watch& operator=(const xcls_watch &o) = default;
 
-  void operator=(xcls_watch &&o) {
-    xlits = std::move(o.xlits);
-    xlit_t_pos = std::move(o.xlit_t_pos);
-    shared_part = std::move(o.shared_part);
-    xlit_dl_count0 = std::move(o.xlit_dl_count0);
-    SAT_dl_count = o.SAT_dl_count;
-    irredundant = o.irredundant;
-    delete_on_cleanup = o.delete_on_cleanup;
-    idx[0] = o.idx[0];
-    idx[1] = o.idx[1];
-    ws[0] = o.ws[0];
-    ws[1] = o.ws[1];
-    ptr_cache[0] = o.ptr_cache[0];
-    ptr_cache[1] = o.ptr_cache[1];
-  };
+  constexpr xcls_watch& operator=(xcls_watch &&o) = default;
 };

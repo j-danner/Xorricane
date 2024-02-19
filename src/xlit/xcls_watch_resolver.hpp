@@ -334,13 +334,15 @@ public:
   };
 #endif
 
-  void operator=(const xcls_watch &o) {
+  inline xcls_watch& operator=(const xcls_watch &o) {
     xcls_watch::operator=(o);
     init();
+    return *this;
   };
 
-  void operator=(xcls_watch &&o) {
+  inline xcls_watch& operator=(xcls_watch &&o) {
     xcls_watch::operator=(std::move(o));
     init();
+    return *this;
   };
 };
