@@ -279,6 +279,8 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     bump_score( TRAIL.back().ind );
     pop_trail(); //remove conflict from trail, i.e., now we should have alpha[0]==bool3:None
 
+    auto it = trails.back().rbegin();
+
     //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
     while( learnt_cls.get_assigning_lvl(alpha_dl) == dl || learnt_cls.get_assigning_lvl(alpha_dl) == (var_t) -1 ) {
         VERB(70, "   * conflict clause is " + BOLD( learnt_cls.to_str() ) + "   --> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
@@ -291,14 +293,14 @@ std::pair<var_t, xcls_watch> solver::analyze() {
       #endif
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
-        while( (TRAIL.back().type != trail_t::IMPLIED_ALPHA) || !learnt_cls.unit_contains(TRAIL.back().ind) ) {
+        while( (it->type != trail_t::IMPLIED_ALPHA) || !learnt_cls.unit_contains(it->ind) ) {
             //@todo instead of unit_contains we should be able to use one of the watched literals, right?!
-            pop_trail();
+            ++it;
         }
-        assert(TRAIL.back().type == trail_t::IMPLIED_ALPHA);
+        assert(it->type == trail_t::IMPLIED_ALPHA);
         
         //get reason_cls
-        const auto reason_cls = get_reason(TRAIL.back());
+        const auto reason_cls = get_reason(*it);
         VERB(70, "   * reason clause is   " + BOLD( reason_cls.to_str() ) + " for UNIT " + reason_cls.get_unit().to_str() );
     #ifndef NDEBUG
         //ensure that reason cls is reason for provided alpha
@@ -315,10 +317,9 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     #endif
         learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count);
 
-        bump_score( TRAIL.back().ind );
-        pop_trail(); //remove from trail!
+        bump_score( it->ind );
+        ++it;
     }
-    // clean-up trail!
     
     VERB(70, "   * ");
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
