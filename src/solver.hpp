@@ -45,6 +45,14 @@ struct trail_elem {
   trail_elem(const var_t& _ind, const trail_t& _type, xlit_w_it _lin) : ind(_ind), type(_type), lin(_lin) {};
   trail_elem(const trail_elem& other) : ind(other.ind), type(other.type), lin(other.lin) {};
   trail_elem(trail_elem&& other) : ind(other.ind), type(other.type), lin(other.lin) {};
+
+  constexpr trail_elem& operator=(const trail_elem& o) = default;
+  
+  void swap(trail_elem& o) noexcept {
+    std::swap(ind, o.ind);
+    std::swap(type, o.type);
+    std::swap(lin, o.lin);
+  };
 };
 
 struct lineral_queue_elem {
@@ -59,8 +67,8 @@ struct lineral_queue_elem {
 
 struct watch_list_elem {
   var_t lvl;
-  xlit_w_it lin;
   dl_c_t dl_c;
+  xlit_w_it lin;
 };
 
 
@@ -256,6 +264,7 @@ class solver
         break;
       case trail_t::EQUIV:
         assert(equiv_lits[TRAIL.back().ind].is_active());
+        equiv_lits[ equiv_lits[TRAIL.back().ind].ind ].set_prev_ind(0);
         equiv_lits[TRAIL.back().ind].clear();
         equiv_lits_dl[TRAIL.back().ind] = (var_t) 0;
         assert(!equiv_lits[TRAIL.back().ind].is_active());
@@ -462,10 +471,10 @@ class solver
     void bump_score(const xsys& new_xsys);
     void bump_score(const xlit& lit);
     void decay_score();
-
+    
     inline void add_new_guess(xlit&& l) {
       //update assignments
-      lineral_watches[dl].emplace_back( std::move(l), alpha, alpha_dl, dl_count );
+      lineral_watches[dl].emplace_back( l, alpha, alpha_dl, dl_count );
       queue_implied_lineral( std::prev(lineral_watches[dl].end()), trail_t::GUESS);
     };
 
@@ -525,24 +534,24 @@ class solver
       }
       
       //TODO should we always reduce?! consider the following:
-      //we already have UNIT x1+x2+x3 and now get x1; as of now, we add x2+x3, even though x1 would be assigning!
+      //we already have UNIT x1+x2+x3 and now get x1; full reduction would give x2+x3, even though x1 would be assigning!
       //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
-      // add to trail //TODO add in propoer position in trail!
 
       xlit_watch& l = *lin;
       if(type!=trail_t::IMPLIED_ALPHA) {
-        //lin->update_lit(std::move(_reduced_lit), alpha, alpha_dl);
-        trails[dl].emplace_back( l.LT(), type, lin); //TODO rm from trails?
+        trails[dl].emplace_back( l.LT(), type, lin);
         //if clause is active, i.e., not yet assigning add to watch lists; otherwise add assignment!
         if(l.is_active(alpha)) {
           // add to L_watch_list's -- if there is anything to watch
-          if(l.size()>0) L_watch_list[ l.get_wl0() ].emplace_back( dl, lin, dl_count[dl] );
-          if(l.size()>1) L_watch_list[ l.get_wl1() ].emplace_back( dl, lin, dl_count[dl] );
+          if(l.size()>0) L_watch_list[ l.get_wl0() ].emplace_back( dl, dl_count[dl], lin );
+          if(l.size()>1) L_watch_list[ l.get_wl1() ].emplace_back( dl, dl_count[dl], lin );
           //deal with new equivalence!
-          if (l.is_equiv() && opt.eq) {
+          if(opt.eq && l.is_equiv()) {
             const var_t lt = l.LT();
-            assert(lt < l.get_equiv_lit() ); //ensure that lt is smallest!
-            equiv_lits[lt].set_ind( l.get_equiv_lit() );
+            const var_t lt_other = l.get_equiv_lit();
+            assert(lt < lt_other ); //ensure that lt is smallest!
+            equiv_lits[lt].set_ind( lt_other );
+            equiv_lits[lt_other].set_prev_ind( lt );
             equiv_lits[lt].set_polarity( l.has_constant() );
             equiv_lits[lt].set_lin( lin );
             equiv_lits_dl[lt] = dl;
@@ -579,7 +588,7 @@ class solver
      * @param type type of propagation (defaults to trail_t::IMPLIED_UNIT)
      */
     inline void queue_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT) {
-      if(lin->LT()==0) lineral_queue.emplace_front( lin, type );
+      if(lin->LT()==0 || lin->is_equiv()) lineral_queue.emplace_front( lin, type );
       else lineral_queue.emplace_back( lin, type );
     }
     
@@ -606,9 +615,9 @@ class solver
      */
     inline var_t propagate_implied_lineral() {
       assert(!lineral_queue.empty());
-      auto& [lin, type] = lineral_queue.front();
-      var_t new_lt = add_implied_lineral(lin, type);
+      auto [lin, type] = std::move(lineral_queue.front());
       lineral_queue.pop_front();
+      var_t new_lt = add_implied_lineral(lin, type);
       return new_lt;
     }
 
@@ -718,7 +727,10 @@ class solver
       for(rci_t r = rank-1; r>0; --r) {
         idxs.clear();
         for(rci_t c=0; (unsigned)c<n_vars; ++c) {
-            if( mzd_read_bit(M, r, c) ) idxs.push_back(perm_inv[c]);
+            if( mzd_read_bit(M, r, c) ) {
+              idxs.push_back(perm_inv[c]);
+              if(idxs.size()>2) continue; //early abort if weight too high
+            }
         }
         if(idxs.size()==0) {
           //we got 1, i.e., we have a conflict; all other alpha assignments can be ignored
@@ -726,11 +738,9 @@ class solver
           assert(mzd_read_bit(M,r,n_vars));
           xlits_.emplace_back( 0, false );
           break;
-        }
-        if(idxs.size()==1 && alpha[idxs[0]]!=to_bool3(mzd_read_bit(M,r,n_vars)) ) {
+        } else if(idxs.size()==1 && alpha[idxs[0]]!=to_bool3(mzd_read_bit(M,r,n_vars)) ) {
           xlits_.emplace_back( idxs[0], (bool) mzd_read_bit(M, r, n_vars) );
-        }
-        if(idxs.size()==2 && equiv_lits[idxs[0]].ind==0 && opt.eq) {
+        } else if(idxs.size()==2 && equiv_lits[idxs[0]].ind==0 && opt.eq) {
           assert(idxs[0] < idxs[1]);
           xlits_.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::yes );
         }

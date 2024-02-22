@@ -463,12 +463,14 @@ public:
     //adapt idx-pos -- if it was swapped!
     if(idx[0] == xlits.size()) {
       idx[0] = i;
-      assert(xlits.size()==0 || i < xlits.size());
+      assert(xlits.size()<=1 || i < xlits.size());
     }
     if(idx[1] == xlits.size()) {
       idx[1] = i;
-      assert(xlits.size()==0 || i < xlits.size());
+      assert(xlits.size()<=1 || i < xlits.size());
     }
+    assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
+    assert( size()<2 || xlits[idx[1]][ptr_cache[1]] );
   }
 
   /**
@@ -957,6 +959,8 @@ public:
   var_t LT(const cls_size_t i) const { return xlits[i].LT(); };
 
   const vec<xlit> &get_xlits() const { return xlits; };
+  
+  vec<xlit> &get_xlits_() { return xlits; };
 
   xlit get_first() const { return (WLIN0 + shared_part).add_one(); };
 

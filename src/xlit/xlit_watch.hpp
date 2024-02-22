@@ -425,4 +425,12 @@ class xlit_watch : public xlit
       xlit::operator=(other);
       return *this;
     }
+
+    void swap(xlit_watch& o) noexcept {
+      xlit::swap(o);
+      std::swap(ws, o.ws);
+      std::swap(dl_c, o.dl_c);
+      std::swap(reason_cls_idxs, o.reason_cls_idxs);
+      std::swap(reason_cls_idx, reason_cls_idx);
+    }
 };

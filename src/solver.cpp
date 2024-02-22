@@ -490,8 +490,8 @@ void solver::remove_fixed_equiv([[maybe_unused]] const var_t idx) {
         if(lin->is_active(alpha) && !lin->is_equiv()) {
             if( lin->reduce(alpha, alpha_dl, dl_count, equiv_lits) ) {
                 //watch-lists need to be fixed
-                if(lin->size()>0) L_watch_list[ lin->get_wl0() ].emplace_back( dl, lin, dl_count[dl] );
-                if(lin->size()>1) L_watch_list[ lin->get_wl1() ].emplace_back( dl, lin, dl_count[dl] );
+                if(lin->size()>0) L_watch_list[ lin->get_wl0() ].emplace_back( dl, dl_count[dl], lin );
+                if(lin->size()>1) L_watch_list[ lin->get_wl1() ].emplace_back( dl, dl_count[dl], lin );
             }
         }
     }
@@ -521,7 +521,7 @@ void solver::GCP(stats &s) {
         //(1) find new implied alphas from watched linerals
         auto it = L_watch_list[upd_lt].begin();
         while(it != L_watch_list[upd_lt].end()) {
-          const auto& [lvl, lin, dl_c] = *it;
+          const auto& [lvl, dl_c, lin] = *it;
           //if *lin might habe been removed and the watching scheme must now be fixed
           if(dl_count[lvl] != dl_c) {
               it = L_watch_list[upd_lt].erase( it );
@@ -799,12 +799,11 @@ void solver::solve(stats &s) {
     xsys new_xsys = xsys();
 
     // GCP -- before making decisions!
-    GCP(s);
-    if( no_conflict() ) {
-        if( find_implications_from_linerals(s) ) {
-            goto cdcl_gcp;
-        }
-    }
+    do {
+        GCP(s);
+    } while( no_conflict() && find_implications_from_linerals(s) );
+
+    
 
     while (true) {
         if (s.cancelled.load()) {
@@ -861,13 +860,9 @@ void solver::solve(stats &s) {
             }
 
             cdcl_gcp:
-            GCP(s);
-            //linear algebra on linerals
-            if( need_linalg_inprocessing() ) {
-                if( find_implications_from_linerals(s) ) {
-                    goto cdcl_gcp;
-                }
-            }
+            do {
+                GCP(s);
+            } while( need_linalg_inprocessing() && find_implications_from_linerals(s) );
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
@@ -1042,7 +1037,7 @@ std::string solver::to_xnf_str() const noexcept {
             auto it = L_watch_list.begin();
             var_t idx = 0;
             while(it != L_watch_list.end()) {
-                for([[maybe_unused]] auto [lvl, lin, dl_c] : *it) {
+                for([[maybe_unused]] auto [lvl, dl_c, lin] : *it) {
                     const auto& lin_w = *lin;
                     assert( dl_count[lvl]!=dl_c || lin_w.watches( idx ) || lin_w.to_xlit().is_one() || lin_w.to_xlit().is_zero() );
                 }

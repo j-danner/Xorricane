@@ -24,7 +24,7 @@
 
 //verbosity output
 #ifdef VERBOSITY
-  #define VERB(lvl, msg) if(opt.verb >= lvl) { std::cout << msg << std::endl; }
+  #define VERB(lvl, msg) if(this->opt.verb >= lvl) { std::cout << msg << std::endl; }
 #else
   #define VERB(lvl, msg)
 #endif
@@ -71,22 +71,32 @@ class xlit_watch;
  */
 struct equivalence {
   var_t ind;
+  var_t prev_ind;
   bool polarity;
   std::list<xlit_watch>::iterator reason_lin;
 
-  equivalence() : ind(0), polarity(false) {};
+  equivalence() : ind(0), prev_ind(0), polarity(false) {};
   equivalence(const var_t _ind, const bool _polarity) : ind(_ind), polarity(_polarity) {};
-  equivalence(const equivalence& other) : ind(other.ind), polarity(other.polarity) {};
-  equivalence(equivalence&& other) : ind(other.ind), polarity(other.polarity), reason_lin(other.reason_lin) {};
+  equivalence(const equivalence& other) = default;
+  equivalence(equivalence&& other) = default;
+  
+  constexpr equivalence& operator=(const equivalence& o) = default;
   
   void set_ind(const var_t _ind) { ind = _ind; };
+  void set_prev_ind(const var_t _ind) { prev_ind = _ind; };
   void set_polarity(const bool _polarity) { polarity = _polarity; };
   void set_lin(const std::list<xlit_watch>::iterator& reason_lin_) { reason_lin = reason_lin_; };
 
   bool is_active() const { return ind>0; };
 
-  void clear() { ind = 0; polarity = false; };
+  void clear() { ind = 0; };
   std::string to_str(const var_t& idx) const { return "x" + std::to_string(idx) + "+x" + std::to_string(ind) + (polarity ? "+1" : ""); };
+
+  void swap(equivalence& o) noexcept {
+    std::swap(ind, o.ind);
+    std::swap(polarity, o.polarity);
+    std::swap(reason_lin, o.reason_lin);
+  }
 };
 
 /**
