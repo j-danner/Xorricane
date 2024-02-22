@@ -27,6 +27,7 @@ enum class xcls_upd_ret {
 class xcls_watch
 {
   friend class xcls_watch_resolver;
+  friend class solver;
 private:
   /**
    * @brief lits in the xlits that form a generating set for the associated vector space
@@ -546,15 +547,16 @@ public:
         return xcls_upd_ret::UNIT;
     }
 
-    [[maybe_unused]] const auto [new_w, _] = advance(alpha, alpha_dl, alpha_trail_pos, dl_count);
-    assert(is_sat(dl_count) || is_unit(dl_count) || ptr_ws(0) == new_w);
-    assert(watches(new_w));
-    assert(assert_data_struct());
-
+    if(alpha[ptr_ws(1)] == bool3::None) {
+      [[maybe_unused]] const auto [new_w, _] = advance(alpha, alpha_dl, alpha_trail_pos, dl_count);
+      assert(is_sat(dl_count) || is_unit(dl_count) || ptr_ws(0) == new_w);
+      assert(watches(new_w));
+      assert(assert_data_struct());
+    }
     if (alpha[get_wl0()] == bool3::None) {
       swap_wl(); // if one of the watched literals is unassigned, ensure it is wl1
 
-      advance(alpha, alpha_dl, alpha_trail_pos, dl_count);
+      [[maybe_unused]] const auto [new_w, _] = advance(alpha, alpha_dl, alpha_trail_pos, dl_count);
       assert(is_sat(dl_count) || is_unit(dl_count) || ptr_ws(0) == new_w);
       assert(watches(new_w));
       assert(assert_data_struct());

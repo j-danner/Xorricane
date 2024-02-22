@@ -4,6 +4,8 @@
 
 #include <queue>
 
+//forward declaration
+class solver;
 
 
 class xcls_watch_resolver : public xcls_watch {
@@ -37,10 +39,17 @@ private:
     assert( assert_data_struct() );
   }
 
+  /**
+   * @brief adds xlits[i] to t_pos_to_idxs; ensuring that first el is smallest
+   * 
+   * @param i idx of lineral to add
+   * @return true iff no other lineral with same xlit_trail_pos has been found in t_pos_to_idxs
+   */
   inline bool filtration_add(const var_t& i) {
     auto lb = t_pos_to_idxs.lower_bound(xlit_t_pos[i]);
     if(lb!=t_pos_to_idxs.end() && lb->first == xlit_t_pos[i]) {
-      lb->second.push_back(i);
+      if( xlits[lb->second.front()].size() > xlits[i].size() ) lb->second.push_front(i);
+      else lb->second.push_back(i);
       return false;
     } else {
       t_pos_to_idxs.emplace_hint(lb, xlit_t_pos[i], std::list<var_t>({i}));
@@ -56,15 +65,13 @@ public:
   xcls_watch_resolver(xcls_watch &&rs_cls) : xcls_watch(std::move(rs_cls)) { init(); };
 
   /**
-   * @brief 
-   * 
+   * @brief reduces each xlits s.t. for each t_pos there are at most max_size many linerals
    */
   void reduction(const var_t max_size, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
     for(auto it=t_pos_to_idxs.rbegin(); it!=t_pos_to_idxs.rend(); ++it) {
       auto& [k,l] = *it;
       if(l.size()<=max_size) continue;
-      const var_t i0 = l.front();
-      //@todo choose i0 in some clever way? i.e. shortest or similar?
+      const var_t i0 = l.front(); //note first el is shortest xlit with that t_pos - by construction
       l.pop_front();
       //add first el in l to all others, re-evaluate xlit_t_pos, adapt xlit_dl_count0, AND add them back to t_pos_to_idxs
       for(const var_t i : l) {
@@ -125,7 +132,15 @@ public:
     return *this;
   }
 
-  xcls_upd_ret resolve(const xcls_watch &rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, [[maybe_unused]] const vec<dl_c_t> &dl_count) {
+
+  /**
+   * @brief rm linerals that are implied by others; roughly follows ideas of 'vivification'
+   * 
+   * @return true iff clause could be shortened
+   */
+  bool minimize(solver& s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count);
+  
+  xcls_upd_ret resolve(const xcls_watch &rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
       assert( assert_data_struct() );
       assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
 
@@ -179,79 +194,85 @@ public:
         filtration_add(xlits.size()-1);
       }
 
-      //find highest two t_pos linerals to watch; and reduce those as long as they are not unique!
-      if(t_pos_to_idxs.size()>0) {
-        const auto it = t_pos_to_idxs.rbegin();
-        const var_t i0 = it->second.front();
-        //set idx, ws, and ptr_cache
-        const auto& [v, dl, t_pos, _idx] = xlits[i0].get_watch_tuple(alpha_dl, alpha_trail_pos);
-        idx[0] = i0; 
-        ws[0] = _idx;
-        ptr_cache[0] = v;
-        assert(xlit_t_pos[i0] == t_pos);
-        //find unique lineral of highest t_pos to watch
-        if(it->second.size()>1) {
-          auto& l = it->second;
-          l.pop_front();
-          //add first el in l to all others, re-evaluate xlit_t_pos, adapt xlit_dl_count0, AND add them back to t_pos_to_idxs
-          for(const var_t i : l) {
-            assert(i!=i0);
-            xlits[i] += WLIN0;
-            if(xlits[i].is_zero()) {
-              --num_nz_lins;
-              continue;
-            }
-            const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
-            assert(v==(var_t)-1 || t_pos < t_pos_to_idxs.rbegin()->first);
-            xlit_t_pos[i] = t_pos;
-            xlit_dl_count0[i] = {dl, dl_count[dl]};
-            filtration_add(i);
-          }
-          l.clear();
-          l.emplace_front( i0 );
-        }
-        assert(it->second.size()==1);
-      }
-
-      if(t_pos_to_idxs.size()>1) {
-        const auto it = std::next(t_pos_to_idxs.rbegin());
-        //set idx, ws, and ptr_cache
-        const var_t i1 = it->second.front();
-        const auto& [v, dl, t_pos, _idx] = xlits[i1].get_watch_tuple(alpha_dl, alpha_trail_pos);
-        idx[1] = i1;
-        ws[1] = _idx;
-        ptr_cache[1] = v;
-        xlit_dl_count0[i1] = {dl, dl_count[dl]};
-        assert(xlit_t_pos[idx[1]] == t_pos);
-        if(it->second.size() > 1 ) {
-          //find unique lineral of 2nd-highest t_pos to watch
-          auto& l = it->second; 
-          l.pop_front();
-          //add first el in l to all others, re-evaluate xlit_t_pos, adapt xlit_dl_count0, AND add them back to t_pos_to_idxs
-          for(const var_t i : l) {
-            assert(i!=i1);
-            xlits[i] += WLIN1;
-            if(xlits[i].is_zero()) {
-              --num_nz_lins;
-              continue;
-            }
-            const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
-            assert(v==(var_t)-1 || t_pos < it->first);
-            xlit_t_pos[i] = t_pos;
-            xlit_dl_count0[i] = {dl, dl_count[dl]};
-            filtration_add(i);
-          }
-          l.clear();
-          l.emplace_front( i1 );
-        }
-        assert(it->second.size()==1);
-      }
+      fix_watched_idx(alpha_dl, alpha_trail_pos, dl_count);
 
       assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
       assert( assert_data_struct() );
       assert( is_unit(dl_count) );
 
       return xcls_upd_ret::UNIT;
+  };
+
+  void fix_watched_idx(const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+    //find highest two t_pos linerals to watch; and reduce those as long as they are not unique!
+    if(t_pos_to_idxs.size()>0) {
+      const auto it = t_pos_to_idxs.rbegin();
+      const var_t i0 = it->second.front();
+      //set idx, ws, and ptr_cache
+      const auto& [v, dl, t_pos, _idx] = xlits[i0].get_watch_tuple(alpha_dl, alpha_trail_pos);
+      idx[0] = i0; 
+      ws[0] = _idx;
+      ptr_cache[0] = v;
+      assert(xlit_t_pos[i0] == t_pos);
+      //find unique lineral of highest t_pos to watch
+      if(it->second.size()>1) {
+        auto& l = it->second;
+        l.pop_front();
+        //add first el in l to all others, re-evaluate xlit_t_pos, adapt xlit_dl_count0, AND add them back to t_pos_to_idxs
+        for(const var_t i : l) {
+          assert(i!=i0);
+          xlits[i] += WLIN0;
+          if(xlits[i].is_zero()) {
+            --num_nz_lins;
+            continue;
+          }
+          const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
+          assert(v==(var_t)-1 || t_pos < t_pos_to_idxs.rbegin()->first);
+          xlit_t_pos[i] = t_pos;
+          xlit_dl_count0[i] = {dl, dl_count[dl]};
+          filtration_add(i);
+        }
+        l.clear();
+        l.emplace_front( i0 );
+      }
+      assert(it->second.size()==1);
+    }
+
+    if(t_pos_to_idxs.size()>1) {
+      const auto it = std::next(t_pos_to_idxs.rbegin());
+      //set idx, ws, and ptr_cache
+      const var_t i1 = it->second.front();
+      const auto& [v, dl, t_pos, _idx] = xlits[i1].get_watch_tuple(alpha_dl, alpha_trail_pos);
+      idx[1] = i1;
+      ws[1] = _idx;
+      ptr_cache[1] = v;
+      xlit_dl_count0[i1] = {dl, dl_count[dl]};
+      assert(xlit_t_pos[idx[1]] == t_pos);
+      if(it->second.size() > 1 ) {
+        //find unique lineral of 2nd-highest t_pos to watch
+        auto& l = it->second; 
+        l.pop_front();
+        //add first el in l to all others, re-evaluate xlit_t_pos, adapt xlit_dl_count0, AND add them back to t_pos_to_idxs
+        for(const var_t i : l) {
+          assert(i!=i1);
+          xlits[i] += WLIN1;
+          if(xlits[i].is_zero()) {
+            --num_nz_lins;
+            continue;
+          }
+          const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
+          assert(v==(var_t)-1 || t_pos < it->first);
+          xlit_t_pos[i] = t_pos;
+          xlit_dl_count0[i] = {dl, dl_count[dl]};
+          filtration_add(i);
+        }
+        l.clear();
+        l.emplace_front( i1 );
+      }
+      assert(it->second.size()==1);
+    }
+    assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
+    assert( size()<2 || xlits[idx[1]][ptr_cache[1]] );
   };
 
 

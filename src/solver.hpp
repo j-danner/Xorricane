@@ -84,6 +84,7 @@ struct VarOrderLt { ///Order variables according to their activities
 
 class solver
 {
+  friend xcls_watch_resolver;
   private:
     /**
      * @brief xor-clause watchers
@@ -141,6 +142,7 @@ class solver
      * @brief checks 
      * 
      * @return true if current state is at conflict
+     * @todo rename to at_conflict()
      */
     inline bool no_conflict() const { return alpha[0]!=bool3::True; };
 
@@ -204,10 +206,12 @@ class solver
 
     var_t get_num_vars() const { return alpha.size()-1; };
     
-    std::pair<var_t,xcls_watch> analyze();
-    std::pair<var_t,xcls_watch> analyze_exp();
-    std::pair<var_t,xcls_watch> analyze_no_sres();
+    std::pair<var_t,xcls_watch> analyze(solver& s);
+    std::pair<var_t,xcls_watch> analyze_exp(solver& s);
     std::pair<var_t,xcls_watch> analyze_dpll();
+    inline std::pair<var_t,xcls_watch> analyze_dpll([[maybe_unused]] solver& s) { return analyze_dpll(); };
+    
+    void minimize(xcls_watch& cls) const;
 
     /**
      * @brief add new (learnt) clause to database
@@ -465,14 +469,14 @@ class solver
     }
 
     typedef xlit (solver::*dec_heu_t)();
-    typedef std::pair<var_t,xcls_watch> (solver::*ca_t)();
+    typedef std::pair<var_t,xcls_watch> (solver::*ca_t)(solver&);
 
     void bump_score(const var_t& ind);
     void bump_score(const xsys& new_xsys);
     void bump_score(const xlit& lit);
     void decay_score();
     
-    inline void add_new_guess(xlit&& l) {
+    inline void add_new_guess(xlit l) {
       //update assignments
       lineral_watches[dl].emplace_back( l, alpha, alpha_dl, dl_count );
       queue_implied_lineral( std::prev(lineral_watches[dl].end()), trail_t::GUESS);
@@ -525,8 +529,9 @@ class solver
     inline var_t add_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT) {
       if(type==trail_t::IMPLIED_UNIT) {
         VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->to_xlit().reduced(alpha,equiv_lits).to_str() + (type!=trail_t::GUESS  && lin->has_nz_reason_cls() && dl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+        //reduce lin
         if(opt.eq) lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
-        else lin->reduce(alpha, alpha_dl, dl_count);
+        else       lin->reduce(alpha, alpha_dl, dl_count);
       }
       if(lin->is_zero(alpha)) {
         if(lin->is_zero()) lineral_watches[dl].erase( lin );
@@ -538,31 +543,29 @@ class solver
       //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
 
       xlit_watch& l = *lin;
-      if(type!=trail_t::IMPLIED_ALPHA) {
+      if(l.is_active(alpha)) {
         trails[dl].emplace_back( l.LT(), type, lin);
         //if clause is active, i.e., not yet assigning add to watch lists; otherwise add assignment!
-        if(l.is_active(alpha)) {
-          // add to L_watch_list's -- if there is anything to watch
-          if(l.size()>0) L_watch_list[ l.get_wl0() ].emplace_back( dl, dl_count[dl], lin );
-          if(l.size()>1) L_watch_list[ l.get_wl1() ].emplace_back( dl, dl_count[dl], lin );
-          //deal with new equivalence!
-          if(opt.eq && l.is_equiv()) {
-            const var_t lt = l.LT();
-            const var_t lt_other = l.get_equiv_lit();
-            assert(lt < lt_other ); //ensure that lt is smallest!
-            equiv_lits[lt].set_ind( lt_other );
-            equiv_lits[lt_other].set_prev_ind( lt );
-            equiv_lits[lt].set_polarity( l.has_constant() );
-            equiv_lits[lt].set_lin( lin );
-            equiv_lits_dl[lt] = dl;
-            assert( l.get_equiv_lvl(alpha_dl) <= dl );
-            trails[dl].emplace_back( lt, trail_t::EQUIV, lin );
-            VERB(65, "c " + std::to_string(dl) + " : new EQUIV " + lin->to_str() )
-            //if we are at dl 0, replace lt in all lineral_watches AND in all xclss with l.get_equiv_lit() (!)
-            if(dl==0) remove_fixed_equiv(lt);
-          }
-          return -1;
+        // add to L_watch_list's -- if there is anything to watch
+        if(l.size()>0) L_watch_list[ l.get_wl0() ].emplace_back( dl, dl_count[dl], lin );
+        if(l.size()>1) L_watch_list[ l.get_wl1() ].emplace_back( dl, dl_count[dl], lin );
+        //deal with new equivalence!
+        if(opt.eq && l.is_equiv()) {
+          const var_t lt = l.LT();
+          const var_t lt_other = l.get_equiv_lit();
+          assert(lt < lt_other ); //ensure that lt is smallest!
+          equiv_lits[lt].set_ind( lt_other );
+          equiv_lits[lt_other].set_prev_ind( lt );
+          equiv_lits[lt].set_polarity( l.has_constant() );
+          equiv_lits[lt].set_lin( lin );
+          equiv_lits_dl[lt] = dl;
+          assert( l.get_equiv_lvl(alpha_dl) <= dl );
+          trails[dl].emplace_back( lt, trail_t::EQUIV, lin );
+          VERB(65, "c " + std::to_string(dl) + " : new EQUIV " + lin->to_str() )
+          //if we are at dl 0, replace lt in all lineral_watches AND in all xclss with l.get_equiv_lit() (!)
+          if(dl==0) remove_fixed_equiv(lt);
         }
+        return -1;
       }
       //now l must be an alpha-assignment!
       assert(l.is_assigning(alpha));
@@ -588,7 +591,9 @@ class solver
      * @param type type of propagation (defaults to trail_t::IMPLIED_UNIT)
      */
     inline void queue_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT) {
-      if(lin->LT()==0 || lin->is_equiv()) lineral_queue.emplace_front( lin, type );
+      //@todo where should we push equivs; maybe sort queue according to some activity score?! --> priority_queue?! based on size()?!
+      //if(lin->LT()==0 || lineral_queue.empty() || (lineral_queue.front().lin->LT()!=0 && lin->is_equiv())) lineral_queue.emplace_front( lin, type );
+      if(lin->LT()==0) lineral_queue.emplace_front( lin, type );
       else lineral_queue.emplace_back( lin, type );
     }
     
@@ -603,6 +608,7 @@ class solver
     inline void queue_implied_alpha(xlit_w_it lin) {
       const auto lt = lin->is_constant() ? 0 : lin->get_wl1();
       assert(alpha[lt] == bool3::None);
+      //@todo queue as maxheap w.r.t. activity_score?
 
       if(lt==0) lineral_queue.emplace_front( lin, trail_t::IMPLIED_ALPHA );
       else lineral_queue.emplace_back( lin, trail_t::IMPLIED_ALPHA );
@@ -615,9 +621,9 @@ class solver
      */
     inline var_t propagate_implied_lineral() {
       assert(!lineral_queue.empty());
-      auto [lin, type] = std::move(lineral_queue.front());
-      lineral_queue.pop_front();
+      auto& [lin, type] = lineral_queue.front();
       var_t new_lt = add_implied_lineral(lin, type);
+      lineral_queue.pop_front();
       return new_lt;
     }
 
@@ -1041,7 +1047,6 @@ class solver
       VERB(90, "c adding new clause: " + BOLD(xclss[i].to_str()) + "  --> gives with current assignments: "+xclss[i].to_xcls().reduced(alpha).to_str());
       if(learnt_cls) VERB(90, "c XNF : " + xclss[i].to_xnf_str());
       const auto ret = learnt_cls ? xcls_upd_ret::UNIT : xclss[i].init(alpha, alpha_dl, alpha_trail_pos, dl_count);
-      //@todo write lightweight init_unit func if it is a learnt_cls!
       //copied from GCP
       switch (ret) {
       case xcls_upd_ret::SAT:
@@ -1127,7 +1132,17 @@ class solver
     solver(parsed_xnf& p_xnf, guessing_path& P) noexcept : solver(p_xnf.cls, p_xnf.num_vars, options(P)) {};
 
     //copy ctor
-    solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), active_cls_stack(o.active_cls_stack), activity_score(o.activity_score), dl_count(o.dl_count), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), total_trail_length(o.total_trail_length), lineral_queue(o.lineral_queue) { assert(assert_data_structs()); };
+    solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), active_cls_stack(o.active_cls_stack), activity_score(o.activity_score), dl_count(o.dl_count), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), total_trail_length(o.total_trail_length), lineral_queue(o.lineral_queue) { 
+      opt.verb = 0;
+      backtrack(0);
+      //fix L_watch_list
+      for(auto& wl : L_watch_list) wl.clear();
+      for(xlit_w_it lin = lineral_watches[0].begin(); lin!=lineral_watches[0].end(); ++lin) {
+        if(lin->size()>0) L_watch_list[ lin->get_wl0() ].emplace_back( dl, dl_count[dl], lin );
+        if(lin->size()>1) L_watch_list[ lin->get_wl1() ].emplace_back( dl, dl_count[dl], lin );
+      }
+      assert(assert_data_structs());
+    };
 
     ~solver() = default;
 
@@ -1202,7 +1217,7 @@ class solver
     std::string to_str() const noexcept;
     std::string to_xnf_str() const noexcept;
 
-    solver& operator=(const solver& ig) = delete;
+    solver& operator=(const solver& ig) = default;
 
     bool assert_data_structs() const noexcept;
     void print_trail(std::string lead = "") const noexcept;

@@ -241,7 +241,7 @@ void solver::bump_score(const var_t &ind) {
 
 void solver::bump_score(const xlit &lit) {
     assert(lit.LT() < activity_score.size());
-    bump_score(lit.LT());
+    bump_score(lit.LT()); //@todo bump scores of ALL occuring vars?
 };
 
 void solver::bump_score(const xsys &new_xsys) {
@@ -260,11 +260,11 @@ void solver::decay_score() {
 xlit unit;
 #endif
 
-std::pair<var_t, xcls_watch> solver::analyze_exp() {
-    return analyze();
+std::pair<var_t, xcls_watch> solver::analyze_exp(solver& s) {
+    return analyze(s);
 };
 
-std::pair<var_t, xcls_watch> solver::analyze() {
+std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
     VERB(70, "**** analyzing conflict");
 #ifndef NDEBUG
     print_trail("    *");
@@ -323,29 +323,35 @@ std::pair<var_t, xcls_watch> solver::analyze() {
     
     VERB(70, "   * ");
     VERB(70, "   * learnt clause is " + learnt_cls.to_str());
-    VERB(90, "   * XNF " + learnt_cls.to_xnf_str() );
-    VERB(70, "   '----> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
+
+    if(opt.cm) {
+        VERB(70, "   * vivify " + learnt_cls.to_str() );
+        //minimization
+        learnt_cls.minimize(s, alpha, alpha_dl, alpha_trail_pos, dl_count);
+        VERB(70, "   '------> " + learnt_cls.to_str() );
+    }
+
+    VERB(70, "   * finalize " + learnt_cls.to_str() );
+    const auto out = learnt_cls.finalize(alpha_dl, alpha_trail_pos, dl_count);
+    VERB(70, "   '--------> " + out.to_str() );
+    
+    VERB(90, "   * XNF " + out.to_xnf_str() );
+    VERB(70, "   '----> gives with current assignments: " + out.to_xcls().reduced(alpha).to_str());
+
+    //find correct backtrack-lvl
+    const var_t b_lvl = out.get_assigning_lvl(alpha_dl);
 
 #ifndef NDEBUG
     print_trail("    *");
 #endif
-
-    //TODO
-    //CLAUSE MINIMIZATION!
-
-    //find correct backtrack-lvl
-    const var_t b_lvl = learnt_cls.get_assigning_lvl(alpha_dl);
-    if( dl < learnt_cls.size() && b_lvl == dl-1 ) {
+    
+    if( dl < out.size() && b_lvl == dl-1 ) {
         VERB(50, "   * negated decisions lead to smaller learnt_cls and the same backtrack-level!");
-        //assert(false);
     }
     
     VERB(70, "****");
-    return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls.finalize(alpha_dl, alpha_trail_pos, dl_count));
-    //return std::pair<var_t, xcls_watch>(b_lvl, learnt_cls);
+    return std::pair<var_t, xcls_watch>(b_lvl, out);
 };
-
-std::pair<var_t, xcls_watch> solver::analyze_no_sres() { return analyze_dpll(); };
 
 std::pair<var_t, xcls_watch> solver::analyze_dpll() {
     VERB(60, "analyze_dpll called!")
@@ -795,15 +801,17 @@ void solver::solve(stats &s) {
         break;
     }
     
-    // stack for xsys that store alternative dec
-    xsys new_xsys = xsys();
-
     // GCP -- before making decisions!
     do {
         GCP(s);
     } while( no_conflict() && find_implications_from_linerals(s) );
 
     
+    //create copy of solver -- for clause minimization
+    solver solver_cpy(*this);
+    solver_cpy.get_opts()->lin_alg_schedule = 1;
+    solver_cpy.get_opts()->verb = 0;
+    stats s_cpy;
 
     while (true) {
         if (s.cancelled.load()) {
@@ -828,10 +836,18 @@ void solver::solve(stats &s) {
             
                 ///// BACKTRACKING /////
                 ///// CLAUSE LEARNING /////
-                auto [lvl, learnt_cls] = (this->*analyze)();
+                auto [lvl, learnt_cls] = (this->*analyze)(solver_cpy);
+                
                 // backtrack
                 backtrack(lvl);
-                VERB(201, to_str());
+
+                //if clause minimization is activated
+                if(opt.cm) {
+                    auto cls_cpy = learnt_cls;
+                    //reset cls_cpy xlit_dl_count0
+                    for(auto& v : cls_cpy.xlit_dl_count0) v = {0,0};
+                    solver_cpy.add_xcls_watch( std::move(cls_cpy), true ); //@todo leads to rare errors; since xlit_t_pos and xlit_dl_count0 does not match with dl_count of solver_cpy!! (maybe just copy dl_count before every GCP? or set dl_count veeery high at the beginning?)
+                }
 
                 // add learnt_cls
                 add_learnt_cls( std::move(learnt_cls) );
@@ -840,7 +856,10 @@ void solver::solve(stats &s) {
 
                 VERB(201, to_str());
                 //restart?
-                if( need_restart() ) { restart(s); }
+                if( need_restart() ) {
+                    restart(s);
+                    solver_cpy.restart(s_cpy);
+                }
             } else {
                 ++dl;
                 ++dl_count[dl];

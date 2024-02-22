@@ -179,6 +179,8 @@ struct options {
     phase_opt po = phase_opt::save;
 
     ca_alg ca = ca_alg::fuip;
+    const bool cm = true;
+
     restart_opt rst = restart_opt::luby;
     initial_prop_opt ip = initial_prop_opt::no;
 

@@ -787,7 +787,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     SECTION( "test55.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test55.xnf");
         options opt;
-        opt.verb = 80;
+        opt.verb = 10;
         opt.ca = ca_alg::fuip;
         opt.ip = initial_prop_opt::nbu;
         opt.rst = restart_opt::no;
@@ -803,7 +803,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     SECTION( "test56.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test56.xnf");
         options opt;
-        opt.verb = 80;
+        opt.verb = 10;
         opt.ca = ca_alg::fuip;
         opt.ip = initial_prop_opt::nbu;
         opt.rst = restart_opt::no;
