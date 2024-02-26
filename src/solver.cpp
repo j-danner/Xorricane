@@ -809,7 +809,6 @@ void solver::solve(stats &s) {
     
     //create copy of solver -- for clause minimization
     solver solver_cpy(*this);
-    solver_cpy.get_opts()->lin_alg_schedule = 1;
     solver_cpy.get_opts()->verb = 0;
     stats s_cpy;
 

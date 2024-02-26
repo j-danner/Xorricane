@@ -9,11 +9,11 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
     stats _;
     
     //prepare s
-    if(s.dl_count.size()<xlits.size()) s.dl_count.resize(xlits.size(), 0);
-    if(s.lineral_watches.size()<xlits.size()) s.lineral_watches.resize(xlits.size(), std::list<xlit_watch>());
+    if(s.dl_count.size()<xlits.size()) s.dl_count.resize(xlits.size()+1, 0);
+    if(s.lineral_watches.size()<xlits.size()) s.lineral_watches.resize(xlits.size()+1, std::list<xlit_watch>());
     do {
         s.GCP(_);
-    } while( s.no_conflict() && s.find_implications_from_linerals(_) );
+    } while( s.no_conflict() && (s.need_linalg_inprocessing() ? s.find_implications_from_linerals(_) : false) );
 
     bool update_req = false;
     bool early_abort = false;
@@ -30,7 +30,7 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
             lin.clear();
             changed = true;
         } else {
-            changed |= lin.reduce(s.equiv_lits);
+            if(s.opt.eq) changed |= lin.reduce(s.equiv_lits);
             changed |= lin.reduce(s.alpha);
         }
         assert( (!changed || lin.to_str()!=xlits[i].to_str()) && (changed || lin.to_str()==xlits[i].to_str()) );
@@ -71,7 +71,7 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
         //GCP + linalg
         do {
             s.GCP(_);
-        } while( s.no_conflict() && s.find_implications_from_linerals(_) );
+        } while( s.no_conflict() && (s.need_linalg_inprocessing() ? s.find_implications_from_linerals(_) : false) );
         assert(!s.trails.back().empty());
         //if s is at conflict, then all processed clauses already make up a (shorter) conflict clause!
         if(!s.no_conflict()) {
