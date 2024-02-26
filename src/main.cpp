@@ -77,6 +77,12 @@ int main(int argc, char const *argv[])
             //arg invalid!
             throw std::runtime_error("invalid argument passed for parameter -ca");
         }).nargs(1);
+
+    //clause minimization
+    program.add_argument("-cm","--clause-minimization")
+        .help("activate heuristic clause minimization")
+        .flag();
+    
     
     //restart opts
     program.add_argument("-rh","--restart-heuristic")
@@ -185,6 +191,8 @@ int main(int argc, char const *argv[])
     else if(ca_str=="1uip") ca = ca_alg::fuip;
     else if(ca_str=="1uip+") ca = ca_alg::fuip_opt;
     
+    bool cm = program.is_used("-cm");
+    
     auto rh_str = program.get<std::string>("-rh");
     restart_opt rh = restart_opt::luby;
     if(rh_str=="no") rh = restart_opt::no;
@@ -227,7 +235,7 @@ int main(int argc, char const *argv[])
         assert( P.assert_data_struct() );
 
         //set upt options
-        options opts( dh, po, ca, rh, ip, eq, lin_alg_schedule, jobs, verb, time_out, sol_count, P );
+        options opts( dh, po, ca, cm, rh, ip, eq, lin_alg_schedule, jobs, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;
