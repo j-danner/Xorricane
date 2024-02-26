@@ -13,7 +13,7 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
     if(s.lineral_watches.size()<xlits.size()) s.lineral_watches.resize(xlits.size()+1, std::list<xlit_watch>());
     do {
         s.GCP(_);
-    } while( s.no_conflict() && (s.need_linalg_inprocessing() ? s.find_implications_from_linerals(_) : false) );
+    } while( !s.at_conflict() && s.need_linalg_inprocessing() && s.find_implications_from_linerals(_) );
 
     bool update_req = false;
     bool early_abort = false;
@@ -71,10 +71,10 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
         //GCP + linalg
         do {
             s.GCP(_);
-        } while( s.no_conflict() && (s.need_linalg_inprocessing() ? s.find_implications_from_linerals(_) : false) );
+        } while( !s.at_conflict() && s.need_linalg_inprocessing() && s.find_implications_from_linerals(_) );
         assert(!s.trails.back().empty());
         //if s is at conflict, then all processed clauses already make up a (shorter) conflict clause!
-        if(!s.no_conflict()) {
+        if(s.at_conflict()) {
             early_abort = true;
         }
     }

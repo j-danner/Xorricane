@@ -142,9 +142,8 @@ class solver
      * @brief checks 
      * 
      * @return true if current state is at conflict
-     * @todo rename to at_conflict()
      */
-    inline bool no_conflict() const { return alpha[0]!=bool3::True; };
+    inline bool at_conflict() const { return alpha[0]==bool3::True; };
 
     //CDCL vars
     /**
@@ -648,12 +647,12 @@ class solver
      * @brief decides whether a linear algebra in-processing step should be performed
      */
     bool need_linalg_inprocessing() {
-      if(!no_conflict()) return false;
+      if(at_conflict()) return false;
       if(dl==0) return true; //always use linear algebra on dl 0?
       if(opt.lin_alg_schedule==0) return false;
       ++ctr;
       ctr %= opt.lin_alg_schedule;
-      return ctr == 0 && no_conflict();
+      return ctr == 0 && !at_conflict();
     }
 
     /**

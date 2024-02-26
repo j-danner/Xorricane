@@ -517,11 +517,11 @@ xlit new_unit;
 void solver::GCP(stats &s) {
     s.no_gcp++;
     VERB(90, "c GCP start");
-    while(!lineral_queue.empty() && no_conflict()) {
+    while(!lineral_queue.empty() && !at_conflict()) {
         const var_t& upd_lt = propagate_implied_lineral();
         VERB(120, "c new literal ready for propagation");
         if(upd_lt == (var_t) -1) continue; //nothing new to propagate!
-        if(upd_lt == 0) { assert(!no_conflict()); continue; } //at conflict!
+        if(upd_lt == 0) { assert(at_conflict()); continue; } //at conflict!
 
         VERB(120, "c updating lineral_watches");
         //(1) find new implied alphas from watched linerals
@@ -608,7 +608,7 @@ void solver::GCP(stats &s) {
         if(dl == 0) { remove_fixed_alpha(upd_lt); };
         assert_slow(assert_data_structs());
     }
-    assert(lineral_queue.empty() || !no_conflict());
+    assert(lineral_queue.empty() || at_conflict());
 
     VERB(201, to_str());
     VERB(90, "c GCP end");
@@ -619,7 +619,7 @@ void solver::GCP(stats &s) {
 void solver::dpll_solve(stats &s) {
     VERB(25, "c dpll-solving start")
     // return UNSAT if linsys has no solution
-    if (!no_conflict()) {
+    if (at_conflict()) {
         s.sat = false;
         s.finished = true;
         return;
@@ -655,7 +655,7 @@ void solver::dpll_solve(stats &s) {
 
     // GCP -- before making decisions!
     GCP(s);
-    if( no_conflict() ) {
+    if( !at_conflict() ) {
         if( find_implications_from_linerals(s) ) {
             goto dpll_gcp;
         }
@@ -666,9 +666,9 @@ void solver::dpll_solve(stats &s) {
             VERB(10, "c cancelled");
             return;
         }
-        if (active_cls > 0 || !no_conflict()) {
+        if (active_cls > 0 || at_conflict()) {
             // make decision / backtrack
-            if (!no_conflict()) {
+            if (at_conflict()) {
                 dpll_conflict:
                 VERB(25, "c " << std::to_string(dl) << " : "
                               << "conflict --> backtrack!")
@@ -730,7 +730,7 @@ void solver::dpll_solve(stats &s) {
             assert((var_t)dec_stack.size() == dl);
             assert(assert_data_structs());
         } else {
-            //now active_cls == 0 AND no_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
+            //now active_cls == 0 AND !at_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
             const auto [L,_] = get_assignments_xsys();
             if (!L.is_consistent()) {
                 //enforce backtracking!
@@ -756,7 +756,7 @@ void solver::solve(stats &s) {
     if(opt.ca == ca_alg::no) return dpll_solve(s);
     VERB(25, "c cdcl-solving start")
     // return UNSAT if linsys has no solution
-    if (!no_conflict()) {
+    if (at_conflict()) {
         s.sat = false;
         s.finished = true;
         return;
@@ -804,7 +804,7 @@ void solver::solve(stats &s) {
     // GCP -- before making decisions!
     do {
         GCP(s);
-    } while( no_conflict() && find_implications_from_linerals(s) );
+    } while( !at_conflict() && find_implications_from_linerals(s) );
 
     
     //create copy of solver -- for clause minimization
@@ -817,9 +817,9 @@ void solver::solve(stats &s) {
             VERB(10, "c cancelled");
             return;
         }
-        if (active_cls > 0 || !no_conflict()) {
+        if (active_cls > 0 || at_conflict()) {
             // make decision / backtrack
-            if (!no_conflict()) {
+            if (at_conflict()) {
                 VERB(25, "c " << std::to_string(dl) << " : "
                               << "conflict --> backtrack!")
                 ++s.no_confl;
@@ -881,19 +881,19 @@ void solver::solve(stats &s) {
             cdcl_gcp:
             do {
                 GCP(s);
-            } while( need_linalg_inprocessing() && find_implications_from_linerals(s) );
+            } while( !at_conflict() && need_linalg_inprocessing() && find_implications_from_linerals(s) );
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
             assert(assert_data_structs());
         } else {
-            //now active_cls == 0 AND no_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
+            //now active_cls == 0 AND !at_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
             auto [L,r_cls] = get_assignments_xsys();
             if (!L.is_consistent()) {
                 backtrack( r_cls.get_assigning_lvl(alpha_dl) );
                 add_learnt_cls( std::move(r_cls), false );
                 GCP(s);
-                if(no_conflict()) ++s.no_confl; //count as conflict here only if we do not need another conflict analysis
+                if(!at_conflict()) ++s.no_confl; //count as conflict here only if we do not need another conflict analysis
             } else {
                 solve_L(L, s);
 
@@ -1041,7 +1041,7 @@ std::string solver::to_xnf_str() const noexcept {
         for (var_t i = 0; i < xclss.size(); i++) {
             assert(xclss[i].assert_data_struct());
             //only check advanced conditions if lineral_queue is empty!
-            if(no_conflict() && lineral_queue.empty()) assert(xclss[i].assert_data_struct(alpha, alpha_trail_pos, dl_count));
+            if(!at_conflict() && lineral_queue.empty()) assert(xclss[i].assert_data_struct(alpha, alpha_trail_pos, dl_count));
         }
         //check watch-lists
         {
@@ -1084,7 +1084,7 @@ std::string solver::to_xnf_str() const noexcept {
             //VERB(90, "active_cls recomputed on lvl " + std::to_string(lvl) + ": " + std::to_string(
             //    std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls) { return xcls.is_active(dl_count_cpy) && xcls.is_irredundant(); })
             //));
-            assert_slow( !no_conflict() || active_cls_stack[lvl] == (var_t) 
+            assert_slow( at_conflict() || active_cls_stack[lvl] == (var_t) 
                 std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch& xcls) { return xcls.is_active(dl_count_cpy) && xcls.is_irredundant(); })
             );
         }
