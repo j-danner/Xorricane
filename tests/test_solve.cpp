@@ -11,6 +11,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     phase_opt po = phase_opt::save;
     ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip);
     initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
+    bool cm = GENERATE(true, false);
     bool equiv = true;
     int verb = 0;
   #else
@@ -20,10 +21,11 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     ca_alg ca = GENERATE(ca_alg::dpll, ca_alg::no, ca_alg::fuip);
     initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
     bool equiv = GENERATE(true, false);
+    bool cm = GENERATE(true, false);
     int verb = 0;
   #endif
 
-    options opt(dh, po, ca, restart_opt::luby, ip, equiv, la_sch, verb);
+    options opt(dh, po, ca, cm, restart_opt::luby, ip, equiv, la_sch, verb);
 
     SECTION( "test1.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test1.xnf");
@@ -806,6 +808,22 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.verb = 10;
         opt.ca = ca_alg::fuip;
         opt.ip = initial_prop_opt::nbu;
+        opt.rst = restart_opt::no;
+        opt.dh = dec_heu::vsids;
+        opt.lin_alg_schedule = 0;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test57.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test57.xnf");
+        options opt;
+        opt.verb = 80;
+        opt.ca = ca_alg::fuip;
+        opt.ip = initial_prop_opt::full;
         opt.rst = restart_opt::no;
         opt.dh = dec_heu::vsids;
         opt.lin_alg_schedule = 0;

@@ -9,6 +9,8 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
     stats _;
     
     //prepare s
+    if(s.dl_count.size()<xlits.size()) s.dl_count.resize(xlits.size(), 0);
+    if(s.lineral_watches.size()<xlits.size()) s.lineral_watches.resize(xlits.size(), std::list<xlit_watch>());
     do {
         s.GCP(_);
     } while( s.no_conflict() && s.find_implications_from_linerals(_) );
@@ -16,68 +18,67 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
     bool update_req = false;
     bool early_abort = false;
 
-    for(auto it=t_pos_to_idxs.begin(); it!=t_pos_to_idxs.end(); ++it) {
-        auto& [k,l] = *it;
-        for(auto it2=l.begin(); it2!=l.end(); ++it2) {
-            const var_t i = *it2;
-            //skip if already 0
-            if(xlits[i].is_zero()) continue;
-            //reduce with alpha and equivs
-            xlit lin = xlits[i];
-            bool changed = false;
-            if(early_abort) {
-                lin.clear(); 
-                changed = true;
-            } else {
-                changed |= lin.reduce(s.alpha); //@todo can we rm this line?
-                changed |= lin.reduce(s.equiv_lits);
-                changed |= lin.reduce(s.alpha);
-            }
-            assert((!changed || lin.to_str()!=xlits[i].to_str()) && (changed || lin.to_str()==xlits[i].to_str()));
-            //if(lin.is_one()) {
-            if(lin.eval(alpha)) {
-                //early abort! as lin is reduced to 1 (under alpha); we know that lin+1 is already implied by previous 'decisions' + lin
-                //rm all remaining lits & stop!
-                early_abort = true;
+    xlit lin;
+    
+    for(var_t i = 0; i<xlits.size(); ++i) {
+        if(xlits[i].is_zero()) continue;
+
+        //reduce with alpha and equivs
+        lin = xlits[i];
+        bool changed = false;
+        if(early_abort) {
+            lin.clear();
+            changed = true;
+        } else {
+            changed |= lin.reduce(s.equiv_lits);
+            changed |= lin.reduce(s.alpha);
+        }
+        assert( (!changed || lin.to_str()!=xlits[i].to_str()) && (changed || lin.to_str()==xlits[i].to_str()) );
+        //if(lin.is_one()) {
+        //if(!early_abort && lin.is_one()) {
+        if(!early_abort && lin.reduced(alpha).is_one()) {
+            //early abort! as lin is reduced to 1 (under alpha); we know that lin+1 is already implied by previous 'decisions'
+            //thus all 'guesses' + lin form a conflict clause!
+            //rm all remaining lits & stop!
+            early_abort = true;
+            continue;
+        } else if(changed) {
+            const auto& [v, dl, t_pos, _idx] = lin.get_watch_tuple(alpha_dl, alpha_trail_pos);
+            if(t_pos==xlit_t_pos[i]) continue;
+            //watched_idx need to be fixed, if watched linerals change t_pos OR a new lineral has higher t_pos
+            update_req |= (i==idx[0] || i==idx[1]) || (t_pos>xlit_t_pos[idx[1]]);
+            //now t_pos!=k, i.e., lin needs to moved elsewhere in t_pos_to_idxs
+            t_pos_to_idxs[xlit_t_pos[i]].remove( i );
+            if(t_pos_to_idxs[xlit_t_pos[i]].empty()) { t_pos_to_idxs.erase(xlit_t_pos[i]); }
+            xlit_t_pos[i] = t_pos;
+            if(dl!=(var_t)-1) xlit_dl_count0[i] = {dl, dl_count[dl]};
+            else              xlit_dl_count0[i] = {0,0};
+            xlits[i] = std::move(lin);
+            if(xlits[i].is_zero()) {
+                ret |= changed;
+                --num_nz_lins;
                 continue;
             }
-            if(changed) {
-                update_req |= (i==idx[0] || i==idx[1]);
-                xlits[i] = std::move(lin);
-                const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
-                //assert(t_pos <= k);
-                if(t_pos==k) continue;
-                //now t_pos!=k, i.e., lin needs to moved elsewhere in t_pos_to_idxs
-                //assert(t_pos < k);
-                it2 = l.erase( it2 ); --it2;
-                xlit_t_pos[i] = t_pos;
-                if(dl!=(var_t)-1) xlit_dl_count0[i] = {dl, dl_count[dl]};
-                else              xlit_dl_count0[i] = {0,0};
-                if(xlits[i].is_zero()) {
-                    ret |= changed;
-                    --num_nz_lins;
-                    continue;
-                }
-                filtration_add(i);
-            }
-            assert(!xlits[i].is_zero());
-            //increase dl
-            ++s.dl;
-            ++s.dl_count[s.dl];
-            s.trails.emplace_back( std::list<trail_elem>() );
-            s.active_cls_stack.emplace_back(s.active_cls);
-            //add guess
-            s.add_new_guess( xlits[i] );
-            //GCP + linalg
-            do {
-                s.GCP(_);
-            } while( s.no_conflict() && s.find_implications_from_linerals(_) );
+            filtration_add(i);
         }
-        if(l.empty()) {
-            it = t_pos_to_idxs.erase( it );
-            if(it!=t_pos_to_idxs.begin()) --it;
+        //increase dl
+        ++s.dl;
+        ++s.dl_count[s.dl];
+        s.trails.emplace_back( std::list<trail_elem>() );
+        s.active_cls_stack.emplace_back(s.active_cls);
+        //add guess
+        s.add_new_guess( xlits[i] );
+        //GCP + linalg
+        do {
+            s.GCP(_);
+        } while( s.no_conflict() && s.find_implications_from_linerals(_) );
+        assert(!s.trails.back().empty());
+        //if s is at conflict, then all processed clauses already make up a (shorter) conflict clause!
+        if(!s.no_conflict()) {
+            early_abort = true;
         }
     }
+
     //fix watched idxs if necessary
     if(update_req) {
         fix_watched_idx(alpha_dl, alpha_trail_pos, dl_count);

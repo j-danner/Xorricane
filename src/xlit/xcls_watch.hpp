@@ -465,10 +465,14 @@ public:
     if(idx[0] == xlits.size()) {
       idx[0] = i;
       assert(xlits.size()<=1 || i < xlits.size());
-    }
-    if(idx[1] == xlits.size()) {
+    } else if(idx[1] == xlits.size()) {
       idx[1] = i;
-      assert(xlits.size()<=1 || i < xlits.size());
+      if(xlits.size()==i) {
+        idx[1] = 0;
+        ws[1] = 0;
+        ptr_cache[1] = 0;
+      }
+      assert(xlits.size()<=1 || i <= xlits.size());
     }
     assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
     assert( size()<2 || xlits[idx[1]][ptr_cache[1]] );

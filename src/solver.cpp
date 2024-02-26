@@ -841,12 +841,13 @@ void solver::solve(stats &s) {
                 // backtrack
                 backtrack(lvl);
 
-                //if clause minimization is activated
+                //if clause minimization is activated, add new clause also to solver_cpy
                 if(opt.cm) {
                     auto cls_cpy = learnt_cls;
                     //reset cls_cpy xlit_dl_count0
                     for(auto& v : cls_cpy.xlit_dl_count0) v = {0,0};
-                    solver_cpy.add_xcls_watch( std::move(cls_cpy), true ); //@todo leads to rare errors; since xlit_t_pos and xlit_dl_count0 does not match with dl_count of solver_cpy!! (maybe just copy dl_count before every GCP? or set dl_count veeery high at the beginning?)
+                    cls_cpy.SAT_dl_count = {0,0};
+                    solver_cpy.add_xcls_watch( std::move(cls_cpy), true );
                 }
 
                 // add learnt_cls

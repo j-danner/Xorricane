@@ -68,6 +68,7 @@ public:
    * @brief reduces each xlits s.t. for each t_pos there are at most max_size many linerals
    */
   void reduction(const var_t max_size, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+    const bool ret = (t_pos_to_idxs.rbegin()->second.size()>1) || (t_pos_to_idxs.size()>1 && std::next(t_pos_to_idxs.rbegin())->second.size()>1);
     for(auto it=t_pos_to_idxs.rbegin(); it!=t_pos_to_idxs.rend(); ++it) {
       auto& [k,l] = *it;
       if(l.size()<=max_size) continue;
@@ -93,6 +94,7 @@ public:
       assert(t_pos_to_idxs[k].size()<=max_size);
     }
     assert( std::all_of(t_pos_to_idxs.begin(), t_pos_to_idxs.end(), [max_size](const auto& k_l){ return k_l.second.size()<=max_size; }) );
+    if(ret) fix_watched_idx(alpha_dl, alpha_trail_pos, dl_count);
   }
 
   /**
@@ -104,10 +106,13 @@ public:
     //@heuristic choose good value!
     var_t max_size = std::min(4, (int) (num_nz_lins / t_pos_to_idxs.size()) + 2 );
     reduction(max_size, alpha_dl, alpha_trail_pos, dl_count);
+    assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
+    assert( size()<2 || xlits[idx[1]][ptr_cache[1]] );
 
     //rm zero linerals -- this step breaks t_pos_to_idxs!
     for(var_t j=0; j<xlits.size(); ++j) {
-      if(xlits[j].is_zero()) { xcls_watch::remove_zero_lineral(j); --j; }
+      const var_t k = xlits.size() - j - 1;
+      if(xlits[k].is_zero()) { xcls_watch::remove_zero_lineral(k); --j; }
     }
     assert(num_nz_lins == xlits.size());
     assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
@@ -213,7 +218,7 @@ public:
       idx[0] = i0; 
       ws[0] = _idx;
       ptr_cache[0] = v;
-      assert(xlit_t_pos[i0] == t_pos);
+      xlit_t_pos[i0] = t_pos;
       //find unique lineral of highest t_pos to watch
       if(it->second.size()>1) {
         auto& l = it->second;

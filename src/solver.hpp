@@ -528,7 +528,9 @@ class solver
      */
     inline var_t add_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT) {
       if(type==trail_t::IMPLIED_UNIT) {
-        VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->to_xlit().reduced(alpha,equiv_lits).to_str() + (type!=trail_t::GUESS  && lin->has_nz_reason_cls() && dl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+        VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->to_xlit().reduced(alpha,equiv_lits).to_str() + (lin->has_nz_reason_cls() && dl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+      }
+      if(type!=trail_t::IMPLIED_ALPHA) {
         //reduce lin
         if(opt.eq) lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
         else       lin->reduce(alpha, alpha_dl, dl_count);
@@ -554,6 +556,7 @@ class solver
           const var_t lt = l.LT();
           const var_t lt_other = l.get_equiv_lit();
           assert(lt < lt_other ); //ensure that lt is smallest!
+          assert(!equiv_lits[lt].is_active()); //ensure that lt does not already have an equiv literal
           equiv_lits[lt].set_ind( lt_other );
           equiv_lits[lt_other].set_prev_ind( lt );
           equiv_lits[lt].set_polarity( l.has_constant() );
