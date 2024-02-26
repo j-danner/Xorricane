@@ -23,7 +23,7 @@
 
 #define TRAIL trails.back()
 
-using xlit_w_it = std::list<xlit_watch>::iterator;
+using xlit_w_it = list<xlit_watch>::iterator;
 
 enum class trail_t { EQUIV, IMPLIED_UNIT, IMPLIED_ALPHA, GUESS };
 
@@ -100,12 +100,12 @@ class solver
     /**
      * @brief watch_list[i] contains all idxs j s.t. xclss[j] watches indet i
      */
-    vec< std::list<var_t> > watch_list;
+    vec< list<var_t> > watch_list;
     
     /**
      * @brief L_watch_list[lt] stores elements of the form [lvl, i, dl_c]; indicating that lineral_watches[lvl][i] watches lt IFF dl_count[lvl]==dl_c
      */
-    vec< std::list< watch_list_elem > > L_watch_list;
+    vec< list< watch_list_elem > > L_watch_list;
 
 
     /**
@@ -156,7 +156,7 @@ class solver
      * @brief current unit watches
      * @note lineral_watches[lvl] contains all units added in dl lvl; used as stack
      */
-    vec< std::list< xlit_watch > > lineral_watches;
+    vec< list< xlit_watch > > lineral_watches;
 
     /**
      * @brief current assignments of vars; assignments[i] contains xlit with LT i
@@ -194,7 +194,7 @@ class solver
      * @brief trail of decisions/unit-propagations
      * @note trail[lvl] is the trail at level lvl
      */
-    vec< std::list<trail_elem> > trails;
+    vec< list<trail_elem> > trails;
 
     /**
      * @brief total trail length up to dl-1
@@ -283,7 +283,7 @@ class solver
      * @param add_idx additional index to resolve with
      * @return var_t indedx position of new xcls_watch
      */
-    inline xcls_watch get_reason_and_init(const std::list<xlit_w_it>& rs_cls_idxs, const var_t idx = (var_t) -1) {
+    inline xcls_watch get_reason_and_init(const list<xlit_w_it>& rs_cls_idxs, const var_t idx = (var_t) -1) {
     #ifndef NDEBUG
       vec<xlit> lits; lits.reserve(lineral_watches.size());
       for(const auto& l_dl : lineral_watches) {
@@ -360,7 +360,7 @@ class solver
      * @param add_idx additional index to resolve with
      * @return var_t indedx position of new xcls_watch
      */
-    inline xcls_watch get_reason(const std::list<xlit_w_it>& rs_cls_idxs, const var_t idx = (var_t) -1) const {
+    inline xcls_watch get_reason(const list<xlit_w_it>& rs_cls_idxs, const var_t idx = (var_t) -1) const {
     #ifndef NDEBUG
     #ifdef DEBUG_SLOW
       vec<xlit> lits; lits.reserve(lineral_watches.size());
@@ -671,7 +671,7 @@ class solver
       xsys L_( std::move(lits) );
     #endif
       VERB(80, "c use M4RI to find implied alpha from linerals");
-      std::list< std::list<var_t> > r_clss;
+      list< list<var_t> > r_clss;
 
       //(1) reduce watched linerals
 
@@ -730,7 +730,7 @@ class solver
       const rci_t rank = mzd_echelonize_m4ri(M, true, 0); //should we use mzd_echelonize instead?
      
       //read results
-      std::list<xlit> xlits_;
+      list<xlit> xlits_;
       vec<var_t> idxs;
       for(rci_t r = rank-1; r>0; --r) {
         idxs.clear();
@@ -786,7 +786,7 @@ class solver
         VERB(95, "c constructing reason cls indices for "+lit.to_str());
         ++s.no_linalg_prop;
         
-        std::list<xlit_w_it> r_cls_idxs;
+        list<xlit_w_it> r_cls_idxs;
         var_t resolving_lvl = 0;
       
       #ifndef NDEBUG
@@ -933,7 +933,7 @@ class solver
       
       //mzd_print(M);
       //read results
-      std::list<xlit> xlits_;
+      list<xlit> xlits_;
       vec<var_t> idxs;
       for(rci_t r = 0; r<rank; ++r) {
         idxs.clear();
@@ -981,7 +981,7 @@ class solver
     #endif
       r = 0;
       //resolve cls to get true reason cls
-      std::list<xlit_w_it> r_cls_idxs;
+      list<xlit_w_it> r_cls_idxs;
       for(var_t lvl=0; lvl<=dl; ++lvl) {
         auto& l_dl = lineral_watches[lvl];
         VERB(85, "c processing linerals deduced on lvl "+std::to_string(lvl));

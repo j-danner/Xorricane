@@ -14,7 +14,7 @@ private:
    * @brief maps t_pos to idxs of xlits, i.e., xlits[ t_pos_to_idxs[t_pos] ] = t_pos
    */
   //@todo replace with 'https://www.codeproject.com/script/Articles/ViewDownloads.aspx?aid=27799' ?
-  std::map<var_t, std::list<var_t> > t_pos_to_idxs;
+  std::map<var_t, list<var_t> > t_pos_to_idxs;
 
   /**
    * @brief number of non-zero linerals in xlits
@@ -52,7 +52,7 @@ private:
       else lb->second.push_back(i);
       return false;
     } else {
-      t_pos_to_idxs.emplace_hint(lb, xlit_t_pos[i], std::list<var_t>({i}));
+      t_pos_to_idxs.emplace_hint(lb, xlit_t_pos[i], list<var_t>({i}));
       return true;
     }
   }

@@ -17,7 +17,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     L_watch_list.resize(num_vars+1);
     //assignments_list.resize(opt_.num_vars+1);
     
-    lineral_watches = vec<std::list<xlit_watch>>(num_vars+1, std::list<xlit_watch>() );
+    lineral_watches = vec<list<xlit_watch>>(num_vars+1, list<xlit_watch>() );
     
     // init assignments
     alpha = vec<bool3>(num_vars + 1, bool3::None);
@@ -26,9 +26,9 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     equiv_lits = vec<equivalence>(num_vars+1);
     equiv_lits_dl = vec<var_t>(num_vars+1, (var_t) -1);
     dl_count = vec<dl_c_t>(num_vars+1, 1); 
-    trails = vec< std::list<trail_elem> >();
+    trails = vec< list<trail_elem> >();
     trails.reserve(num_vars+1);
-    trails.emplace_back( std::list<trail_elem>() );
+    trails.emplace_back( list<trail_elem>() );
     total_trail_length = 1;
     last_phase = vec<bool3>(num_vars + 1, bool3::None);
     //init last_phase according to init_phase of guessing_path:
@@ -46,7 +46,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     utility.reserve(clss.size());
 
     // temporarily store clss in _xclss - before init of xclss we might want to reduce with pure literals in _L (!)
-    std::list<xcls> _xclss;
+    list<xcls> _xclss;
     active_cls = 0; //value is managed by 'init_and_add_xcls_watch'
 
     // run through xor-clauses to find lineq and construct watch-literals
@@ -361,7 +361,7 @@ std::pair<var_t, xcls_watch> solver::analyze_dpll() {
     //return negation of last decision!
     assert(!TRAIL.empty());
     //if trail is empty, we are at dl 0, i.e., analyze_dpll should not be called!
-    std::list<xlit> xlits;
+    list<xlit> xlits;
     for(auto tr = trails.begin()+1; tr!=trails.end(); ++tr) {
         if(!tr->empty()) xlits.emplace_back( tr->front().ind, !b3_to_bool(alpha[tr->front().ind]) );
     }
@@ -696,7 +696,7 @@ void solver::dpll_solve(stats &s) {
             } else {
                 ++dl;
                 ++dl_count[dl];
-                trails.emplace_back( std::list<trail_elem>() );
+                trails.emplace_back( list<trail_elem>() );
                 ++s.no_dec;
                 // save active_cls count
                 assert(active_cls == (var_t) std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); }));
@@ -863,7 +863,7 @@ void solver::solve(stats &s) {
             } else {
                 ++dl;
                 ++dl_count[dl];
-                trails.emplace_back( std::list<trail_elem>() );
+                trails.emplace_back( list<trail_elem>() );
                 ++s.no_dec;
                 // save active_cls count
                 assert(active_cls == (var_t) std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); }));

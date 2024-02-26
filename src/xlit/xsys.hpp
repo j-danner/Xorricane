@@ -16,23 +16,23 @@
   using pivot_map = std::map<K,V>;
 #endif
 
-typedef std::list<xlit>::iterator xlits_it;
+typedef list<xlit>::iterator xlits_it;
 
 class xsys
 {
   private:
-    std::list< xlit > xlits;
+    list< xlit > xlits;
 
     pivot_map<var_t, xlits_it > pivot_poly_its;
 
     void rref();
   public:
-    xsys() noexcept { xlits = std::list<xlit>(); };
-    xsys(const xlit& lit) noexcept : xlits(std::list<xlit>({lit})) { rref(); };
-    xsys(xlit&& lit) noexcept : xlits(std::list<xlit>({std::move(lit)})) { rref(); };
+    xsys() noexcept { xlits = list<xlit>(); };
+    xsys(const xlit& lit) noexcept : xlits(list<xlit>({lit})) { rref(); };
+    xsys(xlit&& lit) noexcept : xlits(list<xlit>({std::move(lit)})) { rref(); };
     xsys(const vec<xlit>& xlits_) noexcept : xlits(xlits_.begin(),xlits_.end()) { rref(); };
-    xsys(const std::list<xlit>& xlits_) noexcept : xlits(xlits_) { rref(); };
-    xsys(std::list<xlit>&& xlits_) noexcept : xlits(std::move(xlits_)) { rref(); };
+    xsys(const list<xlit>& xlits_) noexcept : xlits(xlits_) { rref(); };
+    xsys(list<xlit>&& xlits_) noexcept : xlits(std::move(xlits_)) { rref(); };
     xsys(const xsys& o) noexcept : xlits(o.xlits) { fix_pivot_poly_idx(); };
     xsys(xsys&& o) noexcept : xlits(std::move(o.xlits)) { fix_pivot_poly_idx(); };
     ~xsys() = default;
@@ -103,7 +103,7 @@ class xsys
     
     //deprecated!
     inline const vec<xlit> get_xlits_vec() const { return vec<xlit>(xlits.begin(),xlits.end()); };
-    inline const std::list<xlit>& get_xlits() const { return xlits; };
+    inline const list<xlit>& get_xlits() const { return xlits; };
     inline const xlit& get_xlits(var_t i) const { return *(std::next(xlits.begin(),i)); };
     inline const xlit& get_xlits(xlits_it it) const { return *it; };
     inline const pivot_map<var_t,xlits_it>& get_pivot_poly_idx() const { return pivot_poly_its; };

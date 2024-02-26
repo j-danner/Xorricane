@@ -19,6 +19,7 @@
 #include <boost/container/stable_vector.hpp>
 #include <boost/container/allocator.hpp>
 #include <boost/container/adaptive_pool.hpp>
+#include <boost/pool/pool_alloc.hpp>
 
 //#define DEBUG_SLOW
 
@@ -56,6 +57,15 @@ using vec = std::vector<T>;
 //using vec = boost::container::vector<T, boost::container::allocator<T>>;
 //using vec = boost::container::vector<T, boost::container::adaptive_pool<T>>;
 
+//select list impl to use
+template<class T>
+//using allocator = boost::fast_pool_allocator<T, boost::default_user_allocator_new_delete, boost::details::pool::null_mutex, 64, 128>;
+using allocator = boost::fast_pool_allocator<T, boost::default_user_allocator_malloc_free, boost::details::pool::null_mutex, 64, 128>;
+
+template<class T>
+//using list = std::list<T>;
+using list = std::list<T, allocator<T> >;
+
 
 enum class bool3 { False, True, None };
 inline bool3 to_bool3(const bool b) { return b ? bool3::True : bool3::False; };
@@ -73,7 +83,7 @@ struct equivalence {
   var_t ind;
   var_t prev_ind;
   bool polarity;
-  std::list<xlit_watch>::iterator reason_lin;
+  list<xlit_watch>::iterator reason_lin;
 
   equivalence() : ind(0), prev_ind(0), polarity(false) {};
   equivalence(const var_t _ind, const bool _polarity) : ind(_ind), polarity(_polarity) {};
@@ -85,7 +95,7 @@ struct equivalence {
   void set_ind(const var_t _ind) { ind = _ind; };
   void set_prev_ind(const var_t _ind) { prev_ind = _ind; };
   void set_polarity(const bool _polarity) { polarity = _polarity; };
-  void set_lin(const std::list<xlit_watch>::iterator& reason_lin_) { reason_lin = reason_lin_; };
+  void set_lin(const list<xlit_watch>::iterator& reason_lin_) { reason_lin = reason_lin_; };
 
   bool is_active() const { return ind>0; };
 
@@ -279,7 +289,7 @@ class stats {
   public:
     bool finished = false;
     bool sat = false;
-    std::list<vec<bool>> sols;
+    list<vec<bool>> sols;
     std::atomic<bool> cancelled = false;
 
     unsigned int no_dec = 0;
@@ -357,7 +367,7 @@ class stats {
     stats(stats&& o) noexcept : finished(std::move(o.finished)), sat(std::move(o.sat)), sols(std::move(o.sols)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_linalg(std::move(o.no_linalg)), no_linalg_prop(std::move(o.no_linalg_prop)), no_restarts(std::move(o.no_restarts)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
       cancelled.store( o.cancelled.load() );
     }
-    stats(unsigned int no_dec_, unsigned int no_confl_, const std::list<vec<bool>>& sols_) : sat(true), sols(sols_), no_dec(no_dec_), no_confl(no_confl_) {};
+    stats(unsigned int no_dec_, unsigned int no_confl_, const list<vec<bool>>& sols_) : sat(true), sols(sols_), no_dec(no_dec_), no_confl(no_confl_) {};
     stats(unsigned int no_dec_, unsigned int no_confl_) : sat(false), no_dec(no_dec_), no_confl(no_confl_) {};
 
     stats& operator=(const stats& o) noexcept {

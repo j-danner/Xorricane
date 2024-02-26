@@ -39,12 +39,13 @@ find_package(OpenMP REQUIRED)
 
 #find and set up boost
 set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_MULTITHREADED OFF)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.67 COMPONENTS container REQUIRED)
 message(STATUS "Boost version: ${Boost_VERSION}")
 
-target_link_libraries(xlit PUBLIC ${EXTRA_LIBS} PRIVATE OpenMP::OpenMP_CXX Boost::container)
+target_include_directories(xlit PUBLIC ${Boost_INCLUDE_DIRS})
+target_link_libraries(xlit PUBLIC ${EXTRA_LIBS} PRIVATE OpenMP::OpenMP_CXX)
 
 target_link_libraries(xlit_lazy PUBLIC ${EXTRA_LIBS} PRIVATE m4ri xlit)
 

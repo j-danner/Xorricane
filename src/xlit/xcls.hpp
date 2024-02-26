@@ -24,12 +24,12 @@ class xcls {
       for(auto& l : lits_) l.add_one();
       assVS = xsys( std::move(lits_) );
     };
-    xcls(const std::list<xlit>& lits_) noexcept {
+    xcls(const list<xlit>& lits_) noexcept {
       auto lits_p1(lits_);
       for(auto& l : lits_p1) l.add_one();
       assVS = xsys( std::move(lits_) );
     };
-    xcls(std::list<xlit>&& lits_) noexcept {
+    xcls(list<xlit>&& lits_) noexcept {
       for(auto& l : lits_) l.add_one();
       assVS = xsys( std::move(lits_) );
     };
@@ -43,7 +43,7 @@ class xcls {
     xlit get_unit() const { assert(is_unit()); return deg()==1 ? assVS.get_non_zero_el().add_one() : xlit(0, false); };
 
     xcls& reduced(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl) {
-      std::list<xlit> lits;
+      list<xlit> lits;
       for(const auto& l : assVS.get_xlits() ) {
         xlit l_(l);
         l_.reduce(alpha, alpha_dl, lvl);
@@ -54,7 +54,7 @@ class xcls {
     };
     
     xcls& reduced(const vec<bool3>& alpha) {
-      std::list<xlit> lits;
+      list<xlit> lits;
       for(const auto& l : assVS.get_xlits() ) {
         xlit l_(l);
         l_.reduce(alpha);

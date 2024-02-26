@@ -43,7 +43,7 @@ bool xlit::reduce(const xsys& sys) {
         }
     } else {
         //complexity to find correct update xlits: amortized O( this.size() )
-        auto upd_idxs = std::list<std::list<xlit>::iterator>();
+        auto upd_idxs = list<list<xlit>::iterator>();
         const auto& pivot_poly_its = sys.get_pivot_poly_idx();
         for(const auto& l : idxs) {
             auto search = pivot_poly_its.find(l);

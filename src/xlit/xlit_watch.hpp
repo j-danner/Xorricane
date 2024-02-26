@@ -26,11 +26,11 @@ class xlit_watch : public xlit
      */
     std::pair<var_t,var_t> dl_c = {0,0};
 
-    typedef std::list<xlit_watch>::iterator xlit_w_it;
+    typedef list<xlit_watch>::iterator xlit_w_it;
     /**
      * @brief index of reason clause
      */
-    std::list< xlit_w_it > reason_cls_idxs;
+    list< xlit_w_it > reason_cls_idxs;
     var_t reason_cls_idx = -1;
 
   public:
@@ -41,8 +41,8 @@ class xlit_watch : public xlit
     xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t& rs) noexcept : xlit(std::move(lit)), reason_cls_idx(rs) { 
       init(alpha, alpha_dl, dl_count);
     };
-    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const std::list< xlit_w_it >& rs) noexcept : xlit(lit), reason_cls_idxs(rs) { init(alpha, alpha_dl, dl_count); }
-    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const std::list< xlit_w_it >& rs) noexcept : xlit(std::move(lit)), reason_cls_idxs(rs) { init(alpha, alpha_dl, dl_count); };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const list< xlit_w_it >& rs) noexcept : xlit(lit), reason_cls_idxs(rs) { init(alpha, alpha_dl, dl_count); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const list< xlit_w_it >& rs) noexcept : xlit(std::move(lit)), reason_cls_idxs(rs) { init(alpha, alpha_dl, dl_count); };
     //copy ctor
     xlit_watch(const xlit_watch& o) noexcept : xlit(o), dl_c(o.dl_c), reason_cls_idxs(o.reason_cls_idxs) {
       ws[0] = o.ws[0]; ws[1]=o.ws[1]; ws[2]=o.ws[2];
@@ -244,7 +244,7 @@ class xlit_watch : public xlit
      * @brief returns list of xlit_watches whose reasones need to be resolved to get this lineral
      * @return list< xlit_w_it > list of xlit_watches
      */
-    inline const std::list< xlit_w_it >& get_reason_idxs() const { return reason_cls_idxs; }
+    inline const list< xlit_w_it >& get_reason_idxs() const { return reason_cls_idxs; }
     
     /**
      * @brief returns the reason clause index, if this lineral was derived from an xcls_watch

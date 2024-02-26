@@ -10,7 +10,7 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
     
     //prepare s
     if(s.dl_count.size()<xlits.size()) s.dl_count.resize(xlits.size()+1, 0);
-    if(s.lineral_watches.size()<xlits.size()) s.lineral_watches.resize(xlits.size()+1, std::list<xlit_watch>());
+    if(s.lineral_watches.size()<xlits.size()) s.lineral_watches.resize(xlits.size()+1, list<xlit_watch>());
     do {
         s.GCP(_);
     } while( !s.at_conflict() && s.need_linalg_inprocessing() && s.find_implications_from_linerals(_) );
@@ -64,7 +64,7 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
         //increase dl
         ++s.dl;
         ++s.dl_count[s.dl];
-        s.trails.emplace_back( std::list<trail_elem>() );
+        s.trails.emplace_back( list<trail_elem>() );
         s.active_cls_stack.emplace_back(s.active_cls);
         //add guess
         s.add_new_guess( xlits[i] );
