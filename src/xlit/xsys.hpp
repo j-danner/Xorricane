@@ -6,11 +6,8 @@
 
 #include "xlit.hpp"
 
-//#include "../robin_hood-3.11.5/robin_hood.h"
 
 #ifdef NDEBUG
-  //template<class K, class V>
-  //using pivot_map = robin_hood::unordered_flat_map<K,V>;
   template<class K, class V>
   using pivot_map = std::unordered_map<K,V>;
 #else

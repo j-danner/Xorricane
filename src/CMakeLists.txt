@@ -10,9 +10,6 @@ add_library(
     #xsys
     xlit/xsys.hpp
     xlit/xsys.cpp 
-    #hmaps
-    robin_hood-3.11.5/robin_hood.h
-    emhash/hash_table8.hpp
 )
 
 add_library(
