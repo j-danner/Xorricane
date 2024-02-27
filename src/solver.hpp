@@ -471,7 +471,6 @@ class solver
     typedef std::pair<var_t,xcls_watch> (solver::*ca_t)(solver&);
 
     void bump_score(const var_t& ind);
-    void bump_score(const xsys& new_xsys);
     void bump_score(const xlit& lit);
     void decay_score();
     
