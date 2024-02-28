@@ -67,7 +67,7 @@ public:
   /**
    * @brief reduces each xlits s.t. for each t_pos there are at most max_size many linerals
    */
-  void reduction(const var_t max_size, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+  inline void reduction(const var_t max_size, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
     const bool ret = (t_pos_to_idxs.rbegin()->second.size()>1) || (t_pos_to_idxs.size()>1 && std::next(t_pos_to_idxs.rbegin())->second.size()>1);
     for(auto it=t_pos_to_idxs.rbegin(); it!=t_pos_to_idxs.rend(); ++it) {
       auto& [k,l] = *it;
@@ -101,11 +101,12 @@ public:
    * @brief call once when no more resolvents are computed.
    * @note recompute shared_parts to 'repair' xcls_watch data_struct
    */
-  xcls_watch finalize(const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+  inline xcls_watch finalize(const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
     assert(t_pos_to_idxs.size()>0);
     //@heuristic choose good value!
     var_t max_size = std::min(4, (int) (num_nz_lins / t_pos_to_idxs.size()) + 2 );
     reduction(max_size, alpha_dl, alpha_trail_pos, dl_count);
+    assert( xlits.size()<max_size*t_pos_to_idxs.size() );
     assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
     assert( size()<2 || xlits[idx[1]][ptr_cache[1]] );
 
@@ -151,7 +152,7 @@ public:
    * 
    * @return true iff clause could be shortened
    */
-  bool minimize(solver& s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count);
+  bool minimize(solver& s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept;
   
   xcls_upd_ret resolve(const xcls_watch &rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
       assert( assert_data_struct() );
@@ -216,7 +217,7 @@ public:
       return xcls_upd_ret::UNIT;
   };
   
-  xcls_upd_ret resolve(xcls_watch&& rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+  inline xcls_upd_ret resolve(xcls_watch&& rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept {
       assert( assert_data_struct() );
       assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
 
@@ -284,7 +285,7 @@ public:
       return xcls_upd_ret::UNIT;
   };
 
-  void fix_watched_idx(const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+  inline void fix_watched_idx(const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept {
     //find highest two t_pos linerals to watch; and reduce those as long as they are not unique!
     if(t_pos_to_idxs.size()>0) {
       const auto it = t_pos_to_idxs.rbegin();

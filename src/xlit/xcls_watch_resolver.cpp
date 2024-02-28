@@ -4,7 +4,7 @@
 
 
 
-bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept {
     bool ret = false;
     stats _;
     

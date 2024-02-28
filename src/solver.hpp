@@ -1156,7 +1156,7 @@ class solver
 
     void remove_fixed_equiv(const var_t idx);
     
-    void GCP(stats& s);
+    void GCP(stats& s) noexcept;
 
     /**
      * @brief performs linear algebra in-processing;

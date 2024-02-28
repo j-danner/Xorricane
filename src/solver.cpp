@@ -508,7 +508,7 @@ void solver::remove_fixed_equiv([[maybe_unused]] const var_t idx) {
 
 xlit new_unit;
 //perform full GCP -- does not stop if conflict is found -- otherwise assert_data_struct will fail!
-void solver::GCP(stats &s) {
+void solver::GCP(stats &s) noexcept {
     s.no_gcp++;
     VERB(90, "c GCP start");
     while(!lineral_queue.empty() && !at_conflict()) {
