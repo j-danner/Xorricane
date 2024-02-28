@@ -24,6 +24,11 @@ class xlit
         bool p1;
         //sparse repr of literal
         vec< var_t > idxs; /**<  List of sorted indices of the terms. */
+        
+        //constructor for internal use only -- skips a check for flag 'presorted'
+        xlit(const vec< var_t >& idxs_, const bool p1_) noexcept : p1(p1_), idxs(idxs_) {
+          assert( std::is_sorted(idxs.begin(), idxs.end()) );
+        };
 
     public:
         xlit() noexcept : p1(false), idxs(vec<var_t>({})) {};
@@ -55,7 +60,7 @@ class xlit
             //remove duplicates -- should never be necessary!
             //idxs.erase( std::unique( idxs.begin(), idxs.end() ), idxs.end() );
             if( idxs.size()>0 && idxs[0]==0 ) { idxs.erase(idxs.begin()); p1^=true; }
-            assert( idxs.empty() || idxs[0]!=0);
+            assert( idxs.empty() || idxs[0]!=0 );
         }
 
         inline void clear() noexcept { p1 = false; idxs.clear(); };

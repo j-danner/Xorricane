@@ -42,36 +42,42 @@ BENCHMARK_CAPTURE(BM_cdcl_solve, mq-toyexample-type1-n15,  concat(BENCH_FILES, "
 BENCHMARK_CAPTURE(BM_cdcl_solve, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed4.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
 
 
-int xlit_performance(var_t n, unsigned long k) {
+static void xlit_performance(benchmark::State& state, var_t n, var_t prob, unsigned long k) {
     //compute k random xlit additions in n vars
     vec< xlit > xlits;
     xlits.reserve(2*k);
 
     vec<var_t> xlit_set;
-    srand((unsigned)time(NULL));
+    xlit_set.reserve(n);
+    srand((unsigned) 123456789);
     for(var_t j=0; j<2*k; j++) {
         for (var_t i=0; i < n; i++){
-            if(rand() % 2) xlit_set.push_back(i);
+            if( ((var_t) (rand() % 100)) <= prob ) xlit_set.emplace_back(i);
         }
-        xlits.push_back( xlit(xlit_set) );
+        xlits.emplace_back( xlit(xlit_set) );
         xlit_set.clear();
     }
 
     //performance analysis:
-    auto start = std::chrono::steady_clock::now();
     vec<xlit> sums;
     sums.reserve(k);
 
-    for (unsigned int i = 0; i < k; i++)
-    {
-        sums[i] = xlits[2*i] + xlits[2*i+1];
+    for (auto _ : state) {
+        for (unsigned int i = 0; i < k; i++) {
+            sums.emplace_back( xlits[2*i] + xlits[2*i+1] );
+        }
     }
-    auto end = std::chrono::steady_clock::now();
-
-    std::cout << k << " additions of random xlits in " << n << " inds took " << std::chrono::duration_cast<std::chrono::seconds> (end - start).count() << "s." << std::endl;
-
-    return 1;
 }
 
+
+BENCHMARK_CAPTURE(xlit_performance, xlit-add-n100-d50-k1000, 100, 50, 1000)->Unit(benchmark::kMillisecond)->MinTime(3);
+BENCHMARK_CAPTURE(xlit_performance, xlit-add-n1000-d50-k1000, 1000, 50, 1000)->Unit(benchmark::kMillisecond)->MinTime(3);
+BENCHMARK_CAPTURE(xlit_performance, xlit-add-n10000-d50-k1000, 10000, 50, 1000)->Unit(benchmark::kMillisecond)->MinTime(3);
+BENCHMARK_CAPTURE(xlit_performance, xlit-add-n100-d25-k1000, 100, 25, 1000)->Unit(benchmark::kMillisecond)->MinTime(3);
+BENCHMARK_CAPTURE(xlit_performance, xlit-add-n1000-d25-k1000, 1000, 25, 1000)->Unit(benchmark::kMillisecond)->MinTime(3);
+BENCHMARK_CAPTURE(xlit_performance, xlit-add-n10000-d25-k1000, 10000, 25, 1000)->Unit(benchmark::kMillisecond)->MinTime(3);
+BENCHMARK_CAPTURE(xlit_performance, xlit-add-n100-d1-k1000, 100, 1, 1000)->Unit(benchmark::kMillisecond)->MinTime(3);
+BENCHMARK_CAPTURE(xlit_performance, xlit-add-n1000-d15-k1000, 1000, 1, 1000)->Unit(benchmark::kMillisecond)->MinTime(3);
+BENCHMARK_CAPTURE(xlit_performance, xlit-add-n10000-d1-k1000, 10000, 1, 1000)->Unit(benchmark::kMillisecond)->MinTime(3);
 
 BENCHMARK_MAIN();

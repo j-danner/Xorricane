@@ -3,7 +3,6 @@
 #include <deque>
 #include <set>
 #include <queue>
-#include <omp.h>
 
 #include "solver.hpp"
 

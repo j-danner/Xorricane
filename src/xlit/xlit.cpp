@@ -10,13 +10,9 @@
 
 #include "xlit.hpp"
 #include "xsys.hpp"
-#include "omp.h"
-
-//implementation inspired by the one of 3BA by Jan Horacek
-#define DIFF diff_[omp_get_thread_num()]
 
 // this suppresses creating the new objects again and again (each thread has their own diff-vec)
-vec< vec<var_t> > diff_( omp_get_max_threads() );
+vec<var_t> diff_;
 
 
 size_t xlit::hash() const {
@@ -79,10 +75,10 @@ bool xlit::reduce_short(const xsys& sys) {
 bool xlit::reduce(const vec<bool3>& alpha) {
     //IMPLEMENATION 1 (swapping)
     //const auto sz = idxs.size();
-    //DIFF.clear();
-    //std::copy_if(idxs.begin(), idxs.end(), std::back_inserter(DIFF), [&](var_t i){ return alpha[i] == bool3::None; } );
+    //diff_.clear();
+    //std::copy_if(idxs.begin(), idxs.end(), std::back_inserter(diff_), [&](var_t i){ return alpha[i] == bool3::None; } );
     //std::for_each(idxs.begin(), idxs.end(), [&](var_t i){ if(alpha[i] != bool3::None) p1 ^= b3_to_bool(alpha[i]); } );
-    //std::swap(idxs, DIFF);
+    //std::swap(idxs, diff_);
     //return sz != idxs.size();
 
     //IMPLEMENATION 2 (in-place)
@@ -239,29 +235,29 @@ std::string xlit::to_full_str(var_t num_vars) const{
 
 
 xlit xlit::shared_part(const xlit& other) const {
-  DIFF.clear(); // DIFF is declared global and static, this saves creating new DIFFs for each calling
-  std::set_intersection(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
-  return xlit(DIFF, false, presorted::yes); //call ctor that does NOT sort DIFF
+  diff_.clear(); // diff_ is declared global and static, this saves creating new diff_s for each calling
+  std::set_intersection(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(diff_));
+  return xlit(diff_, false); //call ctor that does NOT sort diff_
 };
 
 //overloaded operators
 xlit xlit::operator+(const xlit &other) const {
     /* \warning we assume that both xlits have same num_vars (!) */
-    DIFF.clear(); // DIFF is declared global and static, this saves creating new DIFFs for each calling
-    std::set_symmetric_difference(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
+    diff_.clear(); // diff_ is declared global and static, this saves creating new diff_s for each calling
+    std::set_symmetric_difference(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(diff_));
     //NOTE back_insterter might lead to repeated reallocations!
-    //idxs = DIFF;
+    //idxs = diff_;
 
-    return xlit(DIFF, p1^other.p1, presorted::yes); //call ctor that does NOT sort DIFF
+    return xlit(diff_, p1^other.p1);
 };
 
 //in-place operation (!)
 xlit& xlit::operator +=(const xlit& other) {
     if(other.size()==0) { p1^=other.p1; return *this; }
 
-    DIFF.clear(); // DIFF is declared global and static, this saves creating new DIFFs for each calling
-    std::set_symmetric_difference(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
-    std::swap(idxs, DIFF);
+    diff_.clear(); // diff_ is declared global and static, this saves creating new diff_s for each calling
+    std::set_symmetric_difference(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(diff_));
+    std::swap(idxs, diff_);
 
     p1 ^= other.p1;
 
