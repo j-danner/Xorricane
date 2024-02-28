@@ -11,7 +11,7 @@
 #include "xlit_watch.hpp"
 
 using lit_watch = var_t;
-  
+
 /**
  * @brief return type for update of xcls_watch
  */
@@ -82,10 +82,12 @@ private:
    */
   bool delete_on_cleanup = false;
 
+#ifdef TRACK_DISJOINT_XCLS
   /**
    * @brief indicates whether clause if disjoint
    */
   bool disjoint = false;
+#endif
 
   /**
    * @brief initializes shared_part, ws[0], ws[1] and ptr_cache
@@ -98,22 +100,28 @@ private:
 
     if (size() == 0) {
       shared_part.clear();
+    #ifdef TRACK_DISJOINT_XCLS
       disjoint = true;
+    #endif
       return;
     } else if (size() == 1) {
       idx[0] = 0;
       ws[0] = 0;
       ptr_cache[0] = ptr_(idx[0], ws[0]);
       shared_part.clear();
+    #ifdef TRACK_DISJOINT_XCLS
       disjoint = true;
+    #endif
       return;
     }
     assert(size() > 1);
     idx[0] = 0;
     idx[1] = 1;
     
+  #ifdef TRACK_DISJOINT_XCLS
     disjoint = is_disjoint();
     if(!disjoint) {
+  #endif
       // init shared
       shared_part = WLIN0.shared_part(WLIN1);
       // rm shared part from WLIN0 and WLIN1
@@ -122,7 +130,9 @@ private:
 
       if(WLIN0.size()==0) WLIN0.swap(shared_part);
       if(WLIN1.size()==0) WLIN1.swap(shared_part);
+  #ifdef TRACK_DISJOINT_XCLS
     }
+  #endif
     // ensure that WLIN0 and WLIN1 are non-empty
     assert(WLIN0.size() > 0 && WLIN1.size() > 0);
 
@@ -173,7 +183,9 @@ private:
    * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
    */
   inline std::pair<var_t, xcls_upd_ret> advance(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+  #ifdef TRACK_DISJOINT_XCLS
     if(disjoint) return advance_disjoint(alpha, alpha_dl, alpha_trail_pos, dl_count);
+  #endif
     assert(alpha[ptr_ws(0)] != bool3::None);
 
     // TODO shorter & cleaner impl with c++20 ranges?
@@ -1116,7 +1128,9 @@ public:
     // check size of xlits
     assert( xlits.size() < (1 << sizeof(cls_size_t)));
 
+  #ifdef TRACK_DISJOINT_XCLS
     assert( !disjoint || is_disjoint() );
+  #endif
 
     return true;
   };

@@ -22,7 +22,11 @@
 #define BOOST_POOL_NO_MT //disable multithreading support
 #include <boost/pool/pool_alloc.hpp>
 
+//activate additional debugging
 //#define DEBUG_SLOW
+
+//activate special treatment of disjoint xcls_watch -- experiments showed little to no performance gain
+//#define TRACK_DISJOINT_XCLS
 
 //verbosity output
 #ifdef VERBOSITY
