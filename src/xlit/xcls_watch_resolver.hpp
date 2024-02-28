@@ -207,6 +207,74 @@ public:
 
       return xcls_upd_ret::UNIT;
   };
+  
+  xcls_upd_ret resolve(xcls_watch&& rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+      assert( assert_data_struct() );
+      assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
+
+      if(size()==0) {
+         xlits.emplace_back( xlit(0, true) );
+         xlit_dl_count0.emplace_back( 0, dl_count[0] );
+         xlit_t_pos.emplace_back((var_t) -1);
+         ws[0] = 0;
+         idx[0] = 0;
+         t_pos_to_idxs[0] = {0};
+      }
+      assert(size()>0);
+      assert(size()<2 || idx[0]!=idx[1]);
+
+      //'normalize' rs_cls
+      if(rs_cls.size()>1) {
+        rs_cls.xlits[rs_cls.idx[0]] += rs_cls.shared_part;
+        rs_cls.xlits[rs_cls.idx[1]] += rs_cls.shared_part;
+        rs_cls.shared_part.clear();
+      }
+
+      // fix unit part ('resolving' part)
+      WLIN0 += rs_cls.xlits[rs_cls.idx[0]]; WLIN0.add_one();
+      //rm unit from t_pos_to_idxs
+      t_pos_to_idxs.erase( std::prev(t_pos_to_idxs.end()) );
+
+      if(!WLIN0.is_zero()) {
+        //if unit-part is non-zero
+        const auto& [v, dl, t_pos, _idx] = WLIN0.get_watch_tuple(alpha_dl, alpha_trail_pos);
+        xlit_t_pos[idx[0]] = t_pos;
+        //add new 'unit' to t_pos_to_idxs
+        filtration_add(idx[0]);
+      } else {
+        //if unit-part is zero -- do not add it back to xlit_t_pos, i.e., 'remove' it
+        xlit_dl_count0[idx[0]] = {0,1};
+        //remove_zero_lineral(idx[0]);
+        --num_nz_lins;
+        idx[0] = idx[1];
+        ptr_cache[0] = ptr_cache[1];
+        idx[1] = -1;
+        ptr_cache[1] = -1;
+      }
+
+      //add remaining xlits
+      //copy the remaining linerals
+      xlits.reserve(xlits.size()+rs_cls.xlits.size());
+      xlit_dl_count0.reserve(xlits.size()+rs_cls.xlits.size());
+      xlit_t_pos.reserve(xlits.size()+rs_cls.xlits.size());
+      for(var_t i=0; i<rs_cls.size(); ++i) {
+        assert(!rs_cls.xlits[i].is_zero());
+        if(i==rs_cls.idx[0]) continue;
+        ++num_nz_lins;
+        xlits.emplace_back( std::move(rs_cls.xlits[i]) );
+        xlit_dl_count0.emplace_back( std::move(rs_cls.xlit_dl_count0[i]) );
+        xlit_t_pos.emplace_back( std::move(rs_cls.xlit_t_pos[i]) );
+        filtration_add(xlits.size()-1);
+      }
+
+      fix_watched_idx(alpha_dl, alpha_trail_pos, dl_count);
+
+      assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
+      assert( assert_data_struct() );
+      assert( is_unit(dl_count) );
+
+      return xcls_upd_ret::UNIT;
+  };
 
   void fix_watched_idx(const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
     //find highest two t_pos linerals to watch; and reduce those as long as they are not unique!

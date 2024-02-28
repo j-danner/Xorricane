@@ -269,6 +269,8 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
 
     auto it = trails.back().rbegin();
 
+    xcls_watch reason_cls;
+
     //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
     while( learnt_cls.get_assigning_lvl(alpha_dl) == dl || learnt_cls.get_assigning_lvl(alpha_dl) == (var_t) -1 ) {
         VERB(70, "   * conflict clause is " + BOLD( learnt_cls.to_str() ) + "   --> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
@@ -288,7 +290,7 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
         assert(it->type == trail_t::IMPLIED_ALPHA);
         
         //get reason_cls
-        const auto reason_cls = get_reason(*it);
+        reason_cls = get_reason(*it);
         VERB(70, "   * reason clause is   " + BOLD( reason_cls.to_str() ) + " for UNIT " + reason_cls.get_unit().to_str() );
     #ifndef NDEBUG
         //ensure that reason cls is reason for provided alpha
@@ -303,7 +305,7 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
         }
         assert(unit.is_zero()); //unit MUST reduce to zero, as TRAIL is not yet popped
     #endif
-        learnt_cls.resolve( reason_cls, alpha, alpha_dl, alpha_trail_pos, dl_count);
+        learnt_cls.resolve( std::move(reason_cls), alpha, alpha_dl, alpha_trail_pos, dl_count);
 
         bump_score( it->ind );
         ++it;

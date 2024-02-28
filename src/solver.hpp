@@ -374,24 +374,29 @@ class solver
     #endif
       //resolve cls to get true reason cls
       xcls_watch_resolver r_cls;
-
+      {
+      xcls_watch r_cls2;
       for(const auto& lin : rs_cls_idxs) {
         if(r_cls.is_zero()) { //r_cls has not yet been instantiated
           r_cls = get_reason(lin);
           assert(r_cls.is_unit(dl_count));
         } else {
-          const auto& r_cls2 = get_reason(lin);
+          r_cls2 = get_reason(lin);
           //resolve cls
           assert(r_cls2.is_unit(dl_count));
+        #ifndef NDEBUG
+          xlit unit = r_cls2.get_unit();
+        #endif
           //extend r_cls2 with (unit of r_cls)+1, and r_cls with (unit of r_cls2)+1
           VERB(120, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
-          r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count);
+          r_cls.resolve( std::move(r_cls2), alpha, alpha_dl, alpha_trail_pos, dl_count);
           VERB(120, "c and get \nc   "+ BOLD(r_cls.to_str()));
           VERB(120, "c");
-          assert_slow( !L_.is_consistent() || L_.reduce(tmp+r_cls2.get_unit()).is_zero() );
+          assert_slow( !L_.is_consistent() || L_.reduce(tmp+unit).is_zero() );
           assert(r_cls.to_xcls().reduced(alpha).is_unit());
           assert_slow( !L_.is_consistent() || L_.reduce( r_cls.to_xcls().reduced(alpha).get_unit()+tmp).is_constant() );
         }
+      }
       }
       //resolve with additional clause -- if required!
       if(idx != (var_t) -1) {
