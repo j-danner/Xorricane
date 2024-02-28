@@ -19,6 +19,7 @@
 #include <boost/container/stable_vector.hpp>
 #include <boost/container/allocator.hpp>
 #include <boost/container/adaptive_pool.hpp>
+#define BOOST_POOL_NO_MT //disable multithreading support
 #include <boost/pool/pool_alloc.hpp>
 
 //#define DEBUG_SLOW
@@ -49,18 +50,22 @@ typedef uint_fast16_t dl_c_t; //change to something larger? this might overflow 
 //type for cls length
 typedef uint_fast16_t cls_size_t; //clauses with more than 65535 linerals are impractical!
 
+
+
+//select allocator
+template<class T>
+//using allocator = std::allocator<T>;
+//using allocator = boost::fast_pool_allocator<T, boost::default_user_allocator_new_delete, boost::details::pool::null_mutex, 64, 128>;
+using allocator = boost::fast_pool_allocator<T, boost::default_user_allocator_malloc_free, boost::details::pool::null_mutex, 64, 128>;
+
 //select vector impl to use
 template<class T>
 using vec = std::vector<T>;
+//using vec = std::vector<T, allocator<T>>; //very poor performance
 //using vec = boost::container::vector<T>;
 //using vec = boost::container::stable_vector<T>;
 //using vec = boost::container::vector<T, boost::container::allocator<T>>;
 //using vec = boost::container::vector<T, boost::container::adaptive_pool<T>>;
-
-//select list impl to use
-template<class T>
-//using allocator = boost::fast_pool_allocator<T, boost::default_user_allocator_new_delete, boost::details::pool::null_mutex, 64, 128>;
-using allocator = boost::fast_pool_allocator<T, boost::default_user_allocator_malloc_free, boost::details::pool::null_mutex, 64, 128>;
 
 template<class T>
 //using list = std::list<T>;
