@@ -737,10 +737,14 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
 }
 
 TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
+    //const bool cm = GENERATE(true, false);
+    const bool cm = false;
+
     SECTION( "test0.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test0.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->verb = 0;
+        slvr.get_opts()->cm = cm;
     
         stats s = slvr.solve();
         CHECK( s.sat == false ); //instance is UNSAT
@@ -750,6 +754,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test1.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->verb = 0;
+        slvr.get_opts()->cm = cm;
     
         stats s = slvr.solve();
         CHECK( s.sat == true );
@@ -760,6 +765,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test2.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->verb = 0;
+        slvr.get_opts()->cm = cm;
     
         stats s = slvr.solve();
         CHECK( s.sat == true );
@@ -770,6 +776,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test3.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->verb = 0;
+        slvr.get_opts()->cm = cm;
     
         stats s = slvr.solve();
         CHECK( s.sat == true );
@@ -780,6 +787,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test4.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->verb = 0;
+        slvr.get_opts()->cm = cm;
     
         stats s = slvr.solve();
         CHECK( s.sat == true );
@@ -792,9 +800,10 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.verb = 10;
         opt.ca = ca_alg::fuip;
         opt.ip = initial_prop_opt::nbu;
-        opt.rst = restart_opt::no;
+        opt.rst = cm ? restart_opt::luby : restart_opt::no;
         opt.dh = dec_heu::vsids;
         opt.lin_alg_schedule = 0;
+        opt.cm = cm;
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -808,9 +817,10 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.verb = 10;
         opt.ca = ca_alg::fuip;
         opt.ip = initial_prop_opt::nbu;
-        opt.rst = restart_opt::no;
+        opt.rst = cm ? restart_opt::luby : restart_opt::no;
         opt.dh = dec_heu::vsids;
         opt.lin_alg_schedule = 0;
+        opt.cm = cm;
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -824,9 +834,10 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.verb = 80;
         opt.ca = ca_alg::fuip;
         opt.ip = initial_prop_opt::full;
-        opt.rst = restart_opt::no;
+        opt.rst = cm ? restart_opt::luby : restart_opt::no;
         opt.dh = dec_heu::vsids;
         opt.lin_alg_schedule = 0;
+        opt.cm = cm;
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
