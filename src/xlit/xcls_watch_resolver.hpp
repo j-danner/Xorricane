@@ -232,7 +232,7 @@ public:
             continue;
           }
           const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
-          assert(v==(var_t)-1 || t_pos < t_pos_to_idxs.rbegin()->first);
+          assert(v==(var_t)-1 || t_pos < t_pos_to_idxs.rbegin()->first); //this assertion fails on large examples!
           xlit_t_pos[i] = t_pos;
           xlit_dl_count0[i] = {dl, dl_count[dl]};
           filtration_add(i);
