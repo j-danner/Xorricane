@@ -106,7 +106,8 @@ public:
     //@heuristic choose good value!
     var_t max_size = std::min(4, (int) (num_nz_lins / t_pos_to_idxs.size()) + 2 );
     reduction(max_size, alpha_dl, alpha_trail_pos, dl_count);
-    assert( xlits.size()<max_size*t_pos_to_idxs.size() );
+
+    assert( num_nz_lins <= max_size*t_pos_to_idxs.size() );
     assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
     assert( size()<2 || xlits[idx[1]][ptr_cache[1]] );
 

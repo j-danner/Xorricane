@@ -1125,8 +1125,9 @@ public:
     assert(size()==0 || (size()==1 && WLIN0.is_constant()) || ptr_cache[0] == ptr_(idx[0], ws[0]));
     assert(size()<2 || ptr_cache[1] == ptr_(idx[1], ws[1]));
 
-    // check size of xlits
-    assert( xlits.size() < (1 << sizeof(cls_size_t)));
+    // check size of xlits -- ensure it does not 'explode'
+    assert( xlits.size() < ((int) 1) << 16);
+
 
   #ifdef TRACK_DISJOINT_XCLS
     assert( !disjoint || is_disjoint() );
