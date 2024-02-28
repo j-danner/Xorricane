@@ -123,11 +123,15 @@ public:
     assert(shared_part.is_zero());
     if(xlits.size()<=1) return *this;
     //from now on xlits.size()>1
-
-    shared_part = WLIN0.shared_part(WLIN1);
-    WLIN0 += shared_part;
-    WLIN1 += shared_part;
-    if(!WLIN1[ptr_cache[1]]) WLIN1.swap(shared_part);
+    
+    disjoint = false;
+    if(!disjoint) {
+      shared_part = WLIN0.shared_part(WLIN1);
+      WLIN0 += shared_part;
+      WLIN1 += shared_part;
+      if(!WLIN1[ptr_cache[1]]) WLIN1.swap(shared_part);
+    }
+    assert(shared_part.is_zero() || !disjoint);
     
     ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), ptr_cache[0]));
     ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), ptr_cache[1]));

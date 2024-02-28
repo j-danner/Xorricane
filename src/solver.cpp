@@ -103,7 +103,9 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     for(var_t i = 1; i<=num_vars; ++i) {
         order_heap_vsids.insert( i );
     }
-    
+
+    VERB(30, "c disjoint clauses: " << std::to_string( std::count_if(xclss.begin(), xclss.end(), [](const xcls_watch& cls){ return cls.is_disjoint(); })) );
+    VERB(30, "c number clauses:   " << std::to_string( xclss.size() ) );
 
     // init active_cls_stack
     active_cls_stack = vec<var_t>();
