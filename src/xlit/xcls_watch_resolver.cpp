@@ -19,8 +19,13 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
     bool early_abort = false;
 
     xlit lin;
+
+    vec<var_t> idxs(xlits.size());
+    for(var_t i=0; i<xlits.size(); ++i) idxs[i]=i;
+    std::sort(idxs.begin(), idxs.end(), [&](const auto& i, const auto& j){ return xlits[i].size()<xlits[j].size(); });
     
-    for(var_t i = 0; i<xlits.size(); ++i) {
+    for(var_t k = 0; k<xlits.size(); ++k) {
+        const var_t i = idxs[k];
         if(xlits[i].is_zero()) continue;
 
         //reduce with alpha and equivs
