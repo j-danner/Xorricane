@@ -242,7 +242,6 @@ xlit xlit::shared_part(const xlit& other) const {
 
 //overloaded operators
 xlit xlit::operator+(const xlit &other) const {
-    /* \warning we assume that both xlits have same num_vars (!) */
     diff_.clear(); // diff_ is declared global and static, this saves creating new diff_s for each calling
     std::set_symmetric_difference(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(diff_));
     //NOTE back_insterter might lead to repeated reallocations!
