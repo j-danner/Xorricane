@@ -303,8 +303,8 @@ class stats {
 
     unsigned int no_dec = 0;
     unsigned int no_confl = 0;
-    unsigned int no_linalg = 0;
-    unsigned int no_linalg_prop = 0;
+    unsigned int no_ge = 0;
+    unsigned int no_ge_prop = 0;
     unsigned int no_restarts = 0;
     unsigned int no_gcp = 0;
     unsigned int no_upd = 0;
@@ -330,10 +330,10 @@ class stats {
       std::cout << "c dec/sec        : "  << no_dec/total_time << std::endl;
 
       std::cout << "c px by upd      : " << new_px_upd << std::endl;
-      std::cout << "c LA prop        : " << no_linalg << std::endl;
-      std::cout << "c LA efficiacy   : " << (float) no_linalg_prop/no_linalg << std::endl;
-      std::cout << "c LA time        : " << (float) total_linalg_time << " [s]" << std::endl;
-      std::cout << "c LA time        : " << (float) total_linalg_time/total_time << " [%]" << std::endl;
+      std::cout << "c GE prop        : " << no_ge << std::endl;
+      std::cout << "c GE efficiacy   : " << (float) no_ge_prop/no_ge << std::endl;
+      std::cout << "c GE time        : " << (float) total_linalg_time << " [s]" << std::endl;
+      std::cout << "c GE time        : " << (float) total_linalg_time/total_time << " [%]" << std::endl;
       std::cout << "c " << std::endl;
 
       std::cout << "c restarts       : " << no_restarts << std::endl;
@@ -368,17 +368,17 @@ class stats {
       float total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
       std::cout << std::fixed << std::setprecision(3);
       std::cout << "c px by upd      : " << new_px_upd << std::endl;
-      std::cout << "c LA prop        : " << no_linalg << std::endl;
-      std::cout << "c LA efficiacy   : " << (double) no_linalg_prop/no_linalg << std::endl;
+      std::cout << "c GE prop        : " << no_ge << std::endl;
+      std::cout << "c GE efficiacy   : " << (double) no_ge_prop/no_ge << std::endl;
       std::cout << "c Total time     : " << total_time << " [s]" << std::endl;
     };
     
     stats() {};
     ~stats() { /*std::cout << "destroying stats!" << std::endl;*/ };
-    stats(stats& o) noexcept : finished(o.finished), sat(o.sat), sols(o.sols), no_dec(o.no_dec), no_confl(o.no_confl), no_linalg(o.no_linalg), no_linalg_prop(o.no_linalg_prop), no_restarts(o.no_restarts), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
+    stats(stats& o) noexcept : finished(o.finished), sat(o.sat), sols(o.sols), no_dec(o.no_dec), no_confl(o.no_confl), no_ge(o.no_ge), no_ge_prop(o.no_ge_prop), no_restarts(o.no_restarts), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
       cancelled.store( o.cancelled.load() );
     }
-    stats(stats&& o) noexcept : finished(std::move(o.finished)), sat(std::move(o.sat)), sols(std::move(o.sols)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_linalg(std::move(o.no_linalg)), no_linalg_prop(std::move(o.no_linalg_prop)), no_restarts(std::move(o.no_restarts)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
+    stats(stats&& o) noexcept : finished(std::move(o.finished)), sat(std::move(o.sat)), sols(std::move(o.sols)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_ge(std::move(o.no_ge)), no_ge_prop(std::move(o.no_ge_prop)), no_restarts(std::move(o.no_restarts)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
       cancelled.store( o.cancelled.load() );
     }
     stats(unsigned int no_dec_, unsigned int no_confl_, const list<vec<bool>>& sols_) : sat(true), sols(sols_), no_dec(no_dec_), no_confl(no_confl_) {};
@@ -390,8 +390,8 @@ class stats {
       sols = o.sols;
       no_dec = o.no_dec;
       no_confl = o.no_confl;
-      no_linalg = o.no_linalg;
-      no_linalg_prop = o.no_linalg_prop;
+      no_ge = o.no_ge;
+      no_ge_prop = o.no_ge_prop;
       no_restarts = o.no_restarts;
       no_gcp = o.no_gcp;
       no_upd = o.no_upd;

@@ -650,7 +650,7 @@ void solver::dpll_solve(stats &s) {
     // GCP -- before making decisions!
     GCP(s);
     if( !at_conflict() ) {
-        if( find_implications_from_linerals(s) ) {
+        if( find_implications_by_GE(s) ) {
             goto dpll_gcp;
         }
     }
@@ -710,8 +710,8 @@ void solver::dpll_solve(stats &s) {
             dpll_gcp:
             GCP(s);
             //linear algebra on linerals
-            if( need_linalg_inprocessing(s) ) {
-                if( find_implications_from_linerals(s) ) {
+            if( need_ge_inprocessing(s) ) {
+                if( find_implications_by_GE(s) ) {
                     //in case we did backtrack, fix dec_stack
                     while(dec_stack.size()>dl) dec_stack.pop();
                     goto dpll_gcp;
@@ -798,7 +798,7 @@ void solver::solve(stats &s) {
     // GCP -- before making decisions!
     do {
         GCP(s);
-    } while( !at_conflict() && find_implications_from_linerals(s) );
+    } while( !at_conflict() && find_implications_by_GE(s) );
 
     
     //create copy of solver -- for clause minimization
@@ -875,7 +875,7 @@ void solver::solve(stats &s) {
             cdcl_gcp:
             do {
                 GCP(s);
-            } while( !at_conflict() && need_linalg_inprocessing(s) && find_implications_from_linerals(s) );
+            } while( !at_conflict() && need_ge_inprocessing(s) && find_implications_by_GE(s) );
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);

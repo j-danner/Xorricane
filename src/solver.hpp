@@ -651,18 +651,18 @@ class solver
     var_t checks_until_next_la = 1 << 7;
     long lin_alg_schedule_wait = 1 << 7;
     /**
-     * @brief decides whether a linear algebra in-processing step should be performed
+     * @brief decides whether a Gaußian Elimination in-processing step should be performed
      * 
      * @param stats s current stats
      */
-    inline bool need_linalg_inprocessing(stats& s) {
+    inline bool need_ge_inprocessing(stats& s) {
       if(at_conflict() || opt.lin_alg_schedule==0) return false;
       else if(dl==0) return true; //always use linear algebra on dl 0?
       else if(opt.lin_alg_schedule==-1) {
         //adaptive scheduling: decrease lin_alg_schedule, if average usability decreased
         --checks_until_next_la;
         if(checks_until_next_la!=0) return false;
-        double new_avg = (double) ( (s.no_linalg_prop) / (s.total_linalg_time.count()) + avg_la_per_sec ) / 2;
+        double new_avg = (double) ( (s.no_ge_prop) / (s.total_linalg_time.count()) + avg_la_per_sec ) / 2;
         if(lin_alg_schedule_wait==1 || avg_la_per_sec >= new_avg) {
           lin_alg_schedule_wait += 1;
           VERB(10, "c new_avg: " << std::to_string(new_avg) );
@@ -687,9 +687,9 @@ class solver
      * 
      * @return true iff a new forcing lineral/equivalence was found
      */
-    bool find_implications_from_linerals(stats& s) {
+    bool find_implications_by_GE(stats& s) {
       const auto begin  = std::chrono::steady_clock::now();
-      ++s.no_linalg;
+      ++s.no_ge;
     #ifndef NDEBUG
       vec<xlit> lits; lits.reserve(lineral_watches.size());
       for(const auto& l_dl : lineral_watches) {
@@ -808,7 +808,7 @@ class solver
     #else
       mzd_solve_left(M_tr, B, 0, false); //skip check for inconsistency; a solution exists i.e. is found!
     #endif
-       s.no_linalg_prop += xlits_.size();
+       s.no_ge_prop += xlits_.size();
 
       //construct corresponding reason clauses
       idx = 0;
@@ -1195,8 +1195,8 @@ class solver
      */
     bool initial_linalg_inprocessing(stats& s) {
       assert(dl==0);
-      if( !need_linalg_inprocessing(s) ) return false;
-      return find_implications_from_linerals(s);
+      if( !need_ge_inprocessing(s) ) return false;
+      return find_implications_by_GE(s);
     };
 
     /**
