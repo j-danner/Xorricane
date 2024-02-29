@@ -313,6 +313,8 @@ class stats {
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::time_point::min();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::time_point::min();
+    
+    std::chrono::duration<double> total_linalg_time = std::chrono::duration<double>::zero();
 
     void print_stats() const {
       std::cout << "c restarts  : " << no_restarts << std::endl;
@@ -321,14 +323,17 @@ class stats {
     };
 
     void print_final() const {
-      float total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
+      double total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
+      double total_linalg_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_linalg_time).count())/1000.0f;
       std::cout << std::fixed << std::setprecision(3);
 
       std::cout << "c dec/sec        : "  << no_dec/total_time << std::endl;
 
       std::cout << "c px by upd      : " << new_px_upd << std::endl;
       std::cout << "c LA prop        : " << no_linalg << std::endl;
-      std::cout << "c LA efficiacy   : " << (double) no_linalg_prop/no_linalg << std::endl;
+      std::cout << "c LA efficiacy   : " << (float) no_linalg_prop/no_linalg << std::endl;
+      std::cout << "c LA time        : " << (float) total_linalg_time << " [s]" << std::endl;
+      std::cout << "c LA time        : " << (float) total_linalg_time/total_time << " [%]" << std::endl;
       std::cout << "c " << std::endl;
 
       std::cout << "c restarts       : " << no_restarts << std::endl;

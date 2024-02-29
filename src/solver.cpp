@@ -710,7 +710,7 @@ void solver::dpll_solve(stats &s) {
             dpll_gcp:
             GCP(s);
             //linear algebra on linerals
-            if( need_linalg_inprocessing() ) {
+            if( need_linalg_inprocessing(s) ) {
                 if( find_implications_from_linerals(s) ) {
                     //in case we did backtrack, fix dec_stack
                     while(dec_stack.size()>dl) dec_stack.pop();
@@ -875,7 +875,7 @@ void solver::solve(stats &s) {
             cdcl_gcp:
             do {
                 GCP(s);
-            } while( !at_conflict() && need_linalg_inprocessing() && find_implications_from_linerals(s) );
+            } while( !at_conflict() && need_linalg_inprocessing(s) && find_implications_from_linerals(s) );
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);

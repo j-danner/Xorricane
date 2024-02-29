@@ -647,13 +647,38 @@ class solver
     };
 
     int ctr = 0;
+    double avg_la_per_sec = 0;
+    var_t checks_until_next_la = 1 << 7;
+    var_t lin_alg_schedule_wait = 1 << 7;
     /**
      * @brief decides whether a linear algebra in-processing step should be performed
+     * 
+     * @param stats s current stats
      */
-    bool need_linalg_inprocessing() {
-      if(at_conflict()) return false;
-      if(dl==0) return true; //always use linear algebra on dl 0?
-      if(opt.lin_alg_schedule==0) return false;
+    inline bool need_linalg_inprocessing(stats& s) {
+      if(at_conflict() || opt.lin_alg_schedule==0) return false;
+      else if(dl==0) return true; //always use linear algebra on dl 0?
+      else if(opt.lin_alg_schedule==-1) {
+        //adaptive scheduling: decrease lin_alg_schedule, if it has been more useful in the last few rounds
+        //track long time avg AND moving avg of last few rounds
+        //update heuristic every 250 decisions
+        --checks_until_next_la;
+        if(checks_until_next_la!=0) return false;
+        double new_avg = (double) (s.no_linalg_prop) / (s.total_linalg_time.count());
+        if(avg_la_per_sec >= new_avg) {
+          lin_alg_schedule_wait <<= 1;
+          VERB(10, "c new_avg: " << std::to_string(new_avg) );
+          VERB(10, "c increasing lin_alg_schedule_wait to " << std::to_string(lin_alg_schedule_wait))
+        } else {
+          lin_alg_schedule_wait = lin_alg_schedule_wait>1 ? lin_alg_schedule_wait>>1 : 1;
+          lin_alg_schedule_wait = lin_alg_schedule_wait>10 ? lin_alg_schedule_wait-10 : 1;
+          VERB(10, "c new_avg: " << std::to_string(new_avg) );
+          VERB(10, "c decreasing lin_alg_schedule_wait to " << std::to_string(lin_alg_schedule_wait))
+        }
+        avg_la_per_sec = new_avg;
+        checks_until_next_la = lin_alg_schedule_wait;
+        return true;
+      }
       ++ctr;
       ctr %= opt.lin_alg_schedule;
       return ctr == 0 && !at_conflict();
@@ -666,6 +691,7 @@ class solver
      * @return true iff a new forcing lineral/equivalence was found
      */
     bool find_implications_from_linerals(stats& s) {
+      const auto begin  = std::chrono::steady_clock::now();
       ++s.no_linalg;
     #ifndef NDEBUG
       vec<xlit> lits; lits.reserve(lineral_watches.size());
@@ -763,6 +789,8 @@ class solver
       if(xlits_.size()==0) {
         VERB(80, "c no new alpha-assignments found!")
         mzd_free(M_tr);
+        const auto end  = std::chrono::steady_clock::now();
+        s.total_linalg_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
         return false;
       }
 
@@ -783,12 +811,12 @@ class solver
     #else
       mzd_solve_left(M_tr, B, 0, false); //skip check for inconsistency; a solution exists i.e. is found!
     #endif
+       s.no_linalg_prop += xlits_.size();
 
       //construct corresponding reason clauses
       idx = 0;
       for(auto&& lit : xlits_) {
         VERB(95, "c constructing reason cls indices for "+lit.to_str());
-        ++s.no_linalg_prop;
         
         list<xlit_w_it> r_cls_idxs;
         var_t resolving_lvl = 0;
@@ -848,6 +876,9 @@ class solver
 
       mzd_free(B);
       mzd_free(M_tr);
+      
+      const auto end  = std::chrono::steady_clock::now();
+      s.total_linalg_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
 
       return true;
     }
@@ -1167,7 +1198,7 @@ class solver
      */
     bool initial_linalg_inprocessing(stats& s) {
       assert(dl==0);
-      if( !need_linalg_inprocessing() ) return false;
+      if( !need_linalg_inprocessing(s) ) return false;
       return find_implications_from_linerals(s);
     };
 
