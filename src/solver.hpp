@@ -649,7 +649,7 @@ class solver
     int ctr = 0;
     double avg_la_per_sec = 0;
     var_t checks_until_next_la = 1 << 7;
-    var_t lin_alg_schedule_wait = 1 << 7;
+    long lin_alg_schedule_wait = 1 << 7;
     /**
      * @brief decides whether a linear algebra in-processing step should be performed
      * 
@@ -659,19 +659,16 @@ class solver
       if(at_conflict() || opt.lin_alg_schedule==0) return false;
       else if(dl==0) return true; //always use linear algebra on dl 0?
       else if(opt.lin_alg_schedule==-1) {
-        //adaptive scheduling: decrease lin_alg_schedule, if it has been more useful in the last few rounds
-        //track long time avg AND moving avg of last few rounds
-        //update heuristic every 250 decisions
+        //adaptive scheduling: decrease lin_alg_schedule, if average usability decreased
         --checks_until_next_la;
         if(checks_until_next_la!=0) return false;
-        double new_avg = (double) (s.no_linalg_prop) / (s.total_linalg_time.count());
-        if(avg_la_per_sec >= new_avg) {
-          lin_alg_schedule_wait <<= 1;
+        double new_avg = (double) ( (s.no_linalg_prop) / (s.total_linalg_time.count()) + avg_la_per_sec ) / 2;
+        if(lin_alg_schedule_wait==1 || avg_la_per_sec >= new_avg) {
+          lin_alg_schedule_wait += 1;
           VERB(10, "c new_avg: " << std::to_string(new_avg) );
           VERB(10, "c increasing lin_alg_schedule_wait to " << std::to_string(lin_alg_schedule_wait))
         } else {
-          lin_alg_schedule_wait = lin_alg_schedule_wait>1 ? lin_alg_schedule_wait>>1 : 1;
-          lin_alg_schedule_wait = lin_alg_schedule_wait>10 ? lin_alg_schedule_wait-10 : 1;
+          lin_alg_schedule_wait = lin_alg_schedule_wait>1 ? lin_alg_schedule_wait-1 : 1;
           VERB(10, "c new_avg: " << std::to_string(new_avg) );
           VERB(10, "c decreasing lin_alg_schedule_wait to " << std::to_string(lin_alg_schedule_wait))
         }
