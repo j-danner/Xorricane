@@ -10,8 +10,8 @@
 #include <m4ri/m4ri.h>
 #include <sstream>
 
-#include "solve.hpp"
 #include "misc.hpp"
+#include "io.hpp"
 #include "xlit/xlit.hpp"
 #include "xlit/xlit_watch.hpp"
 #include "xlit/xsys.hpp"

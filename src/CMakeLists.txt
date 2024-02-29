@@ -19,14 +19,16 @@ add_library(
     xlit/xcls_watch.hpp
     xlit/xcls_watch_resolver.hpp
     xlit/xcls_watch_resolver.cpp
+    #solver hpp
     solver.hpp
 )
 
 add_library(
     solver
     #solve
-    solve.hpp
-    solve.cpp
+    io.hpp
+    io.cpp
+    misc.cpp
     solver.hpp
     solver.cpp
     #heap

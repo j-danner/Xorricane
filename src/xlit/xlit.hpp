@@ -1,4 +1,3 @@
-//from std
 #pragma once
 
 #include <iostream>
@@ -9,7 +8,6 @@
 #include <memory>
 
 #include "../misc.hpp"
-//#include "xsys.hpp"
 //forward declaration of class xsys
 class xsys;
 

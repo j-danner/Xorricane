@@ -1,5 +1,4 @@
 #pragma once
-
 //std
 #include <atomic>
 #include <stdint.h>
@@ -147,7 +146,6 @@ class guessing_path {
     };
 };
 
-
 /**
  * @brief options for decision heuristic
  * lex: proceed lexicographically
@@ -292,7 +290,6 @@ struct options {
 
 /**
  * @brief struct returned by solver, contains bool sat telling if intance is satisfiable; if it is, also contains a solution
- * 
  */
 class stats {
   public:
@@ -400,6 +397,34 @@ class stats {
       cancelled.store( o.cancelled.load() );
       return *this;
     }
-
 };
 
+//functions for solving
+class xlit;
+
+/**
+ * @brief solves xnf using provided opts
+ * 
+ * @param xnf vector of vector representing list of xor-clauses to be solved -- only works for 2-XNFs so far!
+ * @param opts options specifying update alg, timeout, inprocessing settings etc
+ * @param num_vars number of variables
+ * @param s stats to put statistics into
+ * 
+ * @return int exit code
+ */
+int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s);
+
+stats solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts);
+
+/**
+ * @brief perform one GCP on xnf using provided opts
+ * 
+ * @param xnf vector of vector representing list of xor-clauses to be solved -- only works for 2-XNFs so far!
+ * @param opts options specifying update alg, timeout, inprocessing settings etc
+ * @param num_vars number of variables
+ * @param s stats to put statistics into
+ */
+std::string gcp_only(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s);
+
+bool check_sol(const vec< vec<xlit> >& clss, const vec<bool>& sol);
+bool check_sols(const vec< vec<xlit> >& clss, const list<vec<bool>>& sols);

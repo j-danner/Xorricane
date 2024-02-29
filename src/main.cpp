@@ -1,5 +1,7 @@
-#include "solve.hpp"
 #include <unistd.h>
+
+#include "misc.hpp"
+#include "io.hpp"
 
 #include "argparse/argparse.hpp"
 
@@ -231,7 +233,7 @@ int main(int argc, char const *argv[])
     //parse file
     try {
         guessing_path P = parse_gp( gp_fname );
-        parsed_xnf p_xnf = parse_file( fname );
+        auto p_xnf = parse_file( fname );
         assert( P.assert_data_struct() );
 
         //set upt options

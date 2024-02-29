@@ -1,5 +1,7 @@
 //file to test implementation of xcls
+#include "../src/misc.hpp"
 #include "../src/solver.hpp"
+#include "../src/io.hpp"
 
 #include <benchmark/benchmark.h>
 

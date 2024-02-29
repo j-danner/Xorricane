@@ -1,6 +1,8 @@
 //file to test implementation of solve
-#include "../src/solve.hpp"
 #include "../src/solver.hpp"
+#include "../src/io.hpp"
+#include "../src/misc.cpp"
+
 
 #include <catch2/catch_all.hpp>
 
