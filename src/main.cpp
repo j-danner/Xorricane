@@ -174,7 +174,7 @@ int main(int argc, char const *argv[])
     auto fname = isatty(STDIN_FILENO) ? program.get<std::string>("fname") : " ";
 
     auto dh_str = program.get<std::string>("-dh");
-    dec_heu dh = dec_heu::lwl;
+    dec_heu dh = dec_heu::vsids;
     if(dh_str=="vsids") dh = dec_heu::vsids;
     else if(dh_str=="lwl") dh = dec_heu::lwl;
     else if(dh_str=="swl") dh = dec_heu::swl;
