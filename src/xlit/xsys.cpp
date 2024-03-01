@@ -134,6 +134,7 @@ xsys& xsys::operator +=(const xsys& other) {
 
 
 void xsys::add_reduced_lit(const xlit& l) {
+    if(l.is_zero()) return;
     //assert that l is indeed reduced
     assert( reduce(l) == l );
     for(auto& r : xlits) {
@@ -142,7 +143,8 @@ void xsys::add_reduced_lit(const xlit& l) {
     //append l to xlits
     xlits.push_back( l );
     //add to pivot_poly_its
-    pivot_poly_its.insert( {xlits.back().LT(), std::prev(xlits.end())} );
+    assert(!pivot_poly_its.contains(l.LT()));
+    pivot_poly_its[xlits.back().LT()] = std::prev(xlits.end());
 };
 
 bool xsys::eval(const vec<bool>& sol) const {
