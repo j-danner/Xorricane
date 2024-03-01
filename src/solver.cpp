@@ -123,7 +123,7 @@ void solver::backtrack(const var_t& lvl) {
     VERB(90, "BACKTRACK start");
     if(lvl == dl) return;
     assert(lvl < dl);
-    VERB(80, "c backtracking to dl " << lvl);
+    VERB(50, "c backtracking to dl " << lvl);
     if (dl - lvl > 1) {
         VERB(80, "c " << std::to_string(dl) << " : BACKJUMPING BY MORE THAN ON LEVEL!");
     }
@@ -450,7 +450,7 @@ void solver::restart(stats& s) {
     }
     assert( assert_data_structs() );
     
-    VERB(50, "c removed " + std::to_string( (double) (no_cls / xclss.size()) ) + "\% clauses.")
+    VERB(50, "c removed " + std::to_string( (double) (no_cls-xclss.size()) / no_cls) + "\% clauses.")
 
     update_restart_schedule(s.no_restarts);
     VERB(90, "c restart finished")
@@ -665,8 +665,7 @@ void solver::dpll_solve(stats &s) {
             // make decision / backtrack
             if (at_conflict()) {
                 dpll_conflict:
-                VERB(25, "c " << std::to_string(dl) << " : "
-                              << "conflict --> backtrack!")
+                VERB(25, "c " << std::to_string(dl) << " : " << "conflict --> backtrack!")
                 ++s.no_confl;
                 // conflict!
                 if (dl == 0) {
@@ -817,8 +816,7 @@ void solver::solve(stats &s) {
         if (active_cls > 0 || at_conflict()) {
             // make decision / backtrack
             if (at_conflict()) {
-                VERB(25, "c " << std::to_string(dl) << " : "
-                              << "conflict --> backtrack!")
+                VERB(25, "c " << std::to_string(dl) << " : " << "conflict --> backtrack!")
                 ++s.no_confl;
                 ++confl_this_restart;
                 // conflict!
