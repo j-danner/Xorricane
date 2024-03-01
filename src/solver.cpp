@@ -334,6 +334,7 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
 
     //find correct backtrack-lvl
     const var_t b_lvl = out.get_assigning_lvl(alpha_dl);
+    assert(b_lvl < dl);
 
 #ifndef NDEBUG
     print_trail("    *");
@@ -803,7 +804,9 @@ void solver::solve(stats &s) {
     
     //create copy of solver -- for clause minimization
     solver solver_cpy(*this);
-    solver_cpy.get_opts()->verb = 0;
+    solver_cpy.opt.verb = 0;
+    //NOTE deactivate equivalent lits in s; otherwise we might get get_assigning_lvl(alpha_dl) == dl after minimization; this is due to an equiv that is found in solver_cpy; but not in the main solver (here)
+    solver_cpy.opt.eq = false;
     stats s_cpy;
 
     while (true) {
@@ -1098,9 +1101,6 @@ std::string solver::to_xnf_str() const noexcept {
             cnt += std::count_if(trails[lvl].begin(), trails[lvl].end(), [](const trail_elem& t) { return t.type==trail_t::IMPLIED_ALPHA; });
         }
         assert_slow( cnt == total_trail_length );
-
-        //ensure that equiv_lits_dl is 'empty'
-        if(!opt.eq) for(const auto& lvl : equiv_lits_dl) assert(lvl==(var_t)-1);
 
         // check solution! (for rand-10-20.xnf) -- may help in debugging!
         /*

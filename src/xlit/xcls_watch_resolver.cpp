@@ -23,7 +23,7 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
     vec<var_t> idxs(xlits.size());
     for(var_t i=0; i<xlits.size(); ++i) idxs[i]=i;
     std::sort(idxs.begin(), idxs.end(), [&](const auto& i, const auto& j){ return xlits[i].size()<xlits[j].size(); });
-    
+
     for(var_t k = 0; k<xlits.size(); ++k) {
         const var_t i = idxs[k];
         if(xlits[i].is_zero()) continue;
@@ -35,6 +35,7 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
             lin.clear();
             changed = true;
         } else {
+            //@todo can we use main-solvers equiv-lits to reduce xlits?!
             if(s.opt.eq) changed |= lin.reduce(s.equiv_lits);
             changed |= lin.reduce(s.alpha);
         }

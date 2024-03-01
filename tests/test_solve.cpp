@@ -846,6 +846,24 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         CHECK( s.sat == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
+    
+    SECTION( "test58.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test58.xnf");
+        options opt;
+        opt.verb = 80;
+        opt.ca = ca_alg::fuip;
+        opt.ip = initial_prop_opt::nbu;
+        opt.rst = cm ? restart_opt::luby : restart_opt::no;
+        opt.dh = dec_heu::vsids;
+        opt.lin_alg_schedule = 0;
+        opt.cm = cm;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
 }
 
 TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
