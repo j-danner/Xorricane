@@ -215,6 +215,8 @@ public:
       assert( assert_data_struct() );
       assert( is_unit(dl_count) );
 
+      assert( !to_xcls().is_zero() );
+
       return xcls_upd_ret::UNIT;
   };
   

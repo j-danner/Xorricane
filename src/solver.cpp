@@ -240,6 +240,7 @@ void solver::bump_score(const var_t &ind) {
 
 void solver::bump_score(const xlit &lit) {
     assert(lit.LT() < activity_score.size());
+    //for(const auto l : lit) bump_score(l);
     bump_score(lit.LT()); //@todo bump scores of ALL occuring vars?
 };
 
@@ -265,6 +266,7 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
 
     //go through trail of current dl -- skip over irrelevant parts
     xcls_watch_resolver learnt_cls = get_reason(TRAIL.back());
+    assert( learnt_cls.assert_data_struct(alpha, alpha_trail_pos, dl_count) );
 
     assert(learnt_cls.is_unit(dl_count));
     VERB(70, "   * reason clause is   " + BOLD( learnt_cls.to_str() ) + " for UNIT " + learnt_cls.get_unit().to_str() );
@@ -288,7 +290,7 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
         while( (it->type != trail_t::IMPLIED_ALPHA) || !learnt_cls.unit_contains(it->ind) ) {
-            //@todo instead of unit_contains we should be able to use one of the watched literals, right?!
+            //@note instead of 'unit_contains' we could also check 'get_wl0'; but ONLY if we ensure that we always watch the ind with highest alpha_trail_pos after initialization! ('resolve' should ensure this property - but 'init()' does not!)
             ++it;
         }
         assert(it->type == trail_t::IMPLIED_ALPHA);
@@ -426,8 +428,8 @@ void solver::restart(stats& s) {
     for(var_t i=0; i<xclss.size(); ++i) {
         if(xclss[i].is_sat(dl_count) || (!xclss[i].is_irredundant() && utility[i] < util_cutoff && !xclss[i].is_unit(dl_count) && xclss[i].get_unit_at_lvl()>0) ) {
             xclss[i].mark_for_removal();
-            //ensure that xclss[i] is no unit under alpha
-            assert( !xclss[i].to_xcls().reduced(alpha).is_unit() );
+            //ensure that xclss[i] is no unit under alpha, i.e., we did not remove 
+            assert( xclss[i].is_sat(dl_count) || xclss[i].to_xcls().deg()!=1 );
         }
     }
     VERB(50, "c rm clauses")
@@ -506,6 +508,7 @@ void solver::remove_fixed_equiv([[maybe_unused]] const var_t idx) {
     for(auto& xcls_w : xclss) {
         if(xcls_w.is_active(dl_count)) {
             //@todo
+            assert( !(xcls_w.watches(idx) && xcls_w.watches(equiv_lits[idx].ind)) );
             //assert(!xcls_w.watches(upd_lt));
             //if( xcls_w.rm(upd_lt, val) ) decr_active_cls(&xcls_w - &xclss[0]);
         }

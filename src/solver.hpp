@@ -1111,6 +1111,7 @@ class solver
       if(xclss.back().size()>0) watch_list[ (xclss.back().get_wl0()) ].emplace_back(i);
       if(xclss.back().size()>1) watch_list[ (xclss.back().get_wl1()) ].emplace_back(i);
       assert_slow(assert_data_structs());
+      assert( !xclss[i].to_xcls().is_zero() );
       return i;
     }
 
