@@ -55,14 +55,14 @@ BENCHMARK_CAPTURE(BM_cdcl_solve, mq-toyexample-type1-n15,  concat(BENCH_FILES, "
 BENCHMARK_CAPTURE(BM_cdcl_solve, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed3.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
 BENCHMARK_CAPTURE(BM_cdcl_solve, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed4.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
 
-//BENCHMARK_CAPTURE(BM_cdcl_solve_cm, rand-20-60, concat(BENCH_FILES, "/instances/2xnfs/rand/rand-20-60.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
-//BENCHMARK_CAPTURE(BM_cdcl_solve_cm, rand-10-20, concat(BENCH_FILES, "/instances/2xnfs/rand/rand-10-20.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
-//BENCHMARK_CAPTURE(BM_cdcl_solve_cm, rand-5-10,  concat(BENCH_FILES, "/instances/2xnfs/rand/rand-5-10.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
-//BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed0.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
-//BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed1.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
-//BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed2.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
-//BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed3.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
-//BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed4.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
+BENCHMARK_CAPTURE(BM_cdcl_solve_cm, rand-20-60, concat(BENCH_FILES, "/instances/2xnfs/rand/rand-20-60.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
+BENCHMARK_CAPTURE(BM_cdcl_solve_cm, rand-10-20, concat(BENCH_FILES, "/instances/2xnfs/rand/rand-10-20.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
+BENCHMARK_CAPTURE(BM_cdcl_solve_cm, rand-5-10,  concat(BENCH_FILES, "/instances/2xnfs/rand/rand-5-10.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
+BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed0.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
+BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed1.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
+BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed2.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
+BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed3.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
+BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed4.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
 
 
 static void xlit_performance(benchmark::State& state, var_t n, var_t prob, unsigned long k) {
