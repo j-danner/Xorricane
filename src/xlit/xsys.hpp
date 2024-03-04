@@ -9,11 +9,12 @@
 
 #ifdef NDEBUG
   template<class K, class V>
-  using pivot_map = std::unordered_map<K,V>;
+  using pivot_map = std::map<K,V>;
+  //using pivot_map = std::unordered_map<K,V>; //this is sometimes different thatn std::map (see test59.xnf); generally negative effect :/
 #else
-
   template<class K, class V>
   using pivot_map = std::map<K,V>;
+  //using pivot_map = std::unordered_map<K,V>;
 #endif
 
 typedef list<xlit>::iterator xlits_it;
