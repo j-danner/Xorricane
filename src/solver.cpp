@@ -424,7 +424,7 @@ void solver::restart(stats& s) {
     VERB(50, "c clean clause database")
     //mark clauses to be deleted
     for(var_t i=0; i<xclss.size(); ++i) {
-        if(!xclss[i].is_irredundant() && utility[i] < util_cutoff && !xclss[i].is_unit(dl_count) && xclss[i].get_unit_at_lvl()>0) {
+        if(xclss[i].is_sat(dl_count) || (!xclss[i].is_irredundant() && utility[i] < util_cutoff && !xclss[i].is_unit(dl_count) && xclss[i].get_unit_at_lvl()>0) ) {
             xclss[i].mark_for_removal();
             //ensure that xclss[i] is no unit under alpha
             assert( !xclss[i].to_xcls().reduced(alpha).is_unit() );
