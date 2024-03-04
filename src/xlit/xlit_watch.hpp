@@ -253,11 +253,11 @@ class xlit_watch : public xlit
     inline const var_t& get_reason_idx() const { return reason_cls_idx; }
 
     /**
-     * @brief checks if there is a non-zero reason clause
+     * @brief checks if there is a non-trivial reason clause
      * 
-     * @return true iff there is a non-zero reason clause
+     * @return true iff there is a non-trivial reason clause
      */
-    bool has_nz_reason_cls() const {
+    bool has_non_trivial_reason_cls() const {
       return !reason_cls_idxs.empty() || reason_cls_idx!=(var_t)-1;
     }
 

@@ -427,7 +427,7 @@ class solver
 
       if(lin->get_reason_idxs().empty() && lin->get_reason_idx() != (var_t)-1) return xclss[lin->get_reason_idx()];
       //ensure that xclss[0]
-      if(!lin->has_nz_reason_cls()) return zero_cls;
+      if(!lin->has_non_trivial_reason_cls()) return zero_cls;
 
       //construct reason clause
       const auto rs = get_reason_and_init( lin->get_reason_idxs(), lin->get_reason_idx() );
@@ -454,7 +454,7 @@ class solver
 
       if(lin->get_reason_idxs().empty() && lin->get_reason_idx() != (var_t)-1) return xclss[lin->get_reason_idx()];
       //ensure that xclss[0]
-      if(!lin->has_nz_reason_cls()) return zero_cls;
+      if(!lin->has_non_trivial_reason_cls()) return xcls(*lin); //return zero_cls;
 
       //construct reason clause
       const auto rs = get_reason( lin->get_reason_idxs(), lin->get_reason_idx() );
@@ -531,7 +531,7 @@ class solver
      */
     inline var_t add_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT) {
       if(type==trail_t::IMPLIED_UNIT) {
-        VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->to_xlit().reduced(alpha,equiv_lits).to_str() + (lin->has_nz_reason_cls() && dl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+        VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->to_xlit().reduced(alpha,equiv_lits).to_str() + (lin->has_non_trivial_reason_cls() && dl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
       }
       if(type!=trail_t::IMPLIED_ALPHA) {
         //reduce lin
@@ -585,7 +585,7 @@ class solver
       assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), dl));
       alpha_trail_pos[lt2] = total_trail_length;
       ++total_trail_length;
-      VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + l.to_str() + (type!=trail_t::GUESS  && lin->has_nz_reason_cls() && dl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+      VERB(70, "c " + std::to_string(dl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + l.to_str() + (type!=trail_t::GUESS  && lin->has_non_trivial_reason_cls() && dl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
       return lt2;
     };
 
@@ -849,7 +849,7 @@ class solver
             resolving_lvl = lvl;
             bump_score(*l_it);
             //only add those l_it's which have a non-zero reason clause
-            if(l_it->has_nz_reason_cls()) {
+            if(l_it->has_non_trivial_reason_cls()) {
               r_cls_idxs.emplace_back( l_it );
             }
           }
