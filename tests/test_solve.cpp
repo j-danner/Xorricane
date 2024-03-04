@@ -739,8 +739,11 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
 }
 
 TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
-    //const bool cm = GENERATE(true, false);
+  #ifndef NDEBUG
+    const bool cm = GENERATE(true, false);
+  #else
     const bool cm = false;
+  #endif
 
     SECTION( "test0.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test0.xnf");
@@ -864,6 +867,22 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
+    SECTION( "test59.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test59.xnf");
+        options opt;
+        opt.verb = 80;
+        opt.ca = ca_alg::fuip;
+        opt.ip = initial_prop_opt::nbu;
+        opt.rst = restart_opt::luby;
+        opt.dh = dec_heu::vsids;
+        opt.lin_alg_schedule = 0;
+        opt.cm = cm;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sat == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
 }
 
 TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {

@@ -331,6 +331,7 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
     
     VERB(90, "   * XNF " + out.to_xnf_str() );
     VERB(70, "   '----> gives with current assignments: " + out.to_xcls().reduced(alpha).to_str());
+    assert( out.to_xcls().reduced(alpha).to_str() == "1" );
 
     //find correct backtrack-lvl
     const var_t b_lvl = out.get_assigning_lvl(alpha_dl);
@@ -423,8 +424,10 @@ void solver::restart(stats& s) {
     VERB(50, "c clean clause database")
     //mark clauses to be deleted
     for(var_t i=0; i<xclss.size(); ++i) {
-        if(!xclss[i].is_irredundant() && utility[i] < util_cutoff && xclss[i].is_active(dl_count)) {
+        if(!xclss[i].is_irredundant() && utility[i] < util_cutoff && !xclss[i].is_unit(dl_count) && xclss[i].get_unit_at_lvl()>0) {
             xclss[i].mark_for_removal();
+            //ensure that xclss[i] is no unit under alpha
+            assert( !xclss[i].to_xcls().reduced(alpha).is_unit() );
         }
     }
     VERB(50, "c rm clauses")
@@ -454,6 +457,9 @@ void solver::restart(stats& s) {
 
     update_restart_schedule(s.no_restarts);
     VERB(90, "c restart finished")
+#ifndef NDEBUG
+    print_trail("    *");
+#endif
 };
 
 void solver::remove_fixed_alpha(const var_t upd_lt) {
