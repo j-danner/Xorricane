@@ -38,7 +38,7 @@ class xcls {
 
     bool is_zero() const { return assVS.get_pivot_poly_idx().contains(0); };
 
-    bool is_unit() const { return deg()<=1; };
+    bool is_unit() const { return deg()<=1 || is_zero(); };
 
     xlit get_unit() const { assert(is_unit()); return deg()==1 ? assVS.get_non_zero_el().add_one() : xlit(0, false); };
 
