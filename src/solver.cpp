@@ -678,7 +678,7 @@ void solver::dpll_solve(stats &s) {
                     // return UNSAT
                     s.finished = true;
                     s.sat = false;
-                    s.end = std::chrono::steady_clock::now();
+                    s.end = std::chrono::high_resolution_clock::now();
                     
                     return;
                 }

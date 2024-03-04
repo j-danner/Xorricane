@@ -1170,15 +1170,15 @@ TEST_CASE( "solving within timeout" , "[parser][solve]" ) {
     auto num_vars = clss.num_vars;
 
     options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, 100, 0, 0);
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
     stats s = solve(xnf, num_vars, opts);
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
     float time_no_time_out = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
 
     options opts2(dec_heu::vsids, phase_opt::save, ca_alg::fuip, 100, 0, time_no_time_out+3);
-    begin = std::chrono::steady_clock::now();
+    begin = std::chrono::high_resolution_clock::now();
     stats s2 = solve(xnf, num_vars, opts2);
-    end = std::chrono::steady_clock::now();
+    end = std::chrono::high_resolution_clock::now();
     float time_with_time_out = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
   #ifdef NDEBUG
     CHECK( time_no_time_out == Catch::Approx(time_with_time_out).margin(0.1) );

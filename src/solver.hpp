@@ -688,7 +688,7 @@ class solver
      * @return true iff a new forcing lineral/equivalence was found
      */
     bool find_implications_by_GE(stats& s) {
-      const auto begin  = std::chrono::steady_clock::now();
+      const auto begin  = std::chrono::high_resolution_clock::now();
       ++s.no_ge;
     #ifndef NDEBUG
       vec<xlit> lits; lits.reserve(lineral_watches.size());
@@ -786,7 +786,7 @@ class solver
       if(xlits_.size()==0) {
         VERB(80, "c no new alpha-assignments found!")
         mzd_free(M_tr);
-        const auto end  = std::chrono::steady_clock::now();
+        const auto end  = std::chrono::high_resolution_clock::now();
         s.total_linalg_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
         return false;
       }
@@ -874,7 +874,7 @@ class solver
       mzd_free(B);
       mzd_free(M_tr);
       
-      const auto end  = std::chrono::steady_clock::now();
+      const auto end  = std::chrono::high_resolution_clock::now();
       s.total_linalg_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
 
       return true;

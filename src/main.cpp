@@ -10,7 +10,7 @@
 int main(int argc, char const *argv[])
 {
     stats s;
-    s.begin  = std::chrono::steady_clock::now();
+    s.begin  = std::chrono::high_resolution_clock::now();
 
     argparse::ArgumentParser program(__PROJECT_NAME, __VERSION__, argparse::default_arguments::help);
     program.add_argument("-v", "--version")

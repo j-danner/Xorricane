@@ -308,8 +308,8 @@ class stats {
     //newly learnt pure-xors via upd
     unsigned int new_px_upd = 0;
 
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::time_point::min();
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::time_point::min();
+    std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::time_point::min();
+    std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::time_point::min();
     
     std::chrono::duration<double> total_linalg_time = std::chrono::duration<double>::zero();
 

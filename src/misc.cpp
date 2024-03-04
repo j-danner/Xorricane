@@ -21,7 +21,7 @@ int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts
     omp_set_num_threads(opts.jobs > omp_get_max_threads() ? omp_get_max_threads() : opts.jobs);
 
     //time comp, start
-    if(s.begin==std::chrono::steady_clock::time_point::min()) s.begin = std::chrono::steady_clock::now();
+    if(s.begin==std::chrono::high_resolution_clock::time_point::min()) s.begin = std::chrono::high_resolution_clock::now();
 
     //std::cout << to_str( xnf ) << std::endl;
     auto sol = solver( xnf, num_vars, opts );
@@ -52,7 +52,7 @@ int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts
     };
     
     //print stats
-    s.end = std::chrono::steady_clock::now();
+    s.end = std::chrono::high_resolution_clock::now();
     if(opts.verb>0) s.print_final();
 
     s.print_sol();
@@ -83,7 +83,7 @@ std::string gcp_only(const vec< vec<xlit> >& xnf, const var_t num_vars, const op
     omp_set_num_threads(opts.jobs > omp_get_max_threads() ? omp_get_max_threads() : opts.jobs);
 
     //time comp, start
-    s.begin = std::chrono::steady_clock::now();
+    s.begin = std::chrono::high_resolution_clock::now();
 
     //std::cout << to_str( xnf ) << std::endl;
     auto sol = solver( xnf, num_vars, opts );
@@ -121,7 +121,7 @@ std::string gcp_only(const vec< vec<xlit> >& xnf, const var_t num_vars, const op
     };
     
     //print stats
-    s.end = std::chrono::steady_clock::now();
+    s.end = std::chrono::high_resolution_clock::now();
     if(opts.verb>0) s.print_gcp_info();
     return out;
 }
