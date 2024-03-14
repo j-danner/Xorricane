@@ -736,6 +736,15 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
         CHECK( s.sat == false ); //UNSAT!
     }
     
+    SECTION( "test14.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test14.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.sat == false ); //UNSAT!
+    }
+    
     //SECTION( "test_hard.xnf" ) {
     //    auto clss = parse_file("../../benchmarks/instances/xnfs/test_hard.xnf");
     //    auto slvr = solver(clss);

@@ -904,9 +904,9 @@ public:
   };
 
   std::string to_str() const {
-    if (xlits.empty())
+    if (size() == 0)
       return "1";
-    if (xlits.size() == 1) {
+    if (size() == 1) {
       assert(shared_part.is_zero());
       return WLIN0.plus_one().to_str();
     }
