@@ -68,6 +68,7 @@ public:
    * @brief reduces each xlits s.t. for each t_pos there are at most max_size many linerals
    */
   inline void reduction(const var_t max_size, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+    if(t_pos_to_idxs.empty()) return;
     const bool ret = (t_pos_to_idxs.rbegin()->second.size()>1) || (t_pos_to_idxs.size()>1 && std::next(t_pos_to_idxs.rbegin())->second.size()>1);
     for(auto it=t_pos_to_idxs.rbegin(); it!=t_pos_to_idxs.rend(); ++it) {
       auto& [k,l] = *it;
@@ -102,9 +103,8 @@ public:
    * @note recompute shared_parts to 'repair' xcls_watch data_struct
    */
   inline xcls_watch finalize(const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
-    assert(t_pos_to_idxs.size()>0);
     //@heuristic choose good value!
-    const var_t max_size = std::min(4, (int) (num_nz_lins / t_pos_to_idxs.size()) + 2 );
+    const var_t max_size = std::min(4, (int) (num_nz_lins / std::max(1, (int) t_pos_to_idxs.size())) + 2 );
     reduction(max_size, alpha_dl, alpha_trail_pos, dl_count);
 
     assert( num_nz_lins <= max_size*t_pos_to_idxs.size() );
