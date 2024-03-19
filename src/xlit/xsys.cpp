@@ -70,7 +70,6 @@ bool xsys::lt_update_short(const xlit& l) {
     const auto search = pivot_poly_its.find( l.LT() );
     if(search == pivot_poly_its.end()) return false;
     const auto row = search->second;
-    if(row->size() <= 3) return false;
     //LT found -- start reduction!
     tmp_lin.clear();
     tmp_lin = *row + l;
