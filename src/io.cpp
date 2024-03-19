@@ -30,6 +30,7 @@ std::vector< std::string > split(const std::string& str, const std::string& deli
 
 parsed_xnf parse_file(std::istream& file) {
     var_t num_vars = 0;
+    var_t actual_num_vars = 0;
     var_t num_cls = 0;
     
     vec< vec<xlit> > cls;
@@ -77,15 +78,14 @@ parsed_xnf parse_file(std::istream& file) {
                     //std::cout << v << std::endl;
                     if (v_>0) {
                         idxs.emplace_back( v_ );
-                        if ((var_t) v_ > num_vars) {
-                            throw std::invalid_argument( "c provided clauses include larger vars than announced by header!" );
-                        };
+                        actual_num_vars = std::max( (var_t) v_, actual_num_vars );
                     } else if (v_==0) {
                         //not standardized (interpret '+0' as '-')
                         need_0 ^= true;
                     } else {
-                        idxs.emplace_back(  -v_ );
+                        idxs.emplace_back( -v_ );
                         need_0 ^= true;
+                        actual_num_vars = std::max( (var_t) -v_, actual_num_vars );
                     }
                 }
                 
@@ -97,8 +97,14 @@ parsed_xnf parse_file(std::istream& file) {
     }
 
     if( cls.size() != num_cls) {
-        std::cout << "c Number of clauses in header differs from number of found clauses!" << std::endl;
-        std::cout << "c header said " << num_cls << " whereas we found " << cls.size() << " clauses." << std::endl;
+        std::cerr << "c Number of clauses in header differs from number of found clauses!" << std::endl;
+        std::cerr << "c header said " << num_cls << " whereas we found " << cls.size() << " clauses." << std::endl;
+        num_cls = cls.size();
+    }
+    if(actual_num_vars > num_vars) {
+        std::cerr << "c Number of variables in header differs from number of found variables!" << std::endl;
+        std::cerr << "c header said " << num_vars << " whereas we found " << actual_num_vars << " variables." << std::endl;
+        num_vars = actual_num_vars;
     }
     
     return parsed_xnf(num_vars, num_cls, cls);
