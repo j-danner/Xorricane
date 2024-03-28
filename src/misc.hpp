@@ -326,20 +326,20 @@ class stats {
       double ca_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_ca_time).count())/1000.0f;
 
       std::cout << std::fixed << std::setprecision(3);
+      const auto width_time = std::to_string((int) time).length()+4;
+      const auto width_int = std::to_string(new_px_upd).length();
 
-      std::cout << "c GCP props      : " << new_px_upd << std::endl;
-      std::cout << "c GE calls       : " << no_ge << std::endl;
-      const auto width = std::max( std::to_string(no_ge_prop).length(), std::to_string((int) linalg_time).length()+3);
-      std::cout << "c GE props       : " << std::setw(width) << no_ge_prop  << "     (" << (float) no_ge_prop/no_ge << " props/call)" << std::endl;
-      std::cout << "c GE time        : " << std::setw(width) << (float) linalg_time << " [s] (" << (float) 100*linalg_time/time << " [%])" << std::endl;
-      std::cout << "c CA time        : " << std::setw(width) << (float) ca_time     << " [s] (" << (float) 100*ca_time/time << " [%])" << std::endl;
+      std::cout << "c decisions      : " << std::setw(width_int) << no_dec << " (" << (float) no_dec/time  << " dec/sec)" << std::endl;
+      std::cout << "c conflicts      : " << std::setw(width_int) << no_confl << " (" << (float) no_dec/no_confl  << " dec/confl)" << std::endl;
+      std::cout << "c restarts       : " << std::setw(width_int) << no_restarts << " (" << (float) no_confl/no_restarts  << " confl/rst)" << std::endl;
+      std::cout << "c GCP props      : " << std::setw(width_int) << new_px_upd << std::endl;
+      std::cout << "c GE calls       : " << std::setw(width_int) << no_ge << std::endl;
+      std::cout << "c GE props       : " << std::setw(width_int) << no_ge_prop  << " (" << (float) no_ge_prop/no_ge << " props/call)" << std::endl;
       std::cout << "c " << std::endl;
 
-      const auto width2 = std::to_string(no_dec).length();
-      std::cout << "c decisions      : " << std::setw(width2) << no_dec << " (" << (float) no_dec/time  << " dec/sec)" << std::endl;
-      std::cout << "c conflicts      : " << std::setw(width2) << no_confl << " (" << (float) no_dec/no_confl  << " dec/confl)" << std::endl;
-      std::cout << "c restarts       : " << std::setw(width2) << no_restarts << " (" << (float) no_confl/no_restarts  << " confl/rst)" << std::endl;
-      std::cout << "c Total time     : " << time << " [s]" << std::endl;
+      std::cout << "c GE time        : " << std::setw(width_time) << (float) linalg_time << " [s] (" << (float) 100*linalg_time/time << " [%])" << std::endl;
+      std::cout << "c CA time        : " << std::setw(width_time) << (float) ca_time     << " [s] (" << (float) 100*ca_time/time << " [%])" << std::endl;
+      std::cout << "c Total time     : " << std::setw(width_time) << time << " [s]" << std::endl;
     }
     
     /**
