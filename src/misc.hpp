@@ -329,8 +329,7 @@ class stats {
       std::cout << "c px by upd      : " << new_px_upd << std::endl;
       std::cout << "c GE prop        : " << no_ge << std::endl;
       std::cout << "c GE efficiacy   : " << (float) no_ge_prop/no_ge << std::endl;
-      std::cout << "c GE time        : " << (float) total_linalg_time << " [s]" << std::endl;
-      std::cout << "c GE time        : " << (float) total_linalg_time/total_time << " [%]" << std::endl;
+      std::cout << "c GE time        : " << (float) total_linalg_time << " [s] (" << (float) 100*total_linalg_time/total_time << " [%])" << std::endl;
       std::cout << "c " << std::endl;
 
       std::cout << "c restarts       : " << no_restarts << std::endl;
