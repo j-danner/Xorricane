@@ -839,6 +839,7 @@ void solver::solve(stats &s) {
             
                 ///// BACKTRACKING /////
                 ///// CLAUSE LEARNING /////
+                const auto begin  = std::chrono::high_resolution_clock::now();
                 auto [lvl, learnt_cls] = (this->*analyze)(solver_cpy);
                 
                 // backtrack
@@ -852,6 +853,8 @@ void solver::solve(stats &s) {
                     cls_cpy.SAT_dl_count = {0,0};
                     solver_cpy.add_xcls_watch( std::move(cls_cpy), true );
                 }
+                const auto end  = std::chrono::high_resolution_clock::now();
+                s.total_ca_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
 
                 // add learnt_cls
                 add_learnt_cls( std::move(learnt_cls) );

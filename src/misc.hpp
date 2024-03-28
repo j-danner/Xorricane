@@ -312,6 +312,7 @@ class stats {
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::time_point::min();
     
     std::chrono::duration<double> total_linalg_time = std::chrono::duration<double>::zero();
+    std::chrono::duration<double> total_ca_time = std::chrono::duration<double>::zero();
 
     void print_stats() const {
       std::cout << "c restarts  : " << no_restarts << std::endl;
@@ -320,22 +321,25 @@ class stats {
     };
 
     void print_final() const {
-      double total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
-      double total_linalg_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_linalg_time).count())/1000.0f;
+      double time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
+      double linalg_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_linalg_time).count())/1000.0f;
+      double ca_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_ca_time).count())/1000.0f;
+
       std::cout << std::fixed << std::setprecision(3);
 
-      std::cout << "c dec/sec        : "  << no_dec/total_time << std::endl;
-
-      std::cout << "c px by upd      : " << new_px_upd << std::endl;
-      std::cout << "c GE prop        : " << no_ge << std::endl;
-      std::cout << "c GE efficiacy   : " << (float) no_ge_prop/no_ge << std::endl;
-      std::cout << "c GE time        : " << (float) total_linalg_time << " [s] (" << (float) 100*total_linalg_time/total_time << " [%])" << std::endl;
+      std::cout << "c GCP props      : " << new_px_upd << std::endl;
+      std::cout << "c GE calls       : " << no_ge << std::endl;
+      const auto width = std::max( std::to_string(no_ge_prop).length(), std::to_string((int) linalg_time).length()+3);
+      std::cout << "c GE props       : " << std::setw(width) << no_ge_prop  << "     (" << (float) no_ge_prop/no_ge << " props/call)" << std::endl;
+      std::cout << "c GE time        : " << std::setw(width) << (float) linalg_time << " [s] (" << (float) 100*linalg_time/time << " [%])" << std::endl;
+      std::cout << "c CA time        : " << std::setw(width) << (float) ca_time     << " [s] (" << (float) 100*ca_time/time << " [%])" << std::endl;
       std::cout << "c " << std::endl;
 
-      std::cout << "c restarts       : " << no_restarts << std::endl;
-      std::cout << "c decisions      : " << no_dec << std::endl;
-      std::cout << "c conflicts      : " << no_confl << std::endl;
-      std::cout << "c Total time     : " << total_time << " [s]" << std::endl;
+      const auto width2 = std::to_string(no_dec).length();
+      std::cout << "c decisions      : " << std::setw(width2) << no_dec << " (" << (float) no_dec/time  << " dec/sec)" << std::endl;
+      std::cout << "c conflicts      : " << std::setw(width2) << no_confl << " (" << (float) no_dec/no_confl  << " dec/confl)" << std::endl;
+      std::cout << "c restarts       : " << std::setw(width2) << no_restarts << " (" << (float) no_confl/no_restarts  << " confl/rst)" << std::endl;
+      std::cout << "c Total time     : " << time << " [s]" << std::endl;
     }
     
     /**
