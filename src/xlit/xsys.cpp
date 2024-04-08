@@ -131,6 +131,19 @@ xsys& xsys::operator +=(const xsys& other) {
     return *this;
 };
 
+void xsys::add_reduced_lit(xlit&& l) {
+    if(l.is_zero()) return;
+    //assert that l is indeed reduced
+    assert( reduce(l) == l );
+    for(auto& r : xlits) {
+        if(r[l.LT()]) r += l;
+    }
+    //append l to xlits
+    xlits.emplace_back( std::move(l) );
+    //add to pivot_poly_its
+    assert(!pivot_poly_its.contains(xlits.back().LT()));
+    pivot_poly_its[xlits.back().LT()] = std::prev(xlits.end());
+};
 
 void xsys::add_reduced_lit(const xlit& l) {
     if(l.is_zero()) return;

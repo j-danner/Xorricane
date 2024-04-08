@@ -258,7 +258,7 @@ public:
         xlit_dl_count0[idx[0]] = {0,1};
         //remove_zero_lineral(idx[0]);
         --num_nz_lins;
-        idx[0] = idx[1];
+        idx[0] = (idx[1]<(var_t) -1) ? idx[1] : 0;
         ptr_cache[0] = ptr_cache[1];
         idx[1] = -1;
         ptr_cache[1] = -1;

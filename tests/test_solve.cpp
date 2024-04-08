@@ -34,7 +34,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
     
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //UNSAT
+        CHECK( s.sat == true ); //SAT
         //CHECK( s.sol == vec<bool>({false,false,false}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }
@@ -46,7 +46,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         //CHECK( slvr.to_str() == "x1 x3+1; x1+1 x2+x3; x1+x3 x2+1; x2 x3+1;" );
     
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //UNSAT
+        CHECK( s.sat == true ); //SAT
         //CHECK( s.sol == vec<bool>({false,false,false}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }

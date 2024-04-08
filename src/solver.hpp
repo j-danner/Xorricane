@@ -103,7 +103,7 @@ class solver
     vec< list<var_t> > watch_list;
     
     /**
-     * @brief L_watch_list[lt] stores elements of the form [lvl, i, dl_c]; indicating that lineral_watches[lvl][i] watches lt IFF dl_count[lvl]==dl_c
+     * @brief L_watch_list[lt] stores elements of the form [lvl, dl_c, lin]; indicating that lt is watched in *lin IFF dl_count[lvl]==dl_c
      */
     vec< list< watch_list_elem > > L_watch_list;
 
@@ -145,7 +145,6 @@ class solver
      */
     inline bool at_conflict() const { return alpha[0]==bool3::True; };
 
-    //CDCL vars
     /**
      * @brief counts how often a dl was visited -- required to quickly discard xlit that were already watched previously in the current search tree
      *        dl_count[i] is the number of times the solver was at dl i (counting once after increasing dl and before decreasing dl)
@@ -454,7 +453,7 @@ class solver
 
       if(lin->get_reason_idxs().empty() && lin->get_reason_idx() != (var_t)-1) return xclss[lin->get_reason_idx()];
       //ensure that xclss[0]
-      if(!lin->has_non_trivial_reason_cls()) return xcls(*lin); //return zero_cls;
+      if(!lin->has_non_trivial_reason_cls()) return xcls(list<xlit>({*lin}));
 
       //construct reason clause
       const auto rs = get_reason( lin->get_reason_idxs(), lin->get_reason_idx() );
@@ -534,9 +533,9 @@ class solver
         VERB(65, "c " + std::to_string(dl) + " : new UNIT " + lin->to_str() + " ~> " + lin->to_xlit().reduced(alpha,equiv_lits).to_str() + (lin->has_non_trivial_reason_cls() && dl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
       }
       if(type!=trail_t::IMPLIED_ALPHA) {
-        //reduce lin
-        if(opt.eq) lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
-        else       lin->reduce(alpha, alpha_dl, dl_count);
+        //reduce lin -- but only if type is NOT guess -- otherwise reason clause is not computed correctly!
+        if(opt.eq && type!=trail_t::GUESS) lin->reduce(alpha, alpha_dl, dl_count, equiv_lits);
+        else                               lin->reduce(alpha, alpha_dl, dl_count);
       }
       if(lin->is_zero(alpha)) {
         if(lin->is_zero()) lineral_watches[dl].erase( lin );
@@ -597,7 +596,6 @@ class solver
      * @param type type of propagation (defaults to trail_t::IMPLIED_UNIT)
      */
     inline void queue_implied_lineral(xlit_w_it lin, const trail_t type = trail_t::IMPLIED_UNIT) {
-      //@todo where should we push equivs; maybe sort queue according to some activity score?! --> priority_queue?! based on size()?!
       //if(lin->LT()==0 || lineral_queue.empty() || (lineral_queue.front().lin->LT()!=0 && lin->is_equiv())) lineral_queue.emplace_front( lin, type );
       if(lin->LT()==0) lineral_queue.emplace_front( lin, type );
       else lineral_queue.emplace_back( lin, type );
@@ -1166,20 +1164,53 @@ class solver
      */
     solver(parsed_xnf& p_xnf, guessing_path& P) noexcept : solver(p_xnf.cls, p_xnf.num_vars, options(P)) {};
 
-    //copy ctor
-    solver(const solver& o) noexcept : xclss(o.xclss), utility(o.utility), watch_list(o.watch_list), L_watch_list(o.L_watch_list), opt(o.opt), dl(o.dl), active_cls(o.active_cls), active_cls_stack(o.active_cls_stack), activity_score(o.activity_score), dl_count(o.dl_count), lineral_watches(o.lineral_watches), alpha(o.alpha), last_phase(o.last_phase), alpha_dl(o.alpha_dl), alpha_trail_pos(o.alpha_trail_pos), equiv_lits(o.equiv_lits), equiv_lits_dl(o.equiv_lits_dl), trails(o.trails), total_trail_length(o.total_trail_length), lineral_queue(o.lineral_queue) { 
+    //copy ctor -- re-adds all clauses, i.e., looses precise state of watched vars and trail; but keeps activity_score and utility!
+    solver(const solver& o) noexcept : opt(o.opt), activity_score(o.activity_score), dl_count(o.dl_count), last_phase(o.last_phase) { 
       opt.verb = 0;
       backtrack(0);
-      //fix L_watch_list
-      for(auto& wl : L_watch_list) wl.clear();
-      for(xlit_w_it lin = lineral_watches[0].begin(); lin!=lineral_watches[0].end(); ++lin) {
-        if(lin->size()>0) L_watch_list[ lin->get_wl0() ].emplace_back( dl, dl_count[dl], lin );
-        if(lin->size()>1) L_watch_list[ lin->get_wl1() ].emplace_back( dl, dl_count[dl], lin );
+      // init data structures
+      const auto num_vars = o.get_num_vars();
+      //init watch_list
+      watch_list.resize(num_vars+1);
+      L_watch_list.resize(num_vars+1);
+      lineral_watches = vec<list<xlit_watch>>(num_vars+1, list<xlit_watch>() );
+    
+      // init assignments
+      alpha = vec<bool3>(num_vars + 1, bool3::None);
+      alpha_dl = vec<var_t>(num_vars + 1, (var_t) -1);
+      alpha_trail_pos = vec<var_t>(num_vars + 1, (var_t) -1);
+      equiv_lits = vec<equivalence>(num_vars+1);
+      equiv_lits_dl = vec<var_t>(num_vars+1, (var_t) -1);
+      dl_count = vec<dl_c_t>(num_vars+1, 1); 
+      trails = vec< list<trail_elem> >();
+      trails.reserve(num_vars+1);
+      trails.emplace_back( list<trail_elem>() );
+      total_trail_length = 1;
+
+      //re-add all clauses
+      vec< xcls > xclss_; xclss_.reserve(o.xclss.size());
+      for(const auto& cls : o.xclss) xclss_.emplace_back( std::move(cls.to_xcls()) );
+      init_xclss( xclss_ );
+      
+      for(var_t i = 1; i<=num_vars; ++i) {
+          order_heap_vsids.insert( i );
       }
+
+      //init restart params
+      update_restart_schedule(0);
+
       assert(assert_data_structs());
     };
 
     ~solver() = default;
+
+    /**
+     * @brief init solver
+     * 
+     * @param clss vector of xcls
+     */
+    void init_xclss(const vec< xcls >& clss) noexcept;
+
 
     void remove_fixed_alpha(const var_t upd_lt);
 

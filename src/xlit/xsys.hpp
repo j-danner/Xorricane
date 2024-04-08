@@ -128,8 +128,10 @@ class xsys
      * @param l literal to be added
      */
     void add_reduced_lit(const xlit& l);
+    void add_reduced_lit(xlit&& l);
 
     void add_lineral(xlit&& l) noexcept { l.reduce(*this); add_reduced_lit( std::move(l) ); };
+    void add_lineral(const xlit& l) noexcept { xlit l_ = l; l_.reduce(*this); add_reduced_lit( std::move(l_) ); };
 
     void clear() noexcept { xlits.clear(); pivot_poly_its.clear(); };
 };
