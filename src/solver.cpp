@@ -437,16 +437,43 @@ void solver::restart(stats& s) {
     }
     VERB(50, "c rm clauses")
     assert_slow( assert_data_structs() );
-    //remove all clss marked for removal
+  #ifdef DEBUG_SLOW
+    //check if reason cls for lineral_watches can be computed correctly
+    for(auto& l : lineral_watches[0]) {
+        const auto rs = get_reason(l.get_reason_idxs(), l.get_reason_idx());
+        assert( (rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits) + l.to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero()) );
+        //BEWARE this assertion may fail for some 'restart' calls of solver_cpy(!)
+    }
+  #endif
+
+    //remove all clss marked for removal + prepare lookup-table for new idxs of reason_clss
+    vec<var_t> new_idx; new_idx.reserve(xclss.size());
+    var_t curr_idx = 0;
     vec<xcls_watch> cpy; cpy.reserve(xclss.size());
-    vec<double> util_cpy(utility.size(), 0);
+    vec<double> util_cpy; util_cpy.reserve(xclss.size());
     for(var_t i=0; i<xclss.size(); ++i) {
         if(!xclss[i].is_marked_for_removal()) {
             cpy.emplace_back(std::move(xclss[i]));
-            util_cpy[i] = utility[i];
+            util_cpy.emplace_back( utility[i] );
+            new_idx.emplace_back( curr_idx );
+            ++curr_idx;
+        } else {
+            new_idx.emplace_back( (var_t)-1 );
         }
     }
     xclss = std::move(cpy);
+    //fix reason_cls idxs for all xlit_watch in lineral_watches[0]
+    for(auto& l : lineral_watches[0]) {
+        if(l.get_reason_idx()!=(var_t)-1) {
+            assert( new_idx[l.get_reason_idx()] < xclss.size() );
+            l.set_reason_idx( new_idx[l.get_reason_idx()] );
+        }
+      #ifdef DEBUG_SLOW
+        const auto rs = get_reason(l.get_reason_idxs(), l.get_reason_idx());
+        assert( (rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits) + l.to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero()) );
+        //BEWARE this assertion may fail for some 'restart' calls of solver_cpy(!)
+      #endif
+    }
     utility = std::move(util_cpy);
     VERB(50, "c re-init watch_lists")
     //empty watchlists
