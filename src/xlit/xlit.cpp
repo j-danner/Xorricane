@@ -237,7 +237,7 @@ std::string xlit::to_full_str(var_t num_vars) const{
 xlit xlit::shared_part(const xlit& other) const {
   diff_.clear(); // diff_ is declared global and static, this saves creating new diff_s for each calling
   std::set_intersection(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(diff_));
-  return xlit(diff_, false); //call ctor that does NOT sort diff_
+  return xlit(diff_, presorted::yes); //call ctor that does NOT sort diff_
 };
 
 //overloaded operators
@@ -247,7 +247,7 @@ xlit xlit::operator+(const xlit &other) const {
     //NOTE back_insterter might lead to repeated reallocations!
     //idxs = diff_;
 
-    return xlit(diff_, p1^other.p1);
+    return xlit(diff_, p1^other.p1, presorted::yes);
 };
 
 //in-place operation (!)
