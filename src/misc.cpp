@@ -60,7 +60,7 @@ int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts
 
     if(opts.verb >= 120) { std::cout << opts.to_str() << std::endl; }
     
-    if(opts.verb > 0 && s.finished && s.sat) { //check sol!
+    if(opts.verb > 0 && s.sols.size()>0) { //check sol!
         if(check_sols(xnf, s.sols)) {
             std::cout << "c solution verified" << std::endl;
             return 0;
