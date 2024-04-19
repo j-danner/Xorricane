@@ -289,12 +289,11 @@ struct options {
 
 
 /**
- * @brief struct returned by solver, contains bool sat telling if intance is satisfiable; if it is, also contains a solution
+ * @brief struct storing stats info on solving call, contains solution(s) if intance is satisfiable
  */
 class stats {
   public:
     bool finished = false;
-    bool sat = false;
     list<vec<bool>> sols;
     std::atomic<bool> cancelled = false;
 
@@ -314,11 +313,7 @@ class stats {
     std::chrono::duration<double> total_linalg_time = std::chrono::duration<double>::zero();
     std::chrono::duration<double> total_ca_time = std::chrono::duration<double>::zero();
 
-    void print_stats() const {
-      std::cout << "c restarts  : " << no_restarts << std::endl;
-      std::cout << "c decisions : " << no_dec << std::endl;
-      std::cout << "c conflicts : " << no_confl << std::endl;
-    };
+    bool is_sat() const { return !sols.empty(); };
 
     void print_final() const {
       double time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
@@ -347,7 +342,7 @@ class stats {
     void print_sol() const {
       if(finished) {
           const auto& sol = sols.back();
-          if(sat) {
+          if(sols.size()>0) {
               std::cout << "s SATISFIABLE" << std::endl;
               std::cout << "v ";
               for (var_t i = 1; i <= sol.size(); i++) {
@@ -374,18 +369,17 @@ class stats {
     
     stats() {};
     ~stats() { /*std::cout << "destroying stats!" << std::endl;*/ };
-    stats(stats& o) noexcept : finished(o.finished), sat(o.sat), sols(o.sols), no_dec(o.no_dec), no_confl(o.no_confl), no_ge(o.no_ge), no_ge_prop(o.no_ge_prop), no_restarts(o.no_restarts), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
+    stats(stats& o) noexcept : finished(o.finished), sols(o.sols), no_dec(o.no_dec), no_confl(o.no_confl), no_ge(o.no_ge), no_ge_prop(o.no_ge_prop), no_restarts(o.no_restarts), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
       cancelled.store( o.cancelled.load() );
     }
-    stats(stats&& o) noexcept : finished(std::move(o.finished)), sat(std::move(o.sat)), sols(std::move(o.sols)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_ge(std::move(o.no_ge)), no_ge_prop(std::move(o.no_ge_prop)), no_restarts(std::move(o.no_restarts)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
+    stats(stats&& o) noexcept : finished(std::move(o.finished)), sols(std::move(o.sols)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_ge(std::move(o.no_ge)), no_ge_prop(std::move(o.no_ge_prop)), no_restarts(std::move(o.no_restarts)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
       cancelled.store( o.cancelled.load() );
     }
-    stats(unsigned int no_dec_, unsigned int no_confl_, const list<vec<bool>>& sols_) : sat(true), sols(sols_), no_dec(no_dec_), no_confl(no_confl_) {};
-    stats(unsigned int no_dec_, unsigned int no_confl_) : sat(false), no_dec(no_dec_), no_confl(no_confl_) {};
+    stats(unsigned int no_dec_, unsigned int no_confl_, const list<vec<bool>>& sols_) : sols(sols_), no_dec(no_dec_), no_confl(no_confl_) {};
+    stats(unsigned int no_dec_, unsigned int no_confl_) : no_dec(no_dec_), no_confl(no_confl_) {};
 
     stats& operator=(const stats& o) noexcept {
       finished = o.finished;
-      sat = o.sat;
       sols = o.sols;
       no_dec = o.no_dec;
       no_confl = o.no_confl;

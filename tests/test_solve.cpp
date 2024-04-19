@@ -34,7 +34,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
     
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT
+        CHECK( s.is_sat() == true ); //SAT
         //CHECK( s.sol == vec<bool>({false,false,false}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }
@@ -46,7 +46,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         //CHECK( slvr.to_str() == "x1 x3+1; x1+1 x2+x3; x1+x3 x2+1; x2 x3+1;" );
     
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT
+        CHECK( s.is_sat() == true ); //SAT
         //CHECK( s.sol == vec<bool>({false,false,false}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }
@@ -57,7 +57,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         CHECK( ((ip!=initial_prop_opt::no) || (slvr.to_str() == "x1+x2+1; x1+x5; x2+x3+1; x3+x4+1; x4+x5;")) );
     
         stats s = slvr.solve();
-        CHECK( s.sat == false ); //UNSAT
+        CHECK( s.is_sat() == false ); //UNSAT
     }
     
     SECTION( "test18.xnf" ) {
@@ -65,7 +65,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -74,7 +74,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         //CHECK( s.sol == vec<bool>({false,false,false,false,false}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }
@@ -84,7 +84,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         //CHECK( s.sol == vec<bool>({false,false}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }
@@ -94,7 +94,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( s.sols.back() == vec<bool>({false,true}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }
@@ -104,7 +104,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         //CHECK( s.sol == vec<bool>({true,false,false,true,true}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }
@@ -114,7 +114,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         //CHECK( s.sol == vec<bool>({true,true,true}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }
@@ -124,7 +124,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         //CHECK( s.sol == vec<bool>({true,false,true,false,false}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }
@@ -134,7 +134,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         //CHECK( s.sol == vec<bool>({true,true,false,false}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }
@@ -144,7 +144,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         //CHECK( s.sol == vec<bool>({false}) );
         CHECK( check_sols(clss.cls, s.sols) );
     }
@@ -154,7 +154,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -163,7 +163,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -175,7 +175,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         //CHECK( slvr.to_str() == "x2 x1+x2; x2+1 x1+1;" );
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -187,7 +187,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         //CHECK( slvr.to_str() == "x1+1 x2; x2+1 x1+1;" );
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -196,7 +196,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -205,7 +205,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -216,7 +216,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         //CHECK( slvr.to_str() == "x1 x2+1; x1+1 x5+x6; x2 x3+1; x3 x4+1; x3+x5 x6; x3+x5+1 x7; x4 x5+x6+1; x6+1 x7+1;" );
         
         stats s = slvr.solve();
-        CHECK( s.sat == false ); //UNSAT!
+        CHECK( s.is_sat() == false ); //UNSAT!
     }
     
     SECTION( "test19.xnf" ) {
@@ -224,7 +224,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -233,7 +233,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
@@ -242,7 +242,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -251,7 +251,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
@@ -260,7 +260,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
@@ -269,7 +269,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -278,7 +278,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -287,7 +287,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -296,7 +296,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -305,7 +305,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
@@ -314,7 +314,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -323,7 +323,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -332,7 +332,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
@@ -341,7 +341,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
@@ -350,7 +350,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -359,7 +359,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -368,7 +368,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -377,7 +377,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -386,7 +386,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -395,7 +395,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -404,7 +404,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
@@ -413,7 +413,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
 
         stats s = slvr.solve();
-        CHECK( s.sat == false );
+        CHECK( s.is_sat() == false );
     }
     
     SECTION( "test44.xnf" ) {
@@ -421,7 +421,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -430,7 +430,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -439,7 +439,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -448,7 +448,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -457,7 +457,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -466,7 +466,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -475,7 +475,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -484,7 +484,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -493,17 +493,17 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
     SECTION( "test54.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test54.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 120;
+        //slvr.get_opts()->verb = 120;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
@@ -512,7 +512,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 }
@@ -536,8 +536,8 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         stats s_gp = slvr_gp.solve();
         stats s = slvr.solve();
 
-        CHECK( s.sat == true ); //SAT!
-        CHECK( s_gp.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
+        CHECK( s_gp.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
         CHECK( check_sols(clss_gp.cls, s_gp.sols) );
 
@@ -558,8 +558,8 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         stats s_gp = slvr_gp.solve();
         stats s = slvr.solve();
 
-        CHECK( s.sat == true ); //SAT!
-        CHECK( s_gp.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
+        CHECK( s_gp.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
         CHECK( check_sols(clss_gp.cls, s_gp.sols) );
 
@@ -580,7 +580,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
 
         stats s_gp = slvr_gp.solve();
 
-        CHECK( s_gp.sat == true ); //SAT!
+        CHECK( s_gp.is_sat() == true ); //SAT!
         CHECK( check_sols(clss_gp.cls, s_gp.sols) );
 
         //check that after guessing_path sol of s_gp, we get a sol of original clss
@@ -600,7 +600,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
 
         stats s_gp = slvr_gp.solve();
 
-        CHECK( s_gp.sat == true ); //SAT!
+        CHECK( s_gp.is_sat() == true ); //SAT!
         CHECK( check_sols(clss_gp.cls, s_gp.sols) );
 
         //check that after guessing_path sol of s_gp, we get a sol of original clss
@@ -614,7 +614,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
     
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -623,126 +623,137 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
         auto slvr = solver(clss);
     
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
     SECTION( "test3.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test3.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = ca_alg::dpll;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test3.xnf 2" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test3.xnf");
+        auto slvr = solver(clss);
+        //slvr.get_opts()->verb = 90;
+
+        stats s = slvr.solve();
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
     SECTION( "test4.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test4.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
     SECTION( "test5.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test5.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
     SECTION( "test6.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test6.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
     SECTION( "test7.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test7.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
     SECTION( "test8.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test8.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
     SECTION( "test9.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test9.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
     SECTION( "test10.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test10.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
     SECTION( "test11.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test11.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
     SECTION( "test12.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test12.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
     SECTION( "test13.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test13.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
-        CHECK( s.sat == false ); //UNSAT!
+        CHECK( s.is_sat() == false ); //UNSAT!
     }
     
     SECTION( "test14.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/xnfs/test14.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 90;
+        //slvr.get_opts()->verb = 90;
 
         stats s = slvr.solve();
-        CHECK( s.sat == false ); //UNSAT!
+        CHECK( s.is_sat() == false ); //UNSAT!
     }
     
     //SECTION( "test_hard.xnf" ) {
@@ -751,26 +762,22 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     //    slvr.get_opts()->verb = 90;
 
     //    stats s = slvr.solve();
-    //    CHECK( s.sat == true ); //SAT!
+    //    CHECK( s.is_sat() == true ); //SAT!
     //    CHECK( check_sols(clss.cls, s.sols) );
     //}
 }
 
 TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
-  #ifndef NDEBUG
-    const bool cm = GENERATE(true, false);
-  #else
-    const bool cm = false;
-  #endif
+    const bool cm = GENERATE(false, true);
 
     SECTION( "test0.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test0.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 0;
+        slvr.get_opts()->verb = 80;
         slvr.get_opts()->cm = cm;
     
         stats s = slvr.solve();
-        CHECK( s.sat == false ); //instance is UNSAT
+        CHECK( s.is_sat() == false ); //instance is UNSAT
     }
 
     SECTION( "test1.xnf" ) {
@@ -780,7 +787,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         slvr.get_opts()->cm = cm;
     
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
@@ -791,7 +798,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         slvr.get_opts()->cm = cm;
     
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -802,7 +809,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         slvr.get_opts()->cm = cm;
     
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -813,7 +820,24 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         slvr.get_opts()->cm = cm;
     
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
+    SECTION( "test61.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test61.xnf");
+        options opt;
+        opt.verb = 80;
+        opt.ca = ca_alg::fuip;
+        opt.ip = initial_prop_opt::nbu; //initial_prop_opt::no;
+        opt.rst = restart_opt::luby;
+        opt.dh = dec_heu::vsids;
+        opt.lin_alg_schedule = 0;
+        opt.cm = cm;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -827,10 +851,11 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.dh = dec_heu::vsids;
         opt.lin_alg_schedule = 0;
         opt.cm = cm;
+        opt.verb = 80;
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -847,7 +872,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -864,7 +889,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -881,7 +906,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
@@ -898,7 +923,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
 }
@@ -1005,7 +1030,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         slvr.get_opts()->sol_count = 2;
 
         stats s = slvr.solve();
-        CHECK( s.sat == true );
+        CHECK( s.is_sat() == true );
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
@@ -1084,11 +1109,106 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         CHECK( slvr.to_str() == "x1+x3+1; x2+x4+1;" );
 
         stats s = slvr.solve();
-        CHECK( s.sat == true ); //SAT!
+        CHECK( s.is_sat() == true ); //SAT!
         CHECK( s.sols.size()==4 );
         CHECK( check_sols(clss.cls, s.sols) );
     }
+    
+    SECTION( "test62.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test62.xnf");
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
 
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==1 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test63.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test63.xnf");
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==1 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
+    SECTION( "test64.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test64.xnf");
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==2 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
+    SECTION( "test64.xnf 2" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test64.xnf");
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 1, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==2 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
+    SECTION( "test65.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test65.xnf");
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 1, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==1 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
+    SECTION( "test66.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test66.xnf");
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::no, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==1 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
+    SECTION( "test67.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test67.xnf");
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==1 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
+}
+
+TEST_CASE( "solving harder 2xnf test instances with -ms", "[solver][maxsol][small][long]") {
+    SECTION( "test_simon.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon.xnf");
+        auto slvr = solver(clss);
+        //slvr.get_opts()->verb = 90;
+        slvr.get_opts()->ca = ca_alg::fuip;
+        slvr.get_opts()->sol_count = 265;
+        slvr.get_opts()->lin_alg_schedule = 0;
+        slvr.get_opts()->dh = dec_heu::vsids;
+        slvr.get_opts()->rst = restart_opt::no;
+        slvr.get_opts()->ip = GENERATE( initial_prop_opt::no, initial_prop_opt::nbu );
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size() == 264 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
 }
 
 TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
@@ -1166,7 +1286,7 @@ TEST_CASE( "solving simple instances", "[solver]") {
     (slvr.get_opts())->verb = 70;
 
     stats s = slvr.solve();
-    CHECK( s.sat == true ); //SAT!
+    CHECK( s.is_sat() == true ); //SAT!
     CHECK( check_sols(p_xnf.cls, s.sols) );
 }
 
@@ -1186,7 +1306,7 @@ TEST_CASE( "solving with different options" , "[parser][solve]" ) {
     options opts(dh, po, ca, la_sch, 0, 0);
 
     stats s = solve(xnf, num_vars, opts);
-    CHECK( s.sat == true ); //SAT
+    CHECK( s.is_sat() == true ); //SAT
     CHECK( check_sols(clss.cls, s.sols) );
 }
 
@@ -1218,7 +1338,7 @@ TEST_CASE( "solving within timeout" , "[parser][solve]" ) {
     CHECK( time_no_time_out == Catch::Approx(time_with_time_out).margin(5) );
   #endif
     CHECK( s.finished == true ); //SAT
-    CHECK( s.sat == true ); //SAT
+    CHECK( s.is_sat() == true ); //SAT
     CHECK( check_sols(clss.cls, s.sols) );
 }
 
