@@ -1104,7 +1104,6 @@ class solver
       r = 0;
       //resolve cls to get true reason cls
       list<xlit_w_it> r_cls_idxs;
-      var_t resolving_lvl = 0;
     
     #ifndef NDEBUG
       xlit tmp;
@@ -1133,16 +1132,14 @@ class solver
           tmp += *l_it;
           assert( L_.reduce(tmp).is_zero() );
         #endif
-          resolving_lvl = lvl;
           bump_score(*l_it);
           r_cls_idxs.emplace_back( l_it );
 
           #ifndef NDEBUG
             const auto rcls = get_reason( l_it );
             //ensure that reason cls is reason for provided alpha
-            assert(_slowrcls.is_unit(dl_count) && (rcls.get_unit()+*l_it).reduced(alpha).is_zero());
+            assert_slow(rcls.is_unit(dl_count) && (rcls.get_unit()+*l_it).reduced(alpha).is_zero());
           #endif
-          //}
         }
       }
       assert(tmp.reduced(alpha).is_one());
