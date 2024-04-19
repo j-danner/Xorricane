@@ -11,6 +11,7 @@
 #include <string>
 #include <unordered_map>
 #include <set>
+#include <deque>
 //other
 #include <omp.h>
 
@@ -23,6 +24,11 @@
 
 //activate additional debugging
 //#define DEBUG_SLOW
+#ifdef NDEBUG
+  #ifdef DEBUG_SLOW
+    assert(false); //either use NDEBUG or DEBUG_SLOW
+  #endif
+#endif
 
 //activate special treatment of disjoint xcls_watch -- experiments showed little to no performance gain
 //#define TRACK_DISJOINT_XCLS
@@ -73,6 +79,9 @@ using vec = std::vector<T>;
 template<class T>
 //using list = std::list<T>;
 using list = std::list<T, allocator<T> >;
+
+template<class T>
+using deque = std::deque<T>;
 
 
 enum class bool3 { False, True, None };
