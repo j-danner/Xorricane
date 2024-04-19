@@ -9,11 +9,16 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
     stats _;
     
     //prepare s
-    if(s.dl_count.size()<xlits.size()) s.dl_count.resize(xlits.size()+1, 0);
-    if(s.lineral_watches.size()<xlits.size()) s.lineral_watches.resize(xlits.size()+1, list<xlit_watch>());
+    if(s.dl_count.size()<xlits.size()+3) {
+        s.dl_count.resize(xlits.size()+3, 0);
+        s.lineral_watches.resize(xlits.size()+3, list<xlit_watch>());
+    }
+    //todo do we need this initial processing?!
     do {
         s.GCP(_);
     } while( !s.at_conflict() && s.need_ge_inprocessing(_) && s.find_implications_by_GE(_) );
+    assert( s.dl==0 );
+    assert( s.dl_count.size()>=xlits.size()+3);
 
     bool update_req = false;
     bool early_abort = false;
@@ -35,8 +40,7 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
             lin.clear();
             changed = true;
         } else {
-            //@todo can we use main-solvers equiv-lits to reduce xlits?!
-            if(s.opt.eq) changed |= lin.reduce(s.equiv_lits);
+            if(s.opt.eq) changed |= lin.reduce(s.alpha, s.equiv_lits);
             changed |= lin.reduce(s.alpha);
         }
         assert( (!changed || lin.to_str()!=xlits[i].to_str()) && (changed || lin.to_str()==xlits[i].to_str()) );
@@ -83,6 +87,7 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
         if(s.at_conflict()) {
             early_abort = true;
         }
+        assert(s.dl <= k+1);
     }
 
     //fix watched idxs if necessary
