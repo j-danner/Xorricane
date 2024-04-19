@@ -28,7 +28,11 @@ private:
     shared_part.clear();
 
     //init num_nz_lins
-    num_nz_lins = xlits.size();
+    num_nz_lins = 0;
+    for(var_t i = 0; i<xlits.size(); ++i) {
+      if(xlits[i].is_zero()) remove_zero_lineral(i);
+      else ++num_nz_lins;
+    }
 
     //init t_pos_to_idxs
     t_pos_to_idxs.clear();
@@ -186,7 +190,7 @@ public:
         xlit_dl_count0[idx[0]] = {0,1};
         //remove_zero_lineral(idx[0]);
         --num_nz_lins;
-        idx[0] = idx[1];
+        idx[0] = (idx[1]==(var_t)-1) ? 0 : idx[1];
         ptr_cache[0] = ptr_cache[1];
         idx[1] = -1;
         ptr_cache[1] = -1;
