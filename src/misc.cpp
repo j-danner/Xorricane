@@ -24,7 +24,7 @@ int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts
     if(s.begin==std::chrono::high_resolution_clock::time_point::min()) s.begin = std::chrono::high_resolution_clock::now();
 
     //std::cout << to_str( xnf ) << std::endl;
-    auto sol = solver( xnf, num_vars, opts );
+    solver sol( xnf, num_vars, opts );
 
     //register interupt handler
     std::signal(SIGINT, signal_handler);
@@ -62,10 +62,10 @@ int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts
     
     if(opts.verb > 0 && s.sols.size()>0) { //check sol!
         if(check_sols(xnf, s.sols)) {
-            std::cout << "c solution verified" << std::endl;
+            std::cout << "c solution(s) verified" << std::endl;
             return 0;
         } else {
-            std::cout << "c solution INCORRECT!" << std::endl;
+            std::cout << "c solution(s) INCORRECT!" << std::endl;
             return 1;
         }
     } else {
