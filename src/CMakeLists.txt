@@ -16,6 +16,7 @@ add_library(
     xlit_lazy
     #xlit
     xlit/xlit_watch.hpp
+    xlit/xlit_watch.cpp
     xlit/xcls_watch.hpp
     xlit/xcls_watch_resolver.hpp
     xlit/xcls_watch_resolver.cpp

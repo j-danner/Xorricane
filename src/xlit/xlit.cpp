@@ -11,7 +11,7 @@
 #include "xlit.hpp"
 #include "xsys.hpp"
 
-// this suppresses creating the new objects again and again (each thread has their own diff-vec)
+// this suppresses creating the new objects again and again
 vec<var_t> diff_;
 
 
@@ -47,6 +47,8 @@ bool xlit::reduce(const xsys& sys) {
         }
         for(const auto& row: upd_idxs) *this += *row;
         changed = !upd_idxs.empty();
+        //reduce constant
+        if(p1 && sys.contains_lt(0)) { p1 = false; }
     }
     return changed;
 };
@@ -140,13 +142,18 @@ bool xlit::reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl
     return ret;
 };
 
-bool xlit::reduce(const vec<equivalence>& equiv_lits) {
+bool xlit::reduce(const vec<bool3>& alpha, const vec<equivalence>& equiv_lits) {
     bool ret = false;
     var_t offset = 0;
     while(offset<idxs.size()) {
-        if( equiv_lits[ idxs[offset] ].ind>0 ) {
+        if(alpha[idxs[offset]] != bool3::None) {
+            ret = true;
+            p1 ^= b3_to_bool(alpha[idxs[offset]]);
+            idxs.erase( idxs.begin()+offset );
+        } else if( equiv_lits[ idxs[offset] ].ind>0 ) {
             ret = true;
             assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
+            //@todo optimize impl: next step iterates once over full length, but it suffices to start at idxs[offset]!
             *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
         } else {
             ++offset;
@@ -155,11 +162,28 @@ bool xlit::reduce(const vec<equivalence>& equiv_lits) {
     return ret;
 };
 
-bool xlit::reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl) {
+
+bool xlit::reduce(const vec<equivalence>& equiv_lits) {
     bool ret = false;
     var_t offset = 0;
     while(offset<idxs.size()) {
-        if( equiv_lits[ idxs[offset] ].ind>0 && equiv_lits_dl[ idxs[offset] ] <= lvl ) {
+        if( equiv_lits[ idxs[offset] ].ind>0 ) {
+            ret = true;
+            assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
+            //@todo optimize impl: next step iterates once over full length, but it suffices to start at idxs[offset]!
+            *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
+        } else {
+            ++offset;
+        }
+    }
+    return ret;
+};
+
+bool xlit::reduce(const vec<equivalence>& equiv_lits, const var_t& lvl) {
+    bool ret = false;
+    var_t offset = 0;
+    while(offset<idxs.size()) {
+        if( equiv_lits[ idxs[offset] ].is_active(lvl) ) {
             ret = true;
             assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
             *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);

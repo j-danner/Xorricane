@@ -179,6 +179,7 @@ private:
    *
    * @param alpha current bool3-alpha
    * @param alpha_dl dl of alpha-assignments
+   * @param alpha_trail_pos t_pos of alpha-assignments
    * @param dl_count current dl_count
    * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
    */
@@ -342,6 +343,7 @@ private:
    *
    * @param alpha current bool3-alpha
    * @param alpha_dl dl of alpha-assignments
+   * @param alpha_trail_pos t_pos of alpha-assignments
    * @param dl_count current dl_count
    * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
    */
@@ -499,7 +501,13 @@ public:
   };
 
   void set_redundancy(const bool red) { irredundant = !red; };
-  void mark_for_removal() { if (!irredundant) { delete_on_cleanup = true; } };
+
+  /**
+   * @brief mark clause for removal, i.e., remove clause on cleanup
+   * @note clause is not marked if it is irredundant -- except if it is satisfied on dl 0
+   */
+  void mark_for_removal() { if(!irredundant || is_sat0()) { delete_on_cleanup = true; } };
+
   bool is_marked_for_removal() const { return delete_on_cleanup; };
   bool is_irredundant() const { return irredundant; };
 
@@ -586,6 +594,7 @@ public:
 
   /**
    * @brief removes xlits[i] (assumed to be zero), by swapping out to last position and truncating
+   * @note beware of removing watched linerals! (first distribute shared_part!)
    *
    * @param i index of lineral to be removed
    */
@@ -610,8 +619,6 @@ public:
       }
       assert(size()<=1 || i <= xlits.size() || is_zero());
     }
-    assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
-    assert( size()<2 || xlits[idx[1]][ptr_cache[1]] );
   }
 
   /**
@@ -620,8 +627,8 @@ public:
    * @param new_lit literal that was newly assigned
    * @param alpha current bool3-assignment
    * @param alpha_dl dl of alpha-assignments
+   * @param alpha_trail_pos t_pos of alpha-assignments
    * @param dl_count current dl_count
-   * @param dl current dl
    * @return var_t,xcls_upd_ret upd_ret is SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t is the new-watched literal (or the same if unchanged!)
    */
   std::pair<var_t, xcls_upd_ret> update(const var_t &new_lit, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
@@ -658,6 +665,144 @@ public:
       assert( !(is_unit(dl_count) && size()>1) || (xlit_t_pos[idx[0]] > xlit_t_pos[idx[1]]) );
       return {new_w, upd};
     }
+  };
+  
+  /**
+   * @brief updates xcls_watch and watch_list according to the new assigned literal lit, dl_count, dl and alpha.
+   *
+   * @param alpha current bool3-assignment
+   * @param alpha_dl dl of alpha-assignments
+   * @param alpha_trail_pos t_pos of alpha-assignments
+   * @param equiv_lits vec of equivalences
+   * @param dl_count current dl_count
+   * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
+
+
+   */
+  //xcls_upd_ret reduce_equiv(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<equivalence> &equiv_lits, const vec<dl_c_t> &dl_count) {
+  xcls_upd_ret reduce_equiv(const vec<bool3>& alpha, const vec<equivalence> &equiv_lits, const vec<dl_c_t> &dl_count) {
+    // check if clause needs any processing
+    assert(is_active(dl_count));
+    if (!is_active(dl_count)) {
+      assert(is_sat(dl_count) || is_unit(dl_count));
+      return xcls_upd_ret::SAT; // NOTE here it might also be a UNIT, but it did not become one by this update!
+    }
+    //reduce all unwatched linerals
+    for(var_t i=0; i<xlits.size(); ++i) {
+      if(i==idx[0] || i==idx[1]) continue;
+      if(xlits[i].reduce(alpha, equiv_lits)) {
+       #ifdef DEBUG_SLOW
+        for(const auto& v: xlits[i].get_idxs()) assert( alpha[v]==bool3::None && !equiv_lits[v].is_active() );
+       #endif
+        //reset t_pos and dl_count -- do we really need this?!
+        //@todo do we really need to do this? note: the new equiv could only be discoverd as the corr alpha are NOT assigned, i.e., reduction is possible!
+        xlit_t_pos[i] = (var_t) -1;
+        xlit_dl_count0[i] = {0, 0};
+        //treat special cases -- reduction to constant
+        if(xlits[i].is_zero()) {
+          remove_zero_lineral(i);
+          --i; //repeat for same idx i
+        } else if(xlits[i].is_one()) {
+          //leave watches untouched; but set SAT_dl_count s.t. clause is satisfied already at dl 0!
+          SAT_dl_count = {0, 1};
+          //swap into first position -- remove all other xlits!
+          shared_part.clear();
+          xlits[0].clear(); xlits[0].add_one();
+          idx[0] = 0;
+          xlits.resize(1);
+          xlit_dl_count0.resize(1, {0,0});
+          xlit_t_pos.resize(1, (var_t)-1);
+          return xcls_upd_ret::SAT;
+        }
+      }
+    }
+    //reduce watched linerals
+    while(true) {
+      if(size()==0) {
+        return xcls_upd_ret::SAT;
+      } else if(size()==1) {
+        assert(idx[0] == 0);
+        ws[0] = 0;
+        ptr_cache[0] = ptr_(idx[0],ws[0]);
+        return xcls_upd_ret::UNIT;
+      }
+
+      //distribute shared part
+      WLIN0 += shared_part;
+      WLIN1 += shared_part;
+      shared_part.clear();
+      //reduce watched linerals
+      WLIN0.reduce(alpha, equiv_lits);
+      WLIN1.reduce(alpha, equiv_lits);
+
+      //recompute shared_part
+      shared_part = WLIN0.shared_part(WLIN1);
+      WLIN0 += shared_part;
+      WLIN1 += shared_part;
+    
+      if(WLIN0.size()==0) WLIN0.swap(shared_part);
+      if(WLIN1.size()==0) WLIN1.swap(shared_part);
+
+      //if((WLIN0+WLIN1).is_one() || WLIN0.is_one() || WLIN1.is_one()){
+      if((WLIN0+shared_part).is_one() || (WLIN1+shared_part).is_one()) {
+        //clause is SAT!
+        SAT_dl_count = {0, 1};
+        //swap into first position -- remove all other xlits!
+        shared_part.clear();
+        xlits[0].clear(); xlits[0].add_one();
+        idx[0] = 0;
+        xlits.resize(1);
+        xlit_dl_count0.resize(1, {0,0});
+        xlit_t_pos.resize(1, (var_t)-1);
+        return xcls_upd_ret::SAT;
+      } else if((WLIN0+shared_part).is_zero() || (WLIN1+shared_part).is_zero()) {
+      //if((WLIN0+WLIN1).is_zero() || WLIN0.is_zero() || WLIN1.is_zero()) {
+        if(WLIN0.is_zero()) swap_wl(); //ensure that WLIN0 is non-zero (if possible)
+        //one of the watched linerals should be removed!
+        WLIN1.clear();
+        WLIN0 += shared_part;
+        shared_part.clear();
+        remove_zero_lineral(idx[1]);
+        if(xlits.size()>1) {
+          idx[1] = (idx[0]==1) ? 0 : 1;
+          continue;
+        }
+        assert(size()==1);
+        ws[0] = 0;
+        ptr_cache[0] = WLIN0.size()>0 ? ptr_(idx[0], ws[0]) : 0;
+        return xcls_upd_ret::UNIT;
+      } else {
+        //clause is neither SAT nor UNIT --> NONE
+        ws[0] = 0;
+        ws[1] = 0;
+        ptr_cache[0] = ptr_(idx[0],ws[0]);
+        ptr_cache[1] = ptr_(idx[1],ws[1]);
+        return xcls_upd_ret::NONE;
+      }
+    }
+    
+    if(WLIN0.is_zero()) {
+      remove_zero_lineral(idx[0]);
+      WLIN1 += shared_part;
+      shared_part.clear();
+    }
+    if(WLIN1.is_zero()) {
+      remove_zero_lineral(idx[1]);
+      WLIN0 += shared_part;
+      shared_part.clear();
+    }
+    assert(size()>=2);
+
+    if(WLIN0.is_one()) swap_wl();
+    if(WLIN1.is_one()) {
+      //set SAT_dl_count s.t. clause is satisfied already at dl 0
+      SAT_dl_count = {0, 1};
+      return xcls_upd_ret::SAT;
+    }
+   
+    assert( assert_data_struct() );
+    
+    return xcls_upd_ret::NONE;
   };
 
   /**
@@ -944,12 +1089,6 @@ public:
   const lit_watch &get_wl0() const { return ptr_ws(0); };
   const lit_watch &get_wl1() const { return ptr_ws(1); };
 
-  // void set_wl_it0(watch_list_it wli) { wl_it[0] = wli; };
-  // void set_wl_it1(watch_list_it wli) { wl_it[1] = wli; };
-
-  // const watch_list_it& get_wl_it0() const { return wl_it[0]; };
-  // const watch_list_it& get_wl_it1() const { return wl_it[1]; };
-
   /**
    * @brief determines if xcls is currently satsified
    *
@@ -958,6 +1097,15 @@ public:
    */
   inline bool is_sat(const vec<dl_c_t> &dl_count) const {
     return (dl_count[SAT_dl_count.first] == SAT_dl_count.second);
+  }
+  
+  /**
+   * @brief returns if it is known that xcls is satsified on dl0
+   *
+   * @return true iff it is known that xcls is satisfied on dl0
+   */
+  inline bool is_sat0() const {
+    return SAT_dl_count.first == 0 && SAT_dl_count.second == 1;
   }
 
   /**
@@ -1054,7 +1202,7 @@ public:
    */
   inline xlit get_unit() const { 
     //return size() > 1 ? (WLIN1 + shared_part).add_one() : (size() == 0 ? xlit(0,false) : WLIN0.plus_one());
-    return xlits.empty() ? xlit(0,false) : (WLIN0 + shared_part).add_one();
+    return size()==0 ? xlit(0,false) : (WLIN0 + shared_part).add_one();
   };
 
   inline bool unit_contains(const var_t &ind) const {
@@ -1115,7 +1263,7 @@ public:
 
     assert(size()<2 || ptr_ws(0) != ptr_ws(1));
 
-    assert(size()==0 || size()==1 || !WLIN0.is_constant());
+    assert(size()==0 || size()==1 || !WLIN0.is_constant() || is_sat0());
     assert(size()<2 || !WLIN0.is_constant());
 
     // check that WLIN0 and WLIN1 share no inds!
@@ -1140,7 +1288,7 @@ public:
 #else
   bool assert_data_struct(const vec<bool3> &alpha, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) const {
     assert(is_unit(dl_count) || is_sat(dl_count) || alpha[ptr_ws(0)] == bool3::None);
-    if (!is_unit(dl_count) && alpha[ptr_ws(0)] != bool3::None) {
+    if (!is_unit(dl_count) && !WLIN0.is_one() && alpha[ptr_ws(0)] != bool3::None) {
       assert(is_sat(dl_count) || eval0(alpha) || (!eval0(alpha) && !eval1(alpha)));
     }
     if(is_sat(dl_count)) {

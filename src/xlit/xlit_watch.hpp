@@ -9,9 +9,12 @@ using lit_watch = var_t;
 
 /**
  * @brief return type for update of xcls_watch
+ * @todo add EQUIV type?
  */
 enum class xlit_upd_ret { ASSIGNING, UNIT };
 
+
+typedef list<xlit_watch>::iterator xlit_w_it;
 
 class xlit_watch : public xlit
 {
@@ -22,16 +25,21 @@ class xlit_watch : public xlit
     lit_watch ws[3] = {0,0,0};
 
     /**
-     * @brief dl_count when xlit_watch was instantiated, req to check if xlit is active!
+     * @brief dl_count when xlit_watch was last ASSIGNING, req to check if xlit is active!
      */
     std::pair<var_t,var_t> dl_c = {0,0};
 
-    typedef list<xlit_watch>::iterator xlit_w_it;
     /**
      * @brief index of reason clause
      */
     list< xlit_w_it > reason_cls_idxs;
     var_t reason_cls_idx = -1;
+
+    /**
+     * @brief flag that indicates whether lineral can be reduced -- in that case it can be reduced!
+     * @note necessary with opt.eq==true to avoid reducing linerals with themself to zero!
+     */
+    bool reducible = true;
 
   public:
     xlit_watch() {};
@@ -116,7 +124,7 @@ class xlit_watch : public xlit
      * @return true iff lt is watched
      */
     bool watches(const var_t& lt) const {
-      return !idxs.empty() && (get_wl0() == lt || idxs[ws[1]] == lt);
+      return !idxs.empty() && (get_wl0() == lt || get_wl1() == lt);
     };
 
 
@@ -147,13 +155,13 @@ class xlit_watch : public xlit
      * @return the first watched literal
      * @todo caching?!
      */
-    var_t get_wl0() const { return idxs[ws[0]]; };
+    var_t get_wl0() const { assert(ws[0]<idxs.size()); return idxs[ws[0]]; };
     
     /**
      * @brief get the second watched literal
      * @return the second watched literal
      */
-    var_t get_wl1() const { return idxs[ws[1]]; };
+    var_t get_wl1() const { assert(ws[1]<idxs.size()); return idxs[ws[1]]; };
 
     /**
      * @brief returns the equivalent lit, if this is an equivalence
@@ -267,6 +275,14 @@ class xlit_watch : public xlit
      * @param idx index of reason_cls, i.e., xclss[idx] must be a unit clause and the unit is equiv to this
      */
     inline void set_reason_idx(const var_t& idx) { reason_cls_idxs.clear(); reason_cls_idx = idx; }
+    
+    /**
+     * @brief removes all reasons
+     */
+    inline void clear_reason() { reason_cls_idxs.clear(); reason_cls_idx = (var_t) -1; }
+
+    inline bool is_reducible() const { return reducible; };
+    inline void set_reducibility(const bool reducible_) { reducible = reducible_; };
 
     /**
      * @brief removes literal upd_lt from lineral, if is present
@@ -344,7 +360,6 @@ class xlit_watch : public xlit
     
     bool assert_data_struct(const vec<bool3>& alpha, [[maybe_unused]] const vec<dl_c_t>& dl_count) const {
       assert(is_zero() || is_active(dl_count) || is_assigning(alpha));
-      assert(reason_cls_idx == (var_t) -1 || reason_cls_idxs.empty());
       return assert_data_struct(alpha);
     }
 
@@ -359,9 +374,45 @@ class xlit_watch : public xlit
      * @note if it returns true, may invalidate dl_c, i.e., is_assigning(dl_count) (!)
      */
     bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count) {
+      assert(reducible);
       const bool ret = xlit::reduce(alpha);
       if( ret ) init(alpha, alpha_dl, dl_count);
       assert(assert_data_struct(alpha));
+      return ret;
+    };
+    
+    /**
+     * @brief reduce with alpha
+     * 
+     * @param alpha current alpha-assignments
+     * @param alpha_dl dl of alpha-assignments
+     * @param lvl lvl on which to reduce on
+     * @return true iff inds were removed
+     * @todo lazy re-init -- we should be able to do this in one go with xlit::reduce!
+     * 
+     * @note if it returns true, may invalidate dl_c, i.e., is_assigning(dl_count) (!)
+     */
+    bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t lvl) {
+      assert(reducible);
+      const bool ret = xlit::reduce(alpha, alpha_dl, lvl);
+      if( ret ) init(alpha, alpha_dl, dl_count);
+      assert(assert_data_struct(alpha));
+      return ret;
+    };
+    
+    /**
+     * @brief reduce with equiv_lits
+     * @does not track reason_cls!
+     * 
+     * @param alpha current alpha-assignments
+     * @param alpha_dl dl of alpha-assignments
+     * @param equiv_lits current equivalent literals
+     * @return true iff watches were changed
+     */
+    inline bool reduce_no_tracking(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
+      assert(reducible);
+      const auto ret = reduce(alpha, alpha_dl, dl_count, equiv_lits);
+      clear_reason();
       return ret;
     };
     
@@ -373,7 +424,21 @@ class xlit_watch : public xlit
      * @param equiv_lits current equivalent literals
      * @return true iff watches were changed
      */
-    bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
+    bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits);
+    
+    /**
+     * @brief reduce with equiv_lits
+     * 
+     * @param alpha current alpha-assignments
+     * @param alpha_dl dl of alpha-assignments
+     * @param equiv_lits current equivalent literals
+     * @param lvl dl on which to reduce
+     * @return true iff watches were changed
+     */
+    bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits, const var_t lvl);
+    
+    bool reduce_old(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
+      assert(reducible);
       //@todo! do both reductions in one go!
       reduce(alpha, alpha_dl, dl_count);
           //while(it != idxs.end()) {
@@ -385,34 +450,45 @@ class xlit_watch : public xlit
           //        ++it;
           //    }
           //}
+      const auto wl0 = size()>0 ? get_wl0() : 0;
+      const auto wl1 = size()>1 ? get_wl1() : 0;
       bool ret = false;
       var_t offset = 0;
       while(offset<idxs.size()) {
-          if( equiv_lits[ idxs[offset] ].is_active()) {
+          if( equiv_lits[ idxs[offset] ].is_active() ) {
+              const auto other_lit = equiv_lits[ idxs[offset] ].ind;
+              assert(idxs[offset] < other_lit);
               //add reduction reasons
               reason_cls_idxs.emplace_back( equiv_lits[idxs[offset]].reason_lin );
               //adapt watches if necessary!
-              ret |= (ws[0]==offset) || (ws[1]==offset);
-              if(ws[0] < offset && equiv_lits[ idxs[offset] ].ind < get_wl0()) { --ws[0]; }
-              if(ws[1] < offset && equiv_lits[ idxs[offset] ].ind < get_wl1()) { --ws[1]; }
-              assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
-              *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
+              ret |= (ws[0]==offset) || (ws[1]==offset) || (wl0 == other_lit) || (wl1 == other_lit);
+              // idxs[offset] < wl < other_lit --> move wl by one!
+              if(offset < ws[0] && wl0 < other_lit)  --ws[0];
+              if(offset < ws[1] && wl1 < other_lit)  --ws[1];
+              // idxs[offset] < other_lit < wl AND other_lit contained in idxs --> move wl by two!
+              if(offset < ws[0] && other_lit < wl0 && this->operator[](other_lit)) { --ws[0]; --ws[0]; }
+              if(offset < ws[1] && other_lit < wl1 && this->operator[](other_lit)) { --ws[1]; --ws[1]; }
+              // idxs[offset] < other_lit < wl AND other_lit NOT contained in idxs --> leave wl as is!
+              *this += xlit({idxs[offset], other_lit}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
+              assert(ret || idxs[ws[0]] == wl0);
+              assert(ret || idxs[ws[1]] == wl1);
           } else {
               ++offset;
           }
       }
       //re-init watches if watched literals were replaced!
-      if( ret ) init(alpha, alpha_dl, dl_count);
+      //if( ret ) init(alpha, alpha_dl, dl_count);
+      init(alpha, alpha_dl, dl_count);
       assert(assert_data_struct(alpha));
       return ret;
     };
-
 
     xlit_watch& operator=(xlit_watch&& other) noexcept {
       std::swap(ws, other.ws);
       dl_c = std::move(other.dl_c);
       reason_cls_idxs = std::move(other.reason_cls_idxs);
       reason_cls_idx = other.reason_cls_idx;
+      reducible = other.reducible;
       xlit::operator=(other);
       return *this;
     }
@@ -422,15 +498,17 @@ class xlit_watch : public xlit
       dl_c = other.dl_c;
       reason_cls_idxs = other.reason_cls_idxs;
       reason_cls_idx = other.reason_cls_idx;
+      reducible = other.reducible;
       xlit::operator=(other);
       return *this;
     }
 
     void swap(xlit_watch& o) noexcept {
-      xlit::swap(o);
       std::swap(ws, o.ws);
       std::swap(dl_c, o.dl_c);
       std::swap(reason_cls_idxs, o.reason_cls_idxs);
       std::swap(reason_cls_idx, reason_cls_idx);
+      std::swap(reducible, o.reducible);
+      xlit::swap(o);
     }
 };

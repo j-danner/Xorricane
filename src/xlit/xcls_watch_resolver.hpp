@@ -102,12 +102,12 @@ public:
    * @brief call once when no more resolvents are computed.
    * @note recompute shared_parts to 'repair' xcls_watch data_struct
    */
-  inline xcls_watch finalize(const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+  inline xcls_watch finalize(const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count, const var_t max_size_=(var_t)-1) {
     //@heuristic choose good value!
-    const var_t max_size = std::min(4, (int) (num_nz_lins / std::max(1, (int) t_pos_to_idxs.size())) + 2 );
+    const var_t max_size = max_size_==(var_t)-1 ? std::min(4, (int) (num_nz_lins / std::max(1, (int) t_pos_to_idxs.size())) + 2 ) : max_size_;
     reduction(max_size, alpha_dl, alpha_trail_pos, dl_count);
 
-    assert( num_nz_lins <= max_size*t_pos_to_idxs.size() );
+    assert( is_zero() || num_nz_lins <= max_size*t_pos_to_idxs.size() );
     assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
     assert( size()<2 || xlits[idx[1]][ptr_cache[1]] );
 

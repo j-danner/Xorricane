@@ -92,9 +92,10 @@ struct equivalence {
   var_t prev_ind;
   bool polarity;
   list<xlit_watch>::iterator reason_lin;
+  var_t lvl;
 
-  equivalence() : ind(0), prev_ind(0), polarity(false) {};
-  equivalence(const var_t _ind, const bool _polarity) : ind(_ind), polarity(_polarity) {};
+  equivalence() : ind(0), prev_ind(0), polarity(false), lvl(-1) {};
+  equivalence(const var_t _ind, const bool _polarity, const var_t _lvl) : ind(_ind), polarity(_polarity), lvl(_lvl) {};
   equivalence(const equivalence& other) = default;
   equivalence(equivalence&& other) = default;
   
@@ -104,16 +105,19 @@ struct equivalence {
   void set_prev_ind(const var_t _ind) { prev_ind = _ind; };
   void set_polarity(const bool _polarity) { polarity = _polarity; };
   void set_lin(const list<xlit_watch>::iterator& reason_lin_) { reason_lin = reason_lin_; };
+  void set_lvl(const var_t lvl_) { lvl = lvl_; };
 
   bool is_active() const { return ind>0; };
+  bool is_active(const var_t lvl_) const { return lvl<=lvl_ && ind>0; };
 
-  void clear() { ind = 0; };
+  void clear() { ind = 0; lvl=0; };
   std::string to_str(const var_t& idx) const { return "x" + std::to_string(idx) + "+x" + std::to_string(ind) + (polarity ? "+1" : ""); };
 
   void swap(equivalence& o) noexcept {
     std::swap(ind, o.ind);
     std::swap(polarity, o.polarity);
     std::swap(reason_lin, o.reason_lin);
+    std::swap(lvl, o.lvl);
   }
 };
 
