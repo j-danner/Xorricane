@@ -1191,6 +1191,17 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
+    SECTION( "test68.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test68.xnf");
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::nbu, true, 0, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==2 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
 }
 
 TEST_CASE( "solving harder 2xnf test instances with -ms", "[solver][maxsol][small][long]") {
