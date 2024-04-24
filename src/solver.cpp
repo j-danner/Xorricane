@@ -152,7 +152,7 @@ void solver::backtrack(const var_t& lvl) {
     assert(dl==lvl);
 
     //cleanup lineral_queue
-    lineral_queue.clear();
+    lineral_queue.clear(lvl);
 
     // check active_cls count
     //VERB(90, "active_cls restored:   " + std::to_string(active_cls))
@@ -311,13 +311,13 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
       #endif
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
-        while( (it->type != trail_t::IMPLIED_ALPHA) || !learnt_cls.unit_contains(it->ind) ) {
+        while( (it->type != trail_t::ALPHA) || !learnt_cls.unit_contains(it->ind) ) {
             //@note instead of 'unit_contains' we could also check 'get_wl0'; but ONLY if we ensure that we always watch the ind with highest alpha_trail_pos after initialization! ('resolve' should ensure this property - but 'init()' does not!)
             //@todo fix xcls_watch.init() to watch ind with hightest alpha_trail_pos(!)
             ++it;
             assert(it!=trails.back().rend());
         }
-        assert(it->type == trail_t::IMPLIED_ALPHA);
+        assert(it->type == trail_t::ALPHA);
         
         //get reason_cls
         reason_cls = get_reason(*it);
@@ -359,14 +359,12 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
     VERB(90, "   * XNF " + out.to_xnf_str() );
     VERB(70, "   '----> gives with current assignments: " + out.to_xcls().reduced(alpha).to_str());
     assert( out.to_xcls().reduced(alpha).to_str() == "1" );
-
+    
     //find correct backtrack-lvl
     const var_t b_lvl = out.get_assigning_lvl(alpha_dl);
     assert(b_lvl < dl);
-
-#ifndef NDEBUG
-    print_trail("    *");
-#endif
+    //assert that b_lvl is minimal
+    assert_slow(b_lvl==0 || !out.to_xcls().reduced(alpha,alpha_dl,b_lvl-1).is_unit() || !out.to_xcls().reduced(alpha,alpha_dl,b_lvl-1).get_unit().is_assigning());
     
     if( dl < out.size() && b_lvl == dl-1 ) {
         VERB(50, "   * negated decisions lead to smaller learnt_cls and the same backtrack-level!");
@@ -460,9 +458,9 @@ void solver::restart(stats& s) {
     assert_slow( assert_data_structs() );
   #ifdef DEBUG_SLOW
     //check if reason cls for lineral_watches can be computed correctly
-    for(auto& l : lineral_watches[0]) {
-        const auto rs = get_reason(l.get_reason_idxs(), l.get_reason_idx());
-        assert( (rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits) + l.to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero()) );
+    for(xlit_w_it it=lineral_watches[0].begin(); it!=lineral_watches[0].end(); ++it) {
+        const auto rs = get_reason( it );
+        assert( (rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits) + it->to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero()) );
         //BEWARE this assertion may fail for some 'restart' calls of solver_cpy(!)
     }
   #endif
@@ -484,13 +482,14 @@ void solver::restart(stats& s) {
     }
     xclss = std::move(cpy);
     //fix reason_cls idxs for all xlit_watch in lineral_watches[0]
-    for(auto& l : lineral_watches[0]) {
+    for(xlit_w_it it=lineral_watches[0].begin(); it!=lineral_watches[0].end(); ++it) {
+        auto& l = *it;
         if(l.get_reason_idx()!=(var_t)-1) {
             assert( new_idx[l.get_reason_idx()] < xclss.size() );
             l.set_reason_idx( new_idx[l.get_reason_idx()] );
         }
       #ifdef DEBUG_SLOW
-        const auto rs = get_reason(l.get_reason_idxs(), l.get_reason_idx());
+        const auto rs = get_reason( it );
         assert( (rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits) + l.to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero()) );
         //BEWARE this assertion may fail for some 'restart' calls of solver_cpy(!)
       #endif
@@ -511,9 +510,9 @@ void solver::restart(stats& s) {
 
     update_restart_schedule(s.no_restarts);
     VERB(90, "c restart finished")
-#ifndef NDEBUG
+  #ifndef NDEBUG
     print_trail("    *");
-#endif
+  #endif
 };
 
 void solver::remove_fixed_alpha(const var_t upd_lt) {
@@ -553,11 +552,8 @@ void solver::remove_fixed_equiv() {
             //reduce without tracking reason clause -- not neccessary on dl 0
             lin->reduce_no_tracking(alpha, alpha_dl, dl_count, equiv_lits);
             //if lin becomes assigning, push unto lineral_queue
-            if(lin->is_assigning(alpha)) {
-                queue_implied_alpha(lin);
-                continue;
-            } else if(lin->is_equiv()) {
-                queue_implied_lineral(lin, 0, trail_t::EQUIV);
+            if(lin->is_assigning(alpha) || (opt.eq && lin->is_equiv())) {
+                queue_implied_lineral(lin, 0);
                 continue;
             }
         }
@@ -594,11 +590,10 @@ void solver::remove_fixed_equiv() {
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral
-                lineral_watches[0].emplace_back( std::move(xclss[i].get_unit()), alpha, alpha_dl, dl_count, i );
+                lineral_watches[0].emplace_back( std::move(xclss[i].get_unit()), alpha, alpha_dl, dl_count, i, 0 );
                 queue_implied_lineral( std::prev(lineral_watches[0].end()), 0 );
                 if(xclss[i].size()>0) watch_list[xclss[i].get_wl0()].emplace_back( i );
-                assert(xclss[i].size()<=1); //@todo if this fails, uncomment line below!
-                //if(xclss[i].size()>1) watch_list[xclss[i].get_wl1()].emplace_back( i );
+                assert(xclss[i].size()<=1);
                 break;
             case xcls_upd_ret::NONE:
                 assert(xclss[i].is_none(dl_count));
@@ -634,10 +629,11 @@ void solver::GCP(stats &s) noexcept {
             if(lineral_queue.empty()) break;
         }
         const var_t& upd_lt = propagate_implied_lineral();
-        ++s.new_px_upd;
-        VERB(120, "c new literal ready for propagation");
         if(upd_lt == (var_t) -1) continue; //nothing new to propagate!
         if(upd_lt == 0) { assert(at_conflict()); continue; } //at conflict!
+        ++s.new_px_upd;
+        VERB(120, "c new literal ready for propagation");
+        assert( alpha_dl[upd_lt]==dl );
 
         VERB(120, "c updating lineral_watches");
         //(1) find new implied alphas from watched linerals
@@ -654,6 +650,7 @@ void solver::GCP(stats &s) noexcept {
             const auto& [new_wl, ret] = lin->update(upd_lt, alpha, dl, dl_count);
             //if watched-literal has changed, i.e., new_wl != 0; update watch-list
             if(new_wl != upd_lt) {
+                //@todo this case only occurs for ret-type UNIT, doesn't it?! --> refactor code!
                 //mv *it from current watch-list to new watch-list + advance it
                 L_watch_list[new_wl].splice( L_watch_list[new_wl].end(), L_watch_list[upd_lt], it++ );
             } else {
@@ -683,6 +680,7 @@ void solver::GCP(stats &s) noexcept {
             const auto& [new_wl, ret] = xclss[i].update(upd_lt, alpha, alpha_dl, alpha_trail_pos, dl_count);
             //if watched-literal has changed, i.e., new_wl != 0; update watch-list
             if(new_wl != upd_lt) {
+                //@todo this case only occurs for ret-type NONE, doesn't it?! --> refactor code!
                 //rm *it from current watch-list:
                 it2 = watch_list[upd_lt].erase(it2);
                 //add i to newly watched literal:
@@ -706,7 +704,7 @@ void solver::GCP(stats &s) noexcept {
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral
-                lineral_watches[dl].emplace_back( std::move(xclss[i].get_unit()), alpha, alpha_dl, dl_count, i );
+                lineral_watches[dl].emplace_back( std::move(xclss[i].get_unit()), alpha, alpha_dl, dl_count, i, dl);
                 queue_implied_lineral( std::prev(lineral_watches[dl].end()), dl );
                 break;
             case xcls_upd_ret::NONE:
@@ -843,8 +841,8 @@ void solver::dpll_solve(stats &s) {
             const auto [L,_] = get_assignments_xsys();
             if (!L.is_consistent()) {
                 //enforce backtracking!
-                lineral_watches[dl].emplace_back( xlit(0, false), alpha, alpha_dl, dl_count );
-                add_implied_lineral(std::prev(lineral_watches[dl].end()), dl, trail_t::GUESS);
+                lineral_watches[dl].emplace_back( xlit(0, false), alpha, alpha_dl, dl_count, dl );
+                process_lineral(std::prev(lineral_watches[dl].end()), dl, queue_t::NEW_GUESS);
             } else {
                 solve_L(L, s);
 
@@ -979,7 +977,7 @@ void solver::solve(stats &s) {
                 //restart?
                 if( need_restart() ) {
                     restart(s);
-                    solver_cpy.restart(s_cpy);
+                    if(opt.cm) solver_cpy.restart(s_cpy);
                 }
             } else {
                 ++dl;
@@ -1198,24 +1196,24 @@ std::string solver::to_xnf_str() const noexcept {
                 }
                 ++it; ++idx;
             }
+            //@todo finish/fix!!
             //calculate length of individual watch-lists
-            vec<var_t> watch_cnt = vec<var_t>(L_watch_list.size(),0);
-            for(const auto& lw_dl : lineral_watches) {
-                for(const auto& l : lw_dl) {
-                    if(l.size()>0) ++watch_cnt[ l.get_wl0() ];
-                    if(l.size()>1) ++watch_cnt[ l.get_wl1() ];
-                }
-            }
-            //decrease by number of active watches!
-            for(var_t idx=1; idx<L_watch_list.size(); ++idx) {
-                for(const auto& [lvl, dl_c, lin] : L_watch_list[idx]) {
-                    if(dl_count[lvl]==dl_c) --watch_cnt[idx];
-                }
-                //if(alpha[idx]!=bool3::None) --watch_cnt[idx];
-                //now watch_cnt should only be zero!
-                //@todo finish/fix!!
-                //assert( !lineral_queue.empty() || watch_cnt[idx]==0 );
-            }
+            //vec<var_t> watch_cnt = vec<var_t>(L_watch_list.size(),0);
+            //for(const auto& lw_dl : lineral_watches) {
+            //    for(const auto& l : lw_dl) {
+            //        if(l.size()>0) ++watch_cnt[ l.get_wl0() ];
+            //        if(l.size()>1) ++watch_cnt[ l.get_wl1() ];
+            //    }
+            //}
+            ////decrease by number of active watches!
+            //for(var_t idx=1; idx<L_watch_list.size(); ++idx) {
+            //    for(const auto& [lvl, dl_c, lin] : L_watch_list[idx]) {
+            //        if(dl_count[lvl]==dl_c) --watch_cnt[idx];
+            //    }
+            //    //if(alpha[idx]!=bool3::None) --watch_cnt[idx];
+            //    //now watch_cnt should only be zero!
+            //    //assert( !lineral_queue.empty() || watch_cnt[idx]==0 );
+            //}
         }
 
       #ifdef DEBUG_SLOW
@@ -1246,7 +1244,6 @@ std::string solver::to_xnf_str() const noexcept {
             for(const auto& l : L_lin.get_xlits()) {
                 assert(L_units.reduce(l).is_zero());
             }
-            print_trail();
             assert(L_units==L_lin);
         }
       #endif
@@ -1276,7 +1273,6 @@ std::string solver::to_xnf_str() const noexcept {
             );
         }
 
-
         //check trail
         for(var_t lvl = 0; lvl<dl; lvl++) {
             for(const auto& [ind, type, rs] : trails[lvl]) {
@@ -1288,15 +1284,18 @@ std::string solver::to_xnf_str() const noexcept {
         }
         dl_c_t cnt = 1;
         for(var_t lvl=0; lvl<trails.size(); lvl++) {
-            cnt += std::count_if(trails[lvl].begin(), trails[lvl].end(), [](const trail_elem& t) { return t.type==trail_t::IMPLIED_ALPHA; });
+            cnt += std::count_if(trails[lvl].begin(), trails[lvl].end(), [](const trail_elem& t) { return t.type==trail_t::ALPHA; });
         }
         assert_slow( cnt == total_trail_length );
 
-        //sanity check that reasons of lineral_watches have not been deleted!
+        //sanity check that reasons of lineral_watches have not been deleted! (& get_lvl() returns correct lvl)
+        var_t lvl = 0;
         for(const auto& lin_l : lineral_watches) {
             for(const auto& lin : lin_l) {
                 assert( lin.get_reason_idx()==(var_t)-1 || lin.get_reason_idx() < xclss.size() );
+                assert( lin.get_lvl()==lvl );
             }
+            ++lvl;
         }
 
         //check that reasons for equiv_lits exist!
@@ -1354,15 +1353,15 @@ void solver::print_trail(std::string lead) const noexcept {
         var_t i = 0;
         VERB(80, lead+" -");
         for (const auto& t : t_dl) {
-            assert( (t.type!=trail_t::IMPLIED_ALPHA) || alpha_dl[t.ind] == lvl );
+            assert( (t.type!=trail_t::ALPHA) || alpha_dl[t.ind] == lvl );
             switch(t.type) {
               case trail_t::EQUIV:
                 VERB(80, lead+" " + to_string(lvl,w) + " " + to_string(i,w) + " " + trail_t_to_str(t.type) + " " + "x" + to_string(t.ind,w) + " -> x" + to_string(equiv_lits[t.ind].ind,w) + (equiv_lits[t.ind].polarity ? "+1" : "  ") + " from " + get_reason(t, 1).to_str());
                 break;
-              case trail_t::IMPLIED_UNIT:
+              case trail_t::UNIT:
                 VERB(80, lead+" " + to_string(lvl,w) + " " + to_string(i,w) + " " + trail_t_to_str(t.type) + " " +  t.lin->to_str() + ( lvl>0 ? (" from " + get_reason(t, 1).to_str() ) : "") );
                 break;
-              case trail_t::IMPLIED_ALPHA:
+              case trail_t::ALPHA:
                 VERB(80, lead+" " + to_string(lvl,w) + " " + to_string(i,w) + " " + trail_t_to_str(t.type) + " " + "x" + to_string(t.ind,w) + " -> " + (b3_to_bool(alpha[t.ind]) ? "1" : "0") + "  from " + get_reason(t, 1).to_str());
                 break;
               case trail_t::GUESS:
