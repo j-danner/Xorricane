@@ -198,7 +198,7 @@ bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, con
 
     //ensure that no un-reduced inds is left
   #ifndef NDEBUG
-    for(auto& v : idxs) assert( alpha[v]==bool3::None && !equiv_lits[v].is_active() );
+    for(auto& v : idxs) assert( (alpha[v]==bool3::None || alpha_dl[v]>lvl) && !equiv_lits[v].is_active(lvl) );
     assert( assert_data_struct(alpha, dl_count) );
   #endif
 

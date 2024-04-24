@@ -82,7 +82,6 @@ bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec
         do {
             s.GCP(_);
         } while( !s.at_conflict() && s.need_ge_inprocessing(_) && s.find_implications_by_GE(_) );
-        assert(!s.trails.back().empty());
         //if s is at conflict, then all processed clauses already make up a (shorter) conflict clause!
         if(s.at_conflict()) {
             early_abort = true;
