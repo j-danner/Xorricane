@@ -84,20 +84,14 @@ void solver::init_xclss(const vec< xcls >& clss) noexcept {
     if(opt.ip==initial_prop_opt::nbu) {
         xsys _L2;
         //reduce all cls 
-        //@todo properly do reduction 'structured gaussian'-style
-        bool restart = true;
-        while(restart) {
-            restart = false;
-            for(auto it = _xclss.begin(); it!=_xclss.end(); ++it) {
-                if(it->deg()>1) {
-                    if( it->update_short(_Lsys) && it->deg()==1) {
-                        _Lsys.add_lineral( it->get_unit() );
-                        restart = true;
-                    }
+        for(auto it = _xclss.begin(); it!=_xclss.end(); ++it) {
+            if(it->deg()>1) {
+                if( it->update_short(_Lsys) && it->deg()==1) {
+                    _Lsys.add_lineral( it->get_unit() );
+                    it = _xclss.begin(); //restart everytime a new lineral is added!
                 }
-                //can be removed, but needn't be! -- chose to keep those 'irrelevant' clauses, to have more powerful dl0 reasoning
-                //if(it->deg()==1) it = std::prev( _xclss.erase(it) );
             }
+            if(it->deg()==1) it = std::prev( _xclss.erase(it) );
         }
         //add linerals from _Lsys
         for(auto& [lt,l_it] : _Lsys.get_pivot_poly_idx()) {
