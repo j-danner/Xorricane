@@ -36,7 +36,7 @@ TEST_CASE( "xlit_watch", "[xlit_watch]" ) {
 
     //reduction with equiv_lits
     alpha = { bool3::None, bool3::None, bool3::None, bool3::None, bool3::None, bool3::None, bool3::None, bool3::None };
-    xlit_watch lin = xlit_watch(l3, alpha, alpha_dl, dl_count);
+    xlit_watch lin = xlit_watch(l3, alpha, alpha_dl, dl_count, 0);
     alpha_dl = { (var_t) -1, (var_t) -1, (var_t) -1, (var_t) -1, (var_t) -1, (var_t) -1, (var_t) -1, (var_t) -1 };
     vec< equivalence > equiv_lits(8);
 
@@ -132,7 +132,7 @@ TEST_CASE( "xlit_watch", "[xlit_watch]" ) {
     //    CHECK( lin.to_str()=="x1+x2+x6+1" );
     //}
 
-    lin = xlit_watch(l1, alpha, alpha_dl, dl_count);
+    lin = xlit_watch(l1, alpha, alpha_dl, dl_count, 0);
     
     SECTION( "reduction with equiv_lits 10" ) {
         equiv_lits[3].ind = 6;
