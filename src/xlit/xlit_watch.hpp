@@ -40,25 +40,25 @@ class xlit_watch : public xlit
      * @note necessary with opt.eq==true to avoid reducing linerals with themself to zero!
      */
     bool reducible = true;
+    
+    /**
+     * @brief dl on which the lineral was created -- and is valid
+     */
+    var_t lvl = (var_t) -1;
 
   public:
     xlit_watch() {};
-    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count) noexcept : xlit(lit) { init(alpha, alpha_dl, dl_count); }
-    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count) noexcept : xlit(std::move(lit)) { init(alpha, alpha_dl, dl_count); };
-    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t& rs) noexcept : xlit(lit), reason_cls_idx(rs) { init(alpha, alpha_dl, dl_count); }
-    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t& rs) noexcept : xlit(std::move(lit)), reason_cls_idx(rs) { 
-      init(alpha, alpha_dl, dl_count);
-    };
-    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const list< xlit_w_it >& rs) noexcept : xlit(lit), reason_cls_idxs(rs) { init(alpha, alpha_dl, dl_count); }
-    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const list< xlit_w_it >& rs) noexcept : xlit(std::move(lit)), reason_cls_idxs(rs) { init(alpha, alpha_dl, dl_count); };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t lvl_) noexcept : xlit(lit), lvl(lvl_) { init(alpha, alpha_dl, dl_count); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t lvl_) noexcept : xlit(std::move(lit)), lvl(lvl_) { init(alpha, alpha_dl, dl_count); };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t& rs, const var_t lvl_) noexcept : xlit(lit), reason_cls_idx(rs), lvl(lvl_) { init(alpha, alpha_dl, dl_count); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t& rs, const var_t lvl_) noexcept : xlit(std::move(lit)), reason_cls_idx(rs), lvl(lvl_) { init(alpha, alpha_dl, dl_count); };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const list< xlit_w_it >& rs, const var_t lvl_) noexcept : xlit(lit), reason_cls_idxs(rs), lvl(lvl_) { init(alpha, alpha_dl, dl_count); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const list< xlit_w_it >& rs, const var_t lvl_) noexcept : xlit(std::move(lit)), reason_cls_idxs(rs), lvl(lvl_) { init(alpha, alpha_dl, dl_count); };
+    
     //copy ctor
-    xlit_watch(const xlit_watch& o) noexcept : xlit(o), dl_c(o.dl_c), reason_cls_idxs(o.reason_cls_idxs) {
-      ws[0] = o.ws[0]; ws[1]=o.ws[1]; ws[2]=o.ws[2];
-    }
+    xlit_watch(const xlit_watch& o) = default;
     //mv ctor
-    xlit_watch(xlit_watch&& o) noexcept : xlit(std::move(o)), dl_c(std::move(o.dl_c)), reason_cls_idxs(std::move(o.reason_cls_idxs)) {
-      std::swap(ws, o.ws);
-    }
+    xlit_watch(xlit_watch&& o) = default;
 
     ~xlit_watch() = default;
     
@@ -266,7 +266,7 @@ class xlit_watch : public xlit
      * @return true iff there is a non-trivial reason clause
      */
     bool has_non_trivial_reason_cls() const {
-      return !reason_cls_idxs.empty() || reason_cls_idx!=(var_t)-1;
+      return lvl!=0 && (!reason_cls_idxs.empty() || reason_cls_idx!=(var_t)-1);
     }
 
     /**
@@ -275,6 +275,9 @@ class xlit_watch : public xlit
      * @param idx index of reason_cls, i.e., xclss[idx] must be a unit clause and the unit is equiv to this
      */
     inline void set_reason_idx(const var_t& idx) { reason_cls_idxs.clear(); reason_cls_idx = idx; }
+
+    //inline void set_lvl(const var_t lvl_) { lvl = lvl_; };
+    inline var_t get_lvl() const { return lvl; };
     
     /**
      * @brief removes all reasons
