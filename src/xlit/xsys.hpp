@@ -6,34 +6,34 @@
 
 #include "xlit.hpp"
 
-#include "../robin_hood-3.11.5/robin_hood.h"
 
 #ifdef NDEBUG
   template<class K, class V>
-  using pivot_map = robin_hood::unordered_flat_map<K,V>;
+  using pivot_map = std::map<K,V>;
+  //using pivot_map = std::unordered_map<K,V>; //this is sometimes different thatn std::map (see test59.xnf); generally negative effect :/
 #else
-
   template<class K, class V>
   using pivot_map = std::map<K,V>;
+  //using pivot_map = std::unordered_map<K,V>;
 #endif
 
-typedef std::list<xlit>::iterator xlits_it;
+typedef list<xlit>::iterator xlits_it;
 
 class xsys
 {
   private:
-    std::list< xlit > xlits;
+    list< xlit > xlits;
 
     pivot_map<var_t, xlits_it > pivot_poly_its;
 
     void rref();
   public:
-    xsys() noexcept { xlits = std::list<xlit>(); };
-    xsys(const xlit& lit) noexcept : xlits(std::list<xlit>({lit})) { rref(); };
-    xsys(xlit&& lit) noexcept : xlits(std::list<xlit>({std::move(lit)})) { rref(); };
+    xsys() noexcept { xlits = list<xlit>(); };
+    xsys(const xlit& lit) noexcept : xlits(list<xlit>({lit})) { rref(); };
+    xsys(xlit&& lit) noexcept : xlits(list<xlit>({std::move(lit)})) { rref(); };
     xsys(const vec<xlit>& xlits_) noexcept : xlits(xlits_.begin(),xlits_.end()) { rref(); };
-    xsys(const std::list<xlit>& xlits_) noexcept : xlits(xlits_) { rref(); };
-    xsys(std::list<xlit>&& xlits_) noexcept : xlits(std::move(xlits_)) { rref(); };
+    xsys(const list<xlit>& xlits_) noexcept : xlits(xlits_) { rref(); };
+    xsys(list<xlit>&& xlits_) noexcept : xlits(std::move(xlits_)) { rref(); };
     xsys(const xsys& o) noexcept : xlits(o.xlits) { fix_pivot_poly_idx(); };
     xsys(xsys&& o) noexcept : xlits(std::move(o.xlits)) { fix_pivot_poly_idx(); };
     ~xsys() = default;
@@ -104,7 +104,7 @@ class xsys
     
     //deprecated!
     inline const vec<xlit> get_xlits_vec() const { return vec<xlit>(xlits.begin(),xlits.end()); };
-    inline const std::list<xlit>& get_xlits() const { return xlits; };
+    inline const list<xlit>& get_xlits() const { return xlits; };
     inline const xlit& get_xlits(var_t i) const { return *(std::next(xlits.begin(),i)); };
     inline const xlit& get_xlits(xlits_it it) const { return *it; };
     inline const pivot_map<var_t,xlits_it>& get_pivot_poly_idx() const { return pivot_poly_its; };
@@ -128,4 +128,10 @@ class xsys
      * @param l literal to be added
      */
     void add_reduced_lit(const xlit& l);
+    void add_reduced_lit(xlit&& l);
+
+    void add_lineral(xlit&& l) noexcept { l.reduce(*this); add_reduced_lit( std::move(l) ); };
+    void add_lineral(const xlit& l) noexcept { xlit l_ = l; l_.reduce(*this); add_reduced_lit( std::move(l_) ); };
+
+    void clear() noexcept { xlits.clear(); pivot_poly_its.clear(); };
 };

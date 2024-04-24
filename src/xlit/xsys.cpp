@@ -70,16 +70,12 @@ bool xsys::lt_update_short(const xlit& l) {
     const auto search = pivot_poly_its.find( l.LT() );
     if(search == pivot_poly_its.end()) return false;
     const auto row = search->second;
-    auto prev_sz = row->size();
-    if(prev_sz <= 3) return false;
     //LT found -- start reduction!
     tmp_lin.clear();
     tmp_lin = *row + l;
     //update row -- if short enough
-    if(tmp_lin.size() <= 1.50 * prev_sz) {
-        row->swap(tmp_lin);
-        prev_sz = row->size();
-    }
+    if(tmp_lin.size() > 1.50 * row->size()) return false;
+    row->swap(tmp_lin);
     //rm from pivot_poly_its, then reduce with other eqs
     pivot_poly_its.erase( search );
     for (const auto &[lt,row_lt] : pivot_poly_its) {
@@ -135,8 +131,22 @@ xsys& xsys::operator +=(const xsys& other) {
     return *this;
 };
 
+void xsys::add_reduced_lit(xlit&& l) {
+    if(l.is_zero()) return;
+    //assert that l is indeed reduced
+    assert( reduce(l) == l );
+    for(auto& r : xlits) {
+        if(r[l.LT()]) r += l;
+    }
+    //append l to xlits
+    xlits.emplace_back( std::move(l) );
+    //add to pivot_poly_its
+    assert(!pivot_poly_its.contains(xlits.back().LT()));
+    pivot_poly_its[xlits.back().LT()] = std::prev(xlits.end());
+};
 
 void xsys::add_reduced_lit(const xlit& l) {
+    if(l.is_zero()) return;
     //assert that l is indeed reduced
     assert( reduce(l) == l );
     for(auto& r : xlits) {
@@ -145,7 +155,8 @@ void xsys::add_reduced_lit(const xlit& l) {
     //append l to xlits
     xlits.push_back( l );
     //add to pivot_poly_its
-    pivot_poly_its.insert( {xlits.back().LT(), std::prev(xlits.end())} );
+    assert(!pivot_poly_its.contains(l.LT()));
+    pivot_poly_its[xlits.back().LT()] = std::prev(xlits.end());
 };
 
 bool xsys::eval(const vec<bool>& sol) const {

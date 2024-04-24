@@ -1,4 +1,3 @@
-//from std
 #pragma once
 
 #include <iostream>
@@ -9,7 +8,6 @@
 #include <memory>
 
 #include "../misc.hpp"
-//#include "xsys.hpp"
 //forward declaration of class xsys
 class xsys;
 
@@ -24,6 +22,11 @@ class xlit
         bool p1;
         //sparse repr of literal
         vec< var_t > idxs; /**<  List of sorted indices of the terms. */
+        
+        //constructor for internal use only -- skips a check for flag 'presorted'
+        xlit(const vec< var_t >& idxs_, const bool p1_) noexcept : p1(p1_), idxs(idxs_) {
+          assert( std::is_sorted(idxs.begin(), idxs.end()) );
+        };
 
     public:
         xlit() noexcept : p1(false), idxs(vec<var_t>({})) {};
@@ -51,16 +54,16 @@ class xlit
 
         inline void init() noexcept { 
             //sort
-            std::sort(std::execution::par, idxs.begin(), idxs.end()); 
+            std::sort(idxs.begin(), idxs.end()); 
             //remove duplicates -- should never be necessary!
             //idxs.erase( std::unique( idxs.begin(), idxs.end() ), idxs.end() );
             if( idxs.size()>0 && idxs[0]==0 ) { idxs.erase(idxs.begin()); p1^=true; }
-            assert( idxs.empty() || idxs[0]!=0);
+            assert( idxs.empty() || idxs[0]!=0 );
         }
 
         inline void clear() noexcept { p1 = false; idxs.clear(); };
 
-        inline bool is_one() const { return p1 && (idxs.empty()); };
+        inline bool is_one() const { return p1 && idxs.empty(); };
         inline bool is_zero() const { return !p1 && idxs.empty(); };
         inline bool is_constant() const { return idxs.empty(); };
 
@@ -91,15 +94,16 @@ class xlit
         bool reduce_short(const xsys& sys);
         bool reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t& lvl);
         bool reduce(const vec<equivalence>& equiv_lits);
-        bool reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl);
+        bool reduce(const vec<equivalence>& equiv_lits, const var_t& lvl);
         bool reduce(const vec<bool3>& alpha);
+        bool reduce(const vec<bool3>& alpha, const vec<equivalence>& equiv_lits);
         bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl);
         bool reduce(const vec<xlit>& assignments);
         xlit reduced(const vec<xlit>& assignments) const { xlit ret(*this); ret.reduce(assignments); return ret; };
         xlit reduced(const vec<bool3>& alpha) const { xlit ret(*this); ret.reduce(alpha); return ret; };
         xlit reduced(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl) const { xlit ret(*this); ret.reduce(alpha, alpha_dl, lvl); return ret; };
         xlit reduced(const vec<equivalence>& equiv_lits) { xlit ret(*this); ret.reduce(equiv_lits); return ret;};
-        xlit reduced(const vec<bool3>& alpha, const vec<equivalence>& equiv_lits) const { xlit ret(*this); ret.reduce(alpha); ret.reduce(equiv_lits); ret.reduce(alpha); return ret; };
+        xlit reduced(const vec<bool3>& alpha, const vec<equivalence>& equiv_lits) const { xlit ret(*this); ret.reduce(alpha, equiv_lits); return ret; };
         vec<var_t> reducers(const vec<xlit>& assignments) const;
 
         inline vec<var_t> get_idxs() const { vec<var_t> r = idxs; if(p1){ r.insert(r.begin(), 0); } return r; };
@@ -119,8 +123,8 @@ class xlit
 	      xlit operator+(const xlit &other) const;
         //in-place operation (!)
         xlit& operator +=(const xlit& other);	
-        inline xlit& operator =(const xlit& other) noexcept { idxs = other.idxs; p1 = other.p1; return *this; };
-        inline xlit& operator =(xlit&& other) noexcept { idxs = std::move(other.idxs); p1 = std::move(other.p1); return *this; };
+        inline constexpr xlit& operator =(const xlit& other) noexcept { idxs = other.idxs; p1 = other.p1; return *this; };
+        inline constexpr xlit& operator =(xlit&& other) noexcept { idxs = std::move(other.idxs); p1 = std::move(other.p1); return *this; };
 
         void swap(xlit& other) noexcept { std::swap(idxs, other.idxs); std::swap(p1, other.p1); };
 
@@ -213,11 +217,6 @@ class xlit
 };
 
 namespace std {
-  //template<> // specialization
-  //void swap<xlit>(xlit& lhs, xlit& rhs) noexcept {
-  //  lhs.swap(rhs);
-  //};
-
   template <>
   struct hash<xlit> {
     std::size_t operator()(const xlit& k) const {

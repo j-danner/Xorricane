@@ -1,5 +1,7 @@
-#include "solve.hpp"
 #include <unistd.h>
+
+#include "misc.hpp"
+#include "io.hpp"
 
 #include "argparse/argparse.hpp"
 
@@ -8,7 +10,7 @@
 int main(int argc, char const *argv[])
 {
     stats s;
-    s.begin  = std::chrono::steady_clock::now();
+    s.begin  = std::chrono::high_resolution_clock::now();
 
     argparse::ArgumentParser program(__PROJECT_NAME, __VERSION__, argparse::default_arguments::help);
     program.add_argument("-v", "--version")
@@ -77,6 +79,12 @@ int main(int argc, char const *argv[])
             //arg invalid!
             throw std::runtime_error("invalid argument passed for parameter -ca");
         }).nargs(1);
+
+    //clause minimization
+    program.add_argument("-cm","--clause-minimization")
+        .help("activate heuristic clause minimization")
+        .flag();
+    
     
     //restart opts
     program.add_argument("-rh","--restart-heuristic")
@@ -166,7 +174,7 @@ int main(int argc, char const *argv[])
     auto fname = isatty(STDIN_FILENO) ? program.get<std::string>("fname") : " ";
 
     auto dh_str = program.get<std::string>("-dh");
-    dec_heu dh = dec_heu::lwl;
+    dec_heu dh = dec_heu::vsids;
     if(dh_str=="vsids") dh = dec_heu::vsids;
     else if(dh_str=="lwl") dh = dec_heu::lwl;
     else if(dh_str=="swl") dh = dec_heu::swl;
@@ -184,6 +192,8 @@ int main(int argc, char const *argv[])
     else if(ca_str=="dpll") ca = ca_alg::dpll;
     else if(ca_str=="1uip") ca = ca_alg::fuip;
     else if(ca_str=="1uip+") ca = ca_alg::fuip_opt;
+    
+    bool cm = program.is_used("-cm");
     
     auto rh_str = program.get<std::string>("-rh");
     restart_opt rh = restart_opt::luby;
@@ -223,11 +233,11 @@ int main(int argc, char const *argv[])
     //parse file
     try {
         guessing_path P = parse_gp( gp_fname );
-        parsed_xnf p_xnf = parse_file( fname );
+        auto p_xnf = parse_file( fname );
         assert( P.assert_data_struct() );
 
         //set upt options
-        options opts( dh, po, ca, rh, ip, eq, lin_alg_schedule, jobs, verb, time_out, sol_count, P );
+        options opts( dh, po, ca, cm, rh, ip, eq, lin_alg_schedule, jobs, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;

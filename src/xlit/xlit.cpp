@@ -10,13 +10,9 @@
 
 #include "xlit.hpp"
 #include "xsys.hpp"
-#include "omp.h"
 
-//implementation inspired by the one of 3BA by Jan Horacek
-#define DIFF diff_[omp_get_thread_num()]
-
-// this suppresses creating the new objects again and again (each thread has their own diff-vec)
-vec< vec<var_t> > diff_( omp_get_max_threads() );
+// this suppresses creating the new objects again and again
+vec<var_t> diff_;
 
 
 size_t xlit::hash() const {
@@ -43,7 +39,7 @@ bool xlit::reduce(const xsys& sys) {
         }
     } else {
         //complexity to find correct update xlits: amortized O( this.size() )
-        auto upd_idxs = std::list<std::list<xlit>::iterator>();
+        auto upd_idxs = list<list<xlit>::iterator>();
         const auto& pivot_poly_its = sys.get_pivot_poly_idx();
         for(const auto& l : idxs) {
             auto search = pivot_poly_its.find(l);
@@ -51,6 +47,8 @@ bool xlit::reduce(const xsys& sys) {
         }
         for(const auto& row: upd_idxs) *this += *row;
         changed = !upd_idxs.empty();
+        //reduce constant
+        if(p1 && sys.contains_lt(0)) { p1 = false; }
     }
     return changed;
 };
@@ -79,10 +77,10 @@ bool xlit::reduce_short(const xsys& sys) {
 bool xlit::reduce(const vec<bool3>& alpha) {
     //IMPLEMENATION 1 (swapping)
     //const auto sz = idxs.size();
-    //DIFF.clear();
-    //std::copy_if(idxs.begin(), idxs.end(), std::back_inserter(DIFF), [&](var_t i){ return alpha[i] == bool3::None; } );
+    //diff_.clear();
+    //std::copy_if(idxs.begin(), idxs.end(), std::back_inserter(diff_), [&](var_t i){ return alpha[i] == bool3::None; } );
     //std::for_each(idxs.begin(), idxs.end(), [&](var_t i){ if(alpha[i] != bool3::None) p1 ^= b3_to_bool(alpha[i]); } );
-    //std::swap(idxs, DIFF);
+    //std::swap(idxs, diff_);
     //return sz != idxs.size();
 
     //IMPLEMENATION 2 (in-place)
@@ -144,13 +142,18 @@ bool xlit::reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl
     return ret;
 };
 
-bool xlit::reduce(const vec<equivalence>& equiv_lits) {
+bool xlit::reduce(const vec<bool3>& alpha, const vec<equivalence>& equiv_lits) {
     bool ret = false;
     var_t offset = 0;
     while(offset<idxs.size()) {
-        if( equiv_lits[ idxs[offset] ].ind>0 ) {
+        if(alpha[idxs[offset]] != bool3::None) {
+            ret = true;
+            p1 ^= b3_to_bool(alpha[idxs[offset]]);
+            idxs.erase( idxs.begin()+offset );
+        } else if( equiv_lits[ idxs[offset] ].ind>0 ) {
             ret = true;
             assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
+            //@todo optimize impl: next step iterates once over full length, but it suffices to start at idxs[offset]!
             *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
         } else {
             ++offset;
@@ -159,11 +162,28 @@ bool xlit::reduce(const vec<equivalence>& equiv_lits) {
     return ret;
 };
 
-bool xlit::reduce(const vec<equivalence>& equiv_lits, const vec<var_t>& equiv_lits_dl, const var_t& lvl) {
+
+bool xlit::reduce(const vec<equivalence>& equiv_lits) {
     bool ret = false;
     var_t offset = 0;
     while(offset<idxs.size()) {
-        if( equiv_lits[ idxs[offset] ].ind>0 && equiv_lits_dl[ idxs[offset] ] <= lvl ) {
+        if( equiv_lits[ idxs[offset] ].ind>0 ) {
+            ret = true;
+            assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
+            //@todo optimize impl: next step iterates once over full length, but it suffices to start at idxs[offset]!
+            *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
+        } else {
+            ++offset;
+        }
+    }
+    return ret;
+};
+
+bool xlit::reduce(const vec<equivalence>& equiv_lits, const var_t& lvl) {
+    bool ret = false;
+    var_t offset = 0;
+    while(offset<idxs.size()) {
+        if( equiv_lits[ idxs[offset] ].is_active(lvl) ) {
             ret = true;
             assert(idxs[offset] < equiv_lits[ idxs[offset] ].ind);
             *this += xlit({idxs[offset], equiv_lits[ idxs[offset] ].ind}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
@@ -239,29 +259,28 @@ std::string xlit::to_full_str(var_t num_vars) const{
 
 
 xlit xlit::shared_part(const xlit& other) const {
-  DIFF.clear(); // DIFF is declared global and static, this saves creating new DIFFs for each calling
-  std::set_intersection(std::execution::par, idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
-  return xlit(DIFF, false, presorted::yes); //call ctor that does NOT sort DIFF
+  diff_.clear(); // diff_ is declared global and static, this saves creating new diff_s for each calling
+  std::set_intersection(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(diff_));
+  return xlit(diff_, presorted::yes); //call ctor that does NOT sort diff_
 };
 
 //overloaded operators
 xlit xlit::operator+(const xlit &other) const {
-    /* \warning we assume that both xlits have same num_vars (!) */
-    DIFF.clear(); // DIFF is declared global and static, this saves creating new DIFFs for each calling
-    std::set_symmetric_difference(std::execution::par, idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
+    diff_.clear(); // diff_ is declared global and static, this saves creating new diff_s for each calling
+    std::set_symmetric_difference(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(diff_));
     //NOTE back_insterter might lead to repeated reallocations!
-    //idxs = DIFF;
+    //idxs = diff_;
 
-    return xlit(DIFF, p1^other.p1, presorted::yes); //call ctor that does NOT sort DIFF
+    return xlit(diff_, p1^other.p1, presorted::yes);
 };
 
 //in-place operation (!)
 xlit& xlit::operator +=(const xlit& other) {
     if(other.size()==0) { p1^=other.p1; return *this; }
 
-    DIFF.clear(); // DIFF is declared global and static, this saves creating new DIFFs for each calling
-    std::set_symmetric_difference(std::execution::par, idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(DIFF));
-    std::swap(idxs, DIFF);
+    diff_.clear(); // diff_ is declared global and static, this saves creating new diff_s for each calling
+    std::set_symmetric_difference(idxs.begin(), idxs.end(), other.idxs.begin(), other.idxs.end(), std::back_inserter(diff_));
+    std::swap(idxs, diff_);
 
     p1 ^= other.p1;
 

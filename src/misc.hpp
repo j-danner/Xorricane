@@ -1,5 +1,4 @@
 #pragma once
-
 //std
 #include <atomic>
 #include <stdint.h>
@@ -12,20 +11,29 @@
 #include <string>
 #include <unordered_map>
 #include <set>
+#include <deque>
 //other
 #include <omp.h>
-#include "robin_hood-3.11.5/robin_hood.h"
 
 #include <boost/container/vector.hpp>
 #include <boost/container/stable_vector.hpp>
 #include <boost/container/allocator.hpp>
 #include <boost/container/adaptive_pool.hpp>
+#define BOOST_POOL_NO_MT //disable multithreading support
+#include <boost/pool/pool_alloc.hpp>
 
+//activate additional debugging
 //#define DEBUG_SLOW
+#ifdef NDEBUG
+  #undef DEBUG_SLOW
+#endif
+
+//activate special treatment of disjoint xcls_watch -- experiments showed little to no performance gain
+//#define TRACK_DISJOINT_XCLS
 
 //verbosity output
 #ifdef VERBOSITY
-  #define VERB(lvl, msg) if(opt.verb >= lvl) { std::cout << msg << std::endl; }
+  #define VERB(lvl, msg) if(this->opt.verb >= lvl) { std::cout << msg << std::endl; }
 #else
   #define VERB(lvl, msg)
 #endif
@@ -47,22 +55,38 @@ typedef uint_fast32_t var_t;
 typedef uint_fast16_t dl_c_t; //change to something larger? this might overflow if we have dl > 65535... but in that case a solution is unlikely to be found anyways...
 
 //type for cls length
-typedef uint_fast8_t cls_size_t; //clauses with more than 256 linerals are impractical!
+typedef uint_fast16_t cls_size_t; //clauses with more than 65535 linerals are impractical!
+
+
+
+//select allocator
+template<class T>
+//using allocator = std::allocator<T>;
+//using allocator = boost::fast_pool_allocator<T, boost::default_user_allocator_new_delete, boost::details::pool::null_mutex, 64, 128>;
+using allocator = boost::fast_pool_allocator<T, boost::default_user_allocator_malloc_free, boost::details::pool::null_mutex, 64, 128>;
 
 //select vector impl to use
 template<class T>
 using vec = std::vector<T>;
+//using vec = std::vector<T, allocator<T>>; //very poor performance
 //using vec = boost::container::vector<T>;
 //using vec = boost::container::stable_vector<T>;
 //using vec = boost::container::vector<T, boost::container::allocator<T>>;
 //using vec = boost::container::vector<T, boost::container::adaptive_pool<T>>;
+
+template<class T>
+//using list = std::list<T>;
+using list = std::list<T, allocator<T> >;
+
+template<class T>
+using deque = std::deque<T>;
 
 
 enum class bool3 { False, True, None };
 inline bool3 to_bool3(const bool b) { return b ? bool3::True : bool3::False; };
 inline bool3 neg(const bool3 b) { return b==bool3::None ? bool3::None : (b==bool3::True ? bool3::False : bool3::True); };
 inline std::string b3_to_str(const bool3 b) { return b==bool3::None ? "None" : (b==bool3::True ? "True" : "False"); };
-inline bool b3_to_bool(const bool3 b) { assert(b!=bool3::None); return b==bool3::True ? true : false; };
+inline bool b3_to_bool(const bool3 b) { assert(b!=bool3::None); return b==bool3::True; };
 
 
 class xlit_watch;
@@ -72,22 +96,36 @@ class xlit_watch;
  */
 struct equivalence {
   var_t ind;
+  var_t prev_ind;
   bool polarity;
-  std::list<xlit_watch>::iterator reason_lin;
+  list<xlit_watch>::iterator reason_lin;
+  var_t lvl;
 
-  equivalence() : ind(0), polarity(false) {};
-  equivalence(const var_t _ind, const bool _polarity) : ind(_ind), polarity(_polarity) {};
-  equivalence(const equivalence& other) : ind(other.ind), polarity(other.polarity) {};
-  equivalence(equivalence&& other) : ind(other.ind), polarity(other.polarity), reason_lin(other.reason_lin) {};
+  equivalence() : ind(0), prev_ind(0), polarity(false), lvl(-1) {};
+  equivalence(const var_t _ind, const bool _polarity, const var_t _lvl) : ind(_ind), polarity(_polarity), lvl(_lvl) {};
+  equivalence(const equivalence& other) = default;
+  equivalence(equivalence&& other) = default;
+  
+  constexpr equivalence& operator=(const equivalence& o) = default;
   
   void set_ind(const var_t _ind) { ind = _ind; };
+  void set_prev_ind(const var_t _ind) { prev_ind = _ind; };
   void set_polarity(const bool _polarity) { polarity = _polarity; };
-  void set_lin(const std::list<xlit_watch>::iterator& reason_lin_) { reason_lin = reason_lin_; };
+  void set_lin(const list<xlit_watch>::iterator& reason_lin_) { reason_lin = reason_lin_; };
+  void set_lvl(const var_t lvl_) { lvl = lvl_; };
 
   bool is_active() const { return ind>0; };
+  bool is_active(const var_t lvl_) const { return lvl<=lvl_ && ind>0; };
 
-  void clear() { ind = 0; polarity = false; };
+  void clear() { ind = 0; lvl=0; };
   std::string to_str(const var_t& idx) const { return "x" + std::to_string(idx) + "+x" + std::to_string(ind) + (polarity ? "+1" : ""); };
+
+  void swap(equivalence& o) noexcept {
+    std::swap(ind, o.ind);
+    std::swap(polarity, o.polarity);
+    std::swap(reason_lin, o.reason_lin);
+    std::swap(lvl, o.lvl);
+  }
 };
 
 /**
@@ -118,7 +156,6 @@ class guessing_path {
       return true;
     };
 };
-
 
 /**
  * @brief options for decision heuristic
@@ -170,6 +207,8 @@ struct options {
     phase_opt po = phase_opt::save;
 
     ca_alg ca = ca_alg::fuip;
+    bool cm = false;
+
     restart_opt rst = restart_opt::luby;
     initial_prop_opt ip = initial_prop_opt::no;
 
@@ -192,8 +231,8 @@ struct options {
     options(guessing_path P_) : P(P_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int verb_, int timeout_=0) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), verb(verb_), timeout(timeout_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int lin_alg_schedule_, int verb_) : dh(dh_), po(po_), ca(ca_), rst(rst_), ip(ip_), eq(eq_), lin_alg_schedule(lin_alg_schedule_), verb(verb_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), rst(rst_), ip(ip_), eq(eq_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int lin_alg_schedule_, int verb_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), eq(eq_), lin_alg_schedule(lin_alg_schedule_), verb(verb_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), eq(eq_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
 
     std::string to_str() const {
       std::string str = "";
@@ -261,50 +300,51 @@ struct options {
 
 
 /**
- * @brief struct returned by solver, contains bool sat telling if intance is satisfiable; if it is, also contains a solution
- * 
+ * @brief struct storing stats info on solving call, contains solution(s) if intance is satisfiable
  */
 class stats {
   public:
     bool finished = false;
-    bool sat = false;
-    std::list<vec<bool>> sols;
+    list<vec<bool>> sols;
     std::atomic<bool> cancelled = false;
 
     unsigned int no_dec = 0;
     unsigned int no_confl = 0;
-    unsigned int no_linalg = 0;
-    unsigned int no_linalg_prop = 0;
+    unsigned int no_ge = 0;
+    unsigned int no_ge_prop = 0;
     unsigned int no_restarts = 0;
     unsigned int no_gcp = 0;
     unsigned int no_upd = 0;
     //newly learnt pure-xors via upd
     unsigned int new_px_upd = 0;
 
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::time_point::min();
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::time_point::min();
+    std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::time_point::min();
+    std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::time_point::min();
+    
+    std::chrono::duration<double> total_linalg_time = std::chrono::duration<double>::zero();
+    std::chrono::duration<double> total_ca_time = std::chrono::duration<double>::zero();
 
-    void print_stats() const {
-      std::cout << "c restarts  : " << no_restarts << std::endl;
-      std::cout << "c decisions : " << no_dec << std::endl;
-      std::cout << "c conflicts : " << no_confl << std::endl;
-    };
+    bool is_sat() const { return !sols.empty(); };
 
     void print_final() const {
-      float total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
+      double time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
+      double linalg_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_linalg_time).count())/1000.0f;
+      double ca_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_ca_time).count())/1000.0f;
       std::cout << std::fixed << std::setprecision(3);
+      const auto width_time = std::to_string((int) time).length()+4;
+      const auto width_int = std::min(10, (int) std::to_string(new_px_upd).length());
 
-      std::cout << "c dec/sec        : "  << no_dec/total_time << std::endl;
-
-      std::cout << "c px by upd      : " << new_px_upd << std::endl;
-      std::cout << "c LA prop        : " << no_linalg << std::endl;
-      std::cout << "c LA efficiacy   : " << (double) no_linalg_prop/no_linalg << std::endl;
+      std::cout << "c decisions      : " << std::setw(width_int) << no_dec << " (" << (float) no_dec/time  << " dec/sec)" << std::endl;
+      std::cout << "c conflicts      : " << std::setw(width_int) << no_confl << " (" << (float) no_dec/no_confl  << " dec/confl)" << std::endl;
+      std::cout << "c restarts       : " << std::setw(width_int) << no_restarts << " (" << (float) no_confl/no_restarts  << " confl/rst)" << std::endl;
+      std::cout << "c GCP props      : " << std::setw(width_int) << new_px_upd << std::endl;
+      std::cout << "c GE calls       : " << std::setw(width_int) << no_ge << std::endl;
+      std::cout << "c GE props       : " << std::setw(width_int) << no_ge_prop  << " (" << (float) no_ge_prop/no_ge << " props/call)" << std::endl;
       std::cout << "c " << std::endl;
 
-      std::cout << "c restarts       : " << no_restarts << std::endl;
-      std::cout << "c decisions      : " << no_dec << std::endl;
-      std::cout << "c conflicts      : " << no_confl << std::endl;
-      std::cout << "c Total time     : " << total_time << " [s]" << std::endl;
+      std::cout << "c GE time        : " << std::setw(width_time) << (float) linalg_time << " [s] (" << (float) 100*linalg_time/time << " [%])" << std::endl;
+      std::cout << "c CA time        : " << std::setw(width_time) << (float) ca_time     << " [s] (" << (float) 100*ca_time/time << " [%])" << std::endl;
+      std::cout << "c Total time     : " << std::setw(width_time) << time << " [s]" << std::endl;
     }
     
     /**
@@ -313,7 +353,7 @@ class stats {
     void print_sol() const {
       if(finished) {
           const auto& sol = sols.back();
-          if(sat) {
+          if(sols.size()>0) {
               std::cout << "s SATISFIABLE" << std::endl;
               std::cout << "v ";
               for (var_t i = 1; i <= sol.size(); i++) {
@@ -333,30 +373,29 @@ class stats {
       float total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
       std::cout << std::fixed << std::setprecision(3);
       std::cout << "c px by upd      : " << new_px_upd << std::endl;
-      std::cout << "c LA prop        : " << no_linalg << std::endl;
-      std::cout << "c LA efficiacy   : " << (double) no_linalg_prop/no_linalg << std::endl;
+      std::cout << "c GE prop        : " << no_ge << std::endl;
+      std::cout << "c GE efficiacy   : " << (double) no_ge_prop/no_ge << std::endl;
       std::cout << "c Total time     : " << total_time << " [s]" << std::endl;
     };
     
     stats() {};
     ~stats() { /*std::cout << "destroying stats!" << std::endl;*/ };
-    stats(stats& o) noexcept : finished(o.finished), sat(o.sat), sols(o.sols), no_dec(o.no_dec), no_confl(o.no_confl), no_linalg(o.no_linalg), no_linalg_prop(o.no_linalg_prop), no_restarts(o.no_restarts), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
+    stats(stats& o) noexcept : finished(o.finished), sols(o.sols), no_dec(o.no_dec), no_confl(o.no_confl), no_ge(o.no_ge), no_ge_prop(o.no_ge_prop), no_restarts(o.no_restarts), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
       cancelled.store( o.cancelled.load() );
     }
-    stats(stats&& o) noexcept : finished(std::move(o.finished)), sat(std::move(o.sat)), sols(std::move(o.sols)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_linalg(std::move(o.no_linalg)), no_linalg_prop(std::move(o.no_linalg_prop)), no_restarts(std::move(o.no_restarts)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
+    stats(stats&& o) noexcept : finished(std::move(o.finished)), sols(std::move(o.sols)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_ge(std::move(o.no_ge)), no_ge_prop(std::move(o.no_ge_prop)), no_restarts(std::move(o.no_restarts)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
       cancelled.store( o.cancelled.load() );
     }
-    stats(unsigned int no_dec_, unsigned int no_confl_, const std::list<vec<bool>>& sols_) : sat(true), sols(sols_), no_dec(no_dec_), no_confl(no_confl_) {};
-    stats(unsigned int no_dec_, unsigned int no_confl_) : sat(false), no_dec(no_dec_), no_confl(no_confl_) {};
+    stats(unsigned int no_dec_, unsigned int no_confl_, const list<vec<bool>>& sols_) : sols(sols_), no_dec(no_dec_), no_confl(no_confl_) {};
+    stats(unsigned int no_dec_, unsigned int no_confl_) : no_dec(no_dec_), no_confl(no_confl_) {};
 
     stats& operator=(const stats& o) noexcept {
       finished = o.finished;
-      sat = o.sat;
       sols = o.sols;
       no_dec = o.no_dec;
       no_confl = o.no_confl;
-      no_linalg = o.no_linalg;
-      no_linalg_prop = o.no_linalg_prop;
+      no_ge = o.no_ge;
+      no_ge_prop = o.no_ge_prop;
       no_restarts = o.no_restarts;
       no_gcp = o.no_gcp;
       no_upd = o.no_upd;
@@ -365,6 +404,34 @@ class stats {
       cancelled.store( o.cancelled.load() );
       return *this;
     }
-
 };
 
+//functions for solving
+class xlit;
+
+/**
+ * @brief solves xnf using provided opts
+ * 
+ * @param xnf vector of vector representing list of xor-clauses to be solved -- only works for 2-XNFs so far!
+ * @param opts options specifying update alg, timeout, inprocessing settings etc
+ * @param num_vars number of variables
+ * @param s stats to put statistics into
+ * 
+ * @return int exit code
+ */
+int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s);
+
+stats solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts);
+
+/**
+ * @brief perform one GCP on xnf using provided opts
+ * 
+ * @param xnf vector of vector representing list of xor-clauses to be solved -- only works for 2-XNFs so far!
+ * @param opts options specifying update alg, timeout, inprocessing settings etc
+ * @param num_vars number of variables
+ * @param s stats to put statistics into
+ */
+std::string gcp_only(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s);
+
+bool check_sol(const vec< vec<xlit> >& clss, const vec<bool>& sol);
+bool check_sols(const vec< vec<xlit> >& clss, const list<vec<bool>>& sols);
