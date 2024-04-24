@@ -25,9 +25,7 @@
 //activate additional debugging
 //#define DEBUG_SLOW
 #ifdef NDEBUG
-  #ifdef DEBUG_SLOW
-    assert(false); //either use NDEBUG or DEBUG_SLOW
-  #endif
+  #undef DEBUG_SLOW
 #endif
 
 //activate special treatment of disjoint xcls_watch -- experiments showed little to no performance gain
