@@ -1328,7 +1328,7 @@ public:
   };
 #endif
 
-  constexpr xcls_watch& operator=(const xcls_watch &o) = default;
+  xcls_watch& operator=(const xcls_watch &o) = default;
 
-  constexpr xcls_watch& operator=(xcls_watch &&o) = default;
+  xcls_watch& operator=(xcls_watch &&o) = default;
 };

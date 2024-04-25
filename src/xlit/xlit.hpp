@@ -123,8 +123,8 @@ class xlit
 	      xlit operator+(const xlit &other) const;
         //in-place operation (!)
         xlit& operator +=(const xlit& other);	
-        inline constexpr xlit& operator =(const xlit& other) noexcept { idxs = other.idxs; p1 = other.p1; return *this; };
-        inline constexpr xlit& operator =(xlit&& other) noexcept { idxs = std::move(other.idxs); p1 = std::move(other.p1); return *this; };
+        inline xlit& operator =(const xlit& other) noexcept { idxs = other.idxs; p1 = other.p1; return *this; };
+        inline xlit& operator =(xlit&& other) noexcept { idxs = std::move(other.idxs); p1 = std::move(other.p1); return *this; };
 
         void swap(xlit& other) noexcept { std::swap(idxs, other.idxs); std::swap(p1, other.p1); };
 
