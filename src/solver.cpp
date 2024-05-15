@@ -953,6 +953,22 @@ void solver::solve(stats &s) {
                 const auto end  = std::chrono::high_resolution_clock::now();
                 s.total_ca_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
                 
+
+                if( lvl==dl-1 && std::get<0>(learnt_cls.get_unit().get_watch_tuple(alpha_dl, alpha_trail_pos)) != trails.back().front().ind ) {
+                    VERB(50, "c ")
+                    //add dpll-clause as well - if learnt clause is 'too' long?
+                    auto [_, cls] = analyze_dpll();
+
+                    //if clause minimization is activated, add new clause also to solver_cpy
+                    if(opt.cm) {
+                        auto cls_cpy = cls;
+                        //reset cls_cpy xlit_dl_count0
+                        for(auto& v : cls_cpy.xlit_dl_count0) v = {0,0};
+                        cls_cpy.SAT_dl_count = {0,0};
+                        solver_cpy.add_xcls_watch( std::move(cls_cpy), true );
+                    }
+                    add_learnt_cls( std::move(cls) );
+                }
                 // backtrack
                 // @todo how far to backtrack?!?
                 backtrack(lvl);
