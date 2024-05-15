@@ -970,10 +970,14 @@ void solver::solve(stats &s) {
                     add_learnt_cls( std::move(cls) );
                 }
                 // backtrack
-                // @todo how far to backtrack?!?
-                backtrack(lvl);
-                //backtrack(learnt_cls.get_unit_at_lvl());
-                //@todo add heuristic to determine best bracktrack-lvl!
+                const auto unit_lvl = learnt_cls.get_unit_at_lvl();
+                assert(lvl >= unit_lvl);
+                //on unit_lvl a new unit is learnt: if not all decisions are necessary to get the unit assigning, backtrack to unit_lvl.
+                if( learnt_cls.get_unit().reduced(alpha, alpha_dl, unit_lvl).LBD(alpha_dl) <= (lvl-unit_lvl) ) {
+                    backtrack( unit_lvl );
+                } else {
+                    backtrack( lvl );
+                }
 
                 //if clause minimization is activated, add new clause also to solver_cpy
                 if(opt.cm) {
