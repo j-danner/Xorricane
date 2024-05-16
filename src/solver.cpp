@@ -585,8 +585,9 @@ void solver::remove_fixed_equiv() {
                 assert(xclss[i].is_unit(dl_count));
                 assert(xclss[i].is_inactive(dl_count));
                 assert(xclss[i].get_unit_at_lvl() == 0);
-                //increase utility
+                //update utility
                 ++utility[i];
+                //utility[i] = -xclss[i].LBD(alpha_dl);
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral
@@ -701,6 +702,7 @@ void solver::GCP(stats &s) noexcept {
                 assert(xclss[i].get_unit_at_lvl() == dl);
                 //increase utility
                 ++utility[i];
+                //utility[i] = -xclss[i].LBD(alpha_dl);
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral

@@ -176,7 +176,7 @@ class solver
     vec< xcls_watch > xclss;
 
     /**
-     * @brief utility[i] gives number of unit propagations of xclss[i] (with moving average)
+     * @brief utility[i] gives number of unit propagations of xclss[i] (with moving average) @todo fix this line!!
      */
     vec<double> utility;
     double util_cutoff; //min utility to keep a clause on cleanup
@@ -299,7 +299,7 @@ class solver
      */
     inline var_t add_learnt_cls(xcls_watch&& cls, const bool& redundant = true) {
       const var_t i = add_xcls_watch( std::move(cls), redundant, true );
-      utility[i]++;
+      ++utility[i];
       return i;
     }
 
@@ -1267,7 +1267,8 @@ class solver
           assert(xclss[i].is_unit(dl_count));
           assert(xclss[i].is_inactive(dl_count));
           //update utility
-          utility[i]++;
+          ++utility[i];
+          //utility[i] = -xclss[i].LBD(alpha_dl);
           // IGNORE THIS CLAUSE FROM NOW ON
           decr_active_cls(i);
           // NEW LIN-EQS
