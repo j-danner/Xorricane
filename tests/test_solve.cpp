@@ -832,7 +832,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.ip = initial_prop_opt::nbu; //initial_prop_opt::no;
         opt.rst = restart_opt::luby;
         opt.dh = dec_heu::vsids;
-        opt.lin_alg_schedule = 0;
+        opt.gauss_elim_schedule = 0;
         opt.cm = cm;
         auto slvr = solver(clss, opt);
 
@@ -849,7 +849,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.ip = initial_prop_opt::nbu;
         opt.rst = cm ? restart_opt::luby : restart_opt::no;
         opt.dh = dec_heu::vsids;
-        opt.lin_alg_schedule = 0;
+        opt.gauss_elim_schedule = 0;
         opt.cm = cm;
         opt.verb = 80;
         auto slvr = solver(clss, opt);
@@ -867,7 +867,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.ip = initial_prop_opt::nbu;
         opt.rst = cm ? restart_opt::luby : restart_opt::no;
         opt.dh = dec_heu::vsids;
-        opt.lin_alg_schedule = 0;
+        opt.gauss_elim_schedule = 0;
         opt.cm = cm;
         auto slvr = solver(clss, opt);
 
@@ -884,7 +884,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.ip = initial_prop_opt::full;
         opt.rst = cm ? restart_opt::luby : restart_opt::no;
         opt.dh = dec_heu::vsids;
-        opt.lin_alg_schedule = 0;
+        opt.gauss_elim_schedule = 0;
         opt.cm = cm;
         auto slvr = solver(clss, opt);
 
@@ -901,7 +901,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.ip = initial_prop_opt::nbu;
         opt.rst = cm ? restart_opt::luby : restart_opt::no;
         opt.dh = dec_heu::vsids;
-        opt.lin_alg_schedule = 0;
+        opt.gauss_elim_schedule = 0;
         opt.cm = cm;
         auto slvr = solver(clss, opt);
 
@@ -918,7 +918,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.ip = initial_prop_opt::nbu;
         opt.rst = restart_opt::luby;
         opt.dh = dec_heu::vsids;
-        opt.lin_alg_schedule = 0;
+        opt.gauss_elim_schedule = 0;
         opt.cm = cm;
         auto slvr = solver(clss, opt);
 
@@ -1052,7 +1052,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
         slvr.get_opts()->sol_count = -1;
-        slvr.get_opts()->lin_alg_schedule = 2;
+        slvr.get_opts()->gauss_elim_schedule = 2;
 
         stats s = slvr.solve(); //fails when 'remove_fixed_alpha()' is not run!
         CHECK( s.sols.size() == 3 );
@@ -1065,7 +1065,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = ca_alg::no; //GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
         slvr.get_opts()->sol_count = -1;
-        slvr.get_opts()->lin_alg_schedule = 1; //GENERATE(0,1,40);
+        slvr.get_opts()->gauss_elim_schedule = 1; //GENERATE(0,1,40);
         slvr.get_opts()->dh = dec_heu::lex; //GENERATE(dec_heu::lex, dec_heu::vsids);
 
         stats s = slvr.solve();
@@ -1079,7 +1079,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = ca_alg::fuip;
         slvr.get_opts()->sol_count = -1;
-        slvr.get_opts()->lin_alg_schedule = 20;
+        slvr.get_opts()->gauss_elim_schedule = 20;
         slvr.get_opts()->dh = dec_heu::vsids;
 
         stats s = slvr.solve();
@@ -1093,7 +1093,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = ca_alg::fuip;
         slvr.get_opts()->sol_count = -1;
-        slvr.get_opts()->lin_alg_schedule = 0;
+        slvr.get_opts()->gauss_elim_schedule = 0;
         slvr.get_opts()->dh = dec_heu::lex;
 
         stats s = slvr.solve();
@@ -1211,7 +1211,7 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
         slvr.get_opts()->verb = 10;
         slvr.get_opts()->ca = ca_alg::fuip;
         slvr.get_opts()->sol_count = 265;
-        slvr.get_opts()->lin_alg_schedule = 0;
+        slvr.get_opts()->gauss_elim_schedule = 0;
         slvr.get_opts()->dh = dec_heu::vsids;
         slvr.get_opts()->rst = restart_opt::no;
         slvr.get_opts()->ip = GENERATE( initial_prop_opt::no, initial_prop_opt::nbu );
@@ -1227,7 +1227,7 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
         slvr.get_opts()->verb = 85;
         slvr.get_opts()->ca = ca_alg::fuip;
         slvr.get_opts()->sol_count = 265;
-        slvr.get_opts()->lin_alg_schedule = 28;
+        slvr.get_opts()->gauss_elim_schedule = 28;
         slvr.get_opts()->dh = dec_heu::vsids;
         slvr.get_opts()->rst = restart_opt::no;
         slvr.get_opts()->ip = GENERATE( initial_prop_opt::no, initial_prop_opt::nbu );

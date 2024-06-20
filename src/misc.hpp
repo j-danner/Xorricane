@@ -214,7 +214,7 @@ struct options {
 
     bool eq = true;
 
-    int lin_alg_schedule = 0;
+    int gauss_elim_schedule = 0;
     
     int jobs = omp_get_num_threads();
     
@@ -229,10 +229,10 @@ struct options {
     //default settings
     options() {};
     options(guessing_path P_) : P(P_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int verb_, int timeout_=0) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), verb(verb_), timeout(timeout_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_) : dh(dh_), po(po_), ca(ca_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int lin_alg_schedule_, int verb_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), eq(eq_), lin_alg_schedule(lin_alg_schedule_), verb(verb_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int lin_alg_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), eq(eq_), lin_alg_schedule(lin_alg_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, int guass_elim_schedule_, int verb_, int timeout_=0) : dh(dh_), po(po_), ca(ca_), gauss_elim_schedule(guass_elim_schedule_), verb(verb_), timeout(timeout_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, int guass_elim_schedule_, int jobs_, int verb_, int timeout_) : dh(dh_), po(po_), ca(ca_), gauss_elim_schedule(guass_elim_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int guass_elim_schedule_, int verb_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), eq(eq_), gauss_elim_schedule(guass_elim_schedule_), verb(verb_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int guass_elim_schedule_, int jobs_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), eq(eq_), gauss_elim_schedule(guass_elim_schedule_), jobs(jobs_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
 
     std::string to_str() const {
       std::string str = "";
@@ -279,7 +279,7 @@ struct options {
       }
       str += "\n";
 
-      str += "c lin_alg_schedule: " + std::to_string(lin_alg_schedule) + "\n";
+      str += "c gauss_elim_schedule: " + std::to_string(gauss_elim_schedule) + "\n";
 
       str += "c jobs: " + std::to_string(jobs) + "\n";
 
