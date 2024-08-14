@@ -35,7 +35,7 @@ parsed_xnf parse_file(std::istream& file) {
     
     vec< vec<xlit> > cls;
     vec< xlit > cl;
-    vec< var_t > idxs;
+    std::set< var_t > idxs;
 
     std::string line;
     while (std::getline(file, line)) {
@@ -77,19 +77,21 @@ parsed_xnf parse_file(std::istream& file) {
                     int v_ = stoi(v);
                     //std::cout << v << std::endl;
                     if (v_>0) {
-                        idxs.emplace_back( v_ );
+                        if(idxs.contains(v_)) idxs.erase(v_);
+                        else                  idxs.emplace(v_);
                         actual_num_vars = std::max( (var_t) v_, actual_num_vars );
                     } else if (v_==0) {
                         //not standardized (interpret '+0' as '-')
                         need_0 ^= true;
                     } else {
-                        idxs.emplace_back( -v_ );
+                        if(idxs.contains(-v_)) idxs.erase(-v_);
+                        else                   idxs.emplace(-v_);
                         need_0 ^= true;
                         actual_num_vars = std::max( (var_t) -v_, actual_num_vars );
                     }
                 }
                 
-                if (idxs.size() > 0) cl.emplace_back( std::move(idxs), need_0, presorted::no );
+                if (idxs.size() > 0 || need_0) cl.emplace_back( vec<var_t>(idxs.begin(),idxs.end()), need_0, presorted::yes );
             }
             //add clause to cls
             if (cl.size() > 0) cls.emplace_back( std::move(cl) );

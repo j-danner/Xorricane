@@ -74,7 +74,7 @@ void solver::init_xclss(const vec< xcls >& clss) noexcept {
     // run through xor-clauses to find lineq and construct watch-literals
     for(const auto& cls : clss) {
         //check if clause reduces to unit
-        if (cls.deg() == 1) { // lin-eq!
+        if (cls.deg() == 1 || cls.is_one()) { // lin-eq!
             _Lsys.add_lineral( std::move(cls.get_unit()) );
         }
         if (!cls.is_zero()) _xclss.emplace_back( cls );
@@ -101,7 +101,7 @@ void solver::init_xclss(const vec< xcls >& clss) noexcept {
         //fully reduce all cls with deg>1, and replace all linear ones with _Lsys's linerals
         for(auto it = _xclss.begin(); it!=_xclss.end(); ++it) {
             if(it->deg()>1) it->update(_Lsys);
-            else it = std::prev( _xclss.erase(it) );
+            it = std::prev( _xclss.erase(it) );
         }
         //add linerals from _Lsys
         for(auto& [lt,l_it] : _Lsys.get_pivot_poly_idx()) {
