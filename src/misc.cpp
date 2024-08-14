@@ -55,8 +55,8 @@ int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts
     s.end = std::chrono::high_resolution_clock::now();
     if(opts.verb>0) s.print_final();
 
-    s.print_sol();
     if(opts.sol_count>1) std::cout << "c solutions found: "+std::to_string( std::count_if(s.sols.begin(),s.sols.end(), [](const vec<bool>& sol){ return sol.size()>0; } ) ) << std::endl;
+    else s.print_sol();
 
     if(opts.verb >= 120) { std::cout << opts.to_str() << std::endl; }
     
