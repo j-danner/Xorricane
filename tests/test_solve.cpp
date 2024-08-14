@@ -515,6 +515,23 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
+    
+    SECTION( "test69.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test69.xnf");
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.is_sat() == false ); //UNSAT!
+    }
+    
+    SECTION( "test70.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test70.xnf");
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.is_sat() == true ); //SAT!
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
 }
 
 TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
