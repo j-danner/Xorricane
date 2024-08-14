@@ -101,7 +101,7 @@ void solver::init_xclss(const vec< xcls >& clss) noexcept {
         //fully reduce all cls with deg>1, and replace all linear ones with _Lsys's linerals
         for(auto it = _xclss.begin(); it!=_xclss.end(); ++it) {
             if(it->deg()>1) it->update(_Lsys);
-            it = std::prev( _xclss.erase(it) );
+            else it = std::prev( _xclss.erase(it) );
         }
         //add linerals from _Lsys
         for(auto& [lt,l_it] : _Lsys.get_pivot_poly_idx()) {
