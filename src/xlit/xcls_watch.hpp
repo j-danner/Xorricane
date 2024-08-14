@@ -1138,6 +1138,25 @@ public:
     return size() <= 1 ? 0 : xlit_dl_count0[idx[1]].first;
   }
 
+  /**
+   * @brief computes the LBD (literal-block-distance) of the xlit; i.e., the number of different dl's occuring in idxs
+   * 
+   * @param alpha_dl current alpha dl
+   * @return var_t LBD value
+   */
+  var_t LBD(const vec<var_t>& alpha_dl) const {
+    std::set<var_t> l;
+    for(const auto& lin : xlits) {
+      for(const auto& i : lin.get_idxs_()) {
+        l.insert(alpha_dl[i]);
+      }
+      for(const auto& i : shared_part) {
+        l.insert(alpha_dl[i]);
+      }
+    }
+    return l.size();
+  };
+
 #ifndef NDEBUG
   var_t compute_unit_assigning_lvl(const vec<var_t>& alpha_dl) const {
     return size()==0 ? 0 : ( size() == 1 ? WLIN0.get_assigning_lvl(alpha_dl) : std::max( shared_part.get_assigning_lvl(alpha_dl), WLIN1.get_assigning_lvl(alpha_dl) ) );

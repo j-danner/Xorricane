@@ -136,6 +136,18 @@ class xlit
         std::ostream& operator<<(std::ostream& os) const;
 
         /**
+         * @brief computes the LBD (literal-block-distance) of the xlit; i.e., the number of different dl's occuring in idxs
+         * 
+         * @param alpha_dl current alpha dl
+         * @return var_t LBD value
+         */
+        var_t LBD(const vec<var_t>& alpha_dl) const {
+          std::set<var_t> l;
+          std::for_each(idxs.begin(), idxs.end(), [&](const auto i){ l.insert(alpha_dl[i]); });
+          return l.size();
+        };
+
+        /**
          * @brief Get the second highest lineral, i.e., the lvl at which this lineral is assigned
          * 
          * @param alpha_dl current alpha dl

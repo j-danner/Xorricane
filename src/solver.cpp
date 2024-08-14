@@ -585,8 +585,9 @@ void solver::remove_fixed_equiv() {
                 assert(xclss[i].is_unit(dl_count));
                 assert(xclss[i].is_inactive(dl_count));
                 assert(xclss[i].get_unit_at_lvl() == 0);
-                //increase utility
+                //update utility
                 ++utility[i];
+                //utility[i] = -xclss[i].LBD(alpha_dl);
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral
@@ -701,6 +702,7 @@ void solver::GCP(stats &s) noexcept {
                 assert(xclss[i].get_unit_at_lvl() == dl);
                 //increase utility
                 ++utility[i];
+                //utility[i] = -xclss[i].LBD(alpha_dl);
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral
@@ -953,11 +955,31 @@ void solver::solve(stats &s) {
                 const auto end  = std::chrono::high_resolution_clock::now();
                 s.total_ca_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
                 
+
+                if( lvl==dl-1 && std::get<0>(learnt_cls.get_unit().get_watch_tuple(alpha_dl, alpha_trail_pos)) != trails.back().front().ind ) {
+                    VERB(50, "c ")
+                    //add dpll-clause as well - if learnt clause is 'too' long?
+                    auto [_, cls] = analyze_dpll();
+
+                    //if clause minimization is activated, add new clause also to solver_cpy
+                    if(opt.cm) {
+                        auto cls_cpy = cls;
+                        //reset cls_cpy xlit_dl_count0
+                        for(auto& v : cls_cpy.xlit_dl_count0) v = {0,0};
+                        cls_cpy.SAT_dl_count = {0,0};
+                        solver_cpy.add_xcls_watch( std::move(cls_cpy), true );
+                    }
+                    add_learnt_cls( std::move(cls) );
+                }
                 // backtrack
-                // @todo how far to backtrack?!?
-                backtrack(lvl);
-                //backtrack(learnt_cls.get_unit_at_lvl());
-                //@todo add heuristic to determine best bracktrack-lvl!
+                const auto unit_lvl = learnt_cls.get_unit_at_lvl();
+                assert(lvl >= unit_lvl);
+                //on unit_lvl a new unit is learnt: if not all decisions are necessary to get the unit assigning, backtrack to unit_lvl.
+                if( learnt_cls.get_unit().reduced(alpha, alpha_dl, unit_lvl).LBD(alpha_dl) <= (lvl-unit_lvl) ) {
+                    backtrack( unit_lvl );
+                } else {
+                    backtrack( lvl );
+                }
 
                 //if clause minimization is activated, add new clause also to solver_cpy
                 if(opt.cm) {
