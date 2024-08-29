@@ -720,7 +720,7 @@ class solver
         lineral_queue.q_confl.emplace_front( lin, lvl, queue_t::IMPLIED_ALPHA );
       } else if(lin->is_assigning(alpha)) {
         lineral_queue.q_alpha.emplace_back( lin, lvl, type );
-      } else if(opt.eq && lin->is_equiv()) {
+      } else if(opt.eq && lin->is_equiv(alpha)) {
         lineral_queue.q_equiv.emplace_back( lin, lvl, type );
       } else {
         lineral_queue.q_unit.emplace_back( lin, lvl, type );

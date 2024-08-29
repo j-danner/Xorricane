@@ -228,7 +228,6 @@ class xlit_watch : public xlit
      * @brief returns lvl at which the xlit became an equivalence. BEWARE: the lvl at which the literal was constructed might be higher than the equiv-level!
      * @note assumes that xlit is an equivalence
      * 
-     * @param alpha current bool3-assignment
      * @param alpha_dl dl of alpha
      * @return var_t lvl at which the xlit became assigning
      */
@@ -246,6 +245,17 @@ class xlit_watch : public xlit
      */
     bool is_equiv() const {
       return xlit::is_equiv();
+    }
+    
+    /**
+     * @brief checks whether lineral is an equivalence under alpha
+     * 
+     * @param alpha current bool3-assignment
+     * @return true iff lineral is an equivalence under alpha-assignment
+     * @todo optimize via watching three positions!
+     */
+    bool is_equiv(const vec<bool3>& alpha) const {
+      return std::count_if(begin(), end(), [&alpha](const var_t& idx){ return alpha[idx]!=bool3::None; }) == 2;
     }
 
     /**
