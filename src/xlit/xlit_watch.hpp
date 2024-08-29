@@ -255,7 +255,12 @@ class xlit_watch : public xlit
      * @todo optimize via watching three positions!
      */
     bool is_equiv(const vec<bool3>& alpha) const {
-      return std::count_if(begin(), end(), [&alpha](const var_t& idx){ return alpha[idx]!=bool3::None; }) == 2;
+      var_t ct = 0;
+      for(const auto& v : idxs) {
+        ct += alpha[v] != bool3::None;
+        if(ct>2) return false;
+      }
+      return ct==2;
     }
 
     /**
