@@ -720,7 +720,8 @@ class solver
         lineral_queue.q_confl.emplace_front( lin, lvl, queue_t::IMPLIED_ALPHA );
       } else if(lin->is_assigning(alpha)) {
         lineral_queue.q_alpha.emplace_back( lin, lvl, type );
-      } else if(opt.eq && lin->is_equiv(alpha)) {
+      } else if(opt.eq && lin->is_equiv()) {
+        //TODO check if is_equiv() or is_equiv(alpha) performs better! -- the latter can increase the LBD of reason clause!
         lineral_queue.q_equiv.emplace_back( lin, lvl, type );
       } else {
         lineral_queue.q_unit.emplace_back( lin, lvl, type );
