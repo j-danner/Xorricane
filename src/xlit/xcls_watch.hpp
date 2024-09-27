@@ -241,9 +241,18 @@ private:
     cls_size_t new_i = 0;
     for (; new_i < size(); ++new_i) {
       if(new_i==idx[0] || new_i==idx[1]) continue;
-      // skip xlits which evaluate to 1 in current search tree
+      // skip xlits which evaluate to 0 in current search tree
       if (dl_count[xlit_dl_count0[new_i].first] == xlit_dl_count0[new_i].second)
         continue;
+      
+      if(xlits[new_i][ptr_ws(1)]) {
+        //add WLIN1 to xlits[new_i] to eliminate shared part in xlits[new_i]
+        xlits[new_i] += WLIN1;
+        xlits[new_i] += shared_part;
+      }
+
+      const auto& [v, dl_assigned, t_pos, _] = xlits[new_i].get_watch_tuple(alpha_dl, alpha_trail_pos);
+      new_w = _;
 
       //rm xlits[new_i] if it is just zero!
       if(xlits[new_i].is_zero()) {
@@ -258,17 +267,7 @@ private:
       }
       assert(!xlits[new_i].is_one());
 
-      const auto& [v, dl_assigned, t_pos, _] = xlits[new_i].get_watch_tuple(alpha_dl, alpha_trail_pos);
-      new_w = _;
-
-      if (v == ptr_ws(1) || ( xlits[new_i][ptr_ws(1)] && (WLIN1[v] || shared_part[v]) ) ) {
-        //add WLIN1 to xlits[new_i] to eliminate shared part in xlits[new_i]
-        xlits[new_i] += WLIN1;
-        xlits[new_i] += shared_part;
-        // repeat with same new_i
-        --new_i;
-        continue;
-      }
+      assert(!(v == ptr_ws(1) || ( xlits[new_i][ptr_ws(1)] && (WLIN1[v] || shared_part[v]) ) ));
       if (alpha[v] == bool3::None ) {
         //if ptr_(new_i,new_w) AND ptr_(idx[1],ws[1]) both are in shared part of WLIN1 AND xlits[new_i]; rewrite xlits[new_i] and start over
         // new xlit to be watched found --> change watched xlit and return SAT
@@ -321,8 +320,8 @@ private:
         assert( dl_assigned <= alpha_dl[ptr_ws(0)] );
       }
     }
-    // if the above did not yet return, then all xlits (except WLIN1) evaluate to 1 under alpha, i.e., we learn a unit clause!
-    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and WLIN0 evaluates to 1!)
+    // if the above did not yet return, then all xlits (except WLIN1) evaluate to 0 under alpha, i.e., we learn a unit clause!
+    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and WLIN0 evaluates to 0!)
     
     //set xlit_t_pos of unit to -1
     //@todo can we also just set it to -1 ??
@@ -386,7 +385,7 @@ private:
     cls_size_t new_i = 0;
     for (; new_i < size(); ++new_i) {
       if(new_i==idx[0] || new_i==idx[1]) continue;
-      // skip xlits which evaluate to 1 in current search tree
+      // skip xlits which evaluate to 0 in current search tree
       if (dl_count[xlit_dl_count0[new_i].first] == xlit_dl_count0[new_i].second)
         continue;
 
@@ -434,8 +433,8 @@ private:
         assert( dl_assigned <= alpha_dl[ptr_ws(0)] );
       }
     }
-    // if the above did not yet return, then all xlits (except WLIN1) evaluate to 1 under alpha, i.e., we learn a unit clause!
-    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and WLIN0 evaluates to 1!)
+    // if the above did not yet return, then all xlits (except WLIN1) evaluate to 0 under alpha, i.e., we learn a unit clause!
+    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and WLIN0 evaluates to 0!)
     
     //set xlit_t_pos of unit to -1
     //@todo can we also just set it to -1 ??
@@ -1146,6 +1145,9 @@ public:
    */
   var_t LBD(const vec<var_t>& alpha_dl) const {
     std::set<var_t> l;
+    //for(const auto& [lvl,lvl_c] : xlit_dl_count0) {
+    //  l.insert(lvl);
+    //}
     for(const auto& lin : xlits) {
       for(const auto& i : lin.get_idxs_()) {
         l.insert(alpha_dl[i]);
