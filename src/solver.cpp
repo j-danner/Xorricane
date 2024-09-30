@@ -804,7 +804,6 @@ void solver::dpll_solve(stats &s) {
                 //decay_score();
             } else {
                 ++dl;
-                ++dl_count[dl];
                 trails.emplace_back( list<trail_elem>() );
                 ++s.no_dec;
                 // save active_cls count
@@ -1003,7 +1002,6 @@ void solver::solve(stats &s) {
                 }
             } else {
                 ++dl;
-                ++dl_count[dl];
                 trails.emplace_back( list<trail_elem>() );
                 ++s.no_dec;
                 // save active_cls count
