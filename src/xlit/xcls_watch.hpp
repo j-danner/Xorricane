@@ -175,6 +175,27 @@ private:
   };
   
   /**
+   * @brief advances ws[0], 
+   * @note assumes that clause is UNIT under alpha, and implied unit is reduced to 1 under alpha.
+   *
+   * @param alpha current bool3-alpha
+   * @param alpha_dl dl of alpha-assignments
+   * @param alpha_trail_pos t_pos of alpha-assignments
+   * @param dl_count current dl_count
+   * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
+   */
+  inline void fix_ws0([[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos) noexcept {
+    assert(get_unit().reduced(alpha).is_one());
+
+    const auto& [v, _, t_pos, pos] = WLIN0.get_watch_tuple(alpha_dl, alpha_trail_pos);
+    ws[0] = pos;
+    ptr_cache[0] = v;
+    xlit_t_pos[idx[0]] = t_pos;    
+    assert(t_pos < (var_t)-1);
+    assert(assert_data_struct());
+  }
+
+  /**
    * @brief advances ws[0], requires that alpha[ ptr_ws(0) ] != bool3::None
    *
    * @param alpha current bool3-alpha
@@ -489,8 +510,6 @@ public:
     init();
   };
 
-  //@todo replace by 'default'?
-  //xcls_watch(const xcls_watch &o) noexcept = default;
   xcls_watch(const xcls_watch &o) noexcept = default;
   xcls_watch(xcls_watch &&o) noexcept = default;
 

@@ -277,9 +277,16 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
     }
 #endif
 
+    //ensure that we watch the hightest possible variables! -- the reason returned might not watch the variable with the highest alpha_trail_pos!
+    xcls_watch rs = get_reason(TRAIL.back());
+    assert(rs.is_unit(dl_count));
+    rs.fix_ws0(alpha, alpha_dl, alpha_trail_pos);
+    assert( rs.assert_data_struct(alpha, alpha_trail_pos, dl_count) );
+    assert( rs.assert_data_struct() );
     //go through trail of current dl -- skip over irrelevant parts
-    xcls_watch_resolver learnt_cls = get_reason(TRAIL.back());
+    xcls_watch_resolver learnt_cls(std::move(rs));
     assert( learnt_cls.assert_data_struct(alpha, alpha_trail_pos, dl_count) );
+    assert( learnt_cls.assert_data_struct() );
 
     assert(learnt_cls.is_unit(dl_count));
     VERB(70, "   * reason clause is   " + BOLD( learnt_cls.to_str() ) + " for UNIT " + learnt_cls.get_unit().to_str() );
@@ -311,9 +318,8 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
       #endif
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
-        while( (it->type != trail_t::ALPHA) || !learnt_cls.unit_contains(it->ind) ) {
-            //@note instead of 'unit_contains' we could also check 'get_wl0'; but ONLY if we ensure that we always watch the ind with highest alpha_trail_pos after initialization! ('resolve' should ensure this property - but 'init()' does not!)
-            //@todo fix xcls_watch.init() to watch ind with hightest alpha_trail_pos(!)
+        while( (it->type != trail_t::ALPHA) || (learnt_cls.get_wl0() != it->ind) ) {
+            assert(!learnt_cls.unit_contains(it->ind));
             ++it;
             assert(it!=trails.back().rend());
         }
