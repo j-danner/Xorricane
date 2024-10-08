@@ -40,6 +40,14 @@ private:
     for(var_t i = 0; i<xlits.size(); ++i) {
       filtration_add(i);
     }
+    
+    //recalculate ws[0] and ws[1] if necessary! - can be skipped in theory, as ws[0] and ws[1] are not used + updated correctly either during 'resolve', but definitely during 'finalize' (!)
+    //                                          - in practice, however, it is necessary when running in debug mode due to sanity checks on ptr_cache and ws !
+  #ifndef NDEBUG
+    if(ptr_cache[0]!=WLIN0.get_idxs_()[ws[0]]) ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), ptr_cache[0]));
+    if(size()>1 && ptr_cache[1]!=WLIN1.get_idxs_()[ws[1]]) ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), ptr_cache[1]));
+  #endif
+
     assert( assert_data_struct() );
   }
 
@@ -322,7 +330,7 @@ public:
             continue;
           }
           const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
-          assert(v==(var_t)-1 || t_pos < t_pos_to_idxs.rbegin()->first); //this assertion fails on large examples!
+          assert(v==(var_t)-1 || t_pos < t_pos_to_idxs.rbegin()->first); //this assertion might fail on large examples!
           xlit_t_pos[i] = t_pos;
           xlit_dl_count0[i] = {dl, dl_count[dl]};
           filtration_add(i);
@@ -366,8 +374,8 @@ public:
       }
       assert(it->second.size()==1);
     }
-    assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
-    assert( size()<2 || xlits[idx[1]][ptr_cache[1]] );
+    assert( size()<1 || (xlits[idx[0]][ptr_cache[0]] && xlits[idx[0]].get_idxs_()[ws[0]]==ptr_cache[0] ));
+    assert( size()<2 || (xlits[idx[1]][ptr_cache[1]] && xlits[idx[1]].get_idxs_()[ws[1]]==ptr_cache[1] ));
   };
 
 
@@ -380,6 +388,9 @@ public:
   inline var_t size() const override { return num_nz_lins; };
 
   bool assert_data_struct() const {
+    assert( size()<1 || (xlits[idx[0]][ptr_cache[0]] && xlits[idx[0]].get_idxs_()[ws[0]]==ptr_cache[0] ));
+    assert( size()<2 || (xlits[idx[1]][ptr_cache[1]] && xlits[idx[1]].get_idxs_()[ws[1]]==ptr_cache[1] ));
+
     //check num_nz_lins
     assert( num_nz_lins == (var_t) std::count_if(xlits.begin(), xlits.end(), [](const auto& l){ return !l.is_zero(); }) );
 
