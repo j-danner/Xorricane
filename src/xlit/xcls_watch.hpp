@@ -196,18 +196,19 @@ private:
   }
 
   /**
-   * @brief advances ws[0], requires that alpha[ ptr_ws(0) ] != bool3::None
+   * @brief advances ws[0]
    *
    * @param alpha current bool3-alpha
    * @param alpha_dl dl of alpha-assignments
    * @param alpha_trail_pos t_pos of alpha-assignments
    * @param dl_count current dl_count
-   * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
+   * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t watched variable (if non-zero)
    */
   inline std::pair<var_t, xcls_upd_ret> advance(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept {
   #ifdef TRACK_DISJOINT_XCLS
     if(disjoint) return advance_disjoint(alpha, alpha_dl, alpha_trail_pos, dl_count);
   #endif
+    if(alpha[ptr_ws(0)] == bool3::None) return {ptr_ws(0), xcls_upd_ret::NONE};
     assert(alpha[ptr_ws(0)] != bool3::None);
 
     // TODO shorter & cleaner impl with c++20 ranges?
@@ -358,16 +359,17 @@ private:
   };
 
   /**
-   * @brief advances ws[0], requires that alpha[ ptr_ws(0) ] != bool3::None
+   * @brief advances ws[0]
    * @note assumes that clause is disjoint!
    *
    * @param alpha current bool3-alpha
    * @param alpha_dl dl of alpha-assignments
    * @param alpha_trail_pos t_pos of alpha-assignments
    * @param dl_count current dl_count
-   * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
+   * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t watched variable (if non-zero)
    */
   inline std::pair<var_t, xcls_upd_ret> advance_disjoint(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+    if(alpha[ptr_ws(0)] == bool3::None) return {ptr_ws(0), xcls_upd_ret::NONE};
     assert(alpha[ptr_ws(0)] != bool3::None);
     assert(is_disjoint());
 
@@ -856,7 +858,7 @@ public:
       assert(watches(new_w));
       assert(assert_data_struct());
     }
-    if (alpha[get_wl0()] == bool3::None) {
+    if(alpha[get_wl0()] == bool3::None) {
       swap_wl(); // if one of the watched literals is unassigned, ensure it is wl1
 
       [[maybe_unused]] const auto [new_w, _] = advance(alpha, alpha_dl, alpha_trail_pos, dl_count);
