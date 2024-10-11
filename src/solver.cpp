@@ -277,44 +277,29 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
     }
 #endif
 
-    //ensure that we watch the hightest possible variables! -- the reason returned might not watch the variable with the highest alpha_trail_pos!
     xcls_watch rs = get_reason(TRAIL.back());
     assert(rs.is_unit(dl_count));
+    //fix the ws[0] watch - so far it need not watch the variable with highest alpha_trail_pos
     rs.fix_ws0(alpha, alpha_dl, alpha_trail_pos);
-    assert( rs.assert_data_struct(alpha, alpha_trail_pos, dl_count) );
-    assert( rs.assert_data_struct() );
+    assert(rs.assert_data_struct(alpha, alpha_trail_pos, dl_count));
     //go through trail of current dl -- skip over irrelevant parts
     xcls_watch_resolver learnt_cls(std::move(rs));
-    assert( learnt_cls.assert_data_struct(alpha, alpha_trail_pos, dl_count) );
-    assert( learnt_cls.assert_data_struct() );
+    assert(learnt_cls.assert_data_struct(alpha, alpha_trail_pos, dl_count) && learnt_cls.is_unit(dl_count));
 
-    assert(learnt_cls.is_unit(dl_count));
     VERB(70, "   * reason clause is   " + BOLD( learnt_cls.to_str() ) + " for UNIT " + learnt_cls.get_unit().to_str() );
     bump_score( TRAIL.back().ind );
-    pop_trail(); //remove conflict from trail, i.e., now we should have alpha[0]==bool3:None
+    pop_trail(); //remove conflict from trail, i.e., now alpha[0]==bool3:None
 
     auto it = trails.back().rbegin();
-
     xcls_watch reason_cls;
 
     //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
     while( learnt_cls.get_assigning_lvl(alpha_dl) == dl || learnt_cls.get_assigning_lvl(alpha_dl) == (var_t) -1 ) {
+        //assert(false); //add 'is_asserting' to xcls_watch_resolver -- shouldn't be too hard to check, right?!
         VERB(70, "   * conflict clause is " + BOLD( learnt_cls.to_str() ) + "   --> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
-        
-      //#ifndef NDEBUG
-      //  //old
-      //  unit = std::move(learnt_cls.get_unit());
-      //  unit.reduce(alpha);
-      //  assert( unit.is_one() );
-      //  assert(!learnt_cls.to_xcls().is_zero());
-      //#endif
-
       #ifndef NDEBUG
-        //new:
-        //ensure that reason cls is reason for provided alpha
-        //assert(learnt_cls.is_unit(dl_count) && learnt_cls.get_unit().reduced(alpha,equiv_lits).is_one());
-        assert(learnt_cls.is_unit(dl_count) && learnt_cls.get_unit().reduced(alpha).is_one());
-        assert(!learnt_cls.to_xcls().is_zero());
+        //ensure that clause is conflict clause under alpha
+        assert(learnt_cls.is_unit(dl_count) && learnt_cls.get_unit().reduced(alpha).is_one() && !learnt_cls.to_xcls().is_zero());
       #endif
 
         //pop trail until we are at the implied alpha that is watched by learnt_cls (by wl1)
@@ -328,21 +313,14 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
         //get reason_cls
         reason_cls = get_reason(*it);
         VERB(70, "   * reason clause is   " + BOLD( reason_cls.to_str() ) + " for UNIT " + reason_cls.get_unit().to_str() );
-    #ifndef NDEBUG
-        //ensure that reason cls is reason for provided alpha AND equiv_lits
-        assert(reason_cls.is_unit(dl_count) && (reason_cls.get_unit().reduced(alpha,equiv_lits)+it->lin->to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero());
-        //ensure that reason cls is reason for provided alpha
+
+        //ensure that reason cls is reason under alpha
         assert(reason_cls.is_unit(dl_count) && (reason_cls.get_unit().reduced(alpha)+it->lin->to_xlit().reduced(alpha)).reduced(alpha).is_zero());
-    #endif
 
         learnt_cls.resolve( std::move(reason_cls), alpha, alpha_dl, alpha_trail_pos, dl_count);
     
-    #ifndef NDEBUG
-        //ensure that reason cls is reason for provided alpha AND equiv_lits
-        assert(learnt_cls.is_unit(dl_count) && learnt_cls.get_unit().reduced(alpha,equiv_lits).is_one());
-        //ensure that reason cls is reason for provided alpha
+        //ensure that cls is conflict clause for provided alpha
         assert(learnt_cls.is_unit(dl_count) && learnt_cls.get_unit().reduced(alpha).is_one());
-    #endif
 
         bump_score( it->ind );
         ++it;
