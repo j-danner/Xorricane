@@ -351,28 +351,29 @@ public:
       ptr_cache[1] = v;
       xlit_dl_count0[i1] = {dl, dl_count[dl]};
       assert(xlit_t_pos[idx[1]] == t_pos);
-      if(it->second.size() > 1 ) {
-        //find unique lineral of 2nd-highest t_pos to watch
-        auto& l = it->second; 
-        l.pop_front();
-        //add first el in l to all others, re-evaluate xlit_t_pos, adapt xlit_dl_count0, AND add them back to t_pos_to_idxs
-        for(const var_t i : l) {
-          assert(i!=i1);
-          xlits[i] += WLIN1;
-          if(xlits[i].is_zero()) {
-            --num_nz_lins;
-            continue;
-          }
-          const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
-          assert(v==(var_t)-1 || t_pos < it->first);
-          xlit_t_pos[i] = t_pos;
-          xlit_dl_count0[i] = {dl, dl_count[dl]};
-          filtration_add(i);
-        }
-        l.clear();
-        l.emplace_front( i1 );
-      }
-      assert(it->second.size()==1);
+      //@todo re-add as heuristic reduction?!
+      //if(it->second.size() > 1 ) {
+      //  //find unique lineral of 2nd-highest t_pos to watch
+      //  auto& l = it->second; 
+      //  l.pop_front();
+      //  //add first el in l to all others, re-evaluate xlit_t_pos, adapt xlit_dl_count0, AND add them back to t_pos_to_idxs
+      //  for(const var_t i : l) {
+      //    assert(i!=i1);
+      //    xlits[i] += WLIN1;
+      //    if(xlits[i].is_zero()) {
+      //      --num_nz_lins;
+      //      continue;
+      //    }
+      //    const auto& [v, dl, t_pos, _idx] = xlits[i].get_watch_tuple(alpha_dl, alpha_trail_pos);
+      //    assert(v==(var_t)-1 || t_pos < it->first);
+      //    xlit_t_pos[i] = t_pos;
+      //    xlit_dl_count0[i] = {dl, dl_count[dl]};
+      //    filtration_add(i);
+      //  }
+      //  l.clear();
+      //  l.emplace_front( i1 );
+      //}
+      //assert(it->second.size()==1);
     }
     assert( size()<1 || (xlits[idx[0]][ptr_cache[0]] && xlits[idx[0]].get_idxs_()[ws[0]]==ptr_cache[0] ));
     assert( size()<2 || (xlits[idx[1]][ptr_cache[1]] && xlits[idx[1]].get_idxs_()[ws[1]]==ptr_cache[1] ));
