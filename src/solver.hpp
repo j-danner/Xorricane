@@ -1250,7 +1250,7 @@ class solver
         for(auto& a_cls : active_cls_stack) ++a_cls;
         ++active_cls;
       }
-      //update cls //@todo is init_unit rly needed here; shouldn't the clause already be initialized?
+      //update cls
       VERB(90, "c adding new clause: " + BOLD(xclss[i].to_str()) + "  --> gives with current assignments: "+xclss[i].to_xcls().reduced(alpha).to_str());
       if(learnt_cls) VERB(90, "c XNF : " + xclss[i].to_xnf_str());
       const auto ret = learnt_cls ? xcls_upd_ret::UNIT : xclss[i].init(alpha, alpha_dl, alpha_trail_pos, dl_count);
