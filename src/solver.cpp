@@ -30,7 +30,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     trails = vec< list<trail_elem> >();
     trails.reserve(num_vars+1);
     trails.emplace_back( list<trail_elem>() );
-    total_trail_length = 1;
+    stepwise_lit_trail_length = 1;
     last_phase = vec<bool3>(num_vars + 1, bool3::None);
     //init last_phase according to init_phase of guessing_path:
     for(var_t idx=0; idx<opt_.P.size(); ++idx) {
@@ -1290,7 +1290,7 @@ std::string solver::to_xnf_str() const noexcept {
         for(var_t lvl=0; lvl<trails.size(); lvl++) {
             cnt += std::count_if(trails[lvl].begin(), trails[lvl].end(), [](const trail_elem& t) { return t.type==trail_t::ALPHA; });
         }
-        assert_slow( cnt == total_trail_length );
+        assert_slow( cnt == stepwise_lit_trail_length );
 
         //sanity check that reasons of lineral_watches have not been deleted! (& get_lvl() returns correct lvl)
         var_t lvl = 0;

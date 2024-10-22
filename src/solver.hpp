@@ -277,7 +277,7 @@ class solver
     /**
      * @brief total trail length up to dl-1
      */
-    var_t total_trail_length = 1;
+    var_t stepwise_lit_trail_length = 1;
 
     lin_queue<lineral_queue_elem> lineral_queue;
 
@@ -341,7 +341,7 @@ class solver
         alpha[TRAIL.back().ind] = bool3::None;
         alpha_dl[TRAIL.back().ind] = (var_t) -1;
         alpha_trail_pos[TRAIL.back().ind] = (var_t) -1;
-        --total_trail_length;
+        --stepwise_lit_trail_length;
         break;
       case trail_t::EQUIV:
         assert(equiv_lits[TRAIL.back().ind].is_active());
@@ -701,8 +701,8 @@ class solver
       alpha[lt2] = val;
       alpha_dl[lt2] = assigning_lvl;
       assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), lvl));
-      alpha_trail_pos[lt2] = total_trail_length;
-      ++total_trail_length;
+      alpha_trail_pos[lt2] = stepwise_lit_trail_length;
+      ++stepwise_lit_trail_length;
       return lt2;
     };
 
@@ -1361,7 +1361,7 @@ class solver
       trails = vec< list<trail_elem> >();
       trails.reserve(num_vars+1);
       trails.emplace_back( list<trail_elem>() );
-      total_trail_length = 1;
+      stepwise_lit_trail_length = 1;
 
       //re-add all clauses
       vec< xcls > xclss_; xclss_.reserve(o.xclss.size());
