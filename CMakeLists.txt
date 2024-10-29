@@ -20,7 +20,7 @@ if(VERBOSITY OR CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 #static linking to libstdc++ and libgcc in case of Release build; otherwise give warnings!
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare -static-libgcc -static-libstdc++ -ltbb" )# -ftree-vectorizer-verbose=5 -Weffc++")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare -static-libgcc -static-libstdc++ -ltbb -pthread" )# -ftree-vectorizer-verbose=5 -Weffc++")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ftree-loop-vectorize -ffast-math -DNDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ffast-math -fasynchronous-unwind-tables -D_GLIBCXX_ASSERTIONS")# -D_FORTIFY_SOURCE=2 
 
@@ -38,9 +38,6 @@ else()
     message("jemalloc not found! (optional)")
 endif()
 
-#find openmp package
-find_package(OpenMP REQUIRED QUIET)
-
 
 # add subdirectories
 add_subdirectory(src)
@@ -49,7 +46,7 @@ add_subdirectory(src)
 add_executable(xnf_cdcl_solver src/main.cpp src/argparse/argparse.hpp)
 
 # link libs to xnf_cdcl_solver
-target_link_libraries(xnf_cdcl_solver PUBLIC ${EXTRA_LIBS} PRIVATE solver OpenMP::OpenMP_CXX)
+target_link_libraries(xnf_cdcl_solver PUBLIC ${EXTRA_LIBS} PRIVATE solver)
 target_include_directories( xnf_cdcl_solver PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
 
 include(CheckCXXCompilerFlag)

@@ -216,7 +216,7 @@ struct options {
 
     int gauss_elim_schedule = 0;
     
-    int jobs = omp_get_num_threads();
+    int jobs = 1; //can be removed!
     
     int verb = 0;
 
