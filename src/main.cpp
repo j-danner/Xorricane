@@ -214,9 +214,6 @@ int main(int argc, char const *argv[])
     
     const std::string gp_fname = program.is_used("-gp") ? program.get<std::string>("-gp") : "";
     if(program.is_used("-gp")) dh = dec_heu::lex;
-
-    //auto jobs = program.get<int>("-j");
-    const auto jobs = 1;
     
     #ifdef VERBOSITY
         const int verb = program.get<int>("-vb");
@@ -237,7 +234,7 @@ int main(int argc, char const *argv[])
         assert( P.assert_data_struct() );
 
         //set upt options
-        options opts( dh, po, ca, cm, rh, ip, eq, gauss_elim_schedule, jobs, verb, time_out, sol_count, P );
+        options opts( dh, po, ca, cm, rh, ip, eq, gauss_elim_schedule, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;
