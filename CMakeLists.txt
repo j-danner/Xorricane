@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 # set the project name
-project(xnf_cdcl_solver VERSION 0.2.6)
+project(xnf_cdcl_solver VERSION 0.2.7)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -22,7 +22,7 @@ endif()
 #static linking to libstdc++ and libgcc in case of Release build; otherwise give warnings!
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare -static-libgcc -static-libstdc++ -ltbb" )# -ftree-vectorizer-verbose=5 -Weffc++")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ftree-loop-vectorize -ffast-math -DNDEBUG")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ffast-math -fasynchronous-unwind-tables -D_FORTIFY_SOURCE=2 -D_GLIBCXX_ASSERTIONS")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ffast-math -fasynchronous-unwind-tables -D_GLIBCXX_ASSERTIONS")# -D_FORTIFY_SOURCE=2 
 
 #find jemalloc for linking
 find_package(PkgConfig REQUIRED QUIET)

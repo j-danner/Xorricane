@@ -168,7 +168,7 @@ class xlit
         };
         
         /**
-         * @brief compute the dl, alpha trail pos and idx pos of the lineral on highest dl with maximal trail pos
+         * @brief compute the var, dl, alpha trail pos and idx pos of the lineral on highest dl with maximal trail pos
          * 
          * @param alpha_dl dl of current alpha assignments
          * @param alpha_trail_pos positions in trail of alpha ssignments

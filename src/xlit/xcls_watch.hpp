@@ -175,7 +175,8 @@ private:
   };
   
   /**
-   * @brief advances ws[0], requires that alpha[ ptr_ws(0) ] != bool3::None
+   * @brief advances ws[0], 
+   * @note assumes that clause is UNIT under alpha, and implied unit is reduced to 1 under alpha.
    *
    * @param alpha current bool3-alpha
    * @param alpha_dl dl of alpha-assignments
@@ -183,10 +184,31 @@ private:
    * @param dl_count current dl_count
    * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
    */
+  inline void fix_ws0([[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos) noexcept {
+    assert(get_unit().reduced(alpha).is_one());
+
+    const auto& [v, _, t_pos, pos] = WLIN0.get_watch_tuple(alpha_dl, alpha_trail_pos);
+    ws[0] = pos;
+    ptr_cache[0] = v;
+    xlit_t_pos[idx[0]] = t_pos;    
+    assert(t_pos < (var_t)-1);
+    assert(assert_data_struct());
+  }
+
+  /**
+   * @brief advances ws[0]
+   *
+   * @param alpha current bool3-alpha
+   * @param alpha_dl dl of alpha-assignments
+   * @param alpha_trail_pos t_pos of alpha-assignments
+   * @param dl_count current dl_count
+   * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t watched variable (if non-zero)
+   */
   inline std::pair<var_t, xcls_upd_ret> advance(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept {
   #ifdef TRACK_DISJOINT_XCLS
     if(disjoint) return advance_disjoint(alpha, alpha_dl, alpha_trail_pos, dl_count);
   #endif
+    if(alpha[ptr_ws(0)] == bool3::None) return {ptr_ws(0), xcls_upd_ret::NONE};
     assert(alpha[ptr_ws(0)] != bool3::None);
 
     // TODO shorter & cleaner impl with c++20 ranges?
@@ -241,9 +263,18 @@ private:
     cls_size_t new_i = 0;
     for (; new_i < size(); ++new_i) {
       if(new_i==idx[0] || new_i==idx[1]) continue;
-      // skip xlits which evaluate to 1 in current search tree
+      // skip xlits which evaluate to 0 in current search tree
       if (dl_count[xlit_dl_count0[new_i].first] == xlit_dl_count0[new_i].second)
         continue;
+      
+      if(xlits[new_i][ptr_ws(1)]) {
+        //add WLIN1 to xlits[new_i] to eliminate shared part in xlits[new_i]
+        xlits[new_i] += WLIN1;
+        xlits[new_i] += shared_part;
+      }
+
+      const auto& [v, dl_assigned, t_pos, _] = xlits[new_i].get_watch_tuple(alpha_dl, alpha_trail_pos);
+      new_w = _;
 
       //rm xlits[new_i] if it is just zero!
       if(xlits[new_i].is_zero()) {
@@ -258,17 +289,7 @@ private:
       }
       assert(!xlits[new_i].is_one());
 
-      const auto& [v, dl_assigned, t_pos, _] = xlits[new_i].get_watch_tuple(alpha_dl, alpha_trail_pos);
-      new_w = _;
-
-      if (v == ptr_ws(1) || ( xlits[new_i][ptr_ws(1)] && (WLIN1[v] || shared_part[v]) ) ) {
-        //add WLIN1 to xlits[new_i] to eliminate shared part in xlits[new_i]
-        xlits[new_i] += WLIN1;
-        xlits[new_i] += shared_part;
-        // repeat with same new_i
-        --new_i;
-        continue;
-      }
+      assert(!(v == ptr_ws(1) || ( xlits[new_i][ptr_ws(1)] && (WLIN1[v] || shared_part[v]) ) ));
       if (alpha[v] == bool3::None ) {
         //if ptr_(new_i,new_w) AND ptr_(idx[1],ws[1]) both are in shared part of WLIN1 AND xlits[new_i]; rewrite xlits[new_i] and start over
         // new xlit to be watched found --> change watched xlit and return SAT
@@ -321,8 +342,8 @@ private:
         assert( dl_assigned <= alpha_dl[ptr_ws(0)] );
       }
     }
-    // if the above did not yet return, then all xlits (except WLIN1) evaluate to 1 under alpha, i.e., we learn a unit clause!
-    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and WLIN0 evaluates to 1!)
+    // if the above did not yet return, then all xlits (except WLIN1) evaluate to 0 under alpha, i.e., we learn a unit clause!
+    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and WLIN0 evaluates to 0!)
     
     //set xlit_t_pos of unit to -1
     //@todo can we also just set it to -1 ??
@@ -338,16 +359,17 @@ private:
   };
 
   /**
-   * @brief advances ws[0], requires that alpha[ ptr_ws(0) ] != bool3::None
+   * @brief advances ws[0]
    * @note assumes that clause is disjoint!
    *
    * @param alpha current bool3-alpha
    * @param alpha_dl dl of alpha-assignments
    * @param alpha_trail_pos t_pos of alpha-assignments
    * @param dl_count current dl_count
-   * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
+   * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t watched variable (if non-zero)
    */
   inline std::pair<var_t, xcls_upd_ret> advance_disjoint(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+    if(alpha[ptr_ws(0)] == bool3::None) return {ptr_ws(0), xcls_upd_ret::NONE};
     assert(alpha[ptr_ws(0)] != bool3::None);
     assert(is_disjoint());
 
@@ -386,7 +408,7 @@ private:
     cls_size_t new_i = 0;
     for (; new_i < size(); ++new_i) {
       if(new_i==idx[0] || new_i==idx[1]) continue;
-      // skip xlits which evaluate to 1 in current search tree
+      // skip xlits which evaluate to 0 in current search tree
       if (dl_count[xlit_dl_count0[new_i].first] == xlit_dl_count0[new_i].second)
         continue;
 
@@ -434,8 +456,8 @@ private:
         assert( dl_assigned <= alpha_dl[ptr_ws(0)] );
       }
     }
-    // if the above did not yet return, then all xlits (except WLIN1) evaluate to 1 under alpha, i.e., we learn a unit clause!
-    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and WLIN0 evaluates to 1!)
+    // if the above did not yet return, then all xlits (except WLIN1) evaluate to 0 under alpha, i.e., we learn a unit clause!
+    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and WLIN0 evaluates to 0!)
     
     //set xlit_t_pos of unit to -1
     //@todo can we also just set it to -1 ??
@@ -490,8 +512,6 @@ public:
     init();
   };
 
-  //@todo replace by 'default'?
-  //xcls_watch(const xcls_watch &o) noexcept = default;
   xcls_watch(const xcls_watch &o) noexcept = default;
   xcls_watch(xcls_watch &&o) noexcept = default;
 
@@ -838,7 +858,7 @@ public:
       assert(watches(new_w));
       assert(assert_data_struct());
     }
-    if (alpha[get_wl0()] == bool3::None) {
+    if(alpha[get_wl0()] == bool3::None) {
       swap_wl(); // if one of the watched literals is unassigned, ensure it is wl1
 
       [[maybe_unused]] const auto [new_w, _] = advance(alpha, alpha_dl, alpha_trail_pos, dl_count);
@@ -1146,6 +1166,9 @@ public:
    */
   var_t LBD(const vec<var_t>& alpha_dl) const {
     std::set<var_t> l;
+    //for(const auto& [lvl,lvl_c] : xlit_dl_count0) {
+    //  l.insert(lvl);
+    //}
     for(const auto& lin : xlits) {
       for(const auto& i : lin.get_idxs_()) {
         l.insert(alpha_dl[i]);
