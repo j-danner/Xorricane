@@ -1,4 +1,13 @@
 #!/bin/bash
 
-#run docker solver on file
-docker run -v $(realpath $1):$(realpath $1) xnf_cdcl_solver:0.1 $(realpath $1) ${@:2}
+if [ -f "$1" ]; then
+  #first arg is file
+  #run docker solver on file
+  docker run -v $(realpath $1):$(realpath $1) -t xnf_cdcl_solver:0.1 $(realpath $1) ${@:2}
+else
+  #first arg is file
+  echo "Note: docker usage needs first argument to be fname."
+  echo ""
+  docker run xnf_cdcl_solver:0.1 -h
+fi
+
