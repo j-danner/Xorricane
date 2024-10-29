@@ -1088,7 +1088,7 @@ std::string solver::to_str() const noexcept {
     // construct strings!
     auto to_str = [&](const xcls_watch &xcls) -> std::string { return xcls.to_str(); };
     std::transform(xclss.begin(), xclss.end(), str.begin(), to_str);
-    std::sort(std::execution::par, str.begin(), str.end());
+    std::sort(str.begin(), str.end());
 
     std::stringstream ss;
     std::copy(str.begin(), str.end(), std::ostream_iterator<std::string>(ss, "; "));

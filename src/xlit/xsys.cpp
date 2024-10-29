@@ -173,8 +173,8 @@ void xsys::solve(vec<bool>& sol_) const {
 std::string xsys::to_str() const {
     vec< std::string > str_xlits( xlits.size() );
     auto to_str = [](const xlit l) -> std::string {return l.to_str();};
-    std::transform(std::execution::par, xlits.begin(), xlits.end(), str_xlits.begin(), to_str);
-    std::sort(std::execution::par, str_xlits.begin(), str_xlits.end());
+    std::transform(xlits.begin(), xlits.end(), str_xlits.begin(), to_str);
+    std::sort(str_xlits.begin(), str_xlits.end());
     //rotate if 1 is first element
     if(str_xlits.size()>0 && str_xlits[0]=="1") std::rotate(str_xlits.begin(), str_xlits.begin()+1, str_xlits.end());
     std::stringstream ss;

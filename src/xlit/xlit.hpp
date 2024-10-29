@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include <algorithm>
-#include <execution>
 #include <memory>
 
 #include "../misc.hpp"
