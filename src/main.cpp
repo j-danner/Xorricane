@@ -13,10 +13,15 @@ int main(int argc, char const *argv[])
     s.begin  = std::chrono::high_resolution_clock::now();
 
     argparse::ArgumentParser program(__PROJECT_NAME, __VERSION__, argparse::default_arguments::help);
+
+    program.set_usage_max_line_width(120);
+    
+    program.add_description("Conflict driven SAT solver for XOR-OR-AND normal forms.");
+
     program.add_argument("-v", "--version")
       .action([=]([[maybe_unused]] const std::string& s) {
         std::stringstream out;
-        out << "c " << __PROJECT_NAME << " created by J. Danner (2023)" << std::endl;
+        out << "c " << __PROJECT_NAME << " created by J. Danner (2023-24)" << std::endl;
         out << "c version:           " << __PROJECT_VERSION << std::endl;
         out << "c compilation date:  " << __DATE__ << " at " << __TIME__ << std::endl;
         out << "c compiler:          " << __CMAKE_CXX_COMPILER_ID << " " << __CMAKE_CXX_COMPILER_VERSION << " using C++" << __CMAKE_CXX_STANDARD << std::endl;
@@ -31,94 +36,8 @@ int main(int argc, char const *argv[])
       .help("shows version and compilation information")
       .implicit_value(true)
       .nargs(0);
-    
-    //add args:
-    //fname
-    if(isatty(STDIN_FILENO)) {
-        program.add_argument("fname")
-            .help("path to 2xnf-instance")
-            .nargs(1);
-    }
-
-    //dec_heu
-    program.add_argument("-dh","--decision-heuristic")
-        .help("decision heuristic; 'vsids', 'lwl' (longest watch list), 'swl' (shortest watch list), or 'lex' (lexicographical)")
-        .default_value(std::string("vsids"))
-        .action([](const std::string& value) {
-            static const vec<std::string> choices = { "vsids", "lwl", "lex", "swl" };
-            if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
-                return value;
-            }
-            //arg invalid!
-            throw std::runtime_error("invalid argument passed for parameter -dh");
-        }).nargs(1);
-    
-    //phase_opt
-    program.add_argument("-po","--phase-options")
-        .help("phase saving options; 'save', 'save_inv', 'rand'")
-        .default_value(std::string("save"))
-        .action([](const std::string& value) {
-            static const vec<std::string> choices = { "save", "save_inv", "rand" };
-            if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
-                return value;
-            }
-            //arg invalid!
-            throw std::runtime_error("invalid argument passed for parameter -po");
-        }).nargs(1);
 
 
-    //cdcl opts
-    program.add_argument("-ca","--conflict-analysis")
-        .help("algorithm to use for conflict analysis; 'no' (DPLL) or '1uip' (1UIP)")
-        .default_value(std::string("1uip"))
-        .action([](const std::string& value) {
-            static const vec<std::string> choices = { "no", "dpll", "1uip", "1uip+" };
-            if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
-                return value;
-            }
-            //arg invalid!
-            throw std::runtime_error("invalid argument passed for parameter -ca");
-        }).nargs(1);
-
-    //clause minimization
-    program.add_argument("-cm","--clause-minimization")
-        .help("activate heuristic clause minimization")
-        .flag();
-    
-    
-    //restart opts
-    program.add_argument("-rh","--restart-heuristic")
-        .help("heuristic to schedule restarts; 'no' (never), 'fixed' (after fixed number of conflicts) or 'luby' (theoritcal optimal)")
-        .default_value(std::string("luby"))
-        .action([](const std::string& value) {
-            static const vec<std::string> choices = { "no", "fixed", "luby" };
-            if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
-                return value;
-            }
-            //arg invalid!
-            throw std::runtime_error("invalid argument passed for parameter -rh");
-        }).nargs(1);
-    
-    //initial reduction opts
-    program.add_argument("-ip","--initial-propagation")
-        .help("initial propagation heuristic of non-forcing linerals; 'no' (no), 'nbu' (reduce if lineral's size does not blow up), or 'full' (full reduction)")
-        .default_value(std::string("no"))
-        .action([](const std::string& value) {
-            static const vec<std::string> choices = { "no", "nbu", "full" };
-            if (std::find(choices.begin(), choices.end(), value) != choices.end()) {
-                return value;
-            }
-            //arg invalid!
-            throw std::runtime_error("invalid argument passed for parameter -ip");
-        }).nargs(1);
-    
-    
-    //equiv opts
-    program.add_argument("-no-eq","--no-equiv-lit")
-        .help("deactivate tracking and usage of equivalent literals")
-        .flag();
-    
-    
     //verbosity
     #ifdef VERBOSITY
         program.add_argument("-vb", "--verb")
@@ -130,24 +49,77 @@ int main(int argc, char const *argv[])
     
     //timeout
     program.add_argument("-t","--time-out")
-        .help("timeout in seconds (negative to deactivate)")
+        .help("timeout in seconds")
         .default_value(-1)
         .scan<'i', int>()
         .nargs(1);
 
-    //gcp-out
-    program.add_argument("-g","--gcp-out")
-        .help("applies GCP once and outputs result")
-        .default_value(std::string("out.xnf"))
+    program.add_usage_newline();
+    
+    //add args:
+    //fname
+    if(isatty(STDIN_FILENO)) {
+        program.add_argument("fname")
+            .help("path to XNF instance")
+            .nargs(1);
+    }
+
+    //dec_heu
+    program.add_argument("-dh","--decision-heuristic")
+        .help("decision heuristic; 'vsids', 'lwl' (longest watch list), 'swl' (shortest watch list), or 'lex' (lexicographical)")
+        .default_value(std::string("vsids"))
+        .choices("vsids", "lwl", "swl", "lex")
         .nargs(1);
     
-    //guessing path input
-    program.add_argument("-gp","--guessing-path")
-        .help("path to file storing guessing path; each line contains exactly one number corr to the corresponding variable")
+    //phase_opt
+    program.add_argument("-po","--phase-options")
+        .help("phase saving options; 'save', 'save_inv', 'rand'")
+        .default_value(std::string("save"))
+        .choices("save", "save_inv", "rand")
         .nargs(1);
-        //undocumented: if var name is negative we first guess the ind to be false instead of true
 
 
+    //cdcl opts
+    program.add_argument("-ca","--conflict-analysis")
+        .help("conflict analysis; 'no' (DPLL) or '1uip' (1UIP/TRLearning)")
+        .default_value(std::string("1uip"))
+        .choices("no", "dpll", "1uip", "1uip+")
+        .nargs(1);
+
+    //clause minimization
+    program.add_argument("-cm","--clause-minimization")
+        .help("activate (experimental!) clause minimization")
+        .flag();
+    
+    
+    //restart opts
+    program.add_argument("-rh","--restart-heuristic")
+        .help("restart schedule; 'no' (never), 'fixed' (after fixed number of conflicts) or 'luby' (theoretical optimal)")
+        .default_value(std::string("luby"))
+        .choices("no", "fixed", "luby")
+        .nargs(1);
+
+    //linalg-in-processing options
+    program.add_argument("-ge","--gauss-elim")
+        .help("gauss-elim in-processing after every i-th decision")
+        .default_value(0)
+        .scan<'i', int>()
+        .nargs(1);
+    
+    //initial reduction opts
+    program.add_argument("-ip","--initial-propagation")
+        .help("initial propagation of non-forcing linerals; 'no' (no), 'nbu' (reduce if each linerals size does not blow up), or 'full' (full reduction)")
+        .default_value(std::string("no"))
+        .choices("no", "nbu", "full")
+        .nargs(1);
+    
+    
+    //equiv opts
+    program.add_argument("-no-eq","--no-equiv-lit")
+        .help("deactivate usage of equivalent literals")
+        .flag();
+    
+    
     //max sols to compute
     program.add_argument("-ms", "--maxsol")
         .help("number of solutions to compute; -1 to compute all solutions")
@@ -155,12 +127,20 @@ int main(int argc, char const *argv[])
         .scan<'i', int>()
         .nargs(1);
     
-    //linalg-in-processing options
-    program.add_argument("-ge","--gauss-elim")
-        .help("schedule gauss-elim in-processing after every i-th decision")
-        .default_value(0)
-        .scan<'i', int>()
+
+    //guessing path input
+    program.add_argument("-gp","--guessing-path")
+        .help("path to file storing guessing path; each line contains exactly one number corr to the corresponding variable")
         .nargs(1);
+        //undocumented: if var name is negative we first guess the ind to be false instead of true
+    
+    //gcp-out
+    program.add_argument("-g","--gcp-out")
+        .help("applies GCP once and outputs result")
+        .default_value(std::string("out.xnf"))
+        .nargs(1);
+    
+
 
     try {
         program.parse_args(argc, argv);
