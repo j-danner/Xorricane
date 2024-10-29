@@ -76,9 +76,6 @@ stats solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& op
 
 //perform one gcp run
 std::string gcp_only(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s) {
-    //set number of omp jobs!
-    //omp_set_num_threads(opts.jobs > omp_get_max_threads() ? omp_get_max_threads() : opts.jobs);
-
     //time comp, start
     s.begin = std::chrono::high_resolution_clock::now();
 
