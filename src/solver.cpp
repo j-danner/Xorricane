@@ -1381,7 +1381,7 @@ void solver::print_trail(std::string lead) const noexcept {
             assert( (t.type!=trail_t::ALPHA) || alpha_dl[t.ind] == lvl );
             switch(t.type) {
               case trail_t::EQUIV:
-                VERB(80, lead<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << "x" << to_string(t.ind,w) << " -> x" << to_string(equiv_lits[t.ind].ind,w) << (equiv_lits[t.ind].polarity ? "<<1" : "  ") << " from " << get_reason(t, 1).to_str());
+                VERB(80, lead<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << "x" << to_string(t.ind,w) << " -> x" << to_string(equiv_lits[t.ind].ind,w) << (equiv_lits[t.ind].polarity ? "+1" : "  ") << " from " << get_reason(t, 1).to_str());
                 break;
               case trail_t::UNIT:
                 VERB(80, lead<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " <<  t.lin->to_str() << ( lvl>0 ? (" from " + get_reason(t, 1).to_str() ) : "") );
