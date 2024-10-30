@@ -29,26 +29,9 @@ enum class trail_t { GUESS, ALPHA, EQUIV, UNIT };
 
 enum class queue_t { NEW_GUESS, IMPLIED_ALPHA, NEW_EQUIV, NEW_UNIT };
 
-const auto trail_t_to_str = [](const trail_t& t) -> std::string {
-    switch(t) {
-      case trail_t::GUESS: return BOLD("GUESS ");
-      case trail_t::ALPHA: return BOLD("ALPHA ");
-      case trail_t::EQUIV: return "EQUIV ";
-      case trail_t::UNIT:  return "UNIT  ";
-    }
-    return "";
-};
+std::ostream& operator<<(std::ostream& os, const trail_t& t);
 
-const auto queue_t_to_str = [](const queue_t& t) -> std::string {
-    switch(t) {
-      case queue_t::NEW_GUESS:     return BOLD("GUESS ");
-      case queue_t::IMPLIED_ALPHA: return BOLD("ALPHA ");
-      case queue_t::NEW_EQUIV:     return "NEW_EQUIV ";
-      case queue_t::NEW_UNIT:      return BOLD("UNIT  ");
-    }
-    return "";
-};
-    
+std::ostream& operator<<(std::ostream& os, const queue_t& t);
 
 struct trail_elem {
   /**
@@ -390,11 +373,11 @@ class solver
           //resolve cls
           assert(r_cls2.is_unit(dl_count));
           //extend r_cls2 with (unit of r_cls)+1, and r_cls with (unit of r_cls2)+1
-          VERB(120, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
+          VERB(120, "c resolving clauses\nc   "<< BOLD(r_cls.to_str()) <<"\nc and\nc   "<< BOLD(r_cls2.to_str()));
           r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count);
-          VERB(120, "c and get \nc   "+ BOLD(r_cls.to_str()));
+          VERB(120, "c and get \nc   "<< BOLD(r_cls.to_str()));
         #ifndef NDEBUG
-          VERB(120, "c tmp = "+tmp.to_str());
+          VERB(120, "c tmp = "<<tmp.to_str());
         #endif
           VERB(120, "c");
           assert( !L_.is_consistent() || L_.reduce(tmp+r_cls2.get_unit()).is_zero() );
@@ -415,11 +398,11 @@ class solver
           //resolve cls
           assert(r_cls2.is_unit(dl_count));
           //extend r_cls2 with (unit of r_cls)+1, and r_cls with (unit of r_cls2)+1
-          VERB(120, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
+          VERB(120, "c resolving clauses\nc   "<< BOLD(r_cls.to_str()) <<"\nc and\nc   "<< BOLD(r_cls2.to_str()));
           r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count);
-          VERB(120, "c and get \nc   "+ BOLD(r_cls.to_str()));
+          VERB(120, "c and get \nc   "<< BOLD(r_cls.to_str()));
         #ifndef NDEBUG
-          VERB(120, "c tmp = "+tmp.to_str());
+          VERB(120, "c tmp = "<<tmp.to_str());
         #endif
           VERB(120, "c");
           assert( !L_.is_consistent() || L_.reduce(tmp+r_cls2.get_unit()).is_zero() );
@@ -468,9 +451,9 @@ class solver
           xlit unit = r_cls2.get_unit();
         #endif
           //extend r_cls2 with (unit of r_cls)+1, and r_cls with (unit of r_cls2)+1
-          VERB(120, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
+          VERB(120, "c resolving clauses\nc   "<< BOLD(r_cls.to_str()) <<"\nc and\nc   "<< BOLD(r_cls2.to_str()));
           r_cls.resolve( std::move(r_cls2), alpha, alpha_dl, alpha_trail_pos, dl_count);
-          VERB(120, "c and get \nc   "+ BOLD(r_cls.to_str()));
+          VERB(120, "c and get \nc   "<< BOLD(r_cls.to_str()));
           VERB(120, "c");
           assert_slow( !L_.is_consistent() || L_.reduce(tmp+unit).is_zero() );
           assert(r_cls.to_xcls().reduced(alpha).is_unit());
@@ -488,9 +471,9 @@ class solver
           //resolve cls
           assert(r_cls2.is_unit(dl_count));
           //extend r_cls2 with (unit of r_cls)+1, and r_cls with (unit of r_cls2)+1
-          VERB(120, "c resolving clauses\nc   "+ BOLD(r_cls.to_str()) +"\nc and\nc   "+ BOLD(r_cls2.to_str()));
+          VERB(120, "c resolving clauses\nc   "<< BOLD(r_cls.to_str()) <<"\nc and\nc   "<< BOLD(r_cls2.to_str()));
           r_cls.resolve(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count);
-          VERB(120, "c and get \nc   "+ BOLD(r_cls.to_str()));
+          VERB(120, "c and get \nc   "<< BOLD(r_cls.to_str()));
           VERB(120, "c");
           assert_slow( !L_.is_consistent() || L_.reduce(tmp+r_cls2.get_unit()).is_zero() );
           assert(r_cls.to_xcls().reduced(alpha).is_unit());
@@ -503,7 +486,7 @@ class solver
 
     xcls_watch zero_cls; //dummy clause to refer to when the reason clause is zero
     inline xcls_watch& get_reason_and_init(xlit_w_it lin, var_t max_size = (var_t)-1) {
-      VERB(120, "c constructing reason clause for "+lin->to_str());
+      VERB(120, "c constructing reason clause for "<<lin->to_str());
 
       if(lin->get_reason_idxs().empty() && lin->get_reason_idx() != (var_t)-1) return xclss[lin->get_reason_idx()];
       //ensure that xclss[0]
@@ -530,7 +513,7 @@ class solver
     }
     
     inline xcls_watch get_reason(const xlit_w_it lin, var_t max_size = (var_t)-1) const {
-      VERB(120, "c constructing reason clause for "+lin->to_str());
+      VERB(120, "c constructing reason clause for "<<lin->to_str());
 
       if(lin->get_reason_idxs().empty() && lin->get_reason_idx() != (var_t)-1) {
         const auto rs = xclss[lin->get_reason_idx()];
@@ -619,7 +602,7 @@ class solver
      */
     inline var_t process_lineral(xlit_w_it lin, const var_t lvl, const queue_t type = queue_t::NEW_UNIT) {
       assert(lvl >= lin->get_lvl());
-      VERB(65, "c " + std::to_string(lvl) + " : process_lineral " + queue_t_to_str(type) + lin->to_str() + " ~> " + lin->to_xlit().reduced(alpha,equiv_lits).to_str() + (lin->has_non_trivial_reason_cls() ? (" with reason clause " + get_reason(lin, 1).to_str()) : "") );
+      VERB(65, "c " << std::to_string(lvl) << " : process_lineral " << type << lin->to_str() << " ~> " << lin->to_xlit().reduced(alpha,equiv_lits).to_str() << (lin->has_non_trivial_reason_cls() ? (" with reason clause " + get_reason(lin, 1).to_str()) : "") );
       if(lin->is_reducible() && type!=queue_t::IMPLIED_ALPHA) {
         assert(lvl==lin->get_lvl());
         //reduce lin -- but only if type is NOT guess -- otherwise reason clause is not computed correctly!
@@ -663,7 +646,7 @@ class solver
           assert( l.get_equiv_lvl(alpha_dl) <= lvl );
           //add to trail
           trails[lvl].emplace_back( lt, trail_t::EQUIV, lin );
-          VERB(65, "c " + std::to_string(lvl) + " : new EQUIV " + l.to_str() )
+          VERB(65, "c " << std::to_string(lvl) << " : new EQUIV " << l.to_str() )
           //if we are learn the equiv on lvl 0, schedule remove_fixed_equiv with next GCP on dl 0
           if(lvl==0) {
             remove_fixed_equiv_before_next_GCP = true;
@@ -685,9 +668,9 @@ class solver
       assert(l.is_assigning(alpha));
       const var_t assigning_lvl = std::max(lvl, l.get_assigning_lvl(alpha_dl));
       //if assignment on higher dl (e.g. when learning UNIT on prev dl + reduction with other lins leads to assignment!), backtrack properly!
-      VERB(70, "c " + std::to_string(assigning_lvl) + " : new ALPHA " + l.get_assigning_xlit(alpha).to_str() + " from UNIT " + l.to_str() + (type!=queue_t::NEW_GUESS  && lin->has_non_trivial_reason_cls() && assigning_lvl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+      VERB(70, "c " << std::to_string(assigning_lvl) << " : new ALPHA " << l.get_assigning_xlit(alpha).to_str() << " from UNIT " << l.to_str() << (type!=queue_t::NEW_GUESS  && lin->has_non_trivial_reason_cls() && assigning_lvl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
       if(assigning_lvl < dl){
-        VERB(70, "c " + std::to_string(assigning_lvl) + " : backtracking to " + std::to_string(assigning_lvl) + " as ALPHA was obtained on lower dl!" );
+        VERB(70, "c " << std::to_string(assigning_lvl) << " : backtracking to " << std::to_string(assigning_lvl) << " as ALPHA was obtained on lower dl!" );
         backtrack(assigning_lvl);
         assert(dl==assigning_lvl);
         assert(opt.eq); //this can only happen when equivalence reductions are activated!
@@ -915,10 +898,10 @@ class solver
       }
 
       mzd_t* B = mzd_init(std::max(ncols,nrows), xlits_.size());
-      VERB(80, "c found "+std::to_string(xlits_.size())+" new alpha assignments and equivs");
+      VERB(80, "c found "<<std::to_string(xlits_.size())<<" new alpha assignments and equivs");
       idx = 0;
       for(const auto& lit : xlits_) {
-        VERB(85, "c   `--> " + lit.to_str());
+        VERB(85, "c   `--> " << lit.to_str());
         //set bits of b according to xlits_
         for(const auto& jdx : lit.get_idxs_()) mzd_write_bit(B, perm[jdx], idx, 1);
         mzd_write_bit(B, n_vars, idx, lit.has_constant()); //uses that supp[0]==0
@@ -936,7 +919,7 @@ class solver
       //construct corresponding reason clauses
       idx = 0;
       for(auto&& lit : xlits_) {
-        VERB(95, "c constructing reason cls indices for "+lit.to_str());
+        VERB(95, "c constructing reason cls indices for "<<lit.to_str());
         
         list<xlit_w_it> r_cls_idxs;
         var_t resolving_lvl = 0;
@@ -1251,8 +1234,8 @@ class solver
         ++active_cls;
       }
       //update cls
-      VERB(90, "c adding new clause: " + BOLD(xclss[i].to_str()) + "  --> gives with current assignments: "+xclss[i].to_xcls().reduced(alpha).to_str());
-      if(learnt_cls) VERB(90, "c XNF : " + xclss[i].to_xnf_str());
+      VERB(90, "c adding new clause: " << BOLD(xclss[i].to_str()) << "  --> gives with current assignments: "<<xclss[i].to_xcls().reduced(alpha).to_str());
+      if(learnt_cls) VERB(90, "c XNF : " << xclss[i].to_xnf_str());
       const auto ret = learnt_cls ? xcls_upd_ret::UNIT : xclss[i].init(alpha, alpha_dl, alpha_trail_pos, dl_count);
       //adapted from GCP
       const var_t lvl = xclss[i].get_unit_at_lvl();

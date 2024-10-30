@@ -6,6 +6,27 @@
 
 #include "solver.hpp"
 
+
+std::ostream& operator<<(std::ostream& os, const trail_t& t) {
+    switch (t) {
+        case trail_t::GUESS: os << BOLD("GUESS "); break;
+        case trail_t::ALPHA: os << BOLD("ALPHA "); break;
+        case trail_t::EQUIV: os << "EQUIV "; break;
+        case trail_t::UNIT:  os << "UNIT  "; break;
+    }
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const queue_t& t) {
+    switch (t) {
+        case queue_t::NEW_GUESS:     os << BOLD("GUESS "); break;
+        case queue_t::IMPLIED_ALPHA: os << BOLD("ALPHA "); break;
+        case queue_t::NEW_EQUIV:     os << "NEW_EQUIV "; break;
+        case queue_t::NEW_UNIT:      os << BOLD("UNIT  "); break;
+    }
+    return os;
+}
+
 solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options& opt_) noexcept : opt(opt_) {
     vec< xcls > clss_; clss_.reserve(clss.size());
     for(const auto& cls : clss) {
@@ -155,8 +176,8 @@ void solver::backtrack(const var_t& lvl) {
     lineral_queue.clear(lvl);
 
     // check active_cls count
-    //VERB(90, "active_cls restored:   " + std::to_string(active_cls))
-    //VERB(90, "active_cls recomputed: " + std::to_string(std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); })))
+    //VERB(90, "active_cls restored:   " << std::to_string(active_cls))
+    //VERB(90, "active_cls recomputed: " << std::to_string(std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); })))
     assert(active_cls == (var_t) std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls_w) { return xcls_w.is_active(dl_count) && xcls_w.is_irredundant(); }));
 
   #ifndef NDEBUG
@@ -286,7 +307,7 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
     xcls_watch_resolver learnt_cls(std::move(rs));
     assert(learnt_cls.assert_data_struct(alpha, alpha_trail_pos, dl_count) && learnt_cls.is_unit(dl_count));
 
-    VERB(70, "   * reason clause is   " + BOLD( learnt_cls.to_str() ) + " for UNIT " + learnt_cls.get_unit().to_str() );
+    VERB(70, "   * reason clause is   " << BOLD( learnt_cls.to_str() ) << " for UNIT " << learnt_cls.get_unit().to_str() );
     bump_score( TRAIL.back().ind );
     pop_trail(); //remove conflict from trail, i.e., now alpha[0]==bool3:None
 
@@ -296,7 +317,7 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
     //as long as assigning_lvl is dl OR -1 (i.e. equiv-lits are used!), resolve with reason clauses
     while( learnt_cls.get_assigning_lvl(alpha_dl) == dl || learnt_cls.get_assigning_lvl(alpha_dl) == (var_t) -1 ) {
         //assert(false); //add 'is_asserting' to xcls_watch_resolver -- shouldn't be too hard to check, right?!
-        VERB(70, "   * conflict clause is " + BOLD( learnt_cls.to_str() ) + "   --> gives with current assignments: " + learnt_cls.to_xcls().reduced(alpha).to_str());
+        VERB(70, "   * conflict clause is " << BOLD( learnt_cls.to_str() ) << "   --> gives with current assignments: " << learnt_cls.to_xcls().reduced(alpha).to_str());
       #ifndef NDEBUG
         //ensure that clause is conflict clause under alpha
         assert(learnt_cls.is_unit(dl_count) && learnt_cls.get_unit().reduced(alpha).is_one() && !learnt_cls.to_xcls().is_zero());
@@ -312,7 +333,7 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
         
         //get reason_cls
         reason_cls = get_reason(*it);
-        VERB(70, "   * reason clause is   " + BOLD( reason_cls.to_str() ) + " for UNIT " + reason_cls.get_unit().to_str() );
+        VERB(70, "   * reason clause is   " << BOLD( reason_cls.to_str() ) << " for UNIT " << reason_cls.get_unit().to_str() );
 
         //ensure that reason cls is reason under alpha
         assert(reason_cls.is_unit(dl_count) && (reason_cls.get_unit().reduced(alpha)+it->lin->to_xlit().reduced(alpha)).reduced(alpha).is_zero());
@@ -327,21 +348,21 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
     }
     
     VERB(70, "   * ");
-    VERB(70, "   * learnt clause is " + learnt_cls.to_str());
+    VERB(70, "   * learnt clause is " << learnt_cls.to_str());
 
     if(opt.cm) {
-        VERB(70, "   * vivify " + learnt_cls.to_str() );
+        VERB(70, "   * vivify " << learnt_cls.to_str() );
         //minimization
         learnt_cls.minimize(s, alpha, alpha_dl, alpha_trail_pos, dl_count);
-        VERB(70, "   '------> " + learnt_cls.to_str() );
+        VERB(70, "   '------> " << learnt_cls.to_str() );
     }
 
-    VERB(70, "   * finalize " + learnt_cls.to_str() );
+    VERB(70, "   * finalize " << learnt_cls.to_str() );
     const auto out = learnt_cls.finalize(alpha_dl, alpha_trail_pos, dl_count);
-    VERB(70, "   '--------> " + out.to_str() );
+    VERB(70, "   '--------> " << out.to_str() );
     
-    VERB(90, "   * XNF " + out.to_xnf_str() );
-    VERB(70, "   '----> gives with current assignments: " + out.to_xcls().reduced(alpha).to_str());
+    VERB(90, "   * XNF " << out.to_xnf_str() );
+    VERB(70, "   '----> gives with current assignments: " << out.to_xcls().reduced(alpha).to_str());
     assert( out.to_xcls().reduced(alpha).to_str() == "1" );
     
     //find correct backtrack-lvl
@@ -371,7 +392,7 @@ std::pair<var_t, xcls_watch> solver::analyze_dpll() {
         if(!tr->empty()) xlits.emplace_back( tr->front().ind, !b3_to_bool(alpha[tr->front().ind]) );
     }
     xcls_watch learnt_cls( std::move(xcls(std::move(xlits))) );
-    VERB(70, "   * learnt clause is " + learnt_cls.to_str());
+    VERB(70, "   * learnt clause is " << learnt_cls.to_str());
     learnt_cls.init_dpll(alpha, alpha_dl, alpha_trail_pos, dl_count);
 
     return {dl>0 ? dl-1 : 0, std::move(learnt_cls) };
@@ -490,7 +511,7 @@ void solver::restart(stats& s) {
     }
     assert( assert_data_structs() );
     
-    VERB(50, "c removed " + std::to_string( (double) (no_cls-xclss.size()) / no_cls) + "\% clauses.")
+    VERB(50, "c removed " << std::to_string( (double) (no_cls-xclss.size()) / no_cls) << "\% clauses.")
 
     update_restart_schedule(s.no_restarts);
     VERB(90, "c restart finished")
@@ -1053,7 +1074,7 @@ void solver::solve_L(const xsys& L, stats& s) const {
     if(s.sols.size()<opt.sol_count) {
         //print sol
         s.print_sol();
-        VERB(0, "c solutions found so far: "+std::to_string(s.sols.size()));
+        VERB(0, "c solutions found so far: "<<std::to_string(s.sols.size()));
     } else {
         return;
     }
@@ -1075,7 +1096,7 @@ void solver::solve_L(const xsys& L, stats& s) const {
         
         //print sol
         s.print_sol();
-        VERB(0, "c solutions found so far: "+std::to_string(s.sols.size()));
+        VERB(0, "c solutions found so far: "<<std::to_string(s.sols.size()));
         ++sol_ct;
     }
 }
@@ -1113,7 +1134,7 @@ std::string solver::to_xnf_str() const noexcept {
         if(alpha[i] == bool3::None) continue;
         xclss_str.emplace_back( xlit(i, b3_to_bool(alpha[i])).to_xnf_str() + " 0" );
         ++n_cls;
-        VERB(85, "c " + xclss_str.back());
+        VERB(85, "c " << xclss_str.back());
     }
     VERB(80, "c printing linear polys")
     //add linear polys
@@ -1125,7 +1146,7 @@ std::string solver::to_xnf_str() const noexcept {
             if(lin.is_zero()) continue;
             xclss_str.emplace_back( lin.to_xnf_str() + " 0" );
             ++n_cls;
-            VERB(85, "c " + xclss_str.back());
+            VERB(85, "c " << xclss_str.back());
         }
     }
     VERB(80, "c printing XNF clauses")
@@ -1140,7 +1161,7 @@ std::string solver::to_xnf_str() const noexcept {
         }
         xclss_str.emplace_back( cls_str + "0" );
         ++n_cls;
-        VERB(95, "c " + xclss_str.back());
+        VERB(95, "c " << xclss_str.back());
     }
     //convert to one big string
     std::string str = "p xnf "+std::to_string(get_num_vars())+" "+std::to_string(n_cls)+"\n";
@@ -1268,8 +1289,8 @@ std::string solver::to_xnf_str() const noexcept {
         auto dl_count_cpy = dl_count;
         for(var_t lvl = dl; lvl>0; --lvl) {
             ++dl_count_cpy[lvl];
-            //VERB(90, "active_cls on lvl " + std::to_string(lvl) + ":   " + std::to_string(active_cls_stack[lvl]));
-            //VERB(90, "active_cls recomputed on lvl " + std::to_string(lvl) + ": " + std::to_string(
+            //VERB(90, "active_cls on lvl " << std::to_string(lvl) << ":   " << std::to_string(active_cls_stack[lvl]));
+            //VERB(90, "active_cls recomputed on lvl " << std::to_string(lvl) << ": " << std::to_string(
             //    std::count_if(xclss.begin(), xclss.end(), [&](const xcls_watch &xcls) { return xcls.is_active(dl_count_cpy) && xcls.is_irredundant(); })
             //));
             assert_slow( at_conflict() || active_cls_stack[lvl] == (var_t) 
@@ -1347,29 +1368,29 @@ void solver::print_trail(std::string lead) const noexcept {
   
     if(this->opt.verb < 80) return;
     VERB(80, lead);
-    VERB(80, lead+" trail");
-    VERB(80, lead+" dl pos type");
+    VERB(80, lead<<" trail");
+    VERB(80, lead<<" dl pos type");
 
     var_t w = std::to_string(alpha.size()).length();
 
     var_t lvl = 0;
     for(const auto& t_dl : trails) {
         var_t i = 0;
-        VERB(80, lead+" -");
+        VERB(80, lead<<" -");
         for (const auto& t : t_dl) {
             assert( (t.type!=trail_t::ALPHA) || alpha_dl[t.ind] == lvl );
             switch(t.type) {
               case trail_t::EQUIV:
-                VERB(80, lead+" " + to_string(lvl,w) + " " + to_string(i,w) + " " + trail_t_to_str(t.type) + " " + "x" + to_string(t.ind,w) + " -> x" + to_string(equiv_lits[t.ind].ind,w) + (equiv_lits[t.ind].polarity ? "+1" : "  ") + " from " + get_reason(t, 1).to_str());
+                VERB(80, lead<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << "x" << to_string(t.ind,w) << " -> x" << to_string(equiv_lits[t.ind].ind,w) << (equiv_lits[t.ind].polarity ? "<<1" : "  ") << " from " << get_reason(t, 1).to_str());
                 break;
               case trail_t::UNIT:
-                VERB(80, lead+" " + to_string(lvl,w) + " " + to_string(i,w) + " " + trail_t_to_str(t.type) + " " +  t.lin->to_str() + ( lvl>0 ? (" from " + get_reason(t, 1).to_str() ) : "") );
+                VERB(80, lead<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " <<  t.lin->to_str() << ( lvl>0 ? (" from " + get_reason(t, 1).to_str() ) : "") );
                 break;
               case trail_t::ALPHA:
-                VERB(80, lead+" " + to_string(lvl,w) + " " + to_string(i,w) + " " + trail_t_to_str(t.type) + " " + "x" + to_string(t.ind,w) + " -> " + (b3_to_bool(alpha[t.ind]) ? "1" : "0") + "  from " + get_reason(t, 1).to_str());
+                VERB(80, lead<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << "x" << to_string(t.ind,w) << " -> " << (b3_to_bool(alpha[t.ind]) ? "1" : "0") << "  from " << get_reason(t, 1).to_str());
                 break;
               case trail_t::GUESS:
-                VERB(80, lead+" " + to_string(lvl,w) + " " + to_string(i,w) + " " + trail_t_to_str(t.type) + " " + "x" + to_string(t.ind,w) + "    " + " from " + get_reason(t, 1).to_str());
+                VERB(80, lead<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << "x" << to_string(t.ind,w) << "    " << " from " << get_reason(t, 1).to_str());
                 break;
             }
             ++i;

@@ -22,6 +22,9 @@
 #define BOOST_POOL_NO_MT //disable multithreading support
 #include <boost/pool/pool_alloc.hpp>
 
+
+#include "rang/rang.hpp"
+
 //activate additional debugging
 //#define DEBUG_SLOW
 #ifdef NDEBUG
@@ -38,7 +41,14 @@
   #define VERB(lvl, msg)
 #endif
 
-#define BOLD(str) ( std::string("\x1b[1m")+str+std::string("\x1b[0m") )
+#define BOLD(str) rang::style::bold << str << rang::style::reset
+#define ITALIC(str) rang::style::italic << str << rang::style::reset
+#define DIM(str) rang::style::dim << str << rang::style::reset
+#define UNDERLINE(str) rang::style::underline << str << rang::style::reset
+
+#define GRAY(str) rang::fg::gray<< str << rang::style::reset
+
+
 
 #if defined(DEBUG_SLOW) && !defined(NDEBUG)
   #define assert_slow(expr) assert(expr)

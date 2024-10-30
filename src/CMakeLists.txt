@@ -10,6 +10,8 @@ add_library(
     #xsys
     xlit/xsys.hpp
     xlit/xsys.cpp 
+    #rang - library for colours in terminal
+    rang/rang.hpp
 )
 
 add_library(
