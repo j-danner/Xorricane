@@ -122,7 +122,7 @@ struct equivalence {
   void set_lvl(const var_t lvl_) { lvl = lvl_; };
 
   bool is_active() const { return ind>0; };
-  bool is_active(const var_t lvl_) const { return lvl<=lvl_ && ind>0; };
+  bool is_active(const var_t lvl_) const { return ind>0 && lvl<=lvl_; };
 
   void clear() { ind = 0; lvl=0; };
   std::string to_str(const var_t& idx) const { return "x" + std::to_string(idx) + "+x" + std::to_string(ind) + (polarity ? "+1" : ""); };
@@ -152,7 +152,7 @@ class guessing_path {
 
     void insert(const var_t& ind, const bool3 phase = bool3::False) {
       P.emplace_back(ind);
-      init_phase.emplace_back(phase);
+      init_phase.emplace_back(b3_to_bool(phase));
     };
     bool get_phase(const var_t& idx) const { return init_phase[idx]; };
 
