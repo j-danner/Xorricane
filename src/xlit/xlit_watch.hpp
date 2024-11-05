@@ -285,11 +285,11 @@ class xlit_watch : public xlit
     }
 
     /**
-     * @brief sets the reason_cls of the lineral to idx, i.e., clears the reason_cls_idxs and sets reason_cls_idx
+     * @brief sets the reason_cls of the lineral to idx
      * 
      * @param idx index of reason_cls, i.e., xclss[idx] must be a unit clause and the unit is equiv to this
      */
-    inline void set_reason_idx(const var_t& idx) { reason_cls_idxs.clear(); reason_cls_idx = idx; }
+    inline void set_reason_idx(const var_t& idx) { reason_cls_idx = idx; }
 
     //inline void set_lvl(const var_t lvl_) { lvl = lvl_; };
     inline var_t get_lvl() const { return lvl; };

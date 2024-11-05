@@ -461,7 +461,7 @@ void solver::restart(stats& s) {
     }
     VERB(50, "c rm clauses")
     assert_slow( assert_data_structs() );
-  #ifdef DEBUG_SLOW
+  #ifndef NDEBUG
     //check if reason cls for lineral_watches can be computed correctly
     for(xlit_w_it it=lineral_watches[0].begin(); it!=lineral_watches[0].end(); ++it) {
         const auto rs = get_reason( it );
@@ -472,15 +472,13 @@ void solver::restart(stats& s) {
 
     //remove all clss marked for removal + prepare lookup-table for new idxs of reason_clss
     vec<var_t> new_idx; new_idx.reserve(xclss.size());
-    var_t curr_idx = 0;
     vec<xcls_watch> cpy; cpy.reserve(xclss.size());
     vec<double> util_cpy; util_cpy.reserve(xclss.size());
     for(var_t i=0; i<xclss.size(); ++i) {
         if(!xclss[i].is_marked_for_removal()) {
             cpy.emplace_back(std::move(xclss[i]));
             util_cpy.emplace_back( utility[i] );
-            new_idx.emplace_back( curr_idx );
-            ++curr_idx;
+            new_idx.emplace_back( cpy.size()-1 );
         } else {
             new_idx.emplace_back( (var_t)-1 );
         }
@@ -493,7 +491,7 @@ void solver::restart(stats& s) {
             assert( new_idx[l.get_reason_idx()] < xclss.size() );
             l.set_reason_idx( new_idx[l.get_reason_idx()] );
         }
-      #ifdef DEBUG_SLOW
+      #ifndef NDEBUG
         const auto rs = get_reason( it );
         assert( (rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits) + l.to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero()) );
         //BEWARE this assertion may fail for some 'restart' calls of solver_cpy(!)
@@ -914,7 +912,7 @@ void solver::solve(stats &s) {
     }
     
     //create copy of solver -- for clause minimization
-    solver solver_cpy(*this);
+    solver solver_cpy(*this); //@todo only construct when opt.cm is enabled!
     stats s_cpy;
     if(opt.cm) {
         //fully init solver_cpy only if clause minimization is activated
