@@ -648,15 +648,18 @@ class solver
           //add to trail
           trails[lvl].emplace_back( lt, trail_t::EQUIV, lin );
           VERB(65, "c " << std::to_string(lvl) << " : new EQUIV " << l.to_str() )
-          //if we are learn the equiv on lvl 0, schedule remove_fixed_equiv with next GCP on dl 0
+          //if we learn the equiv on lvl 0, schedule remove_fixed_equiv with next GCP on dl 0
           if(lvl==0) {
             remove_fixed_equiv_before_next_GCP = true;
             l.clear_reason();
           }
         } else {
           assert(type==queue_t::NEW_UNIT || type==queue_t::NEW_GUESS);
-          //optional: add to trail
-          trails[lvl].emplace_back( l.LT(), type==queue_t::NEW_GUESS ? trail_t::GUESS : trail_t::UNIT, lin);
+          //only add to trail when it is a GUESS - learning only requires the lite literal trail
+          //trails[lvl].emplace_back( l.LT(), type==queue_t::NEW_GUESS ? trail_t::GUESS : trail_t::UNIT, lin);
+          if(type==queue_t::NEW_GUESS) {
+            trails[lvl].emplace_back( l.LT(), trail_t::GUESS, lin);
+          }
         }
         return -1;
       }
@@ -687,6 +690,7 @@ class solver
       assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), lvl));
       alpha_trail_pos[lt2] = stepwise_lit_trail_length;
       ++stepwise_lit_trail_length;
+      assert(type==queue_t::NEW_GUESS || !lin->is_reducible() || equiv_lits[lt2].ind==0 || alpha[equiv_lits[lt2].ind]!=bool3::None);
       return lt2;
     };
 
