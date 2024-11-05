@@ -1237,7 +1237,22 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
         CHECK( s.sols.size() == 264 );
         CHECK( check_sols(clss.cls, s.sols) );
     }
+    
+    SECTION( "test_simon_2.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon_2.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->verb = 100;
+        slvr.get_opts()->ca = ca_alg::fuip;
+        slvr.get_opts()->sol_count = 1;
+        slvr.get_opts()->gauss_elim_schedule = -1;
+        slvr.get_opts()->dh = dec_heu::vsids;
+        slvr.get_opts()->rst = restart_opt::luby;
+        slvr.get_opts()->ip = initial_prop_opt::no;
+        slvr.get_opts()->timeout = 30; //bug appeared after about 20secs
 
+        stats s = slvr.solve();
+    }
+    
     SECTION( "test_simon.xnf -la 28" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon.xnf");
         auto slvr = solver(clss);
