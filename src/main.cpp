@@ -71,6 +71,13 @@ int main(int argc, char const *argv[])
         .choices("vsids", "lwl", "swl", "lex")
         .nargs(1);
     
+    //guessing path input
+    program.add_argument("-gp","--guessing-path")
+        .help("path to file with guessing path, where each line contains exactly one literal corresponding to the variable assignment to be guessed next; lines are skipped if variables already assigned")
+        .nargs(1);
+        //undocumented: if var name is negative we first guess the ind to be false instead of true
+    
+    
     //phase_opt
     program.add_argument("-po","--phase-options")
         .help("phase saving options; 'save', 'save_inv', 'rand'")
@@ -128,12 +135,6 @@ int main(int argc, char const *argv[])
         .nargs(1);
     
 
-    //guessing path input
-    program.add_argument("-gp","--guessing-path")
-        .help("path to file storing guessing path; each line contains exactly one number corr to the corresponding variable")
-        .nargs(1);
-        //undocumented: if var name is negative we first guess the ind to be false instead of true
-    
     //gcp-out
     program.add_argument("-g","--gcp-out")
         .help("applies GCP once and outputs result")
