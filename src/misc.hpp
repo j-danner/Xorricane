@@ -31,9 +31,6 @@
   #undef DEBUG_SLOW
 #endif
 
-//activate special treatment of disjoint xcls_watch -- experiments showed little to no performance gain
-//#define TRACK_DISJOINT_XCLS
-
 //verbosity output
 #ifdef VERBOSITY
   #define VERB(lvl, msg) if(this->opt.verb >= lvl) { std::cout << msg << std::endl; }

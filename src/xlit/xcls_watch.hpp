@@ -82,13 +82,6 @@ private:
    */
   bool delete_on_cleanup = false;
 
-#ifdef TRACK_DISJOINT_XCLS
-  /**
-   * @brief indicates whether clause if disjoint
-   */
-  bool disjoint = false;
-#endif
-
   /**
    * @brief initializes shared_part, ws[0], ws[1] and ptr_cache
    * @note assumes that xlits are already set; wl_it must still be initiated!
@@ -100,39 +93,26 @@ private:
 
     if (size() == 0) {
       shared_part.clear();
-    #ifdef TRACK_DISJOINT_XCLS
-      disjoint = true;
-    #endif
       return;
     } else if (size() == 1) {
       idx[0] = 0;
       ws[0] = 0;
       ptr_cache[0] = ptr_(idx[0], ws[0]);
       shared_part.clear();
-    #ifdef TRACK_DISJOINT_XCLS
-      disjoint = true;
-    #endif
       return;
     }
     assert(size() > 1);
     idx[0] = 0;
     idx[1] = 1;
     
-  #ifdef TRACK_DISJOINT_XCLS
-    disjoint = is_disjoint();
-    if(!disjoint) {
-  #endif
-      // init shared
-      shared_part = WLIN0.shared_part(WLIN1);
-      // rm shared part from WLIN0 and WLIN1
-      WLIN0 += shared_part;
-      WLIN1 += shared_part;
+    // init shared
+    shared_part = WLIN0.shared_part(WLIN1);
+    // rm shared part from WLIN0 and WLIN1
+    WLIN0 += shared_part;
+    WLIN1 += shared_part;
 
-      if(WLIN0.size()==0) WLIN0.swap(shared_part);
-      if(WLIN1.size()==0) WLIN1.swap(shared_part);
-  #ifdef TRACK_DISJOINT_XCLS
-    }
-  #endif
+    if(WLIN0.size()==0) WLIN0.swap(shared_part);
+    if(WLIN1.size()==0) WLIN1.swap(shared_part);
     // ensure that WLIN0 and WLIN1 are non-empty
     assert(WLIN0.size() > 0 && WLIN1.size() > 0);
 
@@ -205,9 +185,6 @@ private:
    * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t watched variable (if non-zero)
    */
   inline std::pair<var_t, xcls_upd_ret> advance(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept {
-  #ifdef TRACK_DISJOINT_XCLS
-    if(disjoint) return advance_disjoint(alpha, alpha_dl, alpha_trail_pos, dl_count);
-  #endif
     if(alpha[ptr_ws(0)] == bool3::None) return {ptr_ws(0), xcls_upd_ret::NONE};
     assert(alpha[ptr_ws(0)] != bool3::None);
 
@@ -348,120 +325,6 @@ private:
     //set xlit_t_pos of unit to -1
     //@todo can we also just set it to -1 ??
     xlit_t_pos[idx[1]] = std::max( xlits[idx[1]].get_watch_var(alpha_trail_pos).first, shared_part.get_watch_var(alpha_trail_pos).first );
-
-    //ensure that WLIN0 is the unit:
-    swap_wl();
-    assert(!is_active(dl_count));
-    assert(is_unit(dl_count));
-    assert( !(size()>1) || (xlit_t_pos[idx[0]] > xlit_t_pos[idx[1]]) );
-    assert(assert_data_struct());
-    return {ptr_ws(1), xcls_upd_ret::UNIT};
-  };
-
-  /**
-   * @brief advances ws[0]
-   * @note assumes that clause is disjoint!
-   *
-   * @param alpha current bool3-alpha
-   * @param alpha_dl dl of alpha-assignments
-   * @param alpha_trail_pos t_pos of alpha-assignments
-   * @param dl_count current dl_count
-   * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t watched variable (if non-zero)
-   */
-  inline std::pair<var_t, xcls_upd_ret> advance_disjoint(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
-    if(alpha[ptr_ws(0)] == bool3::None) return {ptr_ws(0), xcls_upd_ret::NONE};
-    assert(alpha[ptr_ws(0)] != bool3::None);
-    assert(is_disjoint());
-
-    // advance iterator as long as there is another unassigned idx to point to
-    auto new_w = ws[0];
-    while ((new_w < (var_t)WLIN0.size()) && (alpha[ptr_(idx[0], new_w)] != bool3::None)) { ++new_w; }
-    if (new_w == (var_t)WLIN0.size()) {
-      /*wrap around end if necessary */ new_w = 0;
-      while ((alpha[ptr_(idx[0], new_w)] != bool3::None) && (new_w != ws[0])) { ++new_w; }
-    }
-    // advancing done; now new_w points to ws[0] or at an unassigned idx -- or again to ws[0] (!)
-    if (new_w != ws[0]) {
-      assert(alpha[ptr_(idx[0], new_w)] == bool3::None);
-      ws[0] = new_w;
-      ptr_cache[0] = ptr_(idx[0], ws[0]);
-      assert(assert_data_struct());
-      return {ptr_ws(0), xcls_upd_ret::NONE};
-    }
-    // now WLIN0 is constant under alpha! and shared_part is 0!
-    // WLIN0 can be evaluated!
-    if (!WLIN0.eval(alpha)) {
-      // WLIN0 evaluates to 1
-      // corresponding lineral is 1 --> clause does not need to be watched any longer!
-      // do not change watches!
-      SAT_dl_count = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
-      assert(!is_active(dl_count)); // clause is no longer active!
-      assert(assert_data_struct());
-      return {ptr_ws(0), xcls_upd_ret::SAT};
-    }
-    // now WLIN0 evaluates to 0 under alpha, i.e., we check whether a different lineral can be watched.
-    xlit_dl_count0[idx[0]] = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
-    //@todo how to obtain xlit_t_pos information without another iteration?
-    xlit_t_pos[idx[0]] = xlits[idx[0]].get_watch_var(alpha_trail_pos).first;
-
-    // note that WLIN0 and WLIN1 are always the xlits that are watched, i.e., start search from xlits[2] (!)
-    cls_size_t new_i = 0;
-    for (; new_i < size(); ++new_i) {
-      if(new_i==idx[0] || new_i==idx[1]) continue;
-      // skip xlits which evaluate to 0 in current search tree
-      if (dl_count[xlit_dl_count0[new_i].first] == xlit_dl_count0[new_i].second)
-        continue;
-
-      //rm xlits[new_i] if it is just zero!
-      if(xlits[new_i].is_zero()) {
-        remove_zero_lineral(new_i);
-        //repeat with same new_i
-        --new_i;
-        continue;
-      } else if(xlits[new_i].is_one()) {
-        //leave watches untouched; but set SAT_dl_count s.t. clause is satisfied already at dl 0!
-        SAT_dl_count = {0, 1};
-        return {ptr_ws(0), xcls_upd_ret::SAT};
-      }
-      assert(!xlits[new_i].is_one());
-
-      const auto& [v, dl_assigned, t_pos, _] = xlits[new_i].get_watch_tuple(alpha_dl, alpha_trail_pos);
-      new_w = _;
-
-      if (alpha[v] == bool3::None ) {
-        // new xlit to be watched found
-        idx[0] = new_i;
-        ws[0] = new_w;
-        ptr_cache[0] = v;
-        assert(is_active(dl_count));
-        return {ptr_ws(0), xcls_upd_ret::NONE};
-      } else {
-        // xlits[new_i] evaluates to a constant; this is only useful if xlits[new_i].eval(alpha) is 1, i.e., the clause is SAT
-        if(!xlits[new_i].eval(alpha)) {
-          //note: we can leave all watches as they were!
-          SAT_dl_count = {dl_assigned, dl_count[dl_assigned]};
-          
-          assert(!is_active(dl_count));
-          assert(is_sat(dl_count));
-          assert(assert_data_struct());
-          assert(assert_data_struct(alpha, alpha_trail_pos, dl_count));
-          return {ptr_ws(0), xcls_upd_ret::SAT};
-        }
-        // now xlits[new_i] evaluates to 0 --> choose different new_i
-        xlit_dl_count0[new_i] = {dl_assigned, dl_count[dl_assigned]};
-        //update t_pos information
-        xlit_t_pos[new_i] = t_pos;
-        assert_slow(xlit_t_pos[new_i] == xlits[new_i].get_watch_var(alpha_trail_pos).first);
-        
-        assert( dl_assigned <= alpha_dl[ptr_ws(0)] );
-      }
-    }
-    // if the above did not yet return, then all xlits (except WLIN1) evaluate to 0 under alpha, i.e., we learn a unit clause!
-    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and WLIN0 evaluates to 0!)
-    
-    //set xlit_t_pos of unit to -1
-    //@todo can we also just set it to -1 ??
-    xlit_t_pos[idx[1]] = xlits[idx[1]].get_watch_var(alpha_trail_pos).first;
 
     //ensure that WLIN0 is the unit:
     swap_wl();
@@ -1317,11 +1180,6 @@ public:
 
     // check size of xlits -- ensure it does not 'explode'
     assert( xlits.size() < ((int) 1) << 16);
-
-
-  #ifdef TRACK_DISJOINT_XCLS
-    assert( !disjoint || is_disjoint() );
-  #endif
 
     return true;
   };
