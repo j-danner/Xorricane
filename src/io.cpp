@@ -96,6 +96,7 @@ parsed_xnf parse_file(std::istream& file) {
             }
             //add clause to cls
             if (cl.size() > 0) cls.emplace_back( std::move(cl) );
+            else               --num_cls;
         }
     }
 

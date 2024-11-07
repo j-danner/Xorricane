@@ -488,12 +488,12 @@ class solver
     inline xcls_watch& get_reason_and_init(xlit_w_it lin, var_t max_size = (var_t)-1) {
       VERB(120, "c constructing reason clause for "<<lin->to_str());
 
-      if(lin->get_reason_idxs().empty() && lin->get_reason_idx() != (var_t)-1) return xclss[lin->get_reason_idx()];
+      if(lin->get_reason_lins().empty() && lin->get_reason_idx() != (var_t)-1) return xclss[lin->get_reason_idx()];
       //ensure that xclss[0]
       if(!lin->has_non_trivial_reason_cls()) return zero_cls;
 
       //construct reason clause
-      const auto rs = get_reason_and_init( lin->get_reason_idxs(), lin->get_reason_idx(), max_size);
+      const auto rs = get_reason_and_init( lin->get_reason_lins(), lin->get_reason_idx(), max_size);
       assert_slow(!rs.is_zero());
 
       //place rs into xclss
@@ -505,9 +505,9 @@ class solver
       // add new cls to watch_lists
       if(xclss.back().size()>0) watch_list[ (xclss.back().get_wl0()) ].emplace_back(i);
       if(xclss.back().size()>1) watch_list[ (xclss.back().get_wl1()) ].emplace_back(i);
-      //adapt reason_cls_idx of lin
-      lin->clear_reason();
-      lin->set_reason_idx( i );
+      //adapt reason of lin
+      lin->clear_reason_idxs();
+      lin->push_reason_idx( i );
       
       assert_slow(xclss[i].is_unit(dl_count) && (xclss[i].get_unit().reduced(alpha,equiv_lits)+lin->to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero());
       return xclss[i];
@@ -516,7 +516,7 @@ class solver
     inline xcls_watch get_reason(const xlit_w_it lin, var_t max_size = (var_t)-1) const {
       VERB(120, "c constructing reason clause for "<<lin->to_str());
 
-      if(lin->get_reason_idxs().empty() && lin->get_reason_idx() != (var_t)-1) {
+      if(lin->get_reason_lins().empty() && lin->get_reason_idx() != (var_t) -1) {
         const auto rs = xclss[lin->get_reason_idx()];
 
         assert_slow(rs.is_unit(dl_count) && (rs.get_unit()+lin->to_xlit()).reduced(alpha).is_zero());
@@ -527,9 +527,9 @@ class solver
       if(!lin->has_non_trivial_reason_cls()) return xcls(list<xlit>({*lin}));
 
       //construct reason clause
-      const auto rs = get_reason( lin->get_reason_idxs(), lin->get_reason_idx(), max_size );
+      const auto rs = get_reason( lin->get_reason_lins(), lin->get_reason_idx(), max_size );
       
-      assert_slow(rs.is_unit(dl_count) && (rs.get_unit()+lin->to_xlit()).reduced(alpha).is_zero());
+      //assert_slow(rs.is_unit(dl_count) && (rs.get_unit()+lin->to_xlit()).reduced(alpha).is_zero());
       assert(rs.is_unit(dl_count) && rs.get_unit().reduced(alpha)==lin->to_xlit().reduced(alpha));
 
       return rs;
@@ -607,8 +607,10 @@ class solver
       if(lin->is_reducible() && type!=queue_t::IMPLIED_ALPHA) {
         assert(lvl==lin->get_lvl());
         //reduce lin -- but only if type is NOT guess -- otherwise reason clause is not computed correctly!
+        //assert_slow(get_reason(lin).get_unit().reduced(alpha)==lin->to_xlit().reduced(alpha));
         if(opt.eq && type!=queue_t::NEW_GUESS) lin->reduce(alpha, alpha_dl, dl_count, equiv_lits, lvl);
         else                                   lin->reduce(alpha, alpha_dl, dl_count, lvl);
+        //assert_slow(lin->is_zero() || get_reason(lin).get_unit().reduced(alpha)==lin->to_xlit().reduced(alpha));
       }
       if(lin->is_zero(alpha)) {
         if(lin->is_zero()) lineral_watches[lvl].erase( lin );
@@ -651,7 +653,7 @@ class solver
           //if we learn the equiv on lvl 0, schedule remove_fixed_equiv with next GCP on dl 0
           if(lvl==0) {
             remove_fixed_equiv_before_next_GCP = true;
-            l.clear_reason();
+            l.clear_reason_lins();
           }
         } else {
           assert(type==queue_t::NEW_UNIT || type==queue_t::NEW_GUESS);
@@ -666,7 +668,7 @@ class solver
       
       //rm reasons on dl 0 -- might simplify conflict resolution on higher dls (esp with many implications on dl 0)
       //@todo clear reason right after reduction?!
-      if(lvl==0) l.clear_reason();
+      if(lvl==0) l.clear_reason_lins();
 
       //now l must be an alpha-assignment!
       assert(l.is_assigning(alpha));
@@ -703,6 +705,7 @@ class solver
      * @param type type of propagation (defaults to queue_t::NEW_UNIT)
      */
     inline void queue_implied_lineral(xlit_w_it lin, const var_t lvl, const queue_t type = queue_t::NEW_UNIT) {
+      assert(lin->assert_data_struct(alpha));
       if(type==queue_t::NEW_GUESS) lineral_queue.q_alpha.emplace_front( lin, lvl, type );
       else if(lin->LT()==0) {
         lineral_queue.q_confl.emplace_front( lin, lvl, queue_t::IMPLIED_ALPHA );

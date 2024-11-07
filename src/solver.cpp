@@ -484,8 +484,10 @@ void solver::restart(stats& s) {
         auto& l = *it;
         if(l.get_reason_idx()!=(var_t)-1) {
             assert( new_idx[l.get_reason_idx()] < xclss.size() );
-            l.set_reason_idx( new_idx[l.get_reason_idx()] );
+            l.clear_reason_idxs();
+            l.push_reason_idx( new_idx[l.get_reason_idx()] );
         }
+        //l.shift_reason_idxs( new_idx );
       #ifndef NDEBUG
         const auto rs = get_reason( it );
         assert( (rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits) + l.to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero()) );
@@ -1310,7 +1312,8 @@ std::string solver::to_xnf_str() const noexcept {
         var_t lvl = 0;
         for(const auto& lin_l : lineral_watches) {
             for(const auto& lin : lin_l) {
-                assert( lin.get_reason_idx()==(var_t)-1 || lin.get_reason_idx() < xclss.size() );
+                assert( !lineral_queue.empty() || lin.assert_data_struct(alpha) );
+                assert( lin.get_reason_idxs().empty() || lin.get_reason_idx() < xclss.size() );
                 assert( lin.get_lvl()==lvl );
             }
             ++lvl;

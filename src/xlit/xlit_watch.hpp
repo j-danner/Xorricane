@@ -30,10 +30,16 @@ class xlit_watch : public xlit
     std::pair<var_t,var_t> dl_c = {0,0};
 
     /**
-     * @brief index of reason clause
+     * @brief list of linerals with whose reason clauses we need to resolve with to get the reason clause of this lineral
+     * @note also see reason_cls_idxs
      */
-    list< xlit_w_it > reason_cls_idxs;
-    var_t reason_cls_idx = -1;
+    list< xlit_w_it > reason_lins;
+    
+    /**
+     * @brief (sorted) vector of indices for xclss with which we need to resolve with to get the reason clause of this lineral
+     * @note also see reason_lins
+     */
+    vec<var_t> reason_cls_idxs = vec<var_t>();
 
     /**
      * @brief flag that indicates whether lineral can be reduced -- in that case it can be reduced!
@@ -50,10 +56,10 @@ class xlit_watch : public xlit
     xlit_watch() {};
     xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t lvl_) noexcept : xlit(lit), lvl(lvl_) { init(alpha, alpha_dl, dl_count); }
     xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t lvl_) noexcept : xlit(std::move(lit)), lvl(lvl_) { init(alpha, alpha_dl, dl_count); };
-    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t& rs, const var_t lvl_) noexcept : xlit(lit), reason_cls_idx(rs), lvl(lvl_) { init(alpha, alpha_dl, dl_count); }
-    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t& rs, const var_t lvl_) noexcept : xlit(std::move(lit)), reason_cls_idx(rs), lvl(lvl_) { init(alpha, alpha_dl, dl_count); };
-    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const list< xlit_w_it >& rs, const var_t lvl_) noexcept : xlit(lit), reason_cls_idxs(rs), lvl(lvl_) { init(alpha, alpha_dl, dl_count); }
-    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const list< xlit_w_it >& rs, const var_t lvl_) noexcept : xlit(std::move(lit)), reason_cls_idxs(rs), lvl(lvl_) { init(alpha, alpha_dl, dl_count); };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t& rs, const var_t lvl_) noexcept : xlit(lit), reason_cls_idxs({rs}), lvl(lvl_) { init(alpha, alpha_dl, dl_count); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const var_t& rs, const var_t lvl_) noexcept : xlit(std::move(lit)), reason_cls_idxs({rs}), lvl(lvl_) { init(alpha, alpha_dl, dl_count); };
+    xlit_watch(const xlit& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const list< xlit_w_it >& rs, const var_t lvl_) noexcept : xlit(lit), reason_lins(rs), lvl(lvl_) { init(alpha, alpha_dl, dl_count); }
+    xlit_watch(xlit&& lit, const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const list< xlit_w_it >& rs, const var_t lvl_) noexcept : xlit(std::move(lit)), reason_lins(rs), lvl(lvl_) { init(alpha, alpha_dl, dl_count); };
     
     //copy ctor
     xlit_watch(const xlit_watch& o) = default;
@@ -267,13 +273,16 @@ class xlit_watch : public xlit
      * @brief returns list of xlit_watches whose reasones need to be resolved to get this lineral
      * @return list< xlit_w_it > list of xlit_watches
      */
-    inline const list< xlit_w_it >& get_reason_idxs() const { return reason_cls_idxs; }
+    inline const list< xlit_w_it >& get_reason_lins() const { return reason_lins; }
     
     /**
      * @brief returns the reason clause index, if this lineral was derived from an xcls_watch
      * @return var_t reason clause index
      */
-    inline const var_t& get_reason_idx() const { return reason_cls_idx; }
+    inline const vec<var_t>& get_reason_idxs() const { assert(reason_cls_idxs.size()<=1); return reason_cls_idxs; }
+    
+    //tmp remove after refactoring !!!
+    inline var_t get_reason_idx() const { return reason_cls_idxs.empty() ? (var_t) -1 : reason_cls_idxs[0]; }
 
     /**
      * @brief checks if there is a non-trivial reason clause
@@ -281,15 +290,45 @@ class xlit_watch : public xlit
      * @return true iff there is a non-trivial reason clause
      */
     bool has_non_trivial_reason_cls() const {
-      return lvl!=0 && (!reason_cls_idxs.empty() || reason_cls_idx!=(var_t)-1);
+      return lvl!=0 && (!reason_lins.empty() || !reason_cls_idxs.empty());
     }
+    
+    /**
+     * @brief shift reason_idxs; i.e. map reason_idxs to new indices
+     * 
+     * @param new_idx vec of var_t
+     */
+    inline void shift_reason_idxs(const vec<var_t>& new_idx) {
+      for(auto &idx : reason_cls_idxs) {
+        idx = new_idx[idx];
+      }
+      assert(std::is_sorted(reason_cls_idxs.begin(), reason_cls_idxs.end()));
+    };
 
     /**
-     * @brief sets the reason_cls of the lineral to idx
+     * @brief adds a new index to reason_cls_idxs (sorted); removes the index if it is already present!
      * 
-     * @param idx index of reason_cls, i.e., xclss[idx] must be a unit clause and the unit is equiv to this
+     * @param idx index of reason_cls to be added
+     * @note xclss[idx] must be a unit clause
      */
-    inline void set_reason_idx(const var_t& idx) { reason_cls_idx = idx; }
+    inline void push_reason_idx(const var_t& idx) { 
+      auto it = std::lower_bound(reason_cls_idxs.begin(), reason_cls_idxs.end(), idx);
+      if(*it == idx) {
+        std::remove(reason_cls_idxs.begin(), reason_cls_idxs.end(), idx);
+      } else {
+        reason_cls_idxs.insert(it, idx);
+      }
+      //reason_cls_idxs.push_back(idx);
+    }
+    
+    /**
+     * @brief merges the reason_cls_idxs with a (sorted) vec of idxs; (removes the idxs if already present)
+     * 
+     * @param idxs sorted vec of index of reason_cls to be added
+     * @note xclss[idx] must be a unit clause for all idxs
+     */
+    inline void merge_reason_idx(const vec<var_t>& idxs);
+
 
     //inline void set_lvl(const var_t lvl_) { lvl = lvl_; };
     inline var_t get_lvl() const { return lvl; };
@@ -297,7 +336,12 @@ class xlit_watch : public xlit
     /**
      * @brief removes all reasons
      */
-    inline void clear_reason() { reason_cls_idxs.clear(); reason_cls_idx = (var_t) -1; }
+    inline void clear_reason_lins() { reason_lins.clear(); }
+    
+    /**
+     * @brief clear reason_idxs
+     */
+    inline void clear_reason_idxs() { reason_cls_idxs.clear(); };
 
     inline bool is_reducible() const { return reducible; };
     inline void set_reducibility(const bool reducible_) { reducible = reducible_; };
@@ -360,6 +404,7 @@ class xlit_watch : public xlit
     };
 
     bool assert_data_struct(const vec<bool3>& alpha) const {
+      assert(reason_cls_idxs.size()<=1); //temporary!
       if(idxs.size()<2) return true;
       //assert(alpha_dl[idxs[ws[1]]]==0 || alpha_dl[idxs[ws[1]]] <= alpha_dl[idxs[ws[0]]]);
       assert(ws[0] != ws[1]);
@@ -430,7 +475,7 @@ class xlit_watch : public xlit
     inline bool reduce_no_tracking(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
       assert(reducible);
       const auto ret = reduce(alpha, alpha_dl, dl_count, equiv_lits);
-      clear_reason();
+      clear_reason_lins();
       return ret;
     };
     
@@ -477,7 +522,7 @@ class xlit_watch : public xlit
               const auto other_lit = equiv_lits[ idxs[offset] ].ind;
               assert(idxs[offset] < other_lit);
               //add reduction reasons
-              reason_cls_idxs.emplace_back( equiv_lits[idxs[offset]].reason_lin );
+              reason_lins.emplace_back( equiv_lits[idxs[offset]].reason_lin );
               //adapt watches if necessary!
               ret |= (ws[0]==offset) || (ws[1]==offset) || (wl0 == other_lit) || (wl1 == other_lit);
               // idxs[offset] < wl < other_lit --> move wl by one!
@@ -504,8 +549,8 @@ class xlit_watch : public xlit
     xlit_watch& operator=(xlit_watch&& other) noexcept {
       std::swap(ws, other.ws);
       dl_c = std::move(other.dl_c);
-      reason_cls_idxs = std::move(other.reason_cls_idxs);
-      reason_cls_idx = other.reason_cls_idx;
+      reason_lins = std::move(other.reason_lins);
+      reason_cls_idxs = other.reason_cls_idxs;
       reducible = other.reducible;
       xlit::operator=(other);
       return *this;
@@ -514,8 +559,8 @@ class xlit_watch : public xlit
     xlit_watch& operator=(const xlit_watch& other) noexcept {
       ws[0] = other.ws[0]; ws[1] = other.ws[1]; ws[2] = other.ws[2];
       dl_c = other.dl_c;
+      reason_lins = other.reason_lins;
       reason_cls_idxs = other.reason_cls_idxs;
-      reason_cls_idx = other.reason_cls_idx;
       reducible = other.reducible;
       xlit::operator=(other);
       return *this;
@@ -524,8 +569,8 @@ class xlit_watch : public xlit
     void swap(xlit_watch& o) noexcept {
       std::swap(ws, o.ws);
       std::swap(dl_c, o.dl_c);
-      std::swap(reason_cls_idxs, o.reason_cls_idxs);
-      std::swap(reason_cls_idx, reason_cls_idx);
+      std::swap(reason_lins, o.reason_lins);
+      std::swap(reason_cls_idxs, reason_cls_idxs);
       std::swap(reducible, o.reducible);
       xlit::swap(o);
     }
