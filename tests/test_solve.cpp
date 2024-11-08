@@ -1264,13 +1264,13 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
-    SECTION( "test_simon_2.xnf -- timeout" ) {
+    SECTION( "test_simon_2.xnf -- 30s timeout" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon_2.xnf");
         options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, true, -1, 0, 30, 1, guessing_path());
         //timeout 30secs; bug appeared after about 20secs
         stats s = solve(clss.cls, clss.num_vars, opts);
 
-        CHECK(s.finished==false && s.no_restarts>1);
+        CHECK( (s.finished==false && s.no_restarts>1) );
     }
 }
 
