@@ -4,6 +4,11 @@
 // this suppresses creating the new objects again and again
 vec<var_t> diff_tmp;
 
+void xlit_watch::merge_reason_idx(const vec<var_t>& idxs) { 
+  diff_tmp.clear(); // diff_tmp is declared global and static, this saves creating new diff_s for each calling
+  std::set_symmetric_difference(reason_cls_idxs.begin(), reason_cls_idxs.end(), idxs.begin(), idxs.end(), std::back_inserter(diff_tmp));
+  std::swap(reason_cls_idxs, diff_tmp);
+}
 
 bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
     assert(reducible);
@@ -30,7 +35,7 @@ bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, con
                 const auto other_lit = equiv_lits[*rm_idxs.begin()].ind;
                 assert(*rm_idxs.begin() < other_lit);
                 //add reduction reasons
-                reason_cls_idxs.emplace_back( equiv_lits[*rm_idxs.begin()].reason_lin );
+                reason_lins.emplace_back( equiv_lits[*rm_idxs.begin()].reason_lin );
                 //update rm_idxs
                 p1 ^= equiv_lits[*rm_idxs.begin()].polarity;
                 const auto search = rm_idxs.find(other_lit);
@@ -52,7 +57,7 @@ bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, con
             const auto other_lit = equiv_lits[*it].ind;
             assert(*it < other_lit);
             //add reduction reasons
-            reason_cls_idxs.emplace_back( equiv_lits[*it].reason_lin );
+            reason_lins.emplace_back( equiv_lits[*it].reason_lin );
             //update rm_idxs
             p1 ^= equiv_lits[*it].polarity;
             const auto search = rm_idxs.find(other_lit);
@@ -77,7 +82,7 @@ bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, con
             const auto other_lit = equiv_lits[*rm_idxs.begin()].ind;
             assert(*rm_idxs.begin() < other_lit);
             //add reduction reasons
-            reason_cls_idxs.emplace_back( equiv_lits[*rm_idxs.begin()].reason_lin );
+            reason_lins.emplace_back( equiv_lits[*rm_idxs.begin()].reason_lin );
             //update rm_idxs
             p1 ^= equiv_lits[*rm_idxs.begin()].polarity;
             const auto search = rm_idxs.find(other_lit);
@@ -109,7 +114,6 @@ bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, con
     assert(reducible);
     diff_tmp.clear(); diff_tmp.reserve(idxs.size());
 
-    //@todo replace erase with copying? (similar to xlit::operator+ ?)
     std::set<var_t> rm_idxs;
   
     const auto wl0 = size()>0 ? get_wl0() : 0;
@@ -130,7 +134,7 @@ bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, con
                 const auto other_lit = equiv_lits[*rm_idxs.begin()].ind;
                 assert(*rm_idxs.begin() < other_lit);
                 //add reduction reasons
-                reason_cls_idxs.emplace_back( equiv_lits[*rm_idxs.begin()].reason_lin );
+                reason_lins.emplace_back( equiv_lits[*rm_idxs.begin()].reason_lin );
                 //update rm_idxs
                 p1 ^= equiv_lits[*rm_idxs.begin()].polarity;
                 const auto search = rm_idxs.find(other_lit);
@@ -152,7 +156,7 @@ bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, con
             const auto other_lit = equiv_lits[*it].ind;
             assert(*it < other_lit);
             //add reduction reasons
-            reason_cls_idxs.emplace_back( equiv_lits[*it].reason_lin );
+            reason_lins.emplace_back( equiv_lits[*it].reason_lin );
             //update rm_idxs
             p1 ^= equiv_lits[*it].polarity;
             const auto search = rm_idxs.find(other_lit);
@@ -177,7 +181,7 @@ bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, con
             const auto other_lit = equiv_lits[*rm_idxs.begin()].ind;
             assert(*rm_idxs.begin() < other_lit);
             //add reduction reasons
-            reason_cls_idxs.emplace_back( equiv_lits[*rm_idxs.begin()].reason_lin );
+            reason_lins.emplace_back( equiv_lits[*rm_idxs.begin()].reason_lin );
             //update rm_idxs
             p1 ^= equiv_lits[*rm_idxs.begin()].polarity;
             const auto search = rm_idxs.find(other_lit);
@@ -196,8 +200,8 @@ bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, con
     if( ret ) init(alpha, alpha_dl, dl_count);
     assert(assert_data_struct(alpha));
 
-    //ensure that no un-reduced inds is left
-  #ifndef NDEBUG
+  #ifdef DEBUG_SLOW
+    //ensure that no un-reduced inds are left
     for(auto& v : idxs) assert( (alpha[v]==bool3::None || alpha_dl[v]>lvl) && !equiv_lits[v].is_active(lvl) );
     assert( assert_data_struct(alpha, dl_count) );
   #endif

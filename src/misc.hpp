@@ -27,8 +27,13 @@
 
 //activate additional debugging
 //#define DEBUG_SLOW
+//#define DEBUG_SLOWER
 #ifdef NDEBUG
   #undef DEBUG_SLOW
+  #undef DEBUG_SLOWER
+#endif
+#ifdef DEBUG_SLOWER
+  #define DEBUG_SLOW
 #endif
 
 //verbosity output

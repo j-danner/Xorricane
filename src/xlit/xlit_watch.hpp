@@ -289,8 +289,8 @@ class xlit_watch : public xlit
      * 
      * @return true iff there is a non-trivial reason clause
      */
-    bool has_non_trivial_reason_cls() const {
-      return lvl!=0 && (!reason_lins.empty() || !reason_cls_idxs.empty());
+    bool has_trivial_reason_cls() const {
+      return lvl==0 || (reason_lins.empty() && reason_cls_idxs.empty());
     }
     
     /**
@@ -545,6 +545,11 @@ class xlit_watch : public xlit
       assert(assert_data_struct(alpha));
       return ret;
     };
+    
+    bool operator ==(const xlit_watch& other) const noexcept {
+      return xlit::operator ==(other) && (ws[0] == other.ws[0]) && (ws[1] == other.ws[1]) && (dl_c == other.dl_c) && (reason_lins == other.reason_lins) && (reason_cls_idxs == other.reason_cls_idxs) && (reducible == other.reducible);
+    }
+    
 
     xlit_watch& operator=(xlit_watch&& other) noexcept {
       std::swap(ws, other.ws);
@@ -575,3 +580,12 @@ class xlit_watch : public xlit
       xlit::swap(o);
     }
 };
+
+namespace std {
+  template <>
+  struct hash<xlit_watch> {
+    std::size_t operator()(const xlit_watch& k) const {
+      return k.hash();
+    }
+  };
+}

@@ -161,17 +161,13 @@ private:
    * @param alpha current bool3-alpha
    * @param alpha_dl dl of alpha-assignments
    * @param alpha_trail_pos t_pos of alpha-assignments
-   * @param dl_count current dl_count
    * @return pair<var_t,xcls_upd_ret> upd_ret is SAT if xcls became satisfied, UNIT if xcls became unit (includes UNSAT case, i.e., unit 1), NONE otherwise; var_t indicates changed watched literal (if non-zero)
    */
   inline void fix_ws0([[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos) noexcept {
-    assert(get_unit().reduced(alpha).is_one());
-
     const auto& [v, _, t_pos, pos] = WLIN0.get_watch_tuple(alpha_dl, alpha_trail_pos);
     ws[0] = pos;
     ptr_cache[0] = v;
-    xlit_t_pos[idx[0]] = t_pos;    
-    assert(t_pos < (var_t)-1);
+    xlit_t_pos[idx[0]] = t_pos;
     assert(assert_data_struct());
   }
 
@@ -361,6 +357,26 @@ public:
     assert(!l2.is_one() && !l2.is_zero());
     init();
   };
+  
+  xcls_watch(const xlit& lit, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept : xlits(vec<xlit>{lit}), xlit_dl_count0({{0,0}}), xlit_t_pos({(var_t)-1}) {
+    xlits = vec<xlit>({lit.plus_one()});
+    idx[0] = 0; idx[1] = 0;
+    shared_part.clear();
+
+    const auto& [v, v_dl, t_pos, offset] = xlits[0].get_watch_tuple(alpha_dl, alpha_trail_pos);
+    ws[1] = 0; ptr_cache[1] = 0;
+    ws[0] = offset; ptr_cache[0] = v;
+
+    xlit_t_pos[0] = t_pos;
+
+    //if lit is reduced to 0 by alpha, set xlit_dl_count0
+    if(t_pos < (var_t) -1 && !eval0(alpha)) {
+      xlit_dl_count0[0] = {v_dl, dl_count[v_dl]};
+      //@todo do we even need to set xlit_dl_count0 ?!
+    }
+
+    assert(assert_data_struct());
+  };
 
   xcls_watch(const xcls &cl) noexcept : xlits(vec<xlit>(cl.get_ass_VS().get_xlits().begin(), cl.get_ass_VS().get_xlits().end())), xlit_dl_count0(cl.deg(),{0,0}) {
     init();
@@ -445,7 +461,6 @@ public:
         //(potentially) fix xlit_t_pos[j]
         if(xlit_t_pos[j]==alpha_trail_pos[upd_lt]) {
           xlit_t_pos[j] = xlits[j].get_watch_var(alpha_trail_pos).first;
-          //assert(false);
         }
       }
     }
@@ -551,7 +566,7 @@ public:
   };
   
   /**
-   * @brief updates xcls_watch and watch_list according to the new assigned literal lit, dl_count, dl and alpha.
+   * @brief reduces xcls_watch with all equivalences -- and rewrites the clause if necessary!
    *
    * @param alpha current bool3-assignment
    * @param alpha_dl dl of alpha-assignments
@@ -559,10 +574,7 @@ public:
    * @param equiv_lits vec of equivalences
    * @param dl_count current dl_count
    * @return xcls_upd_ret SAT if xcls does not need any further updates (i.e. it is a unit or satisfied), UNIT if xcls became unit just now (includes UNSAT case, i.e., unit 1), NONE otherwise
-
-
    */
-  //xcls_upd_ret reduce_equiv(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<equivalence> &equiv_lits, const vec<dl_c_t> &dl_count) {
   xcls_upd_ret reduce_equiv(const vec<bool3>& alpha, const vec<equivalence> &equiv_lits, const vec<dl_c_t> &dl_count) {
     // check if clause needs any processing
     assert(is_active(dl_count));
@@ -1106,7 +1118,6 @@ public:
    * @return xlit unit that this clause was reduced to
    */
   inline xlit get_unit() const { 
-    //return size() > 1 ? (WLIN1 + shared_part).add_one() : (size() == 0 ? xlit(0,false) : WLIN0.plus_one());
     return size()==0 ? xlit(0,false) : (WLIN0 + shared_part).add_one();
   };
 

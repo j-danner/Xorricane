@@ -484,8 +484,9 @@ void solver::restart(stats& s) {
         auto& l = *it;
         if(l.get_reason_idx()!=(var_t)-1) {
             assert( new_idx[l.get_reason_idx()] < xclss.size() );
+            var_t old_idx = l.get_reason_idx();
             l.clear_reason_idxs();
-            l.push_reason_idx( new_idx[l.get_reason_idx()] );
+            l.push_reason_idx( new_idx[old_idx] );
         }
         //l.shift_reason_idxs( new_idx );
       #ifndef NDEBUG
@@ -516,6 +517,7 @@ void solver::restart(stats& s) {
 };
 
 void solver::remove_fixed_alpha(const var_t upd_lt) {
+    assert_slow( assert_data_structs() );
     VERB(90, "c remove_fixed_alpha start" );
     assert( alpha[upd_lt]!=bool3::None && alpha_dl[upd_lt]==0 );
     assert(dl==0);
@@ -541,7 +543,7 @@ void solver::remove_fixed_alpha(const var_t upd_lt) {
 void solver::remove_fixed_equiv() {
     VERB(90, "c remove_fixed_equiv start" );
   #ifdef DEBUG_SLOW
-    const auto [L,_] = get_assignments_xsys();
+    const auto L = get_lineral_watches_xsys();
   #endif
     assert(dl==0);
     //clear L_watch_list
@@ -610,7 +612,7 @@ void solver::remove_fixed_equiv() {
     VERB(90, "c remove_fixed_equiv end" );
     assert( assert_data_structs() );
   #ifdef DEBUG_SLOW
-    const auto [L_after,__] = get_assignments_xsys();
+    const auto L_after = get_lineral_watches_xsys();
     assert( (L+L_after).to_str() == L_after.to_str() ); //ensure that L <= L_after
   #endif
 }
@@ -678,6 +680,9 @@ void solver::GCP(stats &s) noexcept {
             const var_t& i = *it2;
             assert(xclss[i].watches(upd_lt));
             if(!xclss[i].is_active(dl_count)) { ++it2; continue; }
+            if(i==32 && dl_count.size()>9 && dl_count[9]==41) {
+                VERB(1, "stop here!");
+            }
             const auto& [new_wl, ret] = xclss[i].update(upd_lt, alpha, alpha_dl, alpha_trail_pos, dl_count);
             //if watched-literal has changed, i.e., new_wl != 0; update watch-list
             if(new_wl != upd_lt) {
@@ -718,7 +723,6 @@ void solver::GCP(stats &s) noexcept {
         
         //if we propagated on dl 0, remove all upd_lt from lineral_watches AND from xclss, so that they only occur in the watched clauses.
         if(dl == 0) remove_fixed_alpha(upd_lt);
-        //if(dl == 0) remove_fixed_equiv_before_next_GCP = true; //@todo why does this not work?!
     }
     assert(lineral_queue.empty() || at_conflict());
 
@@ -839,7 +843,7 @@ void solver::dpll_solve(stats &s) {
             assert(assert_data_structs());
         } else {
             //now active_cls == 0 AND !at_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
-            const auto [L,_] = get_assignments_xsys();
+            const auto L = get_lineral_watches_xsys();
             if (!L.is_consistent()) {
                 //enforce backtracking!
                 lineral_watches[dl].emplace_back( xlit(0, false), alpha, alpha_dl, dl_count, dl );
@@ -981,13 +985,13 @@ void solver::solve(stats &s) {
                 }
 
                 //if clause minimization is activated, add new clause also to solver_cpy
-                if(opt.cm) {
-                    auto cls_cpy = learnt_cls;
-                    //reset cls_cpy xlit_dl_count0
-                    for(auto& v : cls_cpy.xlit_dl_count0) v = {0,0};
-                    cls_cpy.SAT_dl_count = {0,0};
-                    solver_cpy.add_xcls_watch( std::move(cls_cpy), true );
-                }
+                //if(opt.cm) {
+                //    auto cls_cpy = learnt_cls;
+                //    //reset cls_cpy xlit_dl_count0
+                //    for(auto& v : cls_cpy.xlit_dl_count0) v = {0,0};
+                //    cls_cpy.SAT_dl_count = {0,0};
+                //    solver_cpy.add_xcls_watch( std::move(cls_cpy), true );
+                //}
 
                 // add learnt_cls
                 add_learnt_cls( std::move(learnt_cls) );
@@ -1028,7 +1032,7 @@ void solver::solve(stats &s) {
         } else {
             VERB(25, "c " << std::to_string(dl) << " : " << "no more active clauses --> solution or backtrack!")
             //now active_cls == 0 AND !at_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
-            auto [L,r_cls] = get_assignments_xsys();
+            auto [L,r_cls] = check_lineral_watches_GE();
             if (!L.is_consistent()) {
                 backtrack( r_cls.get_assigning_lvl(alpha_dl) );
                 add_learnt_cls( std::move(r_cls), false );
@@ -1182,6 +1186,8 @@ std::string solver::to_xnf_str() const noexcept {
             //only check advanced conditions if lineral_queue is empty!
             if(!at_conflict() && lineral_queue.empty()) assert(xclss[i].assert_data_struct(alpha, alpha_trail_pos, dl_count));
         }
+
+      #ifdef DEBUG_SLOWER
         //check watch-lists
         {
             std::set<var_t> watched_idxs;
@@ -1206,37 +1212,57 @@ std::string solver::to_xnf_str() const noexcept {
             assert( watched_idxs.size()==cnt );
         }
         {
-            auto it = L_watch_list.begin();
+            std::map<std::pair<int,int>, int> watch_cnt;
             std::set<xlit_w_it> watched_lins;
-            var_t idx = 0;
+            int idx = 0;
+            auto it = L_watch_list.begin();
             while(it != L_watch_list.end()) {
                 for([[maybe_unused]] auto [lvl, dl_c, lin] : *it) {
                     assert( dl_count[lvl]!=dl_c || lin->watches( idx ) || lin->to_xlit().is_constant() );
-                    //watched_lins.insert(lin);
+                    if(dl_count[lvl]>dl_c) continue;
+                    int idx2 = std::distance(lineral_watches[lvl].begin(), std::find_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; })); //assumes every literal occurs exactly once!
+                    if(watch_cnt.contains({lvl,idx2})) {
+                        watch_cnt[{lvl,idx2}] += 1;
+                    } else {
+                        watch_cnt.insert( {{lvl,idx2}, 1} );
+                    }
                 }
                 ++it; ++idx;
             }
-            //@todo finish/fix!!
-            //calculate length of individual watch-lists
-            //vec<var_t> watch_cnt = vec<var_t>(L_watch_list.size(),0);
-            //for(const auto& lw_dl : lineral_watches) {
-            //    for(const auto& l : lw_dl) {
-            //        if(l.size()>0) ++watch_cnt[ l.get_wl0() ];
-            //        if(l.size()>1) ++watch_cnt[ l.get_wl1() ];
-            //    }
-            //}
-            ////decrease by number of active watches!
-            //for(var_t idx=1; idx<L_watch_list.size(); ++idx) {
-            //    for(const auto& [lvl, dl_c, lin] : L_watch_list[idx]) {
-            //        if(dl_count[lvl]==dl_c) --watch_cnt[idx];
-            //    }
-            //    //if(alpha[idx]!=bool3::None) --watch_cnt[idx];
-            //    //now watch_cnt should only be zero!
-            //    //assert( !lineral_queue.empty() || watch_cnt[idx]==0 );
-            //}
+            it = L_watch_list.begin();
+            int lins_cnt = 0;
+            int sum_cnt = 0;
+            while(it != L_watch_list.end()) {
+                for([[maybe_unused]] auto [lvl, dl_c, lin] : *it) {
+                    if(dl_count[lvl]>dl_c) continue;
+                    //ensure every lineral occurs in two watch-lists!
+                    [[maybe_unused]] int idx2 = std::distance(lineral_watches[lvl].begin(), std::find_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; }));
+                    [[maybe_unused]] var_t ct = watch_cnt.find({lvl,idx2})->second;
+                    assert( lin->is_assigning() || ct%2==0);
+                    if(ct>2) {
+                        //ensure ct = 2* #{lins which are equal and listed inside lineral_watches}
+                        assert( (var_t) (2* std::count_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; }) ) == ct );
+                    }
+                    if(!lin->is_assigning()) { //only count those lins where two watches should be present!
+                        sum_cnt += ct;
+                        ++lins_cnt;
+                    }
+                }
+                ++it;
+            }
+            assert(2*lins_cnt == sum_cnt); //ensures all lins are watched!
+
+            //check that each lineral occurs in corresponding watch-lists!
+            for(const auto& lw_dl : lineral_watches) {
+                for(const auto& lin : lw_dl) {
+                    if(!at_conflict() && lineral_queue.empty() && !lin.is_assigning()) {
+                        assert( std::any_of(L_watch_list[lin.get_wl0()].begin(), L_watch_list[lin.get_wl0()].end(), [&](auto& p){ return *p.lin==lin; }) );
+                        assert( std::any_of(L_watch_list[lin.get_wl1()].begin(), L_watch_list[lin.get_wl1()].end(), [&](auto& p){ return *p.lin==lin; }) );
+                    }
+                }
+            }
         }
 
-      #ifdef DEBUG_SLOW
         //check that all lineral_watches are supported by the units in xclss
         xsys L_lin = xsys();
         for(const auto& lw_dl : lineral_watches) {
