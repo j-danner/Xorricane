@@ -805,7 +805,7 @@ class solver
     bool find_implications_by_GE(stats& s) {
       const auto begin  = std::chrono::high_resolution_clock::now();
       ++s.no_ge;
-    #ifndef NDEBUG
+    #ifdef DEBUG_SLOW
       vec<xlit> lits; lits.reserve(lineral_watches.size());
       for(const auto& l_dl : lineral_watches) {
           for(const auto& l : l_dl) lits.emplace_back( l.to_xlit() );
@@ -949,7 +949,9 @@ class solver
         assert(L_.reduce(tmp+lit).is_zero());
         tmp.clear();
       #endif
+      #ifdef DEBUG_SLOW
         assert( L_.reduce(tmp+lit).is_zero() );
+      #endif
         
         r = 0;
         for(var_t lvl=0; lvl<=dl; ++lvl) {
@@ -959,6 +961,8 @@ class solver
             if(!mzd_read_bit(B,r,idx)) continue;
           #ifndef NDEBUG
             tmp += *l_it;
+          #endif
+          #ifdef DEBUG_SLOW
             assert( L_.reduce(tmp+lit).is_zero() );
           #endif
             resolving_lvl = lvl;
@@ -1014,7 +1018,7 @@ class solver
      * @note we cannot reuse the code from find_implications_by_GE or from check_lineral_watches_GE, since this function should be 'const'!
      */
     inline xsys get_lineral_watches_xsys() const {
-    #ifndef NDEBUG
+    #ifdef DEBUG_SLOW
       //simple implementation
       vec<xlit> lits; lits.reserve(lineral_watches.size());
       for(const auto& l_dl : lineral_watches) {
@@ -1091,7 +1095,9 @@ class solver
       }
 
       xsys L = xsys( std::move(xlits_) );
+    #ifdef DEBUG_SLOW
       assert( L_.to_str() == L.to_str() );
+    #endif
       VERB(80, "c reduction done.");
 
       mzd_free(M);
