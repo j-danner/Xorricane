@@ -84,11 +84,11 @@ public:
     const bool ret = (t_pos_to_idxs.rbegin()->second.size()>1) || (t_pos_to_idxs.size()>1 && std::next(t_pos_to_idxs.rbegin())->second.size()>1);
     for(auto it=t_pos_to_idxs.rbegin(); it!=t_pos_to_idxs.rend(); ++it) {
       auto& [k,l] = *it;
-      if(l.size()<=max_size) continue;
+      if(l.size()<=max_size && (l.size()==0 || xlits[l.front()].size()>=2)) continue;
       const var_t i0 = l.front(); //note first el is shortest xlit with that t_pos - by construction
       l.pop_front();
       //add first el in l to all others, re-evaluate xlit_t_pos, adapt xlit_dl_count0, AND add them back to t_pos_to_idxs
-      for(const var_t i : l) {
+      for(const var_t& i : l) {
         assert(i!=i0);
         xlits[i] += xlits[i0];
         if(xlits[i].is_zero()) {
@@ -123,7 +123,23 @@ public:
     assert( size()<1 || xlits[idx[0]][ptr_cache[0]] );
     assert( size()<2 || xlits[idx[1]][ptr_cache[1]] );
 
-    //rm zero linerals -- this step breaks t_pos_to_idxs!
+    //@heuristic: decide whether to remove duplicates up to a given size!
+    ////rm zero linerals AND duplicates of 'small' size -- this step breaks t_pos_to_idxs !
+    //std::unordered_set<xlit> hashes;
+    ////iterate over t_pos_to_idxs and set all xlits to be removed to zero!
+    //for(auto& [_, l] : t_pos_to_idxs) {
+    //  for(var_t i : l) {
+    //    if(xlits[i].size()>3) continue;
+    //    if(hashes.contains(xlits[i])) {
+    //      xlits[i].clear();
+    //      --num_nz_lins;
+    //    } else {
+    //      hashes.insert(xlits[i]);
+    //    }
+    //  }
+    //  hashes.clear();
+    //}
+    //iterate through other lins and remove duplicates and zero-linerals
     for(var_t j=0; j<xlits.size(); ++j) {
       const var_t k = xlits.size() - j - 1;
       if(xlits[k].is_zero()) { xcls_watch::remove_zero_lineral(k); --j; }
