@@ -107,11 +107,12 @@ int main(int argc, char const *argv[])
         .nargs(1);
 
     //linalg-in-processing options
-    program.add_argument("-ge","--gauss-elim")
+    auto& arg_ge = program.add_argument("-ge","--gauss-elim")
         .help("gauss-elim in-processing after every i-th decision")
         .default_value(0)
         .scan<'i', int>()
         .nargs(1);
+    program.add_hidden_alias_for(arg_ge, "-la"); //old flag
     
     //initial reduction opts
     program.add_argument("-ip","--initial-propagation")
