@@ -545,7 +545,7 @@ class solver
     }
 
     typedef xlit (solver::*dec_heu_t)();
-    typedef std::pair<var_t,xcls_watch> (solver::*ca_t)(solver&);
+    typedef std::pair<var_t,xcls_watch> (solver::*ca_t)();
 
     void bump_score(const var_t& ind);
     void bump_score(const xlit& lit);
