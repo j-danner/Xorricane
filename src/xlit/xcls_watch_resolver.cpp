@@ -4,99 +4,54 @@
 
 
 
-bool xcls_watch_resolver::minimize(solver& s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept {
+bool xcls_watch_resolver::minimize(const solver &s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<xlit_w_it>& alpha_lin, const vec<equivalence> &equiv_lits, const vec<dl_c_t> &dl_count) noexcept {
     return false;
     bool ret = false;
-    stats _;
-    
-    //prepare s
-    if(s.dl_count.size()<xlits.size()+3) {
-        s.dl_count.resize(xlits.size()+3, 0);
-        s.lineral_watches.resize(xlits.size()+3, list<xlit_watch>());
-    }
-    //todo do we need this initial processing?!
-    do {
-        s.GCP(_);
-    } while( !s.at_conflict() && s.need_ge_inprocessing(_) && s.find_implications_by_GE(_) );
-    assert( s.dl==0 );
-    assert( s.dl_count.size()>=xlits.size()+3);
 
-    bool update_req = false;
-    bool early_abort = false;
+    //ensure each lvl has at most one element!
+    reduction(1, alpha_dl, alpha_trail_pos, dl_count);
 
-    xlit lin;
+    //for each lineral compute the reason clause and check whether its associated vector space is implied by the other linerals
 
-    vec<var_t> idxs(xlits.size());
-    for(var_t i=0; i<xlits.size(); ++i) idxs[i]=i;
-    std::sort(idxs.begin(), idxs.end(), [&](const auto& i, const auto& j){ return xlits[i].size()<xlits[j].size(); });
+    //iterate 'upwards' through t_pos_to_xlits -- since 'low'-level reasons have reasons only on 'lower' levels, i.e. we can update our xsys level-by-level
+    xsys L;
+    for(auto& [_, l] : t_pos_to_idxs) {
+        assert(l.size()==1);
+        var_t dl_ = xlit_dl_count0[l.front()].first;
+        xlit_watch lin = xlit_watch(xlits[l.front()], alpha, alpha_dl, dl_count, dl_);
+        //todo check if reduction with equivs simplifies lin!
+        //lin.reduce(alpha, alpha_dl, dl_count, equiv_lits, dl_);
+        list<xlit_w_it> rs_lins;
+        vec<var_t> rs_clss_idxs;
+        for(const auto& i : lin.get_idxs_()) {
+            rs_lins.push_back(alpha_lin[i]);
+        }
+        auto rs = s.get_reason(rs_lins, rs_clss_idxs);
+        assert(rs.get_unit()==lin.to_xlit());
 
-    for(var_t k = 0; k<xlits.size(); ++k) {
-        const var_t i = idxs[k];
-        if(xlits[i].is_zero()) continue;
+        //is this correct even for the watched linerals?? should we skip the 'unit part'??
+        //for(auto& lin : rs.get_xlits()) {
+        //    L.reduce(lin);
+        //}
+        //or do we need sth along the following lines?!
+        //for(var_t idx=0; idx<rs.get_xlits().size(); ++idx) {
+        //    if(idx==lin.idxs[0] || idx==lin.idxs[1]) continue;
+        //    if(L.reduce(rs.get_xlits()[idx]).is_zero()) {
+        //        break;
+        //    }
+        //}
 
-        //reduce with alpha and equivs
-        lin = xlits[i];
-        bool changed = false;
-        if(early_abort) {
+        //does this work?
+        L.add_lineral(lin.to_xlit());
+        if(std::all_of(rs.get_xlits().begin(), rs.get_xlits().end(), [&L](const auto& lin){ return L.reduce(lin).is_zero(); })) {
+            //remove lin!
             lin.clear();
-            changed = true;
-        } else {
-            if(s.opt.eq) changed |= lin.reduce(s.alpha, s.equiv_lits);
-            changed |= lin.reduce(s.alpha);
+            --num_nz_lins;
+            l.clear();
         }
-        assert( (!changed || lin.to_str()!=xlits[i].to_str()) && (changed || lin.to_str()==xlits[i].to_str()) );
-        //if(lin.is_one()) {
-        //if(!early_abort && lin.is_one()) {
-        if(!early_abort && lin.reduced(alpha).is_one()) {
-            //early abort! as lin is reduced to 1 (under alpha); we know that lin+1 is already implied by previous 'decisions'
-            //thus all 'guesses' + lin form a conflict clause!
-            //rm all remaining lits & stop!
-            early_abort = true;
-            continue;
-        } else if(changed) {
-            const auto& [v, dl, t_pos, _idx] = lin.get_watch_tuple(alpha_dl, alpha_trail_pos);
-            if(t_pos==xlit_t_pos[i]) continue;
-            //watched_idx need to be fixed, if watched linerals change t_pos OR a new lineral has higher t_pos
-            update_req |= (i==idx[0] || i==idx[1]) || (t_pos>xlit_t_pos[idx[1]]);
-            //now t_pos!=k, i.e., lin needs to moved elsewhere in t_pos_to_idxs
-            t_pos_to_idxs[xlit_t_pos[i]].remove( i );
-            if(t_pos_to_idxs[xlit_t_pos[i]].empty()) { t_pos_to_idxs.erase(xlit_t_pos[i]); }
-            xlit_t_pos[i] = t_pos;
-            if(dl!=(var_t)-1) xlit_dl_count0[i] = {dl, dl_count[dl]};
-            else              xlit_dl_count0[i] = {0,0};
-            xlits[i] = std::move(lin);
-            if(xlits[i].is_zero()) {
-                ret |= changed;
-                --num_nz_lins;
-                continue;
-            }
-            filtration_add(i);
-        }
-        //increase dl
-        ++s.dl;
-        ++s.dl_count[s.dl];
-        s.trails.emplace_back( list<trail_elem>() );
-        s.active_cls_stack.emplace_back(s.active_cls);
-        //add guess
-        s.add_new_guess( xlits[i] );
-        //GCP + linalg
-        do {
-            s.GCP(_);
-        } while( !s.at_conflict() && s.need_ge_inprocessing(_) && s.find_implications_by_GE(_) );
-        //if s is at conflict, then all processed clauses already make up a (shorter) conflict clause!
-        if(s.at_conflict()) {
-            early_abort = true;
-        }
-        assert(s.dl <= k+1);
     }
 
-    //fix watched idxs if necessary
-    if(update_req) {
-        fix_watched_idx(alpha_dl, alpha_trail_pos, dl_count);
-    }
-
-    //reset s
-    s.backtrack(0);
+    fix_watched_idx(alpha_dl, alpha_trail_pos, dl_count);
 
     return ret;
 };

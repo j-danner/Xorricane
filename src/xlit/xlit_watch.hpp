@@ -18,6 +18,8 @@ typedef list<xlit_watch>::iterator xlit_w_it;
 
 class xlit_watch : public xlit
 {
+  friend class xcls_watch_resolver;
+
   private:
     /**
      * @brief literal watches; offset into idxs-set of idxs

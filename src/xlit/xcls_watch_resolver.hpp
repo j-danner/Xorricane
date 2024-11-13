@@ -173,9 +173,71 @@ public:
    * 
    * @return true iff clause could be shortened
    */
-  bool minimize(solver& s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept;
+  bool minimize(const solver &s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<xlit_w_it>& alpha_lin, const vec<equivalence> &equiv_lits, const vec<dl_c_t> &dl_count) noexcept;
   
-  xcls_upd_ret resolve(const xcls_watch &rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+  /**
+   * @brief differs from resolve in that we do not update the watched linerals (idx[0] and idx[1]), i.e. t_pos_to_idxs.rbegin() may contain multiple elements1
+   * @note subsequent calls to assert_data_struct() will fail!
+   * 
+   * @param rs_cls 
+   * @param alpha 
+   * @param alpha_dl 
+   * @param alpha_trail_pos 
+   * @param dl_count 
+   */
+  void resolve_unsafe(const xcls_watch &rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+      resolve(rs_cls, alpha, alpha_dl, alpha_trail_pos, dl_count);
+      return;
+
+      if(size()==0 || is_zero()) {
+        this->operator=(std::move(rs_cls));
+        return;
+      }
+
+      // fix unit part ('resolving' part)
+      WLIN0 += rs_cls.get_unit();
+      //rm unit from t_pos_to_idxs
+      if(!t_pos_to_idxs.empty()) {
+        if(t_pos_to_idxs.rbegin()->second.size()>1) fix_watched_idx(alpha_dl, alpha_trail_pos, dl_count);
+        assert(t_pos_to_idxs.rbegin()->second.size()==1);
+        t_pos_to_idxs.erase( std::prev(t_pos_to_idxs.end()) );
+      }
+
+      if(!WLIN0.is_zero()) {
+        //if unit-part is non-zero
+        const auto& [v, dl, t_pos, _idx] = WLIN0.get_watch_tuple(alpha_dl, alpha_trail_pos);
+        xlit_t_pos[idx[0]] = t_pos;
+        //add new 'unit' to t_pos_to_idxs
+        filtration_add(idx[0]);
+      } else {
+        //if unit-part is zero -- do not add it back to xlit_t_pos, i.e., 'remove' it
+        xlit_dl_count0[idx[0]] = {0,1};
+        //remove_zero_lineral(idx[0]);
+        --num_nz_lins;
+        idx[0] = (idx[1]==(var_t)-1) ? 0 : idx[1];
+        ptr_cache[0] = ptr_cache[1];
+        idx[1] = -1;
+        ptr_cache[1] = -1;
+      }
+
+      //add remaining xlits
+      //copy the remaining linerals
+      xlits.reserve(xlits.size()+rs_cls.xlits.size());
+      xlit_dl_count0.reserve(xlits.size()+rs_cls.xlits.size());
+      xlit_t_pos.reserve(xlits.size()+rs_cls.xlits.size());
+      for(var_t i=0; i<rs_cls.size(); ++i) {
+        assert(!rs_cls.xlits[i].is_constant());
+        if(i==rs_cls.idx[0]) continue;
+        ++num_nz_lins;
+        xlits.emplace_back( rs_cls.xlits[i] );
+        //if 2nd watched lineral, fix with shared part
+        if(i==rs_cls.idx[1]) xlits.back() += rs_cls.shared_part;
+        xlit_dl_count0.emplace_back( rs_cls.xlit_dl_count0[i] );
+        xlit_t_pos.emplace_back(rs_cls.xlit_t_pos[i]);
+        filtration_add(xlits.size()-1);
+      }
+  };
+  
       assert( assert_data_struct() );
       assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
 

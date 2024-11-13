@@ -46,6 +46,7 @@ solver::solver(const vec< vec<xlit> >& clss, const var_t num_vars, const options
     alpha = vec<bool3>(num_vars + 1, bool3::None);
     alpha_dl = vec<var_t>(num_vars + 1, (var_t) -1);
     alpha_trail_pos = vec<var_t>(num_vars + 1, (var_t) -1);
+    alpha_lin = vec<xlit_w_it>(num_vars + 1);
     equiv_lits = vec<equivalence>(num_vars+1);
     dl_count = vec<dl_c_t>(num_vars+1, 1); 
     trails = vec< list<trail_elem> >();
@@ -271,11 +272,11 @@ void solver::decay_score() {
 xlit unit;
 #endif
 
-std::pair<var_t, xcls_watch> solver::analyze_exp(solver& s) {
-    return analyze(s);
+std::pair<var_t, xcls_watch> solver::analyze_exp() {
+    return analyze();
 };
 
-std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
+std::pair<var_t, xcls_watch> solver::analyze() {
     VERB(70, "**** analyzing conflict");
 #ifndef NDEBUG
     print_trail("    *");
@@ -346,9 +347,9 @@ std::pair<var_t, xcls_watch> solver::analyze(solver& s) {
     VERB(70, "   * learnt clause is " << learnt_cls.to_str());
 
     if(opt.cm) {
-        VERB(70, "   * vivify " << learnt_cls.to_str() );
+        VERB(70, "   * minimize " << learnt_cls.to_str() );
         //minimization
-        learnt_cls.minimize(s, alpha, alpha_dl, alpha_trail_pos, dl_count);
+        learnt_cls.minimize(*this, alpha, alpha_dl, alpha_trail_pos, alpha_lin, equiv_lits, dl_count);
         VERB(70, "   '------> " << learnt_cls.to_str() );
     }
 
@@ -912,20 +913,6 @@ void solver::solve(stats &s) {
         break;
     }
     
-    //create copy of solver -- for clause minimization
-    solver solver_cpy(*this); //@todo only construct when opt.cm is enabled!
-    stats s_cpy;
-    if(opt.cm) {
-        //fully init solver_cpy only if clause minimization is activated
-        solver_cpy.opt.verb = 0;
-        // initial GCP
-        do {
-            solver_cpy.GCP(s_cpy);
-        } while( !solver_cpy.at_conflict() && solver_cpy.find_implications_by_GE(s) );
-        //NOTE deactivate equivalent lits in s; otherwise we might get get_assigning_lvl(alpha_dl) == dl after minimization; this is due to an equiv that is found in solver_cpy; but not in the main solver (here)
-        solver_cpy.opt.eq = false;
-    }
-
     // GCP -- before making decisions!
     do {
         GCP(s);
@@ -954,7 +941,7 @@ void solver::solve(stats &s) {
                 ///// BACKTRACKING /////
                 ///// CLAUSE LEARNING /////
                 const auto begin  = std::chrono::high_resolution_clock::now();
-                auto [lvl, learnt_cls] = (this->*analyze)(solver_cpy);
+                auto [lvl, learnt_cls] = (this->*analyze)();
                 const auto end  = std::chrono::high_resolution_clock::now();
                 s.total_ca_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
                 
@@ -963,15 +950,6 @@ void solver::solve(stats &s) {
                     VERB(50, "c ")
                     //add dpll-clause as well - if learnt clause is 'too' long?
                     auto [_, cls] = analyze_dpll();
-
-                    //if clause minimization is activated, add new clause also to solver_cpy
-                    if(opt.cm) {
-                        auto cls_cpy = cls;
-                        //reset cls_cpy xlit_dl_count0
-                        for(auto& v : cls_cpy.xlit_dl_count0) v = {0,0};
-                        cls_cpy.SAT_dl_count = {0,0};
-                        solver_cpy.add_xcls_watch( std::move(cls_cpy), true );
-                    }
                     add_learnt_cls( std::move(cls) );
                 }
                 // backtrack
@@ -984,15 +962,6 @@ void solver::solve(stats &s) {
                     backtrack( lvl );
                 }
 
-                //if clause minimization is activated, add new clause also to solver_cpy
-                //if(opt.cm) {
-                //    auto cls_cpy = learnt_cls;
-                //    //reset cls_cpy xlit_dl_count0
-                //    for(auto& v : cls_cpy.xlit_dl_count0) v = {0,0};
-                //    cls_cpy.SAT_dl_count = {0,0};
-                //    solver_cpy.add_xcls_watch( std::move(cls_cpy), true );
-                //}
-
                 // add learnt_cls
                 add_learnt_cls( std::move(learnt_cls) );
                 // decay score
@@ -1002,7 +971,6 @@ void solver::solve(stats &s) {
                 //restart?
                 if( need_restart() ) {
                     restart(s);
-                    if(opt.cm) solver_cpy.restart(s_cpy);
                 }
             } else {
                 ++dl;

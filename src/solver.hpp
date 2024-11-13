@@ -238,6 +238,11 @@ class solver
      * @brief dl of chosen/implied alpha assignments; i was true/false-decided at dl alpha_dl[i]
      */
     vec<var_t> alpha_dl;
+
+    /**
+     * @brief pointer to watchlist_elem where alpha[i] is assigned
+     */
+    vec<xlit_w_it> alpha_lin;
     
     /**
      * @brief alpha_trail_pos[i] indicates the position of the alpha-assignment in trails[alpha_dl[i]], this value is unique!
@@ -266,13 +271,10 @@ class solver
 
     var_t get_num_vars() const { return alpha.size()-1; };
     
-    std::pair<var_t,xcls_watch> analyze(solver& s);
-    std::pair<var_t,xcls_watch> analyze_exp(solver& s);
+    std::pair<var_t,xcls_watch> analyze();
+    std::pair<var_t,xcls_watch> analyze_exp();
     std::pair<var_t,xcls_watch> analyze_dpll();
-    inline std::pair<var_t,xcls_watch> analyze_dpll([[maybe_unused]] solver& s) { return analyze_dpll(); };
     
-    void minimize(xcls_watch& cls) const;
-
     /**
      * @brief add new (learnt) clause to database
      * 
@@ -689,6 +691,7 @@ class solver
       assert( alpha[lt2]==val || alpha[lt2]==bool3::None );
       alpha[lt2] = val;
       alpha_dl[lt2] = assigning_lvl;
+      alpha_lin[lt2] = lin;
       assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), lvl));
       assert(alpha_trail_pos[lt2] == (var_t) -1);
       alpha_trail_pos[lt2] = stepwise_lit_trail_length;
