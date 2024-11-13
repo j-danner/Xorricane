@@ -681,9 +681,11 @@ void solver::GCP(stats &s) noexcept {
             const var_t& i = *it2;
             assert(xclss[i].watches(upd_lt));
             if(!xclss[i].is_active(dl_count)) { ++it2; continue; }
+          #ifndef NDEBUG
             if(i==32 && dl_count.size()>9 && dl_count[9]==41) {
                 VERB(1, "stop here!");
             }
+          #endif
             const auto& [new_wl, ret] = xclss[i].update(upd_lt, alpha, alpha_dl, alpha_trail_pos, dl_count);
             //if watched-literal has changed, i.e., new_wl != 0; update watch-list
             if(new_wl != upd_lt) {

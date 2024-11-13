@@ -26,7 +26,7 @@
 #include "rang/rang.hpp"
 
 //activate additional debugging
-//#define DEBUG_SLOW
+#define DEBUG_SLOW
 //#define DEBUG_SLOWER
 #ifdef NDEBUG
   #undef DEBUG_SLOW
@@ -34,6 +34,18 @@
 #endif
 #ifdef DEBUG_SLOWER
   #define DEBUG_SLOW
+#endif
+
+#if defined(DEBUG_SLOW) && !defined(NDEBUG)
+  #define assert_slow(expr) assert(expr)
+#else
+  #define assert_slow(expr) {}
+#endif
+
+#if defined(DEBUG_SLOWER) && !defined(NDEBUG)
+  #define assert_slower(expr) assert(expr)
+#else
+  #define assert_slower(expr) {}
 #endif
 
 //verbosity output
@@ -51,12 +63,6 @@
 #define GRAY(str) rang::fg::gray<< str << rang::style::reset
 
 
-
-#if defined(DEBUG_SLOW) && !defined(NDEBUG)
-  #define assert_slow(expr) assert(expr)
-#else
-  #define assert_slow(expr) {}
-#endif
 
 
 

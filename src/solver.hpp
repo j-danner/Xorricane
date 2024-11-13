@@ -1021,7 +1021,7 @@ class solver
      * @note we cannot reuse the code from find_implications_by_GE or from check_lineral_watches_GE, since this function should be 'const'!
      */
     inline xsys get_lineral_watches_xsys() const {
-    #ifdef DEBUG_SLOW
+    #ifdef DEBUG_SLOWER
       //simple implementation
       vec<xlit> lits; lits.reserve(lineral_watches.size());
       for(const auto& l_dl : lineral_watches) {
@@ -1098,9 +1098,7 @@ class solver
       }
 
       xsys L = xsys( std::move(xlits_) );
-    #ifdef DEBUG_SLOW
-      assert( L_.to_str() == L.to_str() );
-    #endif
+      assert_slower( L_.to_str() == L.to_str() );
       VERB(80, "c reduction done.");
 
       mzd_free(M);
@@ -1115,7 +1113,7 @@ class solver
      * @return L,cls where L is the xsys of all watched linerals and if L is inconsistent then cls is a conflict clause
      */
     inline std::tuple<xsys,xcls_watch> check_lineral_watches_GE() {
-    #ifndef NDEBUG
+    #ifdef DEBUG_SLOWER
       //simple implementation
       vec<xlit> lits; lits.reserve(lineral_watches.size());
       for(const auto& l_dl : lineral_watches) {
@@ -1206,7 +1204,7 @@ class solver
       }
 
       xsys L = xsys( std::move(xlits_) );
-      assert( L_.to_str() == L.to_str() );
+      assert_slower( L_.to_str() == L.to_str() );
       VERB(80, "c reduction done.");
 
       if(L.is_consistent()) {
@@ -1216,7 +1214,7 @@ class solver
       }
 
       // (2) if 1 is contained in sys, construct reason cls!
-      assert(!L_.is_consistent());
+      assert_slower(!L_.is_consistent());
 
       VERB(80, "c watched linerals are inconsistent!");
 
@@ -1267,9 +1265,9 @@ class solver
         if(l_dl.empty()) continue;
         for(xlit_w_it l_it = l_dl.begin(); l_it != l_dl.end() && r < b->nrows; ++l_it, ++r) {
           if(!mzd_read_bit(b,r,0)) continue;
-        #ifndef NDEBUG
+        #ifdef DEBUG_SLOW
           tmp += *l_it;
-          assert( L_.reduce(tmp).is_zero() );
+          assert_slower( L_.reduce(tmp).is_zero() );
         #endif
           resolving_lvl = lvl;
           bump_score(*l_it);
@@ -1278,7 +1276,7 @@ class solver
             r_cls_idxs.emplace_back( l_it );
           }
 
-          #ifndef NDEBUG
+          #ifdef DEBUG_SLOWER
             const auto rcls = get_reason( l_it );
             //ensure that reason cls is reason for provided alpha
             assert_slow(rcls.is_unit(dl_count) && (rcls.get_unit()+*l_it).reduced(alpha).is_zero());
@@ -1299,7 +1297,7 @@ class solver
       mzd_free(b);
       mzd_free(M_tr);
 
-    #ifndef NDEBUG
+    #ifdef DEBUG_SLOW
       const auto reason_cls = get_reason( lin );
       //ensure that reason cls is reason for provided alpha
       assert_slow(reason_cls.is_unit(dl_count) && reason_cls.get_unit().reduced(alpha).is_one());

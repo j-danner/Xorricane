@@ -397,7 +397,7 @@ class xlit_watch : public xlit
       while(new_w!=ws[0] && (alpha[ idxs[new_w] ] != bool3::None || new_w==ws[1])) new_w++;
       //new_w == ws iff all literals are assigned!
       std::swap(ws[0], new_w);
-      assert( assert_data_struct(alpha) );
+      assert_slow( assert_data_struct(alpha) );
       if(ws[0]==new_w) {
         dl_c = {lvl, dl_count[lvl]};
         return {get_wl0(), xlit_upd_ret::ASSIGNING};
