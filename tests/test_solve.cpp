@@ -876,23 +876,6 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
-    SECTION( "test56.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test56.xnf");
-        options opt;
-        opt.verb = 10;
-        opt.ca = ca_alg::fuip;
-        opt.ip = initial_prop_opt::nbu;
-        opt.rst = cm ? restart_opt::luby : restart_opt::no;
-        opt.dh = dec_heu::vsids;
-        opt.gauss_elim_schedule = 0;
-        opt.cm = cm;
-        auto slvr = solver(clss, opt);
-
-        stats s = slvr.solve();
-        CHECK( s.is_sat() == true );
-        CHECK( check_sols(clss.cls, s.sols) );
-    }
-    
     SECTION( "test57.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test57.xnf");
         options opt;
@@ -934,6 +917,23 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.ca = ca_alg::fuip;
         opt.ip = initial_prop_opt::nbu;
         opt.rst = restart_opt::luby;
+        opt.dh = dec_heu::vsids;
+        opt.gauss_elim_schedule = 0;
+        opt.cm = cm;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.is_sat() == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test56.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test56.xnf");
+        options opt;
+        opt.verb = 80;
+        opt.ca = ca_alg::fuip;
+        opt.ip = initial_prop_opt::nbu;
+        opt.rst = cm ? restart_opt::luby : restart_opt::no;
         opt.dh = dec_heu::vsids;
         opt.gauss_elim_schedule = 0;
         opt.cm = cm;
@@ -1205,6 +1205,17 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
 
         stats s = slvr.solve();
         CHECK( s.sols.size()==1 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
+    SECTION( "test71.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test71.xnf");
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, true, 0, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==5 );
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
