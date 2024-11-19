@@ -1168,8 +1168,6 @@ public:
   
   vec<xlit> &get_xlits_() { return xlits; };
 
-  xlit get_first() const { return (WLIN0 + shared_part).add_one(); };
-
   bool assert_data_struct() const {
     assert(xlit_dl_count0.size() == size());
     assert(size() == xlit_t_pos.size());
