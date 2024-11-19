@@ -342,6 +342,9 @@ class xlit_watch : public xlit
      * @param recurse if true, also calls simplify_reasons on reason_lins
      */
     inline void simplify_reasons(const bool recurse = false) {
+     #ifdef OLD_REASON_CLS_COMPUTATION
+      return;
+     #endif
       auto it = reason_lins.begin();
       //auto it_cls = reason_cls_idxs.begin();
       while(it!=reason_lins.end()) {

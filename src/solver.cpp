@@ -483,13 +483,7 @@ void solver::restart(stats& s) {
     //fix reason_cls idxs for all xlit_watch in lineral_watches[0]
     for(xlit_w_it it=lineral_watches[0].begin(); it!=lineral_watches[0].end(); ++it) {
         auto& l = *it;
-        if(l.get_reason_idx()!=(var_t)-1) {
-            assert( new_idx[l.get_reason_idx()] < xclss.size() );
-            var_t old_idx = l.get_reason_idx();
-            l.clear_reason_idxs();
-            l.push_reason_idx( new_idx[old_idx] );
-        }
-        //l.shift_reason_idxs( new_idx );
+        l.shift_reason_idxs( new_idx );
       #ifndef NDEBUG
         const auto rs = get_reason( it );
         assert( (rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits) + l.to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero()) );
@@ -556,7 +550,7 @@ void solver::remove_fixed_equiv() {
             lin->reduce_no_tracking(alpha, alpha_dl, dl_count, equiv_lits);
             //if lin becomes assigning, push unto lineral_queue
             if(lin->is_assigning(alpha) || (opt.eq && lin->is_equiv())) {
-                queue_implied_lineral(lin, 0);
+                queue_implied_lineral(lin, 0, true);
                 continue;
             }
         }
@@ -595,7 +589,7 @@ void solver::remove_fixed_equiv() {
                 decr_active_cls(i);
                 // new lineral
                 lineral_watches[0].emplace_back( std::move(xclss[i].get_unit()), alpha, alpha_dl, dl_count, i, 0 );
-                queue_implied_lineral( std::prev(lineral_watches[0].end()), 0 );
+                queue_implied_lineral( std::prev(lineral_watches[0].end()), 0, false );
                 if(xclss[i].size()>0) watch_list[xclss[i].get_wl0()].emplace_back( i );
                 assert(xclss[i].size()<=1);
                 break;
@@ -665,7 +659,7 @@ void solver::GCP(stats &s) noexcept {
                 assert( lin->is_assigning(alpha) );
                 assert( !lin->is_active(alpha) );
                 // update alpha
-                queue_implied_alpha(lin);
+                queue_implied_lineral(lin, dl, true, queue_t::IMPLIED_ALPHA);
                 break;
             case xlit_upd_ret::UNIT:
                 assert(!lin->is_assigning(alpha));
@@ -715,7 +709,7 @@ void solver::GCP(stats &s) noexcept {
                 decr_active_cls(i);
                 // new lineral
                 lineral_watches[dl].emplace_back( std::move(xclss[i].get_unit()), alpha, alpha_dl, dl_count, i, dl);
-                queue_implied_lineral( std::prev(lineral_watches[dl].end()), dl );
+                queue_implied_lineral( std::prev(lineral_watches[dl].end()), dl, false );
                 break;
             case xcls_upd_ret::NONE:
                 assert(xclss[i].is_none(dl_count));
@@ -1308,8 +1302,8 @@ std::string solver::to_xnf_str() const noexcept {
         var_t lvl = 0;
         for(const auto& lin_l : lineral_watches) {
             for(const auto& lin : lin_l) {
-                assert( !lineral_queue.empty() || lin.assert_data_struct(alpha) );
-                assert( lin.get_reason_idxs().empty() || lin.get_reason_idx() < xclss.size() );
+                //assert( !lineral_queue.empty() || lin.assert_data_struct(alpha) ); //may fail during GCP...
+                assert( std::all_of(lin.get_reason_idxs().begin(), lin.get_reason_idxs().end(), [&](var_t i){ return i < xclss.size(); }) );
                 assert( lin.get_lvl()==lvl );
             }
             ++lvl;

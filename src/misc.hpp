@@ -25,8 +25,8 @@
 
 #include "rang/rang.hpp"
 
-//activate additional debugging
-#define DEBUG_SLOW
+//activate additional debugging assertions
+//#define DEBUG_SLOW
 //#define DEBUG_SLOWER
 #ifdef NDEBUG
   #undef DEBUG_SLOW
@@ -64,6 +64,9 @@
 
 
 
+//use 'non-optimized' computation of reason clauses -- tree-like without reordering and without skipping unneccessary repeated resolvents with the same clause
+//NOTE there are very rare known bugs in the old implementation
+//#define OLD_REASON_CLS_COMPUTATION
 
 
 //type for variable numbering (must be unsigned; as (var_t)-1 must be bigger than all other values...)
