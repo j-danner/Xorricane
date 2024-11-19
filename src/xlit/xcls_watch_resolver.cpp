@@ -5,6 +5,7 @@
 
 
 bool xcls_watch_resolver::minimize(const solver &s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<xlit_w_it>& alpha_lin, const vec<dl_c_t> &dl_count) noexcept {
+    return false;
     bool ret = false;
 
     //ensure each lvl has at most one element!
