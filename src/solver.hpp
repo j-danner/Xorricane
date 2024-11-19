@@ -489,6 +489,11 @@ class solver
       //note, returning zero_cls might lead to complications!
       if(!lin->has_trivial_reason_cls() && lin->get_reason_lins().empty() && lin->get_reason_idxs().size()==1) return xclss[lin->get_reason_idxs().front()];
 
+    #ifndef OLD_REASON_CLS_COMPUTATION
+      //recursively rewrite lin to featrue all xclss and only lins with trivial reason clss
+      lin->simplify_reasons(true);
+    #endif
+
       //construct reason clause
       const auto rs = lin->has_trivial_reason_cls() ? xcls_watch( (xlit) *lin, alpha, alpha_dl, alpha_trail_pos, dl_count) : get_reason_and_init( lin->get_reason_lins(), lin->get_reason_idxs(), max_size);
       assert_slow(!rs.is_zero());
@@ -517,7 +522,7 @@ class solver
         return xcls_watch( (xlit) *lin, alpha, alpha_dl, alpha_trail_pos, dl_count);
       }
 
-    #ifdef OLD_REASON_CLS_COMPUTATION
+    #ifndef OLD_REASON_CLS_COMPUTATION
       //recursively rewrite lin to featrue all xclss and only lins with trivial reason clss
       lin->simplify_reasons(true);
     #endif
@@ -538,6 +543,11 @@ class solver
         return xcls_watch( (xlit) *lin, alpha, alpha_dl, alpha_trail_pos, dl_count);
       }
       
+    #ifndef OLD_REASON_CLS_COMPUTATION
+      //recursively rewrite lin to featrue all xclss and only lins with trivial reason clss
+      lin->simplify_reasons(true);
+    #endif
+    
       //construct reason clause
       const auto rs = get_reason( lin->get_reason_lins(), lin->get_reason_idxs(), max_size );
       
@@ -626,7 +636,7 @@ class solver
         assert(lvl==lin->get_lvl());
         //reduce lin -- but only if type is NOT guess -- otherwise reason clause is not computed correctly!
         assert_slow(lvl==0 || get_reason(lin).get_unit().reduced(alpha)==lin->to_xlit().reduced(alpha));
-        if(opt.eq && type!=queue_t::NEW_GUESS) {lin->reduce(alpha, alpha_dl, dl_count, equiv_lits, lvl); lin->simplify_reasons();}
+        if(opt.eq && type!=queue_t::NEW_GUESS) lin->reduce(alpha, alpha_dl, dl_count, equiv_lits, lvl);
         else                                   lin->reduce(alpha, alpha_dl, dl_count, lvl);
         assert_slow(lvl==0 || lin->is_zero() || get_reason(lin).get_unit().reduced(alpha)==lin->to_xlit().reduced(alpha));
       }
@@ -634,7 +644,6 @@ class solver
         if(lin->is_zero()) lineral_watches[lvl].erase( lin ); //remove lin when it is zero on its respective level
         return -1;
       }
-      lin->simplify_reasons();
       
       //TODO should we always reduce?! consider the following:
       //we already have UNIT x1+x2+x3 and now get x1; full reduction would give x2+x3, even though x1 would be assigning!
@@ -981,7 +990,6 @@ class solver
         //add lineral to lineral_watches
         const bool equiv = lit.is_equiv();
         lineral_watches[resolving_lvl].emplace_back( std::move(lit), alpha, alpha_dl, dl_count, std::move(rs_lins), resolving_lvl );
-        lineral_watches[resolving_lvl].back().simplify_reasons();
 
       #ifndef NDEBUG
         const auto lin = std::prev(lineral_watches[resolving_lvl].end());
@@ -1290,7 +1298,6 @@ class solver
       list<xlit_watch> tmp_l;
       tmp_l.emplace_back( xlit(0,false), alpha, alpha_dl, dl_count, std::move(r_cls_idxs), resolving_lvl );
       const auto lin = tmp_l.begin();
-      lin->simplify_reasons();
 
       mzd_free(b);
       mzd_free(M_tr);
