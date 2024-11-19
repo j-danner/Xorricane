@@ -176,32 +176,96 @@ public:
   bool minimize(const solver &s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<xlit_w_it>& alpha_lin, const vec<equivalence> &equiv_lits, const vec<dl_c_t> &dl_count) noexcept;
   
   /**
-   * @brief differs from resolve in that we do not update the watched linerals (idx[0] and idx[1]), i.e. t_pos_to_idxs.rbegin() may contain multiple elements1
+   * @brief differs from resolve in that we do not update the watched linerals (idx[0] and idx[1]), i.e. t_pos_to_idxs.rbegin() may contain multiple elements AND does not reduce those at all -- this might miss simplifications every now and then BUT ensures that we can change the order when computing reason clauses
    * @note subsequent calls to assert_data_struct() will fail!
-   * 
-   * @param rs_cls 
-   * @param alpha 
-   * @param alpha_dl 
-   * @param alpha_trail_pos 
-   * @param dl_count 
+   * @note use fix_data_struct() to ensure correctness after all resolvents have been computed!
    */
-  void resolve_unsafe(const xcls_watch &rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
-      resolve(rs_cls, alpha, alpha_dl, alpha_trail_pos, dl_count);
-      return;
+  void resolve_unsafe(const xcls_watch &rs_cls, [[maybe_unused]] const vec<bool3> &alpha, [[maybe_unused]] const vec<var_t> &alpha_dl, [[maybe_unused]] const vec<var_t> &alpha_trail_pos, [[maybe_unused]] const vec<dl_c_t> &dl_count) {
+      //resolve(rs_cls, alpha, alpha_dl, alpha_trail_pos, dl_count);
+      //return;
 
       if(size()==0 || is_zero()) {
         this->operator=(std::move(rs_cls));
+        //prepare unsafe resolving -- assign WLIN0 to t_pos -1
+        //rm unit from t_pos_to_idxs
+        assert(idx[0]==t_pos_to_idxs.rbegin()->second.front());
+        assert(t_pos_to_idxs.rbegin()->second.size()==1);
+        t_pos_to_idxs.erase( std::prev( t_pos_to_idxs.end() ) );
+        xlit_t_pos[idx[0]] = (var_t) -1;
+        filtration_add(idx[0]);
         return;
       }
 
       // fix unit part ('resolving' part)
       WLIN0 += rs_cls.get_unit();
+
+      //add remaining xlits
+      //copy the remaining linerals
+      xlits.reserve(xlits.size()+rs_cls.xlits.size());
+      xlit_dl_count0.reserve(xlits.size()+rs_cls.xlits.size());
+      xlit_t_pos.reserve(xlits.size()+rs_cls.xlits.size());
+      for(var_t i=0; i<rs_cls.size(); ++i) {
+        assert(!rs_cls.xlits[i].is_constant());
+        if(i==rs_cls.idx[0]) continue;
+        ++num_nz_lins;
+        xlits.emplace_back( rs_cls.xlits[i] );
+        //if 2nd watched lineral, fix with shared part
+        if(i==rs_cls.idx[1]) xlits.back() += rs_cls.shared_part;
+        xlit_dl_count0.emplace_back( rs_cls.xlit_dl_count0[i] );
+        xlit_t_pos.emplace_back(rs_cls.xlit_t_pos[i]);
+        filtration_add(xlits.size()-1);
+      }
+  };
+
+  /**
+   * @brief to be used after 'resolve_unsafe'
+   */
+  void fix_data_struct([[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
       //rm unit from t_pos_to_idxs
       if(!t_pos_to_idxs.empty()) {
-        if(t_pos_to_idxs.rbegin()->second.size()>1) fix_watched_idx(alpha_dl, alpha_trail_pos, dl_count);
-        assert(t_pos_to_idxs.rbegin()->second.size()==1);
-        t_pos_to_idxs.erase( std::prev(t_pos_to_idxs.end()) );
+        assert(idx[0]==t_pos_to_idxs.rbegin()->second.front());
+        assert(t_pos_to_idxs.rbegin()->first == (var_t) -1);
+        //if(t_pos_to_idxs.rbegin()->second.size()>1) t_pos_to_idxs.rbegin()->second.erase( t_pos_to_idxs.rbegin()->second.begin() );
+        t_pos_to_idxs.erase( std::prev( t_pos_to_idxs.end() ) );
       }
+      //and add it back...
+      if(!WLIN0.is_zero()) {
+        //if unit-part is non-zero
+        const auto& [v, dl, t_pos, _idx] = WLIN0.get_watch_tuple(alpha_dl, alpha_trail_pos);
+        xlit_t_pos[idx[0]] = t_pos;
+        //add new 'unit' to t_pos_to_idxs
+        filtration_add(idx[0]);
+      } else {
+        //if unit-part is zero -- do not add it back to xlit_t_pos, i.e., 'remove' it
+        xlit_dl_count0[idx[0]] = {0,1};
+        //remove_zero_lineral(idx[0]);
+        --num_nz_lins;
+        idx[0] = (idx[1]==(var_t)-1) ? 0 : idx[1];
+        ptr_cache[0] = ptr_cache[1];
+        idx[1] = -1;
+        ptr_cache[1] = -1;
+      }
+
+      //finally 'fix' watched idxs
+      fix_watched_idx(alpha_dl, alpha_trail_pos, dl_count);
+  }
+  
+  void resolve(const xcls_watch &rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
+      assert( assert_data_struct() );
+      assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
+
+      if(size()==0) {
+        this->operator=(std::move(rs_cls));
+        return;
+      }
+      assert(size()>0);
+      assert(size()<2 || idx[0]!=idx[1]);
+
+      // fix unit part ('resolving' part)
+      WLIN0 += rs_cls.get_unit();
+      assert(!WLIN0.is_one());
+      //rm unit from t_pos_to_idxs
+      if(!t_pos_to_idxs.empty()) t_pos_to_idxs.erase( std::prev(t_pos_to_idxs.end()) );
 
       if(!WLIN0.is_zero()) {
         //if unit-part is non-zero
@@ -236,83 +300,29 @@ public:
         xlit_t_pos.emplace_back(rs_cls.xlit_t_pos[i]);
         filtration_add(xlits.size()-1);
       }
-  };
-  
-      assert( assert_data_struct() );
-      assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
-
-      if(size()==0) {
-         xlits.emplace_back( xlit(0, true) );
-         xlit_dl_count0.emplace_back( 0, dl_count[0] );
-         xlit_t_pos.emplace_back((var_t) -1);
-         ws[0] = 0;
-         idx[0] = 0;
-         t_pos_to_idxs[0] = {0};
-      }
-      assert(size()>0);
-      assert(size()<2 || idx[0]!=idx[1]);
-
-      // fix unit part ('resolving' part)
-      WLIN0 += rs_cls.get_unit();
-      //rm unit from t_pos_to_idxs
-      t_pos_to_idxs.erase( std::prev(t_pos_to_idxs.end()) );
-
-      if(!WLIN0.is_zero()) {
-        //if unit-part is non-zero
-        const auto& [v, dl, t_pos, _idx] = WLIN0.get_watch_tuple(alpha_dl, alpha_trail_pos);
-        xlit_t_pos[idx[0]] = t_pos;
-        //add new 'unit' to t_pos_to_idxs
-        filtration_add(idx[0]);
-      } else {
-        //if unit-part is zero -- do not add it back to xlit_t_pos, i.e., 'remove' it
-        xlit_dl_count0[idx[0]] = {0,1};
-        //remove_zero_lineral(idx[0]);
-        --num_nz_lins;
-        idx[0] = (idx[1]==(var_t)-1) ? 0 : idx[1];
-        ptr_cache[0] = ptr_cache[1];
-        idx[1] = -1;
-        ptr_cache[1] = -1;
-      }
-
-      //add remaining xlits
-      //copy the remaining linerals
-      xlits.reserve(xlits.size()+rs_cls.xlits.size());
-      xlit_dl_count0.reserve(xlits.size()+rs_cls.xlits.size());
-      xlit_t_pos.reserve(xlits.size()+rs_cls.xlits.size());
-      for(var_t i=0; i<rs_cls.size(); ++i) {
-        assert(!rs_cls.xlits[i].is_zero());
-        if(i==rs_cls.idx[0]) continue;
-        ++num_nz_lins;
-        xlits.emplace_back( rs_cls.xlits[i] );
-        //if 2nd watched lineral, fix with shared part
-        if(i==rs_cls.idx[1]) xlits.back() += rs_cls.shared_part;
-        xlit_dl_count0.emplace_back( rs_cls.xlit_dl_count0[i] );
-        xlit_t_pos.emplace_back(rs_cls.xlit_t_pos[i]);
-        filtration_add(xlits.size()-1);
-      }
 
       fix_watched_idx(alpha_dl, alpha_trail_pos, dl_count);
+      
+      if(size()>256) {
+        //@heuristic choose good value!
+        const var_t max_size = std::min(4, (int) (num_nz_lins / t_pos_to_idxs.size()) + 2 );
+        reduction(max_size, alpha_dl, alpha_trail_pos, dl_count);
+      }
 
       assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
       assert( assert_data_struct() );
       assert( is_unit(dl_count) );
 
       assert( !to_xcls().is_zero() );
-
-      return xcls_upd_ret::UNIT;
   };
   
-  inline xcls_upd_ret resolve(xcls_watch&& rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept {
+  inline void resolve(xcls_watch&& rs_cls, [[maybe_unused]] const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept {
       assert( assert_data_struct() );
       assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
 
       if(size()==0) {
-         xlits.emplace_back( xlit(0, true) );
-         xlit_dl_count0.emplace_back( 0, dl_count[0] );
-         xlit_t_pos.emplace_back((var_t) -1);
-         ws[0] = 0;
-         idx[0] = 0;
-         t_pos_to_idxs[0] = {0};
+        this->operator=(std::move(rs_cls));
+        return;
       }
       assert(size()>0);
       assert(size()<2 || idx[0]!=idx[1]);
@@ -327,7 +337,7 @@ public:
       // fix unit part ('resolving' part)
       WLIN0 += rs_cls.xlits[rs_cls.idx[0]]; WLIN0.add_one();
       //rm unit from t_pos_to_idxs
-      t_pos_to_idxs.erase( std::prev(t_pos_to_idxs.end()) );
+      if(!t_pos_to_idxs.empty()) t_pos_to_idxs.erase( std::prev(t_pos_to_idxs.end()) );
 
       if(!WLIN0.is_zero()) {
         //if unit-part is non-zero
@@ -372,10 +382,11 @@ public:
       assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
       assert( assert_data_struct() );
       assert( is_unit(dl_count) );
-
-      return xcls_upd_ret::UNIT;
   };
 
+  /**
+   * @brief essentially an implementation of 'WatchableReFiltr'
+   */
   inline void fix_watched_idx(const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) noexcept {
     //find highest two t_pos linerals to watch; and reduce those as long as they are not unique!
     if(t_pos_to_idxs.size()>0) {
@@ -419,7 +430,8 @@ public:
       idx[1] = i1;
       ws[1] = _idx;
       ptr_cache[1] = v;
-      xlit_dl_count0[i1] = {dl, dl_count[dl]};
+      if(dl==(var_t)-1) xlit_dl_count0[i1] = {0, 0};
+      else              xlit_dl_count0[i1] = {dl, dl_count[dl]};
       assert(xlit_t_pos[idx[1]] == t_pos);
       //@todo re-add as heuristic reduction?!
       //if(it->second.size() > 1 ) {
@@ -459,6 +471,7 @@ public:
   inline var_t size() const override { return num_nz_lins; };
 
   bool assert_data_struct() const {
+    if(size()==1 && xlits[0].is_one()) return true;
     assert( size()<1 || (xlits[idx[0]][ptr_cache[0]] && xlits[idx[0]].get_idxs_()[ws[0]]==ptr_cache[0] ));
     assert( size()<2 || (xlits[idx[1]][ptr_cache[1]] && xlits[idx[1]].get_idxs_()[ws[1]]==ptr_cache[1] ));
 
