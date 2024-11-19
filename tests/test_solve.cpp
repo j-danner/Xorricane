@@ -532,6 +532,15 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
+    
+    SECTION( "test72.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test72.xnf"); //only one empty clause
+        CHECK(clss.num_cls==1);
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.is_sat() == false ); //UNSAT!
+    }
 }
 
 TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
@@ -1227,6 +1236,18 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
 
         stats s = slvr.solve();
         CHECK( s.sols.size()==2 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test73.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test73.xnf"); //one clause that is trivially satisfied
+        CHECK(clss.num_cls==0);
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::nbu, true, 0, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==4 );
         CHECK( check_sols(clss.cls, s.sols) );
     }
 

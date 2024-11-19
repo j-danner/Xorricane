@@ -39,6 +39,8 @@ parsed_xnf parse_file(std::istream& file) {
     vec< xlit > cl;
     std::set< var_t > idxs;
 
+    int v_ = 0;
+
     std::string line;
     while (std::getline(file, line)) {
         if (line.length() == 0 || line[0] == 'c') continue; //ignore line
@@ -53,10 +55,12 @@ parsed_xnf parse_file(std::istream& file) {
             }
             num_vars = stoi(words[2]);
             num_cls = stoi(words[3]);
-        } else {
+        } else if (words.size()>0) {
             //line contains clause
             cl.clear();
 
+            if(*(words.rbegin())!="0") { throw std::runtime_error("incorrectly terminated clause '" + line + "' encountered!"); }
+            
             //check if clause is in XOR-clause notation or XNF-notation!
             if(words[0] == "x") {
                 //convert to XNF-notation:
@@ -65,18 +69,17 @@ parsed_xnf parse_file(std::istream& file) {
                 words.resize(2);
             }
 
-            for (size_t i = 0; i < words.size(); i++)
-            {
-                //check if clause is terminated:
-                if (words[i]=="0" || words[i]=="\0") {
-                    break;
-                }
-                //otherwise read xlit
+            //parse linerals -- if there is none, we have an empty clause!
+            if(words.size()==1) {
+                cl.emplace_back( 0, false );
+            }
+            //otherwise process remaining linerals
+            for (size_t i = 0; i < words.size()-1; i++) {
                 auto lit = split(words[i], "+");
                 idxs.clear();
                 bool need_0 = true;
                 for (auto &&v : lit) {
-                    int v_ = stoi(v);
+                    v_ = stoi(v);
                     //std::cout << v << std::endl;
                     if (v_>0) {
                         if(idxs.contains(v_)) idxs.erase(v_);
@@ -86,24 +89,31 @@ parsed_xnf parse_file(std::istream& file) {
                         //not standardized (interpret '+0' as '-')
                         need_0 ^= true;
                     } else {
-                        if(idxs.contains(-v_)) idxs.erase(-v_);
-                        else                   idxs.emplace(-v_);
+                        v_ = -v_;
+                        if(idxs.contains(v_)) idxs.erase(v_);
+                        else                   idxs.emplace(v_);
                         need_0 ^= true;
-                        actual_num_vars = std::max( (var_t) -v_, actual_num_vars );
+                        actual_num_vars = std::max( (var_t) v_, actual_num_vars );
                     }
                 }
-                
-                if (idxs.size() > 0 || need_0) cl.emplace_back( vec<var_t>(idxs.begin(),idxs.end()), need_0, presorted::yes );
+                //put lineral into clause -- if it is not 0 (!)
+                if (idxs.size() > 0 || need_0) {
+                    cl.emplace_back( vec<var_t>(idxs.begin(),idxs.end()), need_0, presorted::yes );
+                } else {
+                    //clause contains 0-lineral, i.e., is trivially satisfied and can be skipped!
+                    cl.clear();
+                    break;
+                }
             }
-            //add clause to cls
+            //add clause to cls -- if non-empty!
             if (cl.size() > 0) cls.emplace_back( std::move(cl) );
-            ++actual_num_cls;
+            else               { --num_cls; ++actual_num_cls; }
         }
     }
 
     if( cls.size() != num_cls) {
         std::cerr << "c Number of clauses in header differs from number of found clauses!" << std::endl;
-        std::cerr << "c header said " << num_cls << " whereas we found " << actual_num_cls << " clauses." << std::endl;
+        std::cerr << "c header said " << num_cls << " whereas we found " << cls.size() << " clauses." << std::endl;
         num_cls = cls.size();
     }
     if(actual_num_vars > num_vars) {
