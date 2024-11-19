@@ -173,7 +173,7 @@ public:
    * 
    * @return true iff clause could be shortened
    */
-  bool minimize(const solver &s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<xlit_w_it>& alpha_lin, const vec<equivalence> &equiv_lits, const vec<dl_c_t> &dl_count) noexcept;
+  bool minimize(const solver &s, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<xlit_w_it>& alpha_lin, const vec<dl_c_t> &dl_count) noexcept;
   
   /**
    * @brief differs from resolve in that we do not update the watched linerals (idx[0] and idx[1]), i.e. t_pos_to_idxs.rbegin() may contain multiple elements AND does not reduce those at all -- this might miss simplifications every now and then BUT ensures that we can change the order when computing reason clauses
