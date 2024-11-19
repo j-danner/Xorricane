@@ -33,6 +33,7 @@ parsed_xnf parse_file(std::istream& file) {
     var_t num_vars = 0;
     var_t actual_num_vars = 0;
     var_t num_cls = 0;
+    var_t actual_num_cls = 0;
     
     vec< vec<xlit> > cls;
     vec< xlit > cl;
@@ -96,13 +97,13 @@ parsed_xnf parse_file(std::istream& file) {
             }
             //add clause to cls
             if (cl.size() > 0) cls.emplace_back( std::move(cl) );
-            else               --num_cls;
+            ++actual_num_cls;
         }
     }
 
     if( cls.size() != num_cls) {
         std::cerr << "c Number of clauses in header differs from number of found clauses!" << std::endl;
-        std::cerr << "c header said " << num_cls << " whereas we found " << cls.size() << " clauses." << std::endl;
+        std::cerr << "c header said " << num_cls << " whereas we found " << actual_num_cls << " clauses." << std::endl;
         num_cls = cls.size();
     }
     if(actual_num_vars > num_vars) {
