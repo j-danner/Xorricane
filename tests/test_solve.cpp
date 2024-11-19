@@ -1257,7 +1257,7 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
     SECTION( "test_simon.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 10;
+        //slvr.get_opts()->verb = 10;
         slvr.get_opts()->ca = ca_alg::fuip;
         slvr.get_opts()->sol_count = 265;
         slvr.get_opts()->gauss_elim_schedule = 0;
@@ -1273,7 +1273,7 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
     SECTION( "test_simon.xnf -la 28" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 85;
+        //slvr.get_opts()->verb = 85;
         slvr.get_opts()->ca = ca_alg::fuip;
         slvr.get_opts()->sol_count = 265;
         slvr.get_opts()->gauss_elim_schedule = 28;
