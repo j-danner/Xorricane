@@ -275,17 +275,14 @@ class xlit_watch : public xlit
      * @brief returns list of xlit_watches whose reasones need to be resolved to get this lineral
      * @return list< xlit_w_it > list of xlit_watches
      */
-    inline const list< xlit_w_it >& get_reason_lins() const { return reason_lins; }
+    inline list< xlit_w_it >& get_reason_lins() { return reason_lins; }
     
     /**
      * @brief returns the reason clause index, if this lineral was derived from an xcls_watch
      * @return var_t reason clause index
      */
-    inline const vec<var_t>& get_reason_idxs() const { assert(reason_cls_idxs.size()<=1); return reason_cls_idxs; }
+    inline const vec<var_t>& get_reason_idxs() const { return reason_cls_idxs; }
     
-    //tmp remove after refactoring !!!
-    inline var_t get_reason_idx() const { return reason_cls_idxs.empty() ? (var_t) -1 : reason_cls_idxs[0]; }
-
     /**
      * @brief checks if there is a non-trivial reason clause
      * 
@@ -294,6 +291,16 @@ class xlit_watch : public xlit
     bool has_trivial_reason_cls() const {
       return lvl==0 || (reason_lins.empty() && reason_cls_idxs.empty());
     }
+    
+    /**
+     * @brief checks if there is a non-trivial reason clause
+     * 
+     * @return true iff there is a non-trivial reason clause
+     */
+    bool has_simplified_reasons() const {
+      return std::all_of(reason_lins.begin(), reason_lins.end(), [](const auto& lin){ return lin->has_trivial_reason_cls(); });
+    }
+    
     
     /**
      * @brief shift reason_idxs; i.e. map reason_idxs to new indices
@@ -327,9 +334,32 @@ class xlit_watch : public xlit
      * @brief merges the reason_cls_idxs with a (sorted) vec of idxs; (removes the idxs if already present)
      * 
      * @param idxs sorted vec of index of reason_cls to be added
-     * @note xclss[idx] must be a unit clause for all idxs
      */
-    inline void merge_reason_idx(const vec<var_t>& idxs);
+    void merge_reason_idx(const vec<var_t>& idxs);
+
+    /**
+     * @brief simplifies reason_lins and reason_cls_idxs to ensure that it only has reason_lins with trivial reason clss
+     * @param recurse if true, also calls simplify_reasons on reason_lins
+     */
+    inline void simplify_reasons(const bool recurse = false) {
+      auto it = reason_lins.begin();
+      //auto it_cls = reason_cls_idxs.begin();
+      while(it!=reason_lins.end()) {
+        const auto& l = *it;
+        if(!l->has_trivial_reason_cls()) {
+          if(recurse) l->simplify_reasons(recurse);
+          //copy reason_lins and reason_cls_idxs!
+          reason_lins.insert(it, l->reason_lins.begin(), l->reason_lins.end());
+          merge_reason_idx(l->get_reason_idxs());
+          //reason_cls_idxs.insert( it_cls, l->get_reason_idxs().begin(), l->get_reason_idxs().end() );
+          //remove lin from reason_lin
+          it = reason_lins.erase(it);
+        } else {
+          ++it;
+        }
+      }
+      assert( has_simplified_reasons() );
+    }
 
 
     //inline void set_lvl(const var_t lvl_) { lvl = lvl_; };
@@ -406,7 +436,6 @@ class xlit_watch : public xlit
     };
 
     bool assert_data_struct(const vec<bool3>& alpha) const {
-      assert(reason_cls_idxs.size()<=1); //temporary!
       if(idxs.size()<2) return true;
       //assert(alpha_dl[idxs[ws[1]]]==0 || alpha_dl[idxs[ws[1]]] <= alpha_dl[idxs[ws[0]]]);
       assert(ws[0] != ws[1]);
