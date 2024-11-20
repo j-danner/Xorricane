@@ -435,7 +435,7 @@ class solver
       xcls_watch r_cls2;
       for(const auto& lin : rs_lins) {
         if(lin->size()<=1) continue; //skip too short reason lins -- these are only guesses and implied alphas... they might only add new dependencies and can never reduce the max-alpha_trail_pos!
-       #ifdef OLD_REASON_CLS_COMPUTATION
+       #ifdef TREE_LIKE_REASON_CLS_COMP
         r_cls2 = get_reason(lin);
        #else
         r_cls2.operator=( std::move(xcls_watch((xlit) *lin, alpha, alpha_dl, alpha_trail_pos, dl_count)) );
@@ -447,7 +447,7 @@ class solver
        #endif
         //extend r_cls2 with (unit of r_cls)+1, and r_cls with (unit of r_cls2)+1
         VERB(120, "c resolving clauses\nc   "<< BOLD(r_cls.to_str()) <<"\nc and\nc   "<< BOLD(r_cls2.to_str()));
-       #ifdef OLD_REASON_CLS_COMPUTATION
+       #ifdef TREE_LIKE_REASON_CLS_COMP
         r_cls.resolve( std::move(r_cls2), alpha, alpha_dl, alpha_trail_pos, dl_count);
        #else
         r_cls.resolve_unsafe( std::move(r_cls2), alpha, alpha_dl, alpha_trail_pos, dl_count);
@@ -464,7 +464,7 @@ class solver
         //resolve cls
         assert(r_cls2.is_unit(dl_count));
         VERB(120, "c resolving clauses\nc   "<< BOLD(r_cls.to_str()) <<"\nc and\nc   "<< BOLD(r_cls2.to_str()));
-       #ifdef OLD_REASON_CLS_COMPUTATION
+       #ifdef TREE_LIKE_REASON_CLS_COMP
         r_cls.resolve( r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count);
        #else
         r_cls.resolve_unsafe(r_cls2, alpha, alpha_dl, alpha_trail_pos, dl_count);
@@ -476,7 +476,7 @@ class solver
         assert_slower( !L_.is_consistent() || L_.reduce( r_cls.to_xcls().reduced(alpha).get_unit()+tmp).is_constant() );
       }
 
-     #ifndef OLD_REASON_CLS_COMPUTATION
+     #ifndef TREE_LIKE_REASON_CLS_COMP
       r_cls.fix_data_struct(alpha, alpha_dl, alpha_trail_pos, dl_count);
      #endif
 
@@ -489,7 +489,7 @@ class solver
       //note, returning zero_cls might lead to complications!
       if(!lin->has_trivial_reason_cls() && lin->get_reason_lins().empty() && lin->get_reason_idxs().size()==1) return xclss[lin->get_reason_idxs().front()];
 
-    #ifndef OLD_REASON_CLS_COMPUTATION
+    #ifndef TREE_LIKE_REASON_CLS_COMP
       //recursively rewrite lin to featrue all xclss and only lins with trivial reason clss
       lin->simplify_reasons(true);
     #endif
@@ -522,7 +522,7 @@ class solver
         return xcls_watch( (xlit) *lin, alpha, alpha_dl, alpha_trail_pos, dl_count);
       }
 
-    #ifndef OLD_REASON_CLS_COMPUTATION
+    #ifndef TREE_LIKE_REASON_CLS_COMP
       //recursively rewrite lin to featrue all xclss and only lins with trivial reason clss
       lin->simplify_reasons(true);
     #endif
@@ -543,7 +543,7 @@ class solver
         return xcls_watch( (xlit) *lin, alpha, alpha_dl, alpha_trail_pos, dl_count);
       }
       
-    #ifndef OLD_REASON_CLS_COMPUTATION
+    #ifndef TREE_LIKE_REASON_CLS_COMP
       //recursively rewrite lin to featrue all xclss and only lins with trivial reason clss
       lin->simplify_reasons(true);
     #endif

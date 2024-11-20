@@ -66,7 +66,7 @@
 
 //use 'non-optimized' computation of reason clauses -- tree-like without reordering and without skipping unneccessary repeated resolvents with the same clause
 //NOTE there are very rare known bugs in the old implementation
-#define OLD_REASON_CLS_COMPUTATION
+#define TREE_LIKE_REASON_CLS_COMP
 
 
 //type for variable numbering (must be unsigned; as (var_t)-1 must be bigger than all other values...)

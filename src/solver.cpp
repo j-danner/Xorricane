@@ -482,8 +482,7 @@ void solver::restart(stats& s) {
     xclss = std::move(cpy);
     //fix reason_cls idxs for all xlit_watch in lineral_watches[0]
     for(xlit_w_it it=lineral_watches[0].begin(); it!=lineral_watches[0].end(); ++it) {
-        auto& l = *it;
-        l.shift_reason_idxs( new_idx );
+        it->shift_reason_idxs( new_idx );
       #ifndef NDEBUG
         const auto rs = get_reason( it );
         assert( (rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits) + l.to_xlit().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero()) );

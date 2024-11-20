@@ -1,17 +1,17 @@
 #include "xlit_watch.hpp"
 #include "xcls_watch.hpp"
 
-
 // this suppresses creating the new objects again and again
 vec<var_t> diff_tmp;
 
-
+#ifndef TREE_LIKE_REASON_CLS_COMP
 void xlit_watch::merge_reason_idx(const vec<var_t>& idxs) {
     if(idxs.empty()) return;
     diff_tmp.clear(); // diff_tmp is declared global and static, this saves creating new diff_s for each calling
     std::set_symmetric_difference(reason_cls_idxs.begin(), reason_cls_idxs.end(), idxs.begin(), idxs.end(), std::back_inserter(diff_tmp));
     std::swap(reason_cls_idxs, diff_tmp);
 }
+#endif
 
 bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
     assert(reducible);

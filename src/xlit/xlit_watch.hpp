@@ -292,15 +292,6 @@ class xlit_watch : public xlit
       return lvl==0 || (reason_lins.empty() && reason_cls_idxs.empty());
     }
     
-    /**
-     * @brief checks if there is a non-trivial reason clause
-     * 
-     * @return true iff there is a non-trivial reason clause
-     */
-    bool has_simplified_reasons() const {
-      return std::all_of(reason_lins.begin(), reason_lins.end(), [](const auto& lin){ return lin->has_trivial_reason_cls(); });
-    }
-    
     
     /**
      * @brief shift reason_idxs; i.e. map reason_idxs to new indices
@@ -311,7 +302,7 @@ class xlit_watch : public xlit
       for(auto &idx : reason_cls_idxs) {
         idx = new_idx[idx];
       }
-      assert(std::is_sorted(reason_cls_idxs.begin(), reason_cls_idxs.end()));
+      assert_slower(std::is_sorted(reason_cls_idxs.begin(), reason_cls_idxs.end()));
     };
 
     /**
@@ -329,7 +320,18 @@ class xlit_watch : public xlit
       }
       //reason_cls_idxs.push_back(idx);
     }
-    
+
+
+  #ifndef TREE_LIKE_REASON_CLS_COMP
+    /**
+     * @brief checks if there is a non-trivial reason clause
+     * 
+     * @return true iff there is a non-trivial reason clause
+     */
+    bool has_simplified_reasons() const {
+      return std::all_of(reason_lins.begin(), reason_lins.end(), [](const auto& lin){ return lin->has_trivial_reason_cls(); });
+    }
+
     /**
      * @brief merges the reason_cls_idxs with a (sorted) vec of idxs; (removes the idxs if already present)
      * 
@@ -342,9 +344,6 @@ class xlit_watch : public xlit
      * @param recurse if true, also calls simplify_reasons on reason_lins
      */
     inline void simplify_reasons(const bool recurse = false) {
-     #ifdef OLD_REASON_CLS_COMPUTATION
-      return;
-     #endif
       auto it = reason_lins.begin();
       //auto it_cls = reason_cls_idxs.begin();
       while(it!=reason_lins.end()) {
@@ -363,6 +362,7 @@ class xlit_watch : public xlit
       }
       assert( has_simplified_reasons() );
     }
+  #endif
 
 
     //inline void set_lvl(const var_t lvl_) { lvl = lvl_; };
