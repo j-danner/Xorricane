@@ -55,21 +55,6 @@ if(COMPILER_SUPPORTS_MARCH_NATIVE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native")
 endif()
 
-# get m4ri library 
-configure_file(CMakeLists.txt.m4ri m4ri-download/CMakeLists.txt)
-execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/m4ri-download"
-)
-execute_process(COMMAND "${CMAKE_COMMAND}" --build .
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/m4ri-download"
-)
-
-find_library(m4ri_library m4ri "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src/.libs")
-
-if(NOT m4ri_library)
-    message(FATAL_ERROR "m4ri library not found!")
-endif()
-
 
 # set up unit tests with Catch2 - if found
 find_package(Catch2 3 QUIET)
@@ -79,7 +64,8 @@ if(Catch2_FOUND)
     include(CTest)
     include(Catch)
     # These tests can use the Catch2-provided main
-    add_executable(testing tests/test_xlit.cpp tests/test_xlit_watch.cpp tests/test_xcls_watch.cpp tests/test_xsys.cpp tests/test_solve.cpp)
+    file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS "tests/test_*.cpp")
+    add_executable(testing ${test_sources})
     target_link_libraries(testing PUBLIC ${EXTRA_LIBS} PRIVATE solver Catch2::Catch2WithMain)
     target_include_directories(testing PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
     catch_discover_tests(testing)

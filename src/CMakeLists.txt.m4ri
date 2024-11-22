@@ -13,7 +13,7 @@ ExternalProject_Add(m4ri_project
     UPDATE_DISCONNECTED true
     CONFIGURE_HANDLED_BY_BUILD true
     SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src"
-    CONFIGURE_COMMAND cd "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src" && autoreconf --install && ./configure --enable-thread-safe --enable--static
+    CONFIGURE_COMMAND cd "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src" && autoreconf --install && ./configure --enable-thread-safe --enable--static=yes
     BUILD_COMMAND cd "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src" && make
     INSTALL_COMMAND ""
     TEST_COMMAND ""
