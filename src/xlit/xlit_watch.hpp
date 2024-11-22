@@ -314,7 +314,7 @@ class xlit_watch : public xlit
     inline void push_reason_idx(const var_t& idx) { 
       auto it = std::lower_bound(reason_cls_idxs.begin(), reason_cls_idxs.end(), idx);
       if(*it == idx) {
-        std::remove(reason_cls_idxs.begin(), reason_cls_idxs.end(), idx);
+        reason_cls_idxs.erase(it);
       } else {
         reason_cls_idxs.insert(it, idx);
       }

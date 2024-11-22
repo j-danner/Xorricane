@@ -85,11 +85,11 @@ class xcls {
 
     const xsys& get_ass_VS() const { return assVS; };
   
-    std::string to_str() const;
+    std::string to_str() const {
+      if(assVS.dim()==0) return "1";
+      std::string result = "";
+      for(const auto& lit : assVS.get_xlits()) result += lit.plus_one().to_str() + " ";
+      result.resize( result.length()-1 );
+      return result;
+    };
 };
-
-std::pair<bool, xlit> intersectaffineVS(const xsys& U, const xsys& W);
-
-vec<xlit> intersectVS(const xsys& U, const xsys& W);
-
-xcls sres_opt(const xcls& cl1, const xcls& cl2);

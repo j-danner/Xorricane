@@ -7,7 +7,6 @@
 #include <list>
 #include <set>
 #include <unordered_set>
-#include <m4ri/m4ri.h>
 #include "xlit_watch.hpp"
 
 using lit_watch = var_t;
@@ -781,168 +780,6 @@ public:
     assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
   }
 
-  //tmp vars
-  vec<var_t> xlit_idxs;
-
-  xcls_upd_ret init_unit(const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
-    if(size()==0) {
-      return xcls_upd_ret::UNIT;
-    }
-    if(size() == 1) {
-      assert(idx[0] == 0);
-      //reduce xlit[0]
-      WLIN0.reduce(alpha, alpha_dl, 0);
-      //update watched variable
-      if(!WLIN0.is_constant()) {
-        ws[0] = WLIN0.get_watch_idx(alpha_trail_pos);
-        ptr_cache[0] = ptr_(idx[0], ws[0]);
-      } else {
-        ws[0] = 0;
-        ptr_cache[0] = 0;
-      }
-      return xcls_upd_ret::UNIT;
-    }
-    assert(size()>1);
-    assert(idx[0] < size() && idx[1] < size());
-    // distribute shared_part
-    WLIN0 += shared_part;
-    WLIN1 += shared_part;
-    shared_part.clear();
-    
-    //reset idx
-    idx[0] = 0;
-    idx[1] = 1;
-
-    // reduce all xlits at dl 0
-    for (auto &l : xlits) {
-      l.reduce(alpha, alpha_dl, 0);
-    }
-
-    // re-order occuring indets with decreasing dl
-    std::set<var_t> tmp;
-    for (const auto &l : xlits) {
-      tmp.insert(l.get_idxs_().begin(), l.get_idxs_().end());
-    }
-    vec<var_t> idxs(tmp.begin(), tmp.end());
-    std::sort(idxs.begin(), idxs.end(),
-              [&alpha_trail_pos](const var_t &a, const var_t &b)
-              { return alpha_trail_pos[a] > alpha_trail_pos[b]; });
-    // construct permutation maps
-    vec<var_t> perm(alpha.size());
-    vec<var_t> perm_inv(alpha.size());
-    for (var_t i = 0; i < idxs.size(); ++i) {
-      perm[idxs[i]] = i;
-      perm_inv[i] = idxs[i];
-    }
-
-    const var_t n_vars = idxs.size();
-    rci_t nrows = size();
-    rci_t ncols = n_vars+1;
-
-    mzd_t* M = mzd_init(nrows, ncols);
-    assert( mzd_is_zero(M) );
-
-    //fill with xlits
-    rci_t r = 0;
-    for(const auto& l : xlits) {
-        if(l.is_zero()) continue;
-        if(l.has_constant()) {
-            mzd_write_bit(M, r, n_vars, 1);
-        }
-        for(const auto& i : l.get_idxs_()) {
-            assert(i>0);
-            assert(perm[i] < (var_t) ncols-1);
-            mzd_write_bit(M, r, perm[i], 1);
-        }
-        ++r;
-    }
-    assert(r <= nrows); //reducing with alpha at dl 0 might reduce some xlits to 0
-
-    //compute rref
-    const rci_t rank = mzd_echelonize_m4ri(M, true, 0); //should we use mzd_echelonize instead?
-    //read results
-    vec<xlit> xlits_; xlits_.reserve(rank);
-    for(rci_t r = 0; r<rank; ++r) {
-        vec<var_t> idxs;
-        for(rci_t c=0; (unsigned)c<n_vars; ++c) {
-            if( mzd_read_bit(M, r, c) ) idxs.push_back(c+1);
-        }
-        xlits_.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::yes );
-        if(xlits_.back().is_zero()) xlits_.pop_back();
-    }
-    mzd_free(M);
-
-    //xlits_ must already be sorted w.r.t. lt!
-    assert_slow( std::is_sorted(xlits_.begin(), xlits_.end(), [](const xlit &a, const xlit &b) { return a.LT() < b.LT(); }) );
-
-    // set xlit_dl_count0
-    xlit_dl_count0[idx[0]] = {0,0};
-    for (var_t i = 0; i < xlits_.size(); ++i) {
-      if(i==idx[0]) {
-        //@todo can we set it directly to -1 ?
-        xlit_t_pos[i] = (var_t) -1; //alpha_trail_pos[ perm_inv[xlits_[i].LT()-1] ];
-        continue;
-      }
-      const var_t lvl = alpha_dl[ perm_inv[xlits_[i].LT()-1] ];
-      assert( lvl<=alpha.size());
-      xlit_dl_count0[i] = {lvl, dl_count[lvl]};
-      xlit_t_pos[i] = alpha_trail_pos[ perm_inv[xlits_[i].LT()-1] ];
-      assert(xlit_t_pos[i]<=alpha.size());
-    }
-
-    if(xlits_.size()==0) {
-      xlits.clear();
-      xlit_dl_count0.clear();
-      xlit_t_pos.clear();
-      assert(is_unit(dl_count));
-      return xcls_upd_ret::UNIT;
-    }
-
-    // now watch the first two xlits as usual
-    const var_t wl0 = !xlits_[0].is_constant() ? perm_inv[xlits_[0].LT()-1] : -1;
-    const var_t wl1 = xlits_.size() > 1 ? perm_inv[xlits_[1].LT()-1] : -1;
-
-    // translate xlits back AND recompute watched idxs
-    for (auto &l : xlits_) {
-      xlit_idxs.clear();
-      xlit_idxs.reserve(l.size());
-      for (const auto &v : l.get_idxs_()) { xlit_idxs.push_back( perm_inv[v-1] ); }
-      l = std::move(xlit(std::move(xlit_idxs), l.has_constant(), presorted::no));
-    }
-
-    // replace xlits with xlits_
-    xlits = std::move(xlits_);
-
-    // resize xlit_dl_count0 & xlit_t_pos
-    xlit_dl_count0.resize(size());
-    xlit_t_pos.resize(size());
-
-    assert(size()>0);
-
-    // recompute the indices at which wl0 and wl1 are stored
-    shared_part = size() > 1 ? WLIN0.shared_part(WLIN1) : xlit();
-    WLIN0 += shared_part;
-    ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), wl0));
-    ptr_cache[0] = ptr_(idx[0], ws[0]);
-    if (size() == 1) {
-      return xcls_upd_ret::UNIT;
-    }
-
-    WLIN1 += shared_part;
-    ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), wl1));
-    ptr_cache[1] = ptr_(idx[1], ws[1]);
-
-    assert(get_wl0() != get_wl1());
-    assert(is_unit(dl_count));
-    assert(alpha[ptr_ws(1)] != bool3::None);
-
-    // check if clause needs any processing
-    assert(!is_active(dl_count));
-    assert(!is_sat(dl_count));
-
-    return xcls_upd_ret::UNIT;
-  };
-
   std::string to_str() const {
     if (size() == 0)
       return "1";
@@ -1125,20 +962,6 @@ public:
     return shared_part[ind] || WLIN0[ind];
   }
 
-  /**
-   * @brief adds the given literal to the unit of this clause
-   * @note assumes that the clause is unit (i.e. is_unit(dl_count) is true)
-   * @note WLIN0 and WLIN1 may have shared parts! -- invalid state! (USE ONLY IN CONFLICT ANALYSIS)
-   *
-   * @param lin lineral to add to unit part
-   */
-  void add_to_unit(const xlit &lin, const vec<bool3> &alpha, const vec<var_t> &alpha_dl, const vec<var_t> &alpha_trail_pos, const vec<dl_c_t> &dl_count) {
-    assert(is_unit(dl_count));
-    assert(idx[0] < size());
-    WLIN0 += lin;
-    // re-init watches!
-    init_unit(alpha, alpha_dl, alpha_trail_pos, dl_count);
-  }
 
   /**
    * @brief Get the dl at which the clause got inactive (i.e. unit or sat)

@@ -1,3 +1,4 @@
+#setup libraries for xlit, xlit_lazy and solver
 add_library(
     xlit
     #misc
@@ -6,7 +7,6 @@ add_library(
     xlit/xlit.hpp
     xlit/xlit.cpp
     xlit/xcls.hpp
-    xlit/xcls.cpp
     #xsys
     xlit/xsys.hpp
     xlit/xsys.cpp 
@@ -22,8 +22,6 @@ add_library(
     xlit/xcls_watch.hpp
     xlit/xcls_watch_resolver.hpp
     xlit/xcls_watch_resolver.cpp
-    #solver hpp
-    solver.hpp
 )
 
 add_library(
