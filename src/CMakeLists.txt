@@ -47,7 +47,8 @@ message(STATUS "Boost version: ${Boost_VERSION}")
 target_include_directories(xlit PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(xlit PUBLIC ${EXTRA_LIBS})
 
-target_link_libraries(xlit_lazy PUBLIC ${EXTRA_LIBS} PRIVATE m4ri xlit)
+target_link_libraries(xlit_lazy PUBLIC ${EXTRA_LIBS} PRIVATE xlit)
 
-target_link_libraries(solver PUBLIC ${EXTRA_LIBS} PRIVATE xlit_lazy)
+target_link_libraries(solver PUBLIC ${EXTRA_LIBS} PRIVATE xlit_lazy ${m4ri_library})
+target_include_directories(solver PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src")
 
