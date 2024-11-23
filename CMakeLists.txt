@@ -51,8 +51,14 @@ add_executable(xnf_cdcl_solver src/main.cpp src/argparse/argparse.hpp)
 
 # link libs to xnf_cdcl_solver
 target_link_libraries(xnf_cdcl_solver PUBLIC ${EXTRA_LIBS} PRIVATE solver)
-target_link_options(xnf_cdcl_solver PRIVATE -static-libgcc -static-libstdc++ -static)
 target_include_directories(xnf_cdcl_solver PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
+
+#static option -- use with caution! leads to segv on algattack...
+option(STATIC "compile statically linked solver" OFF)
+if(STATIC) 
+    target_link_options(xnf_cdcl_solver PUBLIC -static-libstdc++ -static-libgcc -static)
+endif()
+
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
@@ -65,7 +71,7 @@ endif()
 find_package(Catch2 3 QUIET)
 if(Catch2_FOUND)
     message("Catch2 found!")
-    set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED ON)
+    set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED OFF)
     include(CTest)
     include(Catch)
     # These tests can use the Catch2-provided main
