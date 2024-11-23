@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.13)
 
 # set the project name
 project(xnf_cdcl_solver VERSION 0.3.0)
@@ -20,7 +20,7 @@ if(VERBOSITY OR CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 #static linking to libstdc++ and libgcc in case of Release build; otherwise give warnings!
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare -ffast-math -static-libgcc -static-libstdc++ -pthread" )# -ftree-vectorizer-verbose=5 -Weffc++")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare -ffast-math -pthread" )# -ftree-vectorizer-verbose=5 -Weffc++")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ftree-loop-vectorize -DNDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fasynchronous-unwind-tables -D_GLIBCXX_ASSERTIONS")# -D_FORTIFY_SOURCE=2 
 
@@ -31,8 +31,11 @@ if(JEMALLOC_FOUND)
     pkg_search_module(JEMALLOC REQUIRED jemalloc)
     message("jemalloc found!")
     include_directories(${JEMALLOC_INCLUDE_DIRS})
-    set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBRARIES})
-    #set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${JEMALLOC_INCLUDE_DIRS})
+    execute_process(COMMAND jemalloc-config --libdir; jemalloc-config --libs OUTPUT_VARIABLE JEMALLOC_LIBDIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+    #link to static jemalloc -- libjemalloc_pic.a is the only one availabe on my arch system..
+    set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBDIR}/libjemalloc_pic.a)
+    #link to dynamic jemalloc
+    #set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBRARIES})
     add_definitions(-DUSING_JEMALLOC)
 else()
     message("jemalloc not found! (optional)")
@@ -47,6 +50,7 @@ add_executable(xnf_cdcl_solver src/main.cpp src/argparse/argparse.hpp)
 
 # link libs to xnf_cdcl_solver
 target_link_libraries(xnf_cdcl_solver PUBLIC ${EXTRA_LIBS} PRIVATE solver)
+target_link_options(xnf_cdcl_solver PRIVATE -static-libgcc -static-libstdc++ -static)
 target_include_directories(xnf_cdcl_solver PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
 
 include(CheckCXXCompilerFlag)
