@@ -19,7 +19,7 @@ if(VERBOSITY OR CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DVERBOSITY)
 endif()
 
-#static linking to libstdc++ and libgcc in case of Release build; otherwise give warnings!
+#set warnings and other default compiler options
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare -ffast-math -pthread" )# -ftree-vectorizer-verbose=5 -Weffc++")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ftree-loop-vectorize -DNDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fasynchronous-unwind-tables -D_GLIBCXX_ASSERTIONS")# -D_FORTIFY_SOURCE=2 
@@ -31,9 +31,10 @@ if(JEMALLOC_FOUND)
     pkg_search_module(JEMALLOC REQUIRED jemalloc)
     message("jemalloc found!")
     include_directories(${JEMALLOC_INCLUDE_DIRS})
-    execute_process(COMMAND jemalloc-config --libdir; jemalloc-config --libs OUTPUT_VARIABLE JEMALLOC_LIBDIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND jemalloc-config --libdir OUTPUT_VARIABLE JEMALLOC_LIBDIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND jemalloc-config --libs OUTPUT_VARIABLE JEMALLOC_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
     #link to static jemalloc -- libjemalloc_pic.a is the only one availabe on my arch system..
-    set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBDIR}/libjemalloc_pic.a)
+    set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBDIR}/libjemalloc_pic.a ${JEMALLOC_LIBS})
     #link to dynamic jemalloc
     #set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBRARIES})
     add_definitions(-DUSING_JEMALLOC)
