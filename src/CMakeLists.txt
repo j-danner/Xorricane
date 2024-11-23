@@ -1,6 +1,7 @@
 #setup library for xlits
 add_library(
     xlit
+    STATIC
     #misc
     misc.hpp
     #xlit
@@ -27,6 +28,7 @@ target_link_libraries(xlit PUBLIC ${EXTRA_LIBS})
 #setup library for lazy version of xlit
 add_library(
     xlit_lazy
+    STATIC
     #xlit
     xlit/xlit_watch.hpp
     xlit/xlit_watch.cpp
@@ -40,6 +42,7 @@ target_link_libraries(xlit_lazy PUBLIC ${EXTRA_LIBS} PRIVATE xlit)
 #setup library for solver
 add_library(
     solver
+    STATIC
     #solve
     io.hpp
     io.cpp
@@ -59,12 +62,12 @@ execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
 execute_process(COMMAND "${CMAKE_COMMAND}" --build .
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/m4ri-download"
 )
-find_library(m4ri_library m4ri "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src/.libs")
-if(NOT m4ri_library)
+find_library(M4RI_LIBRARY NAMES m4ri PATHS "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src/.libs" NO_DEFAULT_PATH)
+if(NOT M4RI_LIBRARY)
     message(FATAL_ERROR "m4ri library not found!")
 endif()
 
 #generate 
-target_link_libraries(solver PUBLIC ${EXTRA_LIBS} ${m4ri_library} PRIVATE xlit_lazy)
+target_link_libraries(solver PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY} PRIVATE xlit_lazy)
 target_include_directories(solver PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src")
 
