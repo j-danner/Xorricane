@@ -15,7 +15,7 @@ namespace {
     void signal_handler(int signal) { if(interrupt_handler) interrupt_handler(signal); }
 } // namespace
 
-//main solving func; solves xnf using opts!
+//main solving func; solves xnf using opts! -- returns 10 for SAT, 20 for UNSAT, 0 for timeout
 int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s) {
     //time comp, start
     if(s.begin==std::chrono::high_resolution_clock::time_point::min()) s.begin = std::chrono::high_resolution_clock::now();
@@ -57,16 +57,16 @@ int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts
 
     if(opts.verb >= 120) { std::cout << opts.to_str() << std::endl; }
     
-    if(opts.verb > 0 && s.sols.size()>0) { //check sol!
+    if(opts.verb > 0 && s.is_sat()) { //check sol!
         if(check_sols(xnf, s.sols)) {
             std::cout << "c solution(s) verified" << std::endl;
-            return 0;
+            return 10;
         } else {
             std::cout << "c solution(s) INCORRECT!" << std::endl;
             return 1;
         }
     } else {
-        return 0;
+        return s.cancelled.load() ? 0 : (s.is_sat() ? 10 :  20);
     }
 }
 
