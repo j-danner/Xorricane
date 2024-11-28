@@ -1,16 +1,16 @@
-#setup library for xlits
+#setup library for linerals
 add_library(
-    xlit
+    lineral
     STATIC
     #misc
     misc.hpp
-    #xlit
-    xlit/xlit.hpp
-    xlit/xlit.cpp
-    xlit/xcls.hpp
-    #xsys
-    xlit/xsys.hpp
-    xlit/xsys.cpp 
+    #lineral
+    lineral.hpp
+    lineral.cpp
+    cls.hpp
+    #lin_sys
+    lin_sys.hpp
+    lin_sys.cpp 
     #rang - library for colours in terminal
     rang/rang.hpp
 )
@@ -22,21 +22,21 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.67 COMPONENTS container REQUIRED)
 message(STATUS "Boost version: ${Boost_VERSION}")
 
-target_include_directories(xlit PUBLIC ${Boost_INCLUDE_DIRS})
-target_link_libraries(xlit PUBLIC ${EXTRA_LIBS})
+target_include_directories(lineral PUBLIC ${Boost_INCLUDE_DIRS})
+target_link_libraries(lineral PUBLIC ${EXTRA_LIBS})
 
-#setup library for lazy version of xlit
+#setup library for lazy version of lineral
 add_library(
-    xlit_lazy
+    lineral_lazy
     STATIC
-    #xlit
-    xlit/xlit_watch.hpp
-    xlit/xlit_watch.cpp
-    xlit/xcls_watch.hpp
-    xlit/xcls_watch_resolver.hpp
-    xlit/xcls_watch_resolver.cpp
+    #lineral
+    lineral_watch.hpp
+    lineral_watch.cpp
+    cls_watch.hpp
+    cls_watch_resolver.hpp
+    cls_watch_resolver.cpp
 )
-target_link_libraries(xlit_lazy PUBLIC ${EXTRA_LIBS} PRIVATE xlit)
+target_link_libraries(lineral_lazy PUBLIC ${EXTRA_LIBS} PRIVATE lineral)
 
 
 #setup library for solver
@@ -68,6 +68,6 @@ if(NOT M4RI_LIBRARY)
 endif()
 
 #generate 
-target_link_libraries(solver PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY} PRIVATE xlit_lazy)
+target_link_libraries(solver PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY} PRIVATE lineral_lazy)
 target_include_directories(solver PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src")
 

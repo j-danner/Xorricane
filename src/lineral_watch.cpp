@@ -1,11 +1,11 @@
-#include "xlit_watch.hpp"
-#include "xcls_watch.hpp"
+#include "lineral_watch.hpp"
+#include "cls_watch.hpp"
 
 // this suppresses creating the new objects again and again
 vec<var_t> diff_tmp;
 
 #ifndef TREE_LIKE_REASON_CLS_COMP
-void xlit_watch::merge_reason_idx(const vec<var_t>& idxs) {
+void lineral_watch::merge_reason_idx(const vec<var_t>& idxs) {
     if(idxs.empty()) return;
     diff_tmp.clear(); // diff_tmp is declared global and static, this saves creating new diff_s for each calling
     std::set_symmetric_difference(reason_cls_idxs.begin(), reason_cls_idxs.end(), idxs.begin(), idxs.end(), std::back_inserter(diff_tmp));
@@ -13,11 +13,11 @@ void xlit_watch::merge_reason_idx(const vec<var_t>& idxs) {
 }
 #endif
 
-bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
+bool lineral_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
     assert(reducible);
     diff_tmp.clear(); diff_tmp.reserve(idxs.size());
 
-    //@todo replace erase with copying? (similar to xlit::operator+ ?)
+    //@todo replace erase with copying? (similar to lineral::operator+ ?)
     std::set<var_t> rm_idxs;
   
     const auto wl0 = size()>0 ? get_wl0() : 0;
@@ -113,7 +113,7 @@ bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, con
     return ret;
 }
 
-bool xlit_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits, const var_t lvl) {
+bool lineral_watch::reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits, const var_t lvl) {
     assert(reducible);
     if(size()<=1) return false;
     diff_tmp.clear(); diff_tmp.reserve(idxs.size());

@@ -6,16 +6,16 @@
 #include <algorithm>
 #include <memory>
 
-#include "../misc.hpp"
-//forward declaration of class xsys
-class xsys;
+#include "misc.hpp"
+//forward declaration of class lin_sys
+class lin_sys;
 
 enum class presorted { yes, no };
 
 //sparse implementation of a xor-literal
-class xlit
+class lineral
 {
-    friend class xlit_watch;
+    friend class lineral_watch;
 
     private:
         bool p1;
@@ -23,33 +23,33 @@ class xlit
         vec< var_t > idxs; /**<  List of sorted indices of the terms. */
         
         //constructor for internal use only -- skips a check for flag 'presorted'
-        xlit(const vec< var_t >& idxs_, const bool p1_) noexcept : p1(p1_), idxs(idxs_) {
+        lineral(const vec< var_t >& idxs_, const bool p1_) noexcept : p1(p1_), idxs(idxs_) {
           assert( std::is_sorted(idxs.begin(), idxs.end()) );
         };
 
     public:
-        xlit() noexcept : p1(false), idxs(vec<var_t>({})) {};
-        xlit(xlit&& l) noexcept : p1(std::move(l.p1)), idxs(std::move(l.idxs)) {};
-        xlit(const xlit& l) noexcept : p1(l.p1), idxs(l.idxs) {}; // no init required, as l.idxs is already sorted (i.e. initialized!)
+        lineral() noexcept : p1(false), idxs(vec<var_t>({})) {};
+        lineral(lineral&& l) noexcept : p1(std::move(l.p1)), idxs(std::move(l.idxs)) {};
+        lineral(const lineral& l) noexcept : p1(l.p1), idxs(l.idxs) {}; // no init required, as l.idxs is already sorted (i.e. initialized!)
         //b can be set to true if idxs_ is already sorted...
-        xlit(const vec< var_t >& idxs_, const presorted b = presorted::no) noexcept : p1(false), idxs(std::move(idxs_)) {
+        lineral(const vec< var_t >& idxs_, const presorted b = presorted::no) noexcept : p1(false), idxs(std::move(idxs_)) {
           if(b==presorted::no){ init(); }
           else if( idxs.size()>0 && idxs[0]==0 ) { idxs.erase(idxs.begin()); p1^=true; }
         };
-        xlit(vec< var_t >&& idxs_, const presorted b = presorted::no) noexcept : p1(false), idxs(std::move(idxs_)) {
+        lineral(vec< var_t >&& idxs_, const presorted b = presorted::no) noexcept : p1(false), idxs(std::move(idxs_)) {
           if(b==presorted::no){ init(); }
           else if( idxs.size()>0 && idxs[0]==0 ) { idxs.erase(idxs.begin()); p1^=true; }
         };
-        xlit(const vec< var_t >& idxs_, const bool p1_, const presorted b) noexcept : p1(p1_), idxs(idxs_) { if(b==presorted::no){ init(); } };
-        xlit(vec< var_t >&& idxs_, const bool p1_, const presorted b = presorted::no) noexcept : p1(p1_), idxs(std::move(idxs_)) {
+        lineral(const vec< var_t >& idxs_, const bool p1_, const presorted b) noexcept : p1(p1_), idxs(idxs_) { if(b==presorted::no){ init(); } };
+        lineral(vec< var_t >&& idxs_, const bool p1_, const presorted b = presorted::no) noexcept : p1(p1_), idxs(std::move(idxs_)) {
           if(b==presorted::no){ init(); }
           else if( idxs.size()>0 && idxs[0]==0 ) { idxs.erase(idxs.begin()); p1^=true; }
         };
-        xlit(const var_t& idx, const bool p1_) noexcept : p1(p1_), idxs({idx}) { 
+        lineral(const var_t& idx, const bool p1_) noexcept : p1(p1_), idxs({idx}) { 
           if( idxs.size()>0 && idxs[0]==0 ) { idxs.clear(); p1^=true; }
         }
 
-        ~xlit() = default;
+        ~lineral() = default;
 
         inline void init() noexcept { 
             //sort
@@ -76,34 +76,34 @@ class xlit
 
         size_t hash() const;
 
-        inline xlit plus_one() const { return xlit( idxs, !p1, presorted::yes ); };
+        inline lineral plus_one() const { return lineral( idxs, !p1, presorted::yes ); };
 
-        inline xlit add_one() { p1 ^= true; return *this; };
+        inline lineral add_one() { p1 ^= true; return *this; };
     
         vec<var_t> support() const;
 
-        bool reduce(const xsys& sys);
+        bool reduce(const lin_sys& sys);
 
         /**
          * @brief Reduces the lineral by the given system s.t. the lineral increases in size no more than (1.50)^(sys.size()); also does nothing when size()<=3.
          * 
-         * @param sys input xsys
+         * @param sys input lin_sys
          * @return true iff lineral was updated
          */
-        bool reduce_short(const xsys& sys);
-        bool reduce(const vec<xlit>& assignments, const vec<var_t>& assignments_dl, const var_t& lvl);
+        bool reduce_short(const lin_sys& sys);
+        bool reduce(const vec<lineral>& assignments, const vec<var_t>& assignments_dl, const var_t& lvl);
         bool reduce(const vec<equivalence>& equiv_lits);
         bool reduce(const vec<equivalence>& equiv_lits, const var_t& lvl);
         bool reduce(const vec<bool3>& alpha);
         bool reduce(const vec<bool3>& alpha, const vec<equivalence>& equiv_lits);
         bool reduce(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl);
-        bool reduce(const vec<xlit>& assignments);
-        xlit reduced(const vec<xlit>& assignments) const { xlit ret(*this); ret.reduce(assignments); return ret; };
-        xlit reduced(const vec<bool3>& alpha) const { xlit ret(*this); ret.reduce(alpha); return ret; };
-        xlit reduced(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl) const { xlit ret(*this); ret.reduce(alpha, alpha_dl, lvl); return ret; };
-        xlit reduced(const vec<equivalence>& equiv_lits) { xlit ret(*this); ret.reduce(equiv_lits); return ret;};
-        xlit reduced(const vec<bool3>& alpha, const vec<equivalence>& equiv_lits) const { xlit ret(*this); ret.reduce(alpha, equiv_lits); return ret; };
-        vec<var_t> reducers(const vec<xlit>& assignments) const;
+        bool reduce(const vec<lineral>& assignments);
+        lineral reduced(const vec<lineral>& assignments) const { lineral ret(*this); ret.reduce(assignments); return ret; };
+        lineral reduced(const vec<bool3>& alpha) const { lineral ret(*this); ret.reduce(alpha); return ret; };
+        lineral reduced(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl) const { lineral ret(*this); ret.reduce(alpha, alpha_dl, lvl); return ret; };
+        lineral reduced(const vec<equivalence>& equiv_lits) { lineral ret(*this); ret.reduce(equiv_lits); return ret;};
+        lineral reduced(const vec<bool3>& alpha, const vec<equivalence>& equiv_lits) const { lineral ret(*this); ret.reduce(alpha, equiv_lits); return ret; };
+        vec<var_t> reducers(const vec<lineral>& assignments) const;
 
         inline vec<var_t> get_idxs() const { vec<var_t> r = idxs; if(p1){ r.insert(r.begin(), 0); } return r; };
         inline const vec<var_t>& get_idxs_() const { return idxs; };
@@ -119,23 +119,23 @@ class xlit
         std::string to_full_str(var_t num_vars) const;
 
         //overloaded operators
-	      xlit operator+(const xlit &other) const;
+	      lineral operator+(const lineral &other) const;
         //in-place operation (!)
-        xlit& operator +=(const xlit& other);	
-        inline xlit& operator =(const xlit& other) noexcept { idxs = other.idxs; p1 = other.p1; return *this; };
-        inline xlit& operator =(xlit&& other) noexcept { idxs = std::move(other.idxs); p1 = std::move(other.p1); return *this; };
+        lineral& operator +=(const lineral& other);	
+        inline lineral& operator =(const lineral& other) noexcept { idxs = other.idxs; p1 = other.p1; return *this; };
+        inline lineral& operator =(lineral&& other) noexcept { idxs = std::move(other.idxs); p1 = std::move(other.p1); return *this; };
 
-        void swap(xlit& other) noexcept { std::swap(idxs, other.idxs); std::swap(p1, other.p1); };
+        void swap(lineral& other) noexcept { std::swap(idxs, other.idxs); std::swap(p1, other.p1); };
 
-        xlit shared_part(const xlit& other) const;
+        lineral shared_part(const lineral& other) const;
 
-        inline bool operator ==(const xlit& other) const { return (p1==other.p1) && (idxs==other.idxs); };
-        bool operator <(const xlit& other) const;
+        inline bool operator ==(const lineral& other) const { return (p1==other.p1) && (idxs==other.idxs); };
+        bool operator <(const lineral& other) const;
         inline bool operator[](const var_t idx) const { return idx==0 ? p1 : std::binary_search(idxs.begin(), idxs.end(), idx); };
         std::ostream& operator<<(std::ostream& os) const;
 
         /**
-         * @brief computes the LBD (literal-block-distance) of the xlit; i.e., the number of different dl's occuring in idxs
+         * @brief computes the LBD (literal-block-distance) of the lineral; i.e., the number of different dl's occuring in idxs
          * 
          * @param alpha_dl current alpha dl
          * @return var_t LBD value
@@ -229,8 +229,8 @@ class xlit
 
 namespace std {
   template <>
-  struct hash<xlit> {
-    std::size_t operator()(const xlit& k) const {
+  struct hash<lineral> {
+    std::size_t operator()(const lineral& k) const {
       return k.hash();
     }
   };

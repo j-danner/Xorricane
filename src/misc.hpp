@@ -110,7 +110,7 @@ inline std::string b3_to_str(const bool3 b) { return b==bool3::None ? "None" : (
 inline bool b3_to_bool(const bool3 b) { assert(b!=bool3::None); return b==bool3::True; };
 
 
-class xlit_watch;
+class lineral_watch;
 
 /**
  * @brief structure for storing equivalence of vars; essentially a pair of ind and polarity
@@ -119,7 +119,7 @@ struct equivalence {
   var_t ind;
   var_t prev_ind;
   bool polarity;
-  list<xlit_watch>::iterator reason_lin;
+  list<lineral_watch>::iterator reason_lin;
   var_t lvl;
 
   equivalence() : ind(0), prev_ind(0), polarity(false), lvl(-1) {};
@@ -132,7 +132,7 @@ struct equivalence {
   void set_ind(const var_t _ind) { ind = _ind; };
   void set_prev_ind(const var_t _ind) { prev_ind = _ind; };
   void set_polarity(const bool _polarity) { polarity = _polarity; };
-  void set_lin(const list<xlit_watch>::iterator& reason_lin_) { reason_lin = reason_lin_; };
+  void set_lin(const list<lineral_watch>::iterator& reason_lin_) { reason_lin = reason_lin_; };
   void set_lvl(const var_t lvl_) { lvl = lvl_; };
 
   bool is_active() const { return ind>0; };
@@ -423,7 +423,7 @@ class stats {
 };
 
 //functions for solving
-class xlit;
+class lineral;
 
 /**
  * @brief solves xnf using provided opts
@@ -435,9 +435,9 @@ class xlit;
  * 
  * @return int exit code
  */
-int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s);
+int solve(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& opts, stats& s);
 
-stats solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts);
+stats solve(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& opts);
 
 /**
  * @brief perform one GCP on xnf using provided opts
@@ -447,7 +447,7 @@ stats solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& op
  * @param num_vars number of variables
  * @param s stats to put statistics into
  */
-std::string gcp_only(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s);
+std::string gcp_only(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& opts, stats& s);
 
-bool check_sol(const vec< vec<xlit> >& clss, const vec<bool>& sol);
-bool check_sols(const vec< vec<xlit> >& clss, const list<vec<bool>>& sols);
+bool check_sol(const vec< vec<lineral> >& clss, const vec<bool>& sol);
+bool check_sols(const vec< vec<lineral> >& clss, const list<vec<bool>>& sols);

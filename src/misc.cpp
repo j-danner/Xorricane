@@ -1,6 +1,6 @@
 #include "solver.hpp"
 #include "misc.hpp"
-#include "xlit/xlit.hpp"
+#include "lineral.hpp"
 
 #include <future>
 #include <thread>
@@ -16,7 +16,7 @@ namespace {
 } // namespace
 
 //main solving func; solves xnf using opts! -- returns 10 for SAT, 20 for UNSAT, 0 for timeout
-int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s) {
+int solve(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& opts, stats& s) {
     //time comp, start
     if(s.begin==std::chrono::high_resolution_clock::time_point::min()) s.begin = std::chrono::high_resolution_clock::now();
 
@@ -70,12 +70,12 @@ int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts
     }
 }
 
-stats solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts) {
+stats solve(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& opts) {
     stats s; solve(xnf, num_vars, opts, s); return s;
 }
 
 //perform one gcp run
-std::string gcp_only(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s) {
+std::string gcp_only(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& opts, stats& s) {
     //time comp, start
     s.begin = std::chrono::high_resolution_clock::now();
 
@@ -121,14 +121,14 @@ std::string gcp_only(const vec< vec<xlit> >& xnf, const var_t num_vars, const op
 }
 
 
-bool check_sol(const vec< vec<xlit> >& clss, const vec<bool>& sol) {
+bool check_sol(const vec< vec<lineral> >& clss, const vec<bool>& sol) {
     return std::all_of( clss.begin(), clss.end(), /* all clauses need to be satisfied */
-                    [&sol] (vec<xlit> xcls) -> bool { 
-                        return std::any_of(xcls.begin(), xcls.end(), [&sol](xlit l) { return l.eval(sol); } ); /* at least one lit of clause must be satisfied */
+                    [&sol] (vec<lineral> cls) -> bool { 
+                        return std::any_of(cls.begin(), cls.end(), [&sol](lineral l) { return l.eval(sol); } ); /* at least one lit of clause must be satisfied */
                         }
                     );
 }
 
-bool check_sols(const vec< vec<xlit> >& clss, const list<vec<bool>>& sols) {
+bool check_sols(const vec< vec<lineral> >& clss, const list<vec<bool>>& sols) {
     return std::all_of( sols.begin(), sols.end(), [&clss,&sols](const vec<bool>& sol){ return sol.size()==0 || check_sol(clss, sol); } );
 }

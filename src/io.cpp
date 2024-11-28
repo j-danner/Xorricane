@@ -35,8 +35,8 @@ parsed_xnf parse_file(std::istream& file) {
     var_t num_cls = 0;
     var_t actual_num_cls = 0;
     
-    vec< vec<xlit> > cls;
-    vec< xlit > cl;
+    vec< vec<lineral> > cls;
+    vec< lineral > cl;
     std::set< var_t > idxs;
 
     int v_ = 0;
@@ -142,9 +142,9 @@ parsed_xnf parse_file(const std::string& fname) {
     }
 }
 
-std::string to_str(const vec< vec<xlit> >& xclss) {
+std::string to_str(const vec< vec<lineral> >& clss) {
     std::string str = "";
-    for (auto &cls : xclss) {
+    for (auto &cls : clss) {
         for (auto &&l : cls) {
             str.append( l.to_str() + " " );
         }

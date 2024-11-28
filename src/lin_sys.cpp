@@ -1,11 +1,11 @@
 #include <sstream>
 
-#include "xsys.hpp"
+#include "lin_sys.hpp"
 
 
-void xsys::rref() {
+void lin_sys::rref() {
     pivot_poly_its.clear();
-    for(xlits_it it = xlits.begin(); it!=xlits.end();) {
+    for(linerals_it it = linerals.begin(); it!=linerals.end();) {
         //reduce new row (with non-zero pivot-rows)
         for (const auto &[lt,row] : pivot_poly_its)
         {
@@ -27,14 +27,14 @@ void xsys::rref() {
 
             ++it;
         } else {
-            //if zero, remove row from xlits + adjust running var i
-            it = xlits.erase( it );
+            //if zero, remove row from linerals + adjust running var i
+            it = linerals.erase( it );
         }
     }
 };
 
-xlit xsys::reduce(const xlit& l) const {
-    xlit l_(l);
+lineral lin_sys::reduce(const lineral& l) const {
+    lineral l_(l);
     for (const auto &[lt,row] : pivot_poly_its) {
         if(l_[lt]) {
             l_ += *row;
@@ -43,7 +43,7 @@ xlit xsys::reduce(const xlit& l) const {
     return l_;
 }
 
-bool xsys::lt_update(const xlit& l) {
+bool lin_sys::lt_update(const lineral& l) {
     const auto search = pivot_poly_its.find( l.LT() );
     if(search == pivot_poly_its.end()) return false;
     const auto row = search->second;
@@ -64,9 +64,9 @@ bool xsys::lt_update(const xlit& l) {
     return true;
 };
 
-xlit tmp_lin;
-bool xsys::lt_update_short(const xlit& l) {
-    //complexity to find correct update xlits: O( log( this.size() ) * sys.size() )
+lineral tmp_lin;
+bool lin_sys::lt_update_short(const lineral& l) {
+    //complexity to find correct update linerals: O( log( this.size() ) * sys.size() )
     const auto search = pivot_poly_its.find( l.LT() );
     if(search == pivot_poly_its.end()) return false;
     const auto row = search->second;
@@ -90,19 +90,19 @@ bool xsys::lt_update_short(const xlit& l) {
     return true;
 };
 
-xsys xsys::operator+(const xsys &other) const {
-    xsys cpy(*this);
+lin_sys lin_sys::operator+(const lin_sys &other) const {
+    lin_sys cpy(*this);
     cpy += other;
     return cpy;
 };
 
-xsys& xsys::operator +=(const xsys& other) {
-    xlits_it it = xlits.end();
+lin_sys& lin_sys::operator +=(const lin_sys& other) {
+    linerals_it it = linerals.end();
     it--;
-    auto other_xlits = other.get_xlits();
-    xlits.splice(xlits.end(), std::move(other_xlits));
-    it++; //now it points to first element in other.xlits
-    while(it!=xlits.end()) {
+    auto other_linerals = other.get_linerals();
+    linerals.splice(linerals.end(), std::move(other_linerals));
+    it++; //now it points to first element in other.linerals
+    while(it!=linerals.end()) {
         //reduce new row
         for (const auto &[lt,row] : pivot_poly_its)
         {
@@ -124,61 +124,61 @@ xsys& xsys::operator +=(const xsys& other) {
 
             ++it;
         } else {
-            //if zero, remove row from xlits + adjust running var i
-            it = xlits.erase( it );
+            //if zero, remove row from linerals + adjust running var i
+            it = linerals.erase( it );
         }
     }
     return *this;
 };
 
-void xsys::add_reduced_lit(xlit&& l) {
+void lin_sys::add_reduced_lit(lineral&& l) {
     if(l.is_zero()) return;
     //assert that l is indeed reduced
     assert( reduce(l) == l );
-    for(auto& r : xlits) {
+    for(auto& r : linerals) {
         if(r[l.LT()]) r += l;
     }
-    //append l to xlits
-    xlits.emplace_back( std::move(l) );
+    //append l to linerals
+    linerals.emplace_back( std::move(l) );
     //add to pivot_poly_its
-    assert(!pivot_poly_its.contains(xlits.back().LT()));
-    pivot_poly_its[xlits.back().LT()] = std::prev(xlits.end());
+    assert(!pivot_poly_its.contains(linerals.back().LT()));
+    pivot_poly_its[linerals.back().LT()] = std::prev(linerals.end());
 };
 
-void xsys::add_reduced_lit(const xlit& l) {
+void lin_sys::add_reduced_lit(const lineral& l) {
     if(l.is_zero()) return;
     //assert that l is indeed reduced
     assert( reduce(l) == l );
-    for(auto& r : xlits) {
+    for(auto& r : linerals) {
         if(r[l.LT()]) r += l;
     }
-    //append l to xlits
-    xlits.push_back( l );
+    //append l to linerals
+    linerals.push_back( l );
     //add to pivot_poly_its
     assert(!pivot_poly_its.contains(l.LT()));
-    pivot_poly_its[xlits.back().LT()] = std::prev(xlits.end());
+    pivot_poly_its[linerals.back().LT()] = std::prev(linerals.end());
 };
 
-bool xsys::eval(const vec<bool>& sol) const {
-    return std::all_of(xlits.begin(), xlits.end(), [&sol](xlit l) { return l.eval(sol); } );
+bool lin_sys::eval(const vec<bool>& sol) const {
+    return std::all_of(linerals.begin(), linerals.end(), [&sol](lineral l) { return l.eval(sol); } );
 };
 
-void xsys::solve(vec<bool>& sol_) const {
-    if(xlits.size()==0) return;
+void lin_sys::solve(vec<bool>& sol_) const {
+    if(linerals.size()==0) return;
     for (const auto &[lt,row] : pivot_poly_its) {
         sol_[lt-1] = row->eval(sol_) ? sol_[lt-1] : !sol_[lt-1];
     }
 };
 
-std::string xsys::to_str() const {
-    vec< std::string > str_xlits( xlits.size() );
-    auto to_str = [](const xlit l) -> std::string {return l.to_str();};
-    std::transform(xlits.begin(), xlits.end(), str_xlits.begin(), to_str);
-    std::sort(str_xlits.begin(), str_xlits.end());
+std::string lin_sys::to_str() const {
+    vec< std::string > str_linerals( linerals.size() );
+    auto to_str = [](const lineral l) -> std::string {return l.to_str();};
+    std::transform(linerals.begin(), linerals.end(), str_linerals.begin(), to_str);
+    std::sort(str_linerals.begin(), str_linerals.end());
     //rotate if 1 is first element
-    if(str_xlits.size()>0 && str_xlits[0]=="1") std::rotate(str_xlits.begin(), str_xlits.begin()+1, str_xlits.end());
+    if(str_linerals.size()>0 && str_linerals[0]=="1") std::rotate(str_linerals.begin(), str_linerals.begin()+1, str_linerals.end());
     std::stringstream ss;
-    std::copy(str_xlits.begin(), str_xlits.end(), std::ostream_iterator<std::string>(ss, " "));
+    std::copy(str_linerals.begin(), str_linerals.end(), std::ostream_iterator<std::string>(ss, " "));
     std::string result = ss.str();
     if (!result.empty()) {
         result.resize(result.length() - 1); // trim trailing space
