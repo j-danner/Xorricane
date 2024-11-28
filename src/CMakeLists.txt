@@ -67,6 +67,56 @@ if(NOT M4RI_LIBRARY)
     message(FATAL_ERROR "m4ri library not found!")
 endif()
 
+# add impl_graph library
+# options
+option(USE_TRIE "Use trie for graph labels" ON)
+if(USE_TRIE)
+    message("using trie data structure for graph labels!")
+    add_definitions(-DUSE_TRIE)
+endif()
+
+option(FULL_REDUCTION "always fully reduce vertex labels" ON) #DO NOT DEACTIVATE!
+if(FULL_REDUCTION)
+    message("use full-reduction for updating vertices")
+    add_definitions(-DFULL_REDUCTION)
+else()
+    message( FATAL_ERROR "THERE ARE KNOWN BUGS when FULL_REDUCTION is OFF! -- DO NOT DEACTIVATE!")
+endif()
+
+#add graph library
+add_library(
+    impl_graph
+    STATIC
+    #misc
+    xornado/misc.hpp
+    #xlit
+    xornado/LA/lineral.hpp
+    xornado/LA/lineral.cpp
+    #xsys
+    xornado/LA/lineqs.hpp
+    xornado/LA/lineqs.cpp 
+    #graph
+    xornado/graph/graph.hpp
+    xornado/graph/graph_al.hpp
+    xornado/graph/graph_al.cpp
+    #impl_graph
+    xornado/impl_graph.hpp
+    xornado/impl_graph.cpp
+    #vert_label
+    xornado/vl/vl.hpp
+    xornado/vl/vl_trie.hpp
+    xornado/vl/vl_trie.cpp
+    xornado/vl/vl_hmap.hpp
+    xornado/vl/vl_hmap.cpp
+    #hashmaps
+    xornado/parallel-hashmap/phmap.h
+    xornado/robin_hood-3.11.5/robin_hood.h
+)
+
+target_link_libraries(impl_graph PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY})
+target_include_directories(impl_graph PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src")
+
+
 #generate 
 target_link_libraries(solver PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY} PRIVATE lineral_lazy)
 target_include_directories(solver PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src")
