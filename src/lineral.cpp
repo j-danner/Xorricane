@@ -16,13 +16,13 @@ vec<var_t> diff_;
 
 
 size_t lineral::hash() const {
-    size_t h = idxs.size() + (p1 ? 1 : 0);
-    h = p1 ? h : h^~0;
-    for (auto &&i : idxs) {  
-        h = (h << i) ^ ~i;
+    size_t h = std::hash<bool>()(p1); // Hash the boolean value p1
+    // Combine the hash of each element in idxs with the current hash
+    for (const auto& i : idxs) {
+        h ^= std::hash<var_t>()(i) + 0x9e3779b9 + (h << 6) + (h >> 2); // Use a mixing function
     }
     return h;
-};
+}
 
 //gcc-dependent integer log2 func
 #define LOG2(X) ((int) (8*sizeof (unsigned long long) - __builtin_clzll((X)) - 1))
