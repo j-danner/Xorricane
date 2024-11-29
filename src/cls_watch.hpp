@@ -154,8 +154,8 @@ private:
   };
   
   /**
-   * @brief advances ws[0], 
-   * @note assumes that clause is UNIT under alpha, and implied unit is reduced to 1 under alpha.
+   * @brief advances ws[0] such that ws[0] and ws[1] satisfy all invariants; 'repairs' inactive watches
+   * @note assumes that clause is UNIT under alpha
    *
    * @param alpha current bool3-alpha
    * @param alpha_dl dl of alpha-assignments
