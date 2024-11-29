@@ -842,7 +842,7 @@ void solver::dpll_solve(stats &s) {
             const auto L = get_lineral_watches_lin_sys();
             if (!L.is_consistent()) {
                 //enforce backtracking!
-                lineral_watches[dl].emplace_back( lineral(0, false), alpha, alpha_dl, dl_count, dl );
+                lineral_watches[dl].emplace_back( lineral(cnst::one), alpha, alpha_dl, dl_count, dl );
                 process_lineral(std::prev(lineral_watches[dl].end()), dl, queue_t::NEW_GUESS);
             } else {
                 solve_L(L, s);

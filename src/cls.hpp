@@ -42,7 +42,7 @@ class cls {
 
     bool is_unit() const { return deg()<=1 || is_zero(); };
 
-    lineral get_unit() const { assert(is_unit()); return deg()==1 ? assVS.get_non_zero_el().add_one() : lineral(0, false); };
+    lineral get_unit() const { assert(is_unit()); return deg()==1 ? assVS.get_non_zero_el().add_one() : lineral(cnst::one); };
 
     cls& reduced(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const var_t& lvl) {
       list<lineral> lits;
