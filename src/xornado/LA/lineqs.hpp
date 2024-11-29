@@ -22,11 +22,11 @@
 #include <string>
 #include <map>
 
-#include "lineral.hpp"
+#include "../../lineral.hpp"
 
 #include "../robin_hood-3.11.5/robin_hood.h"
 
-#include <m4ri/m4ri.h>
+namespace xornado {
 
 #ifdef NDEBUG
   template<class K, class V>
@@ -140,3 +140,5 @@ vec<lineral> intersect(const LinEqs& U, const LinEqs& W);
 std::pair<bool, lineral> intersectaffineVS(const LinEqs& U, const LinEqs& W);
 
 vec<lineral> extend_basis(const vec<lineral>& B, const LinEqs& L);
+
+}

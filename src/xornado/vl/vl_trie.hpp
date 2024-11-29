@@ -27,8 +27,7 @@
 #include <iterator>
 
 #include "../misc.hpp"
-#include "../LA/lineral.hpp"
-#include "../LA/lineqs.hpp"
+#include "../../lineral.hpp"
 
 #include "../robin_hood-3.11.5/robin_hood.h"
 //#include "../parallel-hashmap/phmap.h"

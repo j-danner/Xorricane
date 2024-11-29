@@ -28,13 +28,16 @@
 
 #include "misc.hpp"
 #include "graph/graph.hpp"
-#include "LA/lineral.hpp"
-#include "LA/lineqs.hpp"
+#include "../lineral.hpp"
+#include "../lin_sys.hpp"
 
 #define Lsys xsys_stack.back()
 #define linsys xsys_stack.back().back()
 
 #include "vl/vl.hpp"
+
+//forward declare class solver
+class solver;
 
 namespace xornado {
 
@@ -153,7 +156,7 @@ class stats {
       std::cout << "c v_upd/dec  : " << ((double) no_vert_upd)/((double) no_dec) << std::endl;
       std::cout << "c " << std::endl;
       std::cout << "c avg graph size : " << ((double) total_upd_no_v)/((double) no_graph_upd) << std::endl;
-      std::cout << "c avg LinEqs size  : " << ((double) total_upd_xsys_size)/((double) no_graph_upd) << std::endl;
+      std::cout << "c avg lin_sys size  : " << ((double) total_upd_xsys_size)/((double) no_graph_upd) << std::endl;
       std::cout << "c " << std::endl;
 
       std::cout << "c lins from upd  : " << new_px_upd << std::endl;
@@ -227,6 +230,8 @@ struct parsed_xnf {
  */
 class impl_graph : public graph
 {
+  friend class solver;
+
   private:
     vert_label vl;
     /**
@@ -242,14 +247,7 @@ class impl_graph : public graph
     /**
      * @brief stack of lists of xsyses for backtracking
      */
-    std::list< std::list<LinEqs> > xsys_stack;
-
-#ifndef FULL_REDUCTION
-    /**
-     * @brief current assignments
-     */
-    vec<lineral> assignments;
-#endif
+    std::list< std::list<lin_sys> > xsys_stack;
 
     /**
      * @brief options for heuristics of dpll-solver (and more)
@@ -273,35 +271,35 @@ class impl_graph : public graph
     void scc_dfs_util(const var_t rt, vec<lineral>& linerals, var_t v, vec<bool>& visited, std::list< std::pair<var_t,var_t> >& merge_list) const;
     void scc_fillOrder(const var_t v, vec<bool>& visited, std::stack<var_t> &Stack) const;
 
-    typedef LinEqs (impl_graph::*upd_t)(xornado::stats& s, const LinEqs&);
-    typedef LinEqs (impl_graph::*fls_t)() const;
-    typedef std::pair<LinEqs,LinEqs> (impl_graph::*dec_heu_t)() const;
+    typedef lin_sys (impl_graph::*upd_t)(xornado::stats& s, const lin_sys&);
+    typedef lin_sys (impl_graph::*fls_t)() const;
+    typedef std::pair<lin_sys,lin_sys> (impl_graph::*dec_heu_t)() const;
 
     void crGCP(xornado::stats& s, const upd_t upd, const fls_t fls, const bool scheduled_fls);
     void crGCP(xornado::stats& s, const upd_t upd = &impl_graph::update_graph, const fls_t fls = &impl_graph::fls_no ) { crGCP(s,upd,fls, true); };
     void crGCP_no_schedule(xornado::stats& s, const upd_t upd = &impl_graph::update_graph, const fls_t fls = &impl_graph::fls_no ) { crGCP(s,upd,fls, false); };
 
-    void bump_score(const LinEqs& new_xsys);
+    void bump_score(const lin_sys& new_xsys);
     void decay_score();
 
     /**
      * @brief computes all linerals implied by lit (calls crGCP with fls_no! modifies graph but backtracks afterwards!)
      * 
      * @param lit lineral that is assumed to be true
-     * @return LinEqs system of implied linerals
+     * @return lin_sys system of implied linerals
      */
-    LinEqs implied_xlits(lineral& lit) {
+    lin_sys implied_xlits(lineral& lit) {
       //(1) save state
       auto g_state = get_state();
       auto vl_state = vl.get_state();
-      xsys_stack.emplace_back( std::list<LinEqs>() );
+      xsys_stack.emplace_back( std::list<lin_sys>() );
       add_new_xsys( lit );
 
       //(2) call crGCP
       xornado::stats s;
       crGCP_no_schedule(s);
       //sum over all list els in xsys_stack.top
-      LinEqs implied_lits;
+      lin_sys implied_lits;
       for(const auto& sys : xsys_stack.back()) implied_lits += sys;
 
       //(3) backtrack state
@@ -346,6 +344,8 @@ class impl_graph : public graph
      * @param opt_ options for heuristics, also includes number of vars
      */
     impl_graph(const vec< vec<lineral> >& clss, const options& opt_);
+    
+    impl_graph(const vec< vec<lineral> >& clss, const var_t num_vars) : impl_graph(clss, options(num_vars, clss.size())) {};
 
     /**
      * @brief Construct a new impl graph
@@ -359,34 +359,27 @@ class impl_graph : public graph
 
     ~impl_graph() = default;
 
-    inline void add_new_xsys(const LinEqs& L) {
-    #ifndef FULL_REDUCTION
-      //update assignments
-      for(const auto [lt,idx] : L.get_pivot_poly_idx()) {
-          assert( assignments[lt].is_zero() );
-          assignments[lt] = L.get_linerals(idx);
-      }
-    #endif
+    inline void add_new_xsys(const lin_sys& L) {
       xsys_stack.back().emplace_back(L);
     };
 
     //various implementations to choose from for the core update functions!
-    LinEqs update_graph(xornado::stats& s, const LinEqs& L);
+    lin_sys update_graph(xornado::stats& s, const lin_sys& L);
 
-    LinEqs update_graph_par(xornado::stats& s, const LinEqs& L);
+    lin_sys update_graph_par(xornado::stats& s, const lin_sys& L);
 
-    LinEqs update_graph_hash_fight(xornado::stats& s, const LinEqs& L);
+    lin_sys update_graph_hash_fight(xornado::stats& s, const lin_sys& L);
 
-    LinEqs update_graph_hash_fight_dev(xornado::stats& s, const LinEqs& L);
+    lin_sys update_graph_hash_fight_dev(xornado::stats& s, const lin_sys& L);
     
     //wrappers for update_funcs when xornado::stats are irrelevant
-    inline LinEqs update_graph(const LinEqs& L) { return update_graph(s, L); };
-    inline LinEqs update_graph_par(const LinEqs& L) { return update_graph_par(s, L); };
-    inline LinEqs update_graph_hash_fight(const LinEqs& L) { return update_graph_hash_fight(s, L); };
-    inline LinEqs update_graph_hash_fight_dev(const LinEqs& L) { return update_graph_hash_fight_dev(s, L); };
+    inline lin_sys update_graph(const lin_sys& L) { return update_graph(s, L); };
+    inline lin_sys update_graph_par(const lin_sys& L) { return update_graph_par(s, L); };
+    inline lin_sys update_graph_hash_fight(const lin_sys& L) { return update_graph_hash_fight(s, L); };
+    inline lin_sys update_graph_hash_fight_dev(const lin_sys& L) { return update_graph_hash_fight_dev(s, L); };
 
     //in-processing
-    LinEqs scc_analysis();
+    lin_sys scc_analysis();
 
     /**
      * @brief compute roots of graph
@@ -444,12 +437,12 @@ class impl_graph : public graph
     };
 
 
-    LinEqs fls_no() const;
-    LinEqs fls_trivial() const; 
-    LinEqs fls_trivial_cc() const;
-    LinEqs fls_full() const;
+    lin_sys fls_no() const;
+    lin_sys fls_trivial() const; 
+    lin_sys fls_trivial_cc() const;
+    lin_sys fls_full() const;
     //currently unused, as computationally expensive
-    LinEqs fls_full_implied();
+    lin_sys fls_full_implied();
 
     //preprocess
     inline void preprocess();
@@ -459,33 +452,32 @@ class impl_graph : public graph
     /**
      * @brief branch on first vertex (i.e. vert at first position in L)
      */
-    std::pair< LinEqs, LinEqs > first_vert() const;
+    std::pair< lin_sys, lin_sys > first_vert() const;
 
     /**
      * @brief branch on largest tree, i.e., guess the whole to be correct
      */
-    std::pair< LinEqs, LinEqs > max_reach() const;
+    std::pair< lin_sys, lin_sys > max_reach() const;
 
     /**
      * @brief branch on making the largest bottleneck
      */
-    std::pair< LinEqs, LinEqs > max_bottleneck() const;
+    std::pair< lin_sys, lin_sys > max_bottleneck() const;
 
     /**
      * @brief branch on lexicographically next un-assigned idx
      */
-    std::pair< LinEqs, LinEqs > lex() const;
+    std::pair< lin_sys, lin_sys > lex() const;
 
     /**
      * @brief branch on making the longest path a cycle
-     * @note if FULL_REDUCTION is not defined, and guess was already previously made, it relies on max_reach heuristic!
      */
-    std::pair< LinEqs, LinEqs > max_path() const;
+    std::pair< lin_sys, lin_sys > max_path() const;
 
     /**
      * @brief branch on making the path of highest score a cycle; note: longer paths are preferred!
      */
-    std::pair< LinEqs, LinEqs > max_score_path() const;
+    std::pair< lin_sys, lin_sys > max_score_path() const;
 
     //solve-main
     xornado::stats dpll_solve() { return dpll_solve(s); };
@@ -500,23 +492,12 @@ class impl_graph : public graph
 
     std::string to_str_() const;
 
-    impl_graph& operator=(const impl_graph& ig) = delete;
+    impl_graph& operator=(const impl_graph& ig) = default;
 
     bool assert_data_structs() const noexcept;
 
     options* get_opts() { return &opt; };
     const options* get_const_opts() const { return &opt; };
-    
-  #ifndef FULL_REDUCTION
-    void print_assignments(std::string lead = "") const noexcept {
-      VERB(80, lead);
-      VERB(80, lead+" assignments");
-      VERB(80, lead+" lt ass");
-      for(var_t i = 0; i<assignments.size(); ++i) {
-          VERB(80, lead+" " + std::to_string(i) + " " + assignments[i].to_str());
-      }
-    };
-  #endif
 };
 
 }

@@ -22,7 +22,9 @@
 #include <memory>
 #include <stack>
 
-#include "../LA/lineral.hpp"
+#include "../misc.hpp"
+
+#include "../../lineral.hpp"
 
 #include "../parallel-hashmap/phmap.h"
 #include "../robin_hood-3.11.5/robin_hood.h"

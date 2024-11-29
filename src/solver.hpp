@@ -19,6 +19,7 @@
 #include "cls_watch_resolver.hpp"
 #include "order_heap/heap.h"
 
+#include "xornado/impl_graph.hpp"
 
 #define TRAIL trails.back()
 
@@ -173,7 +174,6 @@ class solver
      */
     vec< list< watch_list_elem > > L_watch_list;
 
-
     /**
      * @brief options for heuristics of solver (and more)
      */
@@ -203,6 +203,8 @@ class solver
     double bump = 1;
     const float decay = 0.95;
     Heap<VarOrderLt> order_heap_vsids{ VarOrderLt(activity_score) };
+
+    xornado::impl_graph IG;
 
     /**
      * @brief checks 
@@ -957,7 +959,7 @@ class solver
     solver(parsed_xnf& p_xnf, guessing_path& P) noexcept : solver(p_xnf.cls, p_xnf.num_vars, options(P)) {};
 
     //copy ctor -- re-adds all clauses, i.e., looses precise state of watched vars and trail; but keeps activity_score and utility!
-    solver(const solver& o) noexcept : opt(o.opt), activity_score(o.activity_score), dl_count(o.dl_count), last_phase(o.last_phase) { 
+    solver(const solver& o) noexcept : opt(o.opt), IG(o.IG), activity_score(o.activity_score), dl_count(o.dl_count), last_phase(o.last_phase) { 
       opt.verb = 0;
       backtrack(0);
       // init data structures

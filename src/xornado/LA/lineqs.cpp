@@ -24,6 +24,9 @@
 #include <sstream>
 #include <iterator>
 
+#include <m4ri/m4ri.h>
+
+using namespace xornado;
 
 
 void LinEqs::rref() {
@@ -255,89 +258,6 @@ std::string LinEqs::to_str() const {
 
 
 //Intersect xsyses
-
-vec<lineral> intersect(const LinEqs& U, const LinEqs& W) {
-    //Zassenhaus Alg: Put U, W in Matrix [ U U \\ W 0 ] and compute rref [ A 0 \\ 0 B ]. Then B corr to basis of U \cap W.
-    //NOTE assumes that n_vars is less than half of max val (of var_t type)
-
-    //if U contains 1 return W and vice versa
-    if(!U.is_consistent()) return W.get_linerals();
-    if(!W.is_consistent()) return U.get_linerals();
-    
-    //rewrite linerals s.t. they have a continous range of idxs
-    vec<var_t> supp = vec<var_t>({0});
-    vec<var_t> tmp;
-    for(const auto& l : U.get_linerals()) {
-        std::set_union( supp.begin(), supp.end(), l.begin(), l.end(), std::back_insert_iterator(tmp) );
-        std::swap(tmp, supp);
-        tmp.clear();
-    }
-    for(const auto& l : W.get_linerals()) {
-        std::set_union( supp.begin(), supp.end(), l.begin(), l.end(), std::back_insert_iterator(tmp) );
-        std::swap(tmp, supp);
-        tmp.clear();
-    }
-    //now supp contains all lits that occur in U and W
-    std::unordered_map<var_t, var_t> Isupp;
-    for(var_t i=0; i<supp.size(); ++i) Isupp[ supp[i] ] = i;
-    const var_t n_vars = supp.size();
-
-    rci_t nrows = U.dim() + W.dim();
-    rci_t ncols = 2*(n_vars+1);
-
-    mzd_t* M = mzd_init(nrows, ncols);
-    assert( mzd_is_zero(M) );
-
-    //fill with U
-    rci_t r = 0;
-    for(const auto& l : U.get_linerals()) {
-        if(l.is_zero()) continue;
-        if(l.has_constant()) {
-            mzd_write_bit(M, r, 0, 1);
-            mzd_write_bit(M, r, n_vars+1, 1);
-        }
-        for(const auto& i : l.get_idxs_()) {
-            assert(i>0);
-            assert(Isupp[i]+n_vars+1<ncols);
-            mzd_write_bit(M, r, Isupp[i], 1);
-            mzd_write_bit(M, r, Isupp[i]+n_vars+1, 1);
-        }
-        ++r;
-    }
-    //fill with W
-    for(const auto& l : W.get_linerals()) {
-        if(l.is_zero()) continue;
-        if(l.has_constant()) mzd_write_bit(M, r, 0, 1);
-        for(const auto& i : l.get_idxs_()) {
-            assert(i>0);
-            mzd_write_bit(M, r, Isupp[i], 1);
-        }
-        ++r;
-    }
-    assert(r == nrows);
-
-    //compute rref
-    const rci_t rank = mzd_echelonize(M, true);
-    //read results
-    vec<lineral> int_lits;
-    r = rank-1;
-    while(r>0) {
-        mzd_t* r_ = mzd_init_window(M, r, 0, r+1, n_vars+1);
-        if(!mzd_is_zero(r_)) { mzd_free_window(r_); break;}
-        mzd_free_window(r_);
-
-        vec<var_t> idxs;
-        for(rci_t c=(n_vars+1)+1; c<ncols; ++c) {
-            if( mzd_read_bit(M, r, c) ) idxs.push_back(supp[c-n_vars-1]);
-        }
-        int_lits.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars+1), true );
-        --r;
-    }
-
-    mzd_free(M);
-    
-    return int_lits;
-}
 
 std::pair<bool, lineral> intersectaffineVS(const LinEqs& U, const LinEqs& W) {
     //replace U and W with matrix representations; find l s.t. l in U and l+1 in W, i.e.,

@@ -28,7 +28,7 @@ std::ostream& operator<<(std::ostream& os, const queue_t& t) {
     return os;
 }
 
-solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const options& opt_) noexcept : opt(opt_) {
+solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const options& opt_) noexcept : opt(opt_), IG(clss, xornado::options(num_vars, clss.size())) {
     vec< cls > clss_; clss_.reserve(clss.size());
     for(const auto& cls : clss) {
         clss_.emplace_back( cls );
@@ -73,6 +73,10 @@ solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const opti
 
     //init restart params
     update_restart_schedule(0);
+
+    ////preprocess using IG
+    //const xornado::options x_opt(num_vars, clss.size(), xornado::dec_heu::fv, xornado::fls_alg::full, 1, xornado::upd_alg::hf, xornado::sc::active, xornado::constr::simple, xornado::preproc::fls_scc, opt.verb, opt.timeout);
+    //IG = xornado::impl_graph(clss, x_opt);
 }
 
 void solver::init_clss(const vec< cls >& clss) noexcept {

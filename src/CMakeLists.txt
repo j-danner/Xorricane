@@ -75,13 +75,6 @@ if(USE_TRIE)
     add_definitions(-DUSE_TRIE)
 endif()
 
-option(FULL_REDUCTION "always fully reduce vertex labels" ON) #DO NOT DEACTIVATE!
-if(FULL_REDUCTION)
-    message("use full-reduction for updating vertices")
-    add_definitions(-DFULL_REDUCTION)
-else()
-    message( FATAL_ERROR "THERE ARE KNOWN BUGS when FULL_REDUCTION is OFF! -- DO NOT DEACTIVATE!")
-endif()
 
 #add graph library
 add_library(
@@ -89,12 +82,6 @@ add_library(
     STATIC
     #misc
     xornado/misc.hpp
-    #xlit
-    xornado/LA/lineral.hpp
-    xornado/LA/lineral.cpp
-    #xsys
-    xornado/LA/lineqs.hpp
-    xornado/LA/lineqs.cpp 
     #graph
     xornado/graph/graph.hpp
     xornado/graph/graph_al.hpp
@@ -113,11 +100,11 @@ add_library(
     xornado/robin_hood-3.11.5/robin_hood.h
 )
 
-target_link_libraries(impl_graph PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY})
+target_link_libraries(impl_graph PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY} PRIVATE lineral)
 target_include_directories(impl_graph PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src")
 
 
 #generate 
-target_link_libraries(solver PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY} PRIVATE lineral_lazy)
+target_link_libraries(solver PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY} PRIVATE lineral_lazy impl_graph)
 target_include_directories(solver PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src")
 

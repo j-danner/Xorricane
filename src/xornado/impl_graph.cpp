@@ -27,6 +27,8 @@
 #include "robin_hood-3.11.5/robin_hood.h"
 #include "impl_graph.hpp"
 
+#include "m4ri/m4ri.h"
+
 #include <unordered_set>
 
 using namespace xornado;
@@ -34,151 +36,101 @@ using namespace xornado;
 impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : graph(), opt(opt_) {
     vec< vec<lineral> > clss = clss_;
 
-    bool repeat = true;
-    while(repeat) {
-        repeat = false;
+    //init stacks
+    graph_stack = std::stack< graph_repr >();
+    xsys_stack = std::list< std::list<lin_sys> >();
+    //init maps
+    vl_stack = std::stack< vert_label_repr >();
 
-        //init stacks
-        graph_stack = std::stack< graph_repr >();
-        xsys_stack = std::list< std::list<LinEqs> >();
-        //init maps
-        vl_stack = std::stack< vert_label_repr >();
-    #ifndef FULL_REDUCTION
-        //init assignments
-        assignments = vec<lineral>(opt.num_vars+1, lineral());
-    #endif
+    auto E = vec< std::pair<var_t,var_t> >();
+    E.reserve( (opt.ext==constr::extended ? 2 : 6) * clss.size() );
 
-        auto E = vec< std::pair<var_t,var_t> >();
-        E.reserve( (opt.ext==constr::extended ? 2 : 6) * clss.size() );
+    //current number of verts
+    var_t no_v = 0;
 
-        //current number of verts
-        var_t no_v = 0;
+    //init stacks
+    vl = vert_label(clss.size()* (opt.ext==constr::extended ? 6 : 2), opt.num_vars);
+    //vl_stack.push( vl_trie(clss.size()*6, opt.num_vars) ); //TODO better guess on number of verts?!
+    vec<lineral> _L = vec<lineral>();
 
-        //init stacks
-        vl = vert_label(clss.size()* (opt.ext==constr::extended ? 6 : 2), opt.num_vars);
-        //vl_stack.push( vl_trie(clss.size()*6, opt.num_vars) ); //TODO better guess on number of verts?!
-        vec<lineral> _L = vec<lineral>();
+    //run through xor-clauses to find lineq and construct first entries in trie, also generate sigma and E
+    for (auto &cls : clss) {
+        //we can only solve 2-XNFs!
+        if(cls.size() == 1) { _L.push_back( cls.front() ); continue; }
+        if(cls.size() > 2) continue; //ignore non-2XNF clauses
+        assert(cls.size() <=2);
 
-        //run through xor-clauses to find lineq and construct first entries in trie, also generate sigma and E
-        for (auto &cls : clss) {
-            //we can only solve 2-XNFs!
-            if(cls.size() == 1) { _L.push_back( cls.front() ); continue; }
-            if(cls.size() > 2) throw std::runtime_error("given clauses are not in 2-XNF!");
-            assert(cls.size() <=2);
+        //now cls must consists of exactly 2 elements, say cls = {f,g}
+        const lineral f = std::move(cls.front());
+        const lineral g = std::move(cls.back());
+        const lineral fpg = f+g;
 
-            //now cls must consists of exactly 2 elements, say cls = {f,g}
-            const lineral f = std::move(cls.front());
-            const lineral g = std::move(cls.back());
-            const lineral fpg = f+g;
+        // if f=g, then we have a xor-literal
+        if(f == g) _L.push_back( f );
+        // if f = g+1, then the clause should be ignored
+        if( (fpg).is_one() || f==g ) continue;
+        //now clause is of degree 2 AND non-trivial
 
-            // if f=g, then we have a xor-literal
-            if(f == g) _L.push_back( f );
-            // if f = g+1, then the clause should be ignored
-            if( (fpg).is_one() || f==g ) continue;
-            //now clause is of degree 2 AND non-trivial
+        lineral fp1 = f.plus_one();
+        lineral gp1 = g.plus_one();
+        lineral fpgp1 = fpg.plus_one();
 
-            lineral fp1 = f.plus_one();
-            lineral gp1 = g.plus_one();
-            lineral fpgp1 = fpg.plus_one();
-
-            //generate f, g, f+1, g+1, f+g, f+g+1; their respective idxs, and sigma
-            auto v_lits = (opt.ext==constr::extended) ? vec<lineral>({f, g, fpg}) : vec<lineral>({f, g});
-            for (auto &l : v_lits)
-            {
-                if(vl.V_contains(l)) continue;
-                if(l.has_constant()) l.add_one();
-                auto ins = vl.insert(no_v, std::move(l), 0);
-                no_v += ins.inserted ? 2 : 0;
-            }
-            //note: f*g = (f+g+1)*f = (f+g+1)*g, i.e. add edges:
-            //now add edges: fp1 -> g; fpg -> f; fpg -> g   (symmetric edges are then constructed from sigma!)
-            E.push_back( std::pair<var_t,var_t>( vl.V(fp1), vl.V(g) ) );
-            if(opt.ext==constr::extended) {
-                E.push_back( std::pair<var_t,var_t>( vl.V(fpg), vl.V(f) ) );
-                E.push_back( std::pair<var_t,var_t>( vl.V(fpg), vl.V(g) ) );
-            }
-        }
-
-        std::sort(E.begin(), E.end());
-        E.erase( std::unique(E.begin(), E.end()), E.end());
-
-        assert(no_v == 2*vl.size());
-
-        //now E -- and its intepretations with V and Vxlit are constructed, so we can init the graph!
-        init(E,no_v);
-
-        if(s.cancelled.load())
+        //generate f, g, f+1, g+1, f+g, f+g+1; their respective idxs, and sigma
+        auto v_lits = (opt.ext==constr::extended) ? vec<lineral>({f, g, fpg}) : vec<lineral>({f, g});
+        for (auto &l : v_lits)
         {
-            VERB(10, "c cancelled during preprocessing");
-            break;
+            if(vl.V_contains(l)) continue;
+            if(l.has_constant()) l.add_one();
+            auto ins = vl.insert(no_v, std::move(l), 0);
+            no_v += ins.inserted ? 2 : 0;
         }
-
-        //init backtrack-stacks
-        xsys_stack.push_back( std::list<LinEqs>({ LinEqs(_L) }) );
-        vl_stack.push( vl.get_state() );
-        graph_stack.push( get_state() );
-
-        //init activity_score, based on number of occurances as LTs
-        activity_score = vec<unsigned int>(opt.num_vars+1, 1);
-        //TODO run in parallel?! (or at least integreate in above construction of Vxlit?!)
-        for (const auto &v : get_v_range()) {
-            activity_score[ vl.Vxlit_LT(v) ]++;
+        //note: f*g = (f+g+1)*f = (f+g+1)*g, i.e. add edges:
+        //now add edges: fp1 -> g; fpg -> f; fpg -> g   (symmetric edges are then constructed from sigma!)
+        E.push_back( std::pair<var_t,var_t>( vl.V(fp1), vl.V(g) ) );
+        if(opt.ext==constr::extended) {
+            E.push_back( std::pair<var_t,var_t>( vl.V(fpg), vl.V(f) ) );
+            E.push_back( std::pair<var_t,var_t>( vl.V(fpg), vl.V(g) ) );
         }
-        assert( assert_data_structs() );
-        
-        //init done!
-        VERB(70, graph_stats());
-        //pre-process 
-        preprocess();
-        
-        if(opt.pp != preproc::fls_scc_ee) continue;
-        //if edge-extension is wanted; first perform crGCP
-        //update clss to gcp vers
-        clss.clear();
-        clss = to_xcls(); //TODO inefficient!
-        //compute topological order of graph
-        const auto TO = get_TO();
+    }
+
+    std::sort(E.begin(), E.end());
+    E.erase( std::unique(E.begin(), E.end()), E.end());
+
+    assert(no_v == 2*vl.size());
+
+    //now E -- and its intepretations with V and Vxlit are constructed, so we can init the graph!
+    init(E, no_v);
+
+    //init backtrack-stacks
+    xsys_stack.push_back( std::list<lin_sys>({ lin_sys(_L) }) );
+    //vl_stack.push( vl.get_state() );
+    //graph_stack.push( get_state() );
+
+    ////init activity_score, based on number of occurances as LTs
+    //activity_score = vec<unsigned int>(opt.num_vars+1, 1);
+    //for (const auto &v : get_v_range()) {
+    //    activity_score[ vl.Vxlit_LT(v) ]++;
+    //}
+    assert( assert_data_structs() );
     
-        vec<LinEqs> D(no_v);
-        for (auto v_it = TO.rbegin(); v_it != TO.rend(); ++v_it) {
-            var_t v = *v_it;
-            const lineral f = vl.Vxlit(v);
-            D[IL[v]] += LinEqs(f);
-            for (const auto &w : get_in_neighbour_range(v)) D[IL[w]] += D[IL[v]];
-            //D[IL[v]].clear();
-        }
-        //add new edges
-        const auto roots = get_roots();
-        var_t c_new_edges = 0;
-        for(const auto& r1 : roots) {
-            for(const auto& r2 : roots) {
-                if(r1==r2) continue;
-                const LinEqs tmp = D[IL[r1]] + D[IL[r2]];
-                if(tmp.is_consistent()) continue;
-                //const auto& [b,a] = intersectaffineVS(D[IL[r1]], D[IL[r2]]);
-                //if(!b) continue;
-                if(is_descendant(r1, SIGMA(r2))) continue;
-                repeat = true;
-                clss.emplace_back( vec<lineral>({vl.Vxlit(SIGMA(r1)), vl.Vxlit(SIGMA(r2))}) );
-            }
-        }
-        VERB(70, "c deduced "+std::to_string(c_new_edges)+" new edges!");
-        VERB(110, to_str());
-    } while(repeat);
+    //init done!
+    VERB(70, graph_stats());
+    //pre-process 
+    //preprocess();
 };
 
 #ifdef USE_TRIE
-    LinEqs impl_graph::update_graph(xornado::stats& s, const LinEqs& L) {
+    lin_sys impl_graph::update_graph(xornado::stats& s, const lin_sys& L) {
         return update_graph_hash_fight_dev(s,L);
     };
     
-    LinEqs impl_graph::update_graph_par(xornado::stats& s, const LinEqs& L) {
+    lin_sys impl_graph::update_graph_par(xornado::stats& s, const lin_sys& L) {
         return update_graph(s,L);
     };
     
     //one global var for lineral lit, reduces memory allocations
     lineral lit;
-    LinEqs impl_graph::update_graph_hash_fight(xornado::stats& s, const LinEqs& L) {
+    lin_sys impl_graph::update_graph_hash_fight(xornado::stats& s, const lin_sys& L) {
         s.no_graph_upd++;
         s.total_upd_no_v += no_v;
         s.total_upd_xsys_size += L.size();
@@ -186,7 +138,7 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
         //return std::move( update_graph(s, L) );
         assert( L.is_consistent() );
         auto new_L = vec<lineral>();
-        if(L.size() == 0) return LinEqs(std::move(new_L));
+        if(L.size() == 0) return lin_sys(std::move(new_L));
     
         //update in two steps:
         // (1) in parallel: reduce all lits and create new map Vxlit (linerals -> verts)
@@ -196,18 +148,10 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
         //update current trie!
         //  -- (1) --
         for (auto v : get_v_range()) {
-        #ifdef FULL_REDUCTION
             if(!vl.contains(v)) continue;
             lit = std::move( vl.Vxlit(v) );
             //reduce with linsys
             const bool update_req = lit.reduce( L );
-        #else
-            if(!vl.contains(v) || assignments[vl.Vxlit_LT(v)].is_zero()) continue;
-            lit = std::move( vl.Vxlit(v) );
-            //reduce with linsys
-            const bool update_req = lit.lt_reduce( assignments );
-            assert(lit.LT() != vl.Vxlit_LT(v));
-        #endif
             if(update_req) {
                 s.no_vert_upd++;
                 //insert reduced lit in new_trie
@@ -226,9 +170,6 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
             var_t v_zero = is_one ? SIGMA(v_) : v_;
             for (const auto &v : get_out_neighbour_range( v_zero )) {
                 new_L.push_back( vl.Vxlit(v) );
-            #ifndef FULL_REDUCTION
-                new_L.back().reduce(assignments);
-            #endif
             }
             //remove vertex!
             remove_vert( v_zero );
@@ -238,10 +179,10 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
     
         assert( assert_data_structs() );
     
-        return LinEqs(std::move(new_L));
+        return lin_sys(std::move(new_L));
     };
     
-    LinEqs impl_graph::update_graph_hash_fight_dev(xornado::stats& s, const LinEqs& L) {
+    lin_sys impl_graph::update_graph_hash_fight_dev(xornado::stats& s, const lin_sys& L) {
         s.no_graph_upd++;
         s.total_upd_no_v += (long) no_v;
         s.total_upd_xsys_size += (long) L.size();
@@ -249,7 +190,7 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
         //return std::move( update_graph(L) );
         assert( L.is_consistent() );
         auto new_L = vec<lineral>();
-        if(L.size() == 0) return LinEqs(std::move(new_L));
+        if(L.size() == 0) return lin_sys(std::move(new_L));
     
         //if(!assignments[9].is_zero()) {
         //    lit.reset();
@@ -263,7 +204,6 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
         //update current trie!
         //  -- (1) --
         for (auto v : get_v_range()) {
-        #ifdef FULL_REDUCTION
             if(!vl.contains(v)) continue;
             lit = std::move( vl.Vxlit(v) );
             //reduce with linsys
@@ -274,22 +214,6 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
                 auto [v_upd,b] = vl.update(v, lit, get_dl());
                 if( v_upd != v) merge_list.push_back( std::pair<var_t,var_t>{v, b ? SIGMA(v_upd) : v_upd} );
             }
-        #else
-            if(!vl.contains(v) || assignments[vl.Vxlit_LT(v)].is_zero()) continue;
-            lit = std::move( vl.Vxlit(v) );
-            assert(lit.LT() == vl.Vxlit_LT(v));
-            //reduce with linsys
-            const bool update_req = lit.lt_reduce( assignments );
-            assert(lit.LT() != vl.Vxlit_LT(v));
-            assert(update_req);
-            s.no_vert_upd++;
-            //insert reduced lit in new_trie
-            auto [v_upd,b] = vl.update(v, lit, get_dl());
-            if( v_upd != v) {
-                merge_list.emplace_back( v, b ? SIGMA(v_upd) : v_upd );
-                assert( lit == vl.Vxlit(merge_list.back().second) );
-            }
-        #endif
         }
     
         // -- (2) --
@@ -316,9 +240,6 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
                 //now v is certainly still contained in vl
                 assert( vl.contains(v) || vl.contains(SIGMA(v)));
                 new_L.emplace_back( std::move(vl.Vxlit(v)) );
-            #ifndef FULL_REDUCTION
-                new_L.back().reduce(assignments);
-            #endif
                 //put children in queue - if not yet marked
                 for (const auto &w : get_out_neighbour_range( v )) {
                     if(!marked.contains(w)) {
@@ -338,15 +259,15 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
     
         assert( assert_data_structs() );
         
-        return LinEqs(std::move(new_L));
+        return lin_sys(std::move(new_L));
         //return std::move( update_graph(L) );
     };
     
 #else
-    LinEqs impl_graph::update_graph(xornado::stats& s, const LinEqs& L) {
+    lin_sys impl_graph::update_graph(xornado::stats& s, const lin_sys& L) {
         assert( L.is_consistent() );
         auto new_L = vec<lineral>();
-        if(L.size() == 0) return std::move( LinEqs(std::move(new_L)) );
+        if(L.size() == 0) return lin_sys(std::move(new_L));
 
         //update in two steps:
         // (1) in parallel: reduce all lits and create new map Vxlit (linerals -> verts)
@@ -362,11 +283,7 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
             if(!vl.contains(v)) continue;
             lineral lit = vl.Vxlit( v );
             //reduce with linsys
-            #ifdef FULL_REDUCTION
                 const bool update_req = lit.reduce( L );
-            #else
-                const bool update_req = lit.lt_reduce( assignments );
-            #endif
             if(lit.has_constant()) {
                 //flip lit and v
                 v = SIGMA(v);
@@ -393,9 +310,6 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
         if( search != new_V.end() ) { //0-literal found!
             for (const auto &v : get_out_neighbour_range( search->second )) {
                 new_L.push_back( new_Vxlit.contains(v) ? new_Vxlit.at(v) : new_Vxlit.at(SIGMA(v)).plus_one() );
-            #ifndef FULL_REDUCTION
-                new_L.back().reduce(assignments);
-            #endif
             }
             //remove vertex!
             remove_vert( search->second );
@@ -409,19 +323,19 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
 
         assert( assert_data_structs() );
 
-        return std::move( LinEqs(std::move(new_L)) );
+        return lin_sys(std::move(new_L));
     };
 
-    LinEqs impl_graph::update_graph_par(xornado::stats& s, const LinEqs& L) {
-        return std::move( update_graph(s,L) );
+    lin_sys impl_graph::update_graph_par(xornado::stats& s, const lin_sys& L) {
+        return update_graph(s,L);
     };
 
-    LinEqs impl_graph::update_graph_hash_fight(xornado::stats& s, const LinEqs& L) {
-        return std::move( update_graph(s,L) );
+    lin_sys impl_graph::update_graph_hash_fight(xornado::stats& s, const lin_sys& L) {
+        return update_graph(s,L);
     };
     
-    LinEqs impl_graph::update_graph_hash_fight_dev(xornado::stats& s, const LinEqs& L) {
-        return std::move( update_graph(s,L) );
+    lin_sys impl_graph::update_graph_hash_fight_dev(xornado::stats& s, const lin_sys& L) {
+        return update_graph(s,L);
     };
 
 #endif
@@ -459,7 +373,7 @@ void impl_graph::scc_dfs_util(const var_t rt, vec<lineral>& linerals, var_t v, v
 // TODO rewrite complete tarjans algorithm to also check for trivial FLS ?
 vec<lineral> linerals;
 vec<lineral> out;
-LinEqs impl_graph::scc_analysis() {
+lin_sys impl_graph::scc_analysis() {
     std::stack<var_t> Stack;
 
     // Mark all the vertices as not visited (For first DFS)
@@ -486,15 +400,7 @@ LinEqs impl_graph::scc_analysis() {
         }
     }
 
-#ifndef FULL_REDUCTION
-    //filter out all already known linerals
-    std::for_each(linerals.begin(), linerals.end(), [&](lineral& l){ l.reduce(assignments); } );
-    out.clear();
-    std::copy_if(linerals.begin(), linerals.end(), std::back_inserter(out), [](const lineral l){ return !l.is_zero(); });
-    std::swap(linerals,out);
-#endif
-
-    LinEqs scc = LinEqs(std::move(linerals));
+    lin_sys scc = lin_sys(std::move(linerals));
     //merge nodes if scc is consistent!
     if(scc.is_consistent()) {
         //merge SCCs (and remove labels)
@@ -603,9 +509,9 @@ bool impl_graph::is_descendant(const var_t src, const var_t dst) {
 };
 
 //decision heuristics
-std::pair< LinEqs, LinEqs > impl_graph::first_vert() const {
+std::pair< lin_sys, lin_sys > impl_graph::first_vert() const {
     //assert(no_v>0);
-    //return std::move( std::pair< LinEqs, LinEqs >( LinEqs( std::move( vl.Vxlit(L[0]) ) ), LinEqs( std::move( vl.Vxlit(L[0]).add_one() ) ) ) );
+    //return std::move( std::pair< lin_sys, lin_sys >( lin_sys( std::move( vl.Vxlit(L[0]) ) ), lin_sys( std::move( vl.Vxlit(L[0]).add_one() ) ) ) );
     //guess single ind
     var_t i = 0;
     var_t lt = 0;
@@ -615,16 +521,13 @@ std::pair< LinEqs, LinEqs > impl_graph::first_vert() const {
         ++i;
     }
     lineral lt_lit(vec<var_t>({lt}));
-#ifndef FULL_REDUCTION
-    assert(assignments[lt].is_zero());
-#endif
-    return std::pair< LinEqs, LinEqs >( LinEqs( lt_lit ), LinEqs( lt_lit.plus_one() ) );
+    return std::pair< lin_sys, lin_sys >( lin_sys( lt_lit ), lin_sys( lt_lit.plus_one() ) );
 }
 
 vec<lineral> tree_xlits;
 vec<bool> marked;
 std::stack<var_t> queue;
-std::pair< LinEqs, LinEqs > impl_graph::max_reach() const {
+std::pair< lin_sys, lin_sys > impl_graph::max_reach() const {
     //find max tree by traversing TO in reverse
     //TODO can we adapt code from TO to do it in one go? (otherwise two full traversals of the graph are necessary...)
     vec<int> tree_score(no_v, 1);
@@ -647,7 +550,7 @@ std::pair< LinEqs, LinEqs > impl_graph::max_reach() const {
         if(tree_score[IL[v]] > tree_score[IL[v_max_tree]]) v_max_tree = v;
     }
 
-    //compute tree LinEqs (all out-neighbours):
+    //compute tree lin_sys (all out-neighbours):
     tree_xlits.clear();
     marked.clear();
     marked.resize(no_v, false);
@@ -664,9 +567,6 @@ std::pair< LinEqs, LinEqs > impl_graph::max_reach() const {
             break;
         };
         tree_xlits.emplace_back( std::move( vl.Vxlit(v) ) );
-    #ifndef FULL_REDUCTION
-        tree_xlits.back().reduce(assignments);
-    #endif
         for(const auto &w : get_out_neighbour_range(v)) {
             if(!marked[IL[w]]) {
                 marked[IL[w]] = true;
@@ -675,10 +575,10 @@ std::pair< LinEqs, LinEqs > impl_graph::max_reach() const {
         }
     }
     assert(tree_xlits.size() < no_v); //ensure that no linerals are stored multiple times!
-    const LinEqs tree_xsys = LinEqs( std::move(tree_xlits) );
+    const lin_sys tree_xsys = lin_sys( std::move(tree_xlits) );
     tree_xlits.clear();
 
-    //compute inv-tree LinEqs (all in-neighbours):
+    //compute inv-tree lin_sys (all in-neighbours):
     while(!queue.empty()) queue.pop();
     queue.push(v_max_tree);
     marked.clear();
@@ -694,9 +594,6 @@ std::pair< LinEqs, LinEqs > impl_graph::max_reach() const {
             break;
         };
         tree_xlits.emplace_back( std::move( vl.Vxlit(v).add_one() ) );
-    #ifndef FULL_REDUCTION
-        tree_xlits.back().reduce(assignments);
-    #endif
         for(const auto &w : get_in_neighbour_range(v)) {
             if(!marked[IL[w]]) {
                 marked[IL[w]] = true;
@@ -704,12 +601,12 @@ std::pair< LinEqs, LinEqs > impl_graph::max_reach() const {
             }
         }
     }
-    const LinEqs inv_tree_xsys = LinEqs( std::move(tree_xlits) );
+    const lin_sys inv_tree_xsys = lin_sys( std::move(tree_xlits) );
 
-    return std::pair< LinEqs, LinEqs >( std::move( tree_xsys ), std::move( inv_tree_xsys ) );
+    return std::pair< lin_sys, lin_sys >( std::move( tree_xsys ), std::move( inv_tree_xsys ) );
 }
 
-std::pair< LinEqs, LinEqs > impl_graph::max_bottleneck() const {
+std::pair< lin_sys, lin_sys > impl_graph::max_bottleneck() const {
     //find max tree by traversing TO in reverse
     //TODO can we adapt code from TO to do it in one go? (otherwise two full traversals of the graph are necessary...)
     vec<int> bn_in_score(no_v, 1);
@@ -742,7 +639,7 @@ std::pair< LinEqs, LinEqs > impl_graph::max_bottleneck() const {
         if(bn_in_score[IL[v]] > bn_in_score[IL[v_max_bn]]) v_max_bn = v;
     }
     
-    //compute tree LinEqs (all out-neighbours):
+    //compute tree lin_sys (all out-neighbours):
     tree_xlits.clear();
     while(!queue.empty()) queue.pop();
     queue.push(v_max_bn);
@@ -757,17 +654,14 @@ std::pair< LinEqs, LinEqs > impl_graph::max_bottleneck() const {
         };
         queue.pop();
         tree_xlits.emplace_back( std::move( vl.Vxlit(v) ) );
-    #ifndef FULL_REDUCTION
-        tree_xlits.back().reduce(assignments);
-    #endif
         for(const auto &w : get_out_neighbour_range(v)) {
             if(!marked[IL[w]]) queue.push(w);
         }
     }
-    const LinEqs tree_xsys = LinEqs( std::move(tree_xlits) );
+    const lin_sys tree_xsys = lin_sys( std::move(tree_xlits) );
     tree_xlits.clear();
 
-    //compute inv-tree LinEqs (all in-neighbours):
+    //compute inv-tree lin_sys (all in-neighbours):
     while(!queue.empty()) queue.pop();
     queue.push(v_max_bn);
     marked.clear();
@@ -781,21 +675,18 @@ std::pair< LinEqs, LinEqs > impl_graph::max_bottleneck() const {
         };
         queue.pop();
         tree_xlits.emplace_back( std::move( vl.Vxlit(v).add_one() ) );
-    #ifndef FULL_REDUCTION
-        tree_xlits.back().reduce(assignments);
-    #endif
         for(const auto &w : get_in_neighbour_range(v)) {
             if(!marked[IL[w]]) queue.push(w);
         }
     }
-    const LinEqs inv_tree_xsys = LinEqs( std::move(tree_xlits) );
+    const lin_sys inv_tree_xsys = lin_sys( std::move(tree_xlits) );
 
     
-    return std::pair< LinEqs, LinEqs >( std::move( tree_xsys ), std::move( inv_tree_xsys ) );
+    return std::pair< lin_sys, lin_sys >( std::move( tree_xsys ), std::move( inv_tree_xsys ) );
 }
 
 vec<bool> assigned;
-std::pair< LinEqs, LinEqs > impl_graph::lex() const {
+std::pair< lin_sys, lin_sys > impl_graph::lex() const {
     assigned.resize(no_v, false);
     for(const auto& l_lineqs : xsys_stack) {
         for(const auto& l : l_lineqs) {
@@ -813,10 +704,10 @@ std::pair< LinEqs, LinEqs > impl_graph::lex() const {
         }
     }
     lineral lt_lit(vec<var_t>({lt}));
-    return std::pair< LinEqs, LinEqs >( LinEqs( lt_lit ), LinEqs( lt_lit.plus_one() ) );
+    return std::pair< lin_sys, lin_sys >( lin_sys( lt_lit ), lin_sys( lt_lit.plus_one() ) );
 }
 
-std::pair< LinEqs, LinEqs > impl_graph::max_path() const {
+std::pair< lin_sys, lin_sys > impl_graph::max_path() const {
     //find max path by traversing TO in reverse
     if(no_e == 0) return first_vert(); //contains no edges, i.e., longest path is of length 1, i.e., we guess a single vertex!
     //TODO can we adapt code from TO to do it in one go? (otherwise two full traversals of the graph are necessary...)
@@ -842,39 +733,24 @@ std::pair< LinEqs, LinEqs > impl_graph::max_path() const {
 
     assert(path_length[IL[v_max_path_src]] > 1);
     VERB(40, "c chosen path has length " << path_length[IL[v_max_path_src]])
-    //construct cycle and no_cycle LinEqs:
+    //construct cycle and no_cycle lin_sys:
     auto cycle_xlits = vec<lineral>();
     cycle_xlits.reserve(path_length[IL[v_max_path_src]]);
     var_t v = v_max_path_src;
     for (var_t i = 0; i < path_length[IL[v_max_path_src]]; i++) {
         //cycle_xlits.emplace_back( std::move( vl.Vxlit(v)+vl.Vxlit(path_next[IL[v]]) ) );
         cycle_xlits.emplace_back( std::move( Vxlit_sum(v,path_next[IL[v]]) ) );
-    #ifndef FULL_REDUCTION
-        cycle_xlits.back().reduce(assignments);
-    #endif
         //go to next vert in max-path
         v = path_next[IL[v]];
     }
     //max path is from f=src_lit to g=prev_lit; guess g->f, giving lits in cycle_xlits, or < (g+1)*f+1 >=< g,f+1 >
-#ifdef FULL_REDUCTION
-    const LinEqs no_cycle( { std::move( vl.Vxlit(v_max_path_src).add_one() ), std::move( vl.Vxlit(v) ) } );
-#else
-    vec<lineral> no_cycle_lits = { std::move( vl.Vxlit(v_max_path_src).add_one() ), std::move( vl.Vxlit(v) ) };
-    std::for_each(no_cycle_lits.begin(), no_cycle_lits.end(), [&](lineral& l){ l.reduce(assignments); } );
-    const LinEqs no_cycle( no_cycle_lits );
-#endif
-    const LinEqs cycle( std::move(cycle_xlits) );
+    const lin_sys no_cycle( list<lineral>({ std::move( vl.Vxlit(v_max_path_src).add_one() ), std::move( vl.Vxlit(v) ) }) );
+    const lin_sys cycle( std::move(cycle_xlits) );
     //if( cycle.size() < no_cycle.size() ) std::swap( cycle, no_cycle ); //NOTE negative impact on performance with random instances!
-#ifdef FULL_REDUCTION
-    return std::pair<LinEqs,LinEqs>(std::move(cycle), std::move(no_cycle));
-#else
-    //we might have already made this exact guess (or one that 'contains' it), however it did not 'remove' the current path and make it an SCC (as it should have!); so we need to guess differently! --> use max_reach heuristic, which certainly leads to propagation and reductions!
-    if(no_cycle.size()==0 || cycle.size()==0) return max_reach();
-    else return std::pair<LinEqs,LinEqs>(std::move(cycle), std::move(no_cycle));
-#endif
+    return std::pair<lin_sys,lin_sys>(std::move(cycle), std::move(no_cycle));
 }
 
-std::pair< LinEqs, LinEqs > impl_graph::max_score_path() const {
+std::pair< lin_sys, lin_sys > impl_graph::max_score_path() const {
     //find max path by traversing TO in reverse
     if(no_e == 0) return first_vert(); //contains no edges, i.e., longest path is of length 1, i.e., we guess a single vertex!
     //TODO can we adapt code from TO to do it in one go? (otherwise two full traversals of the graph are necessary...)
@@ -910,48 +786,33 @@ std::pair< LinEqs, LinEqs > impl_graph::max_score_path() const {
     VERB(40, "c chosen path has score " << path_score[IL[v_max_path_src]] << " and length " << path_length[IL[v_max_path_src]])
     assert(path_score[IL[v_max_path_src]] > 0);
     if(path_length[IL[v_max_path_src]] > 1) {
-        //construct cycle and no_cycle LinEqs:
+        //construct cycle and no_cycle lin_sys:
         auto cycle_xlits = vec<lineral>();
         cycle_xlits.reserve(path_length[IL[v_max_path_src]]);
         var_t v = v_max_path_src;
         for (var_t i = 0; i < path_length[IL[v_max_path_src]]; i++) {
             //cycle_xlits.emplace_back( std::move( vl.Vxlit(v)+vl.Vxlit(path_next[IL[v]]) ) );
             cycle_xlits.emplace_back( std::move( Vxlit_sum(v,path_next[IL[v]]) ) );
-        #ifndef FULL_REDUCTION
-            cycle_xlits.back().reduce(assignments);
-        #endif
             //go to next vert in max-path
             v = path_next[IL[v]];
         }
         //max path is from f=src_lit to g=prev_lit; guess g->f, giving lits in cycle_xlits, or < (g+1)*f+1 >=< g,f+1 >
-    #ifdef FULL_REDUCTION
-        const LinEqs no_cycle( { std::move( vl.Vxlit(v_max_path_src).add_one() ), std::move( vl.Vxlit(v) ) } );
-    #else
-        vec<lineral> no_cycle_lits = { std::move( vl.Vxlit(v_max_path_src).add_one() ), std::move( vl.Vxlit(v) ) };
-        std::for_each(no_cycle_lits.begin(), no_cycle_lits.end(), [&](lineral& l){ l.reduce(assignments); } );
-        const LinEqs no_cycle( no_cycle_lits );
-    #endif
-        const LinEqs cycle( std::move(cycle_xlits) );
+        const lin_sys no_cycle( list<lineral>({ std::move( vl.Vxlit(v_max_path_src).add_one() ), std::move( vl.Vxlit(v) ) }) );
+        const lin_sys cycle( std::move(cycle_xlits) );
         //if( cycle.size() < no_cycle.size() ) std::swap( cycle, no_cycle ); //NOTE negative impact on performance with random instances!
-    #ifdef FULL_REDUCTION
-        return std::pair<LinEqs,LinEqs>(std::move(cycle), std::move(no_cycle));
-    #else
-        //we might have already made this exact guess (or one that 'contains' it), however it did not 'remove' the current path and make it an SCC (as it should have!); so we need to guess differently! --> use max_reach heuristic, which certainly leads to propagation and reductions!
-        if(cycle.size()==0) return max_reach();
-        else return std::pair<LinEqs,LinEqs>(std::move(cycle), std::move(no_cycle));
-    #endif
+        return std::pair<lin_sys,lin_sys>(std::move(cycle), std::move(no_cycle));
     } else {
         //path has length 1 (!), i.e., we only guess a single vert!
-        return std::pair< LinEqs, LinEqs >( LinEqs( std::move( vl.Vxlit( v_max_path_src).add_one() ) ), LinEqs( std::move( vl.Vxlit( v_max_path_src) ) ) );
+        return std::pair< lin_sys, lin_sys >( lin_sys( std::move( vl.Vxlit( v_max_path_src).add_one() ) ), lin_sys( std::move( vl.Vxlit( v_max_path_src) ) ) );
     }
 }
 
 //in-processing
-LinEqs impl_graph::fls_no() const {
-    return LinEqs();
+lin_sys impl_graph::fls_no() const {
+    return lin_sys();
 };
 
-LinEqs impl_graph::fls_trivial_cc() const {
+lin_sys impl_graph::fls_trivial_cc() const {
     //((1)) label connected components
     const auto label = label_components();
 
@@ -1019,17 +880,14 @@ LinEqs impl_graph::fls_trivial_cc() const {
                 //FAILED LINERAL FOUND!
                 f_xlits.emplace_back( std::move( vl.Vxlit(v) ) );
                 f_xlits.back().add_one();
-            #ifndef FULL_REDUCTION
-                f_xlits.back().reduce(assignments);
-            #endif
             }
             for(const auto& n : get_in_neighbour_range(v)) if(!marked_sigma[IL[n]]) dfs_q.push(n);
         }
     }
-    return LinEqs( std::move(f_xlits) );
+    return lin_sys( std::move(f_xlits) );
 }
 
-LinEqs impl_graph::fls_trivial() const {
+lin_sys impl_graph::fls_trivial() const {
     //(1) compute roots
     auto roots = get_roots();
     //(2) from every root r perform dfs; on discovery of v mark it with r and check if SIGMA(v) was already marked with r;
@@ -1087,14 +945,11 @@ LinEqs impl_graph::fls_trivial() const {
                 //FAILED lineral FOUND!
                 f_xlits.emplace_back( std::move( vl.Vxlit(v) ) );
                 f_xlits.back().add_one();
-            #ifndef FULL_REDUCTION
-                f_xlits.back().reduce(assignments);
-            #endif
             }
             for(const auto& n : get_in_neighbour_range(v)) if(!marked_sigma[IL[n]]) dfs_q.push(n);
         }
     }
-    return LinEqs( std::move(f_xlits) );
+    return lin_sys( std::move(f_xlits) );
     /*
     vec<lineral> new_xlits;
     vec< robin_hood::unordered_flat_set<var_t> > reaches(no_v);
@@ -1129,20 +984,105 @@ LinEqs impl_graph::fls_trivial() const {
         }
     }
 
-    return std::move( LinEqs(new_xlits) );
+    return std::move( lin_sys(new_xlits) );
     */
 };
 
-LinEqs impl_graph::fls_full() const {
+
+list<lineral> intersect(const lin_sys& U, const lin_sys& W) {
+    //Zassenhaus Alg: Put U, W in Matrix [ U U \\ W 0 ] and compute rref [ A 0 \\ 0 B ]. Then B corr to basis of U \cap W.
+    //NOTE assumes that n_vars is less than half of max val (of var_t type)
+
+    //if U contains 1 return W and vice versa
+    if(!U.is_consistent()) return W.get_linerals();
+    if(!W.is_consistent()) return U.get_linerals();
+    
+    //rewrite linerals s.t. they have a continous range of idxs
+    vec<var_t> supp = vec<var_t>({0});
+    vec<var_t> tmp;
+    for(const auto& l : U.get_linerals()) {
+        std::set_union( supp.begin(), supp.end(), l.begin(), l.end(), std::back_insert_iterator(tmp) );
+        std::swap(tmp, supp);
+        tmp.clear();
+    }
+    for(const auto& l : W.get_linerals()) {
+        std::set_union( supp.begin(), supp.end(), l.begin(), l.end(), std::back_insert_iterator(tmp) );
+        std::swap(tmp, supp);
+        tmp.clear();
+    }
+    //now supp contains all lits that occur in U and W
+    std::unordered_map<var_t, var_t> Isupp;
+    for(var_t i=0; i<supp.size(); ++i) Isupp[ supp[i] ] = i;
+    const var_t n_vars = supp.size();
+
+    rci_t nrows = U.dim() + W.dim();
+    rci_t ncols = 2*(n_vars+1);
+
+    mzd_t* M = mzd_init(nrows, ncols);
+    assert( mzd_is_zero(M) );
+
+    //fill with U
+    rci_t r = 0;
+    for(const auto& l : U.get_linerals()) {
+        if(l.is_zero()) continue;
+        if(l.has_constant()) {
+            mzd_write_bit(M, r, 0, 1);
+            mzd_write_bit(M, r, n_vars+1, 1);
+        }
+        for(const auto& i : l.get_idxs_()) {
+            assert(i>0);
+            assert(Isupp[i]+n_vars+1 < (var_t) ncols);
+            mzd_write_bit(M, r, Isupp[i], 1);
+            mzd_write_bit(M, r, Isupp[i]+n_vars+1, 1);
+        }
+        ++r;
+    }
+    //fill with W
+    for(const auto& l : W.get_linerals()) {
+        if(l.is_zero()) continue;
+        if(l.has_constant()) mzd_write_bit(M, r, 0, 1);
+        for(const auto& i : l.get_idxs_()) {
+            assert(i>0);
+            mzd_write_bit(M, r, Isupp[i], 1);
+        }
+        ++r;
+    }
+    assert(r == nrows);
+
+    //compute rref
+    const rci_t rank = mzd_echelonize(M, true);
+    //read results
+    list<lineral> int_lits;
+    r = rank-1;
+    while(r>0) {
+        mzd_t* r_ = mzd_init_window(M, r, 0, r+1, n_vars+1);
+        if(!mzd_is_zero(r_)) { mzd_free_window(r_); break;}
+        mzd_free_window(r_);
+
+        vec<var_t> idxs;
+        for(rci_t c=(n_vars+1)+1; c<ncols; ++c) {
+            if( mzd_read_bit(M, r, c) ) idxs.push_back(supp[c-n_vars-1]);
+        }
+        int_lits.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars+1), presorted::yes );
+        --r;
+    }
+
+    mzd_free(M);
+    
+    return int_lits;
+}
+
+
+lin_sys impl_graph::fls_full() const {
     vec<lineral> new_xlits;
     //compute topological ordering of graph
     const auto TO = get_TO();
     
-    vec<LinEqs> D(no_v);
+    vec<lin_sys> D(no_v);
     for (auto v_it = TO.rbegin(); v_it != TO.rend(); ++v_it) {
         var_t v = *v_it;
         lineral f = vl.Vxlit(v);
-        D[IL[v]] += LinEqs(f);
+        D[IL[v]] += lin_sys(f);
         for (const auto &w : get_in_neighbour_range(v)) D[IL[w]] += D[IL[v]];
         if(!D[ IL[v] ].is_consistent() ) new_xlits.emplace_back( std::move( f.add_one() ) );
     }
@@ -1158,19 +1098,15 @@ LinEqs impl_graph::fls_full() const {
         new_xlits.insert(new_xlits.end(), intVS.begin(), intVS.end());
     }
 
-#ifndef FULL_REDUCTION
-    std::for_each(new_xlits.begin(), new_xlits.end(), [&](lineral& l){ l.reduce(assignments); });
-#endif
-
-    return LinEqs( std::move(new_xlits) );
+    return lin_sys( std::move(new_xlits) );
 };
 
-LinEqs impl_graph::fls_full_implied() {
+lin_sys impl_graph::fls_full_implied() {
     vec<lineral> new_xlits;
     //compute topological ordering of graph
     const auto TO = get_TO();
     
-    vec<LinEqs> D(no_v);
+    vec<lin_sys> D(no_v);
     for (auto v_it = TO.rbegin(); v_it != TO.rend(); ++v_it) {
         var_t v = *v_it;
         lineral f = vl.Vxlit(v);
@@ -1188,36 +1124,32 @@ LinEqs impl_graph::fls_full_implied() {
         new_xlits.insert(new_xlits.end(), intVS.begin(), intVS.end());
     }
 
-#ifndef FULL_REDUCTION
-    std::for_each(new_xlits.begin(), new_xlits.end(), [&](lineral& l){ l.reduce(assignments); });
-#endif
-
-    return LinEqs( std::move(new_xlits) );
+    return lin_sys( std::move(new_xlits) );
 };
 
-//LinEqs impl_graph::fls_full() {
+//lin_sys impl_graph::fls_full() {
 //    vec<lineral> new_xlits;
-//    vec<LinEqs> prev_xsys(no_v);
+//    vec<lin_sys> prev_xsys(no_v);
 //    //compute topological ordering of graph
 //    const auto TO = get_TO();
 //    
 //    for (auto v_it = TO.rbegin(); v_it != TO.rend(); ++v_it) {
 //        var_t v = *v_it;
 //        if(get_out_degree(v) == 0) {
-//            prev_xsys[ IL[v] ] = LinEqs( std::move( vl.Vxlit(v) ) );
+//            prev_xsys[ IL[v] ] = lin_sys( std::move( vl.Vxlit(v) ) );
 //        } else {
-//            prev_xsys[ IL[v] ] = LinEqs( std::move( vl.Vxlit(v) ) );
+//            prev_xsys[ IL[v] ] = lin_sys( std::move( vl.Vxlit(v) ) );
 //            for (const auto &w : get_out_neighbour_range(v)) prev_xsys[IL[v]] += prev_xsys[IL[w]];
 //        }
 //        if(!prev_xsys[ IL[v] ].is_consistent() ) new_xlits.emplace_back( std::move( vl.Vxlit(v).add_one() ) );
 //    }
 //
-//    return std::move( LinEqs( std::move(new_xlits) ) );
+//    return std::move( lin_sys( std::move(new_xlits) ) );
 //};
 
-void impl_graph::bump_score(const LinEqs& new_xsys) {
+void impl_graph::bump_score(const lin_sys& new_xsys) {
     for (const auto &[lt,_] : new_xsys.get_pivot_poly_idx()) {
-        assert(lt >= 0 && lt < activity_score.size());
+        assert(lt < activity_score.size());
         activity_score[ lt ] += bump;
     }
 };
@@ -1268,7 +1200,7 @@ void impl_graph::preprocess() {
 };
 
 //make global var xsyses s.t. the do not need to be destroyed and constructed on each call to crGCP
-LinEqs new_, scc, fls, upd;
+lin_sys new_, scc, fls, upd;
 
 void impl_graph::crGCP(xornado::stats& s, const upd_t upd_graph, const fls_t fls_alg, const bool scheduled_fls ) {
     if(!linsys.is_consistent()) return;
@@ -1378,9 +1310,9 @@ xornado::stats impl_graph::dpll_solve(xornado::stats& s) {
             decH = &impl_graph::max_path; break;
     }
 
-    //stack for LinEqs that store alternative dec
-    auto backtrack_xsys = std::stack<LinEqs>();
-    LinEqs new_xsys = LinEqs();
+    //stack for lin_sys that store alternative dec
+    auto backtrack_xsys = std::stack<lin_sys>();
+    lin_sys new_xsys = lin_sys();
 
     //update graph -- before making decisions!
     VERB(45, graph_stats());
@@ -1416,13 +1348,6 @@ xornado::stats impl_graph::dpll_solve(xornado::stats& s) {
             vl.backtrack( std::move(vl_stack.top()), dl );
             vl_stack.pop();
             //revert assignments
-        #ifndef FULL_REDUCTION
-            for(const auto& L : Lsys) {
-                for(const auto& [lt,_] : L.get_pivot_poly_idx()) {
-                    assignments[lt].reset();
-                }
-            }
-        #endif
             xsys_stack.pop_back();
             backtrack( std::move(graph_stack.top()) );
             assert( assert_data_structs() );
@@ -1435,7 +1360,7 @@ xornado::stats impl_graph::dpll_solve(xornado::stats& s) {
         } else {
             //make new decision!
             //use decisions heuristic to find next decision!
-            std::pair<LinEqs,LinEqs> dec = (this->*decH)();
+            std::pair<lin_sys,lin_sys> dec = (this->*decH)();
             //as long as at least one of the two decisions is inconsistent, instead of taking decision propagate the consistent decision, if there is one, and take another 'decision'; otherwise immediately backtrack
             while (!dec.first.is_consistent() || !dec.second.is_consistent()) {
                 if(dec.first.is_consistent()) add_new_xsys(dec.first); //Lsys.emplace_back( dec.first );
@@ -1464,7 +1389,7 @@ xornado::stats impl_graph::dpll_solve(xornado::stats& s) {
 
             VERB(25, "c " << std::to_string( dl ) << " : " << "decision " << std::to_string(s.no_dec) << " : " << std::to_string(dec.first.size()) << " or " << std::to_string(dec.second.size()) << " eqs")
             VERB(50, "c " << std::to_string( dl ) << " : " << "decision " << std::to_string(s.no_dec) << " namely [" << dec.first.to_str() << "] or [" << dec.second.to_str() << "]")
-            xsys_stack.emplace_back( std::list<LinEqs>() );
+            xsys_stack.emplace_back( std::list<lin_sys>() );
             add_new_xsys( std::move(dec.first) );
             backtrack_xsys.emplace( std::move(dec.second) );
         }

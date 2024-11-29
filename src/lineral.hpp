@@ -12,6 +12,8 @@ class lin_sys;
 
 enum class presorted { yes, no };
 
+enum class cnst { zero, one };
+
 //sparse implementation of a xor-literal
 class lineral
 {
@@ -48,6 +50,7 @@ class lineral
         lineral(const var_t& idx, const bool p1_) noexcept : p1(p1_), idxs({idx}) { 
           if( idxs.size()>0 && idxs[0]==0 ) { idxs.clear(); p1^=true; }
         }
+        explicit lineral(const cnst zero_one) noexcept : p1(zero_one == cnst::one), idxs(vec<var_t>({})) {};
 
         ~lineral() = default;
 
