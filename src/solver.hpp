@@ -1059,8 +1059,8 @@ class solver
     /**
      * @brief decide whether solver should perform xornado in/preprocessing
      */
-    bool need_IG_inprocessing() {
-      return dl==0 && opt.pp!=xornado_preproc::no && IG_linerals_to_be_propagated.size()>0;
+    bool need_IG_inprocessing(stats& s) {
+      return dl==0 && opt.pp!=xornado_preproc::no && (IG_linerals_to_be_propagated.size()>0 || s.no_ig==0);
     }
 
     /**
@@ -1072,7 +1072,7 @@ class solver
       if(dl>0) return false;
       ++s.no_ig;
       const auto begin  = std::chrono::high_resolution_clock::now();
-      VERB(50, "c Xornado in-processing -- propagating " << IG_linerals_to_be_propagated.size() << " new linerals.");
+      VERB(50, "c implication graph in-processing -- propagating " << IG_linerals_to_be_propagated.size() << " new linerals.");
       if(IG_linerals_to_be_propagated.size()>0) {
         IG.add_new_xsys( std::move(IG_linerals_to_be_propagated) );
       }

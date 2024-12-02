@@ -774,7 +774,7 @@ void solver::dpll_solve(stats &s) {
         while(dec_stack.size()>dl) dec_stack.pop();
         goto dpll_gcp;
     }
-    if( need_IG_inprocessing() && find_implications_by_IG(s) ) {
+    if( need_IG_inprocessing(s) && find_implications_by_IG(s) ) {
         goto dpll_gcp;
     }
 
@@ -835,7 +835,7 @@ void solver::dpll_solve(stats &s) {
                 while(dec_stack.size()>dl) dec_stack.pop();
                 goto dpll_gcp;
             }
-            if( need_IG_inprocessing() && find_implications_by_IG(s) ) {
+            if( need_IG_inprocessing(s) && find_implications_by_IG(s) ) {
                 goto dpll_gcp;
             }
 
@@ -918,7 +918,7 @@ void solver::solve(stats &s) {
     // GCP -- before making decisions!
     do {
         GCP(s);
-    } while( !at_conflict() && ( (need_GE_inprocessing(s) && find_implications_by_GE(s)) || (need_IG_inprocessing() && find_implications_by_IG(s)) ) );
+    } while( !at_conflict() && ( (need_GE_inprocessing(s) && find_implications_by_GE(s)) || (need_IG_inprocessing(s) && find_implications_by_IG(s)) ) );
     
 
     while (true) {
@@ -998,7 +998,7 @@ void solver::solve(stats &s) {
                     return;
                 }
                 GCP(s);
-            } while( !at_conflict() && ((need_GE_inprocessing(s) && find_implications_by_GE(s)) || (need_IG_inprocessing() && find_implications_by_IG(s))) );
+            } while( !at_conflict() && ((need_GE_inprocessing(s) && find_implications_by_GE(s)) || (need_IG_inprocessing(s) && find_implications_by_IG(s))) );
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
