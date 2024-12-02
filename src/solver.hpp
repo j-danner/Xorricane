@@ -273,6 +273,11 @@ class solver
      */
     xornado::impl_graph IG;
 
+    /**
+     * @brief linerals that are derived on dl 0 AND are not yet propagated in IG
+     */
+    lin_sys IG_linerals_to_be_propagated;
+
     var_t get_num_vars() const { return alpha.size()-1; };
     
     std::pair<var_t,cls_watch> analyze();
@@ -582,21 +587,72 @@ class solver
     void bump_score(const lineral& lit);
     void decay_score();
     
-    inline void add_new_lineral(lineral&& l, var_t lvl, queue_t type) {
+    /**
+     * @brief enum class to pin down the origin of a lineral that is in the queue for propagation
+     */
+    enum class origin_t { GUESS, CLAUSE, LINERAL, GE, IG };
+
+    /**
+     * @brief queue implied lineral for propagation (one-by-one); update data using propagate_implied_lineral
+     * @note highest priority is conflict, followed by alpha and then equivs
+     * 
+     * @param lin lineral to be added to data structures
+     * @param lvl dl-level on which lin should be propagated as 'type'
+     * @param from_lineral_watch true iff lin originates from a lineral_watch, i.e., a clause did not just become a unit
+     * @param type type of propagation (defaults to queue_t::NEW_UNIT)
+     */
+    inline void queue_implied_lineral(lin_w_it lin, const var_t lvl, const origin_t origin = origin_t::CLAUSE, const queue_t type = queue_t::NEW_UNIT) {
+      assert(lin->assert_data_struct(alpha));
+      if(type==queue_t::NEW_GUESS) lineral_queue.q_alpha.emplace_front( lin, lvl, type );
+      else if(lin->LT()==0) {
+        lineral_queue.q_confl.emplace_front( lin, lvl, queue_t::IMPLIED_ALPHA );
+      } else if(lin->is_assigning(alpha)) {
+        lineral_queue.q_alpha.emplace_back( lin, lvl, type );
+        //if(from_lineral_watch) lineral_queue.q_alpha.emplace_front( lin, lvl, type );
+        //else                   lineral_queue.q_alpha.emplace_back( lin, lvl, type );
+      } else if(lin->is_equiv()) {
+        //TODO check if is_equiv() or is_equiv(alpha) performs better! -- the latter can increase the LBD of reason clause!
+        lineral_queue.q_equiv.emplace_back( lin, lvl, type );
+        //if(from_lineral_watch) lineral_queue.q_equiv.emplace_front( lin, lvl, type );
+        //else                   lineral_queue.q_equiv.emplace_back( lin, lvl, type );
+      } else {
+        lineral_queue.q_unit.emplace_back( lin, lvl, type );
+      }
+      if(lvl==0 && opt.pp!=xornado_preproc::no && origin!=origin_t::IG) {
+        //put lin in queue for propagation in IG -- if it is does not originate from IG
+        IG_linerals_to_be_propagated.add_lineral( lin->to_lineral() );
+      }
+    }
+
+    /**
+     * @brief propagates lineral from queue until a new alpha is propagated or the queue is empty
+     * 
+     * @return var_t idx of new lt; or -1 if no new alpha was propagated
+     */
+    inline var_t propagate_implied_lineral() {
+      assert(!lineral_queue.empty());
+      auto& [lin, lvl, type] = lineral_queue.front();
+      var_t new_lt = process_lineral(lin, lvl, type);
+      lineral_queue.pop_front();
+      return new_lt;
+    }
+
+    
+    inline void add_new_lineral(lineral&& l, var_t lvl, queue_t type, origin_t origin = origin_t::CLAUSE) {
       assert(lvl==dl);
       lineral_watches[lvl].emplace_back( std::move(l), alpha, alpha_dl, dl_count, lvl );
-      queue_implied_lineral( std::prev(lineral_watches[dl].end()), lvl, false, type);
+      queue_implied_lineral( std::prev(lineral_watches[dl].end()), lvl, origin, type);
     };
     
-    inline void add_new_lineral(const lineral& l, var_t lvl, queue_t type) {
+    inline void add_new_lineral(const lineral& l, var_t lvl, queue_t type, origin_t origin = origin_t::CLAUSE) {
       assert(lvl==dl);
       lineral_watches[lvl].emplace_back(l, alpha, alpha_dl, dl_count, lvl);
-      queue_implied_lineral( std::prev(lineral_watches[dl].end()), lvl, false, type);
+      queue_implied_lineral( std::prev(lineral_watches[dl].end()), lvl, origin, type);
     };
     
     inline void add_new_guess(lineral&& l) {
       lineral_watches[dl].emplace_back( std::move(l), alpha, alpha_dl, dl_count, dl );
-      queue_implied_lineral( std::prev(lineral_watches[dl].end()), dl, true, queue_t::NEW_GUESS);
+      queue_implied_lineral( std::prev(lineral_watches[dl].end()), dl, origin_t::GUESS, queue_t::NEW_GUESS);
     };
 
     /**
@@ -742,47 +798,6 @@ class solver
       return lt2;
     };
 
-    /**
-     * @brief queue implied lineral for propagation (one-by-one); update data using propagate_implied_lineral
-     * @note highest priority is conflict, followed by alpha and then equivs
-     * 
-     * @param lin lineral to be added to data structures
-     * @param lvl dl-level on which lin should be propagated as 'type'
-     * @param from_lineral_watch true iff lin originates from a lineral_watch, i.e., a clause did not just become a unit
-     * @param type type of propagation (defaults to queue_t::NEW_UNIT)
-     */
-    inline void queue_implied_lineral(lin_w_it lin, const var_t lvl, [[maybe_unused]] const bool from_lineral_watch=false, const queue_t type = queue_t::NEW_UNIT) {
-      assert(lin->assert_data_struct(alpha));
-      if(type==queue_t::NEW_GUESS) lineral_queue.q_alpha.emplace_front( lin, lvl, type );
-      else if(lin->LT()==0) {
-        lineral_queue.q_confl.emplace_front( lin, lvl, queue_t::IMPLIED_ALPHA );
-      } else if(lin->is_assigning(alpha)) {
-        lineral_queue.q_alpha.emplace_back( lin, lvl, type );
-        //if(from_lineral_watch) lineral_queue.q_alpha.emplace_front( lin, lvl, type );
-        //else                   lineral_queue.q_alpha.emplace_back( lin, lvl, type );
-      } else if(lin->is_equiv()) {
-        //TODO check if is_equiv() or is_equiv(alpha) performs better! -- the latter can increase the LBD of reason clause!
-        lineral_queue.q_equiv.emplace_back( lin, lvl, type );
-        //if(from_lineral_watch) lineral_queue.q_equiv.emplace_front( lin, lvl, type );
-        //else                   lineral_queue.q_equiv.emplace_back( lin, lvl, type );
-      } else {
-        lineral_queue.q_unit.emplace_back( lin, lvl, type );
-      }
-    }
-
-    /**
-     * @brief propagates lineral from queue until a new alpha is propagated or the queue is empty
-     * 
-     * @return var_t idx of new lt; or -1 if no new alpha was propagated
-     */
-    inline var_t propagate_implied_lineral() {
-      assert(!lineral_queue.empty());
-      auto& [lin, lvl, type] = lineral_queue.front();
-      var_t new_lt = process_lineral(lin, lvl, type);
-      lineral_queue.pop_front();
-      return new_lt;
-    }
-
     
     int ctr = 0;
     double avg_la_per_sec = 0;
@@ -793,7 +808,7 @@ class solver
      * 
      * @param stats s current stats
      */
-    inline bool need_ge_inprocessing(stats& s) {
+    inline bool need_GE_inprocessing(stats& s) {
       if(at_conflict() || opt.gauss_elim_schedule==0) return false;
       else if(dl==0) return true; //always use linear algebra on dl 0?
       else if(opt.gauss_elim_schedule==-1) {
@@ -902,7 +917,7 @@ class solver
           const var_t lvl = xnf_clss[i].get_unit_at_lvl();
           // @todo use add_new_lineral
           lineral_watches[lvl].emplace_back( std::move(xnf_clss[i].get_unit()), alpha, alpha_dl, dl_count, i, lvl);
-          queue_implied_lineral( std::prev(lineral_watches[lvl].end()), lvl, false, queue_t::NEW_UNIT );
+          queue_implied_lineral( std::prev(lineral_watches[lvl].end()), lvl, origin_t::CLAUSE, queue_t::NEW_UNIT );
           break;
       }
       case cls_upd_ret::NONE:
@@ -1035,17 +1050,17 @@ class solver
      * @param s stats
      * @return bool true iff new clauses were added, and new alpha assignments derived
      */
-    bool initial_linalg_inprocessing(stats& s) {
+    bool initial_GE_processing(stats& s) {
       assert(dl==0);
-      if( !need_ge_inprocessing(s) ) return false;
+      if( !need_GE_inprocessing(s) ) return false;
       return find_implications_by_GE(s);
     };
 
     /**
      * @brief decide whether solver should perform xornado in/preprocessing
      */
-    bool need_xornado_inprocessing() {
-      return dl==0 && opt.pp!=xornado_preproc::no;
+    bool need_IG_inprocessing() {
+      return dl==0 && opt.pp!=xornado_preproc::no && IG_linerals_to_be_propagated.size()>0;
     }
 
     /**
@@ -1053,10 +1068,15 @@ class solver
      * @note currently only works in dl 0, and only when opts.xornado is set
      * 
      */
-    bool xornado_in_pre_processing() {
-      assert(need_xornado_inprocessing());
-      VERB(50, "c Xornado in-processing");
-      if(dl!=0 || IG.get_no_e()==0) return false;
+    bool find_implications_by_IG(stats& s) {
+      if(dl>0) return false;
+      ++s.no_ig;
+      const auto begin  = std::chrono::high_resolution_clock::now();
+      VERB(50, "c Xornado in-processing -- propagating " << IG_linerals_to_be_propagated.size() << " new linerals.");
+      if(IG_linerals_to_be_propagated.size()>0) {
+        IG.add_new_xsys( std::move(IG_linerals_to_be_propagated) );
+      }
+      IG_linerals_to_be_propagated.clear();
       const auto IG_linsys_begin = std::prev( IG.get_xsys_stack().back().end() );
       //call xornado-preprocessing
       IG.preprocess();
@@ -1065,11 +1085,15 @@ class solver
       for(auto it = std::next(IG_linsys_begin); it!=IG.get_xsys_stack().back().end(); ++it) {
         for(auto it2 = it->get_linerals().begin(); it2 != it->get_linerals().end(); ++it2) {
           const auto& l = *it2;
-          add_new_lineral(l, 0, queue_t::NEW_UNIT);
+          add_new_lineral(l, 0, queue_t::NEW_UNIT, origin_t::IG);
           ++count;
+          if(l.is_assigning() && !l.is_zero()) ++s.no_ig_prop;
         }
       }
       VERB(50, "c Xornado in-processing deduced " << count << " new linerals");
+      
+      const auto end  = std::chrono::high_resolution_clock::now();
+      s.total_ig_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
       return count>0;
     }
     
@@ -1078,9 +1102,9 @@ class solver
      * 
      * @return bool true iff new lins were deduced
      */
-    bool initial_xornado_pre_processing() {
-      if( !need_xornado_inprocessing() ) return false;
-      return xornado_in_pre_processing();
+    bool initial_IG_processing(stats& s) {
+      if(dl!=0 || opt.pp!=xornado_preproc::no) return false;
+      return find_implications_by_IG(s);
     };
 
     /**

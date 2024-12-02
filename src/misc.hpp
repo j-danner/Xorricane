@@ -349,6 +349,8 @@ class stats {
     unsigned int no_confl = 0;
     unsigned int no_ge = 0;
     unsigned int no_ge_prop = 0;
+    unsigned int no_ig = 0;
+    unsigned int no_ig_prop = 0;
     unsigned int no_restarts = 0;
     unsigned int no_gcp = 0;
     unsigned int no_upd = 0;
@@ -359,13 +361,15 @@ class stats {
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::time_point::min();
     
     std::chrono::duration<double> total_linalg_time = std::chrono::duration<double>::zero();
+    std::chrono::duration<double> total_ig_time = std::chrono::duration<double>::zero();
     std::chrono::duration<double> total_ca_time = std::chrono::duration<double>::zero();
-
+    
     bool is_sat() const { return !sols.empty(); };
 
     void print_final() const {
       double time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
       double linalg_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_linalg_time).count())/1000.0f;
+      double ig_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_ig_time).count())/1000.0f;
       double ca_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_ca_time).count())/1000.0f;
       std::cout << std::fixed << std::setprecision(3);
       const auto width_time = std::to_string((int) time).length()+4;
@@ -377,9 +381,12 @@ class stats {
       std::cout << "c GCP props      : " << std::setw(width_int) << new_px_upd << std::endl;
       std::cout << "c GE calls       : " << std::setw(width_int) << no_ge << std::endl;
       std::cout << "c GE props       : " << std::setw(width_int) << no_ge_prop  << " (" << (float) no_ge_prop/no_ge << " props/call)" << std::endl;
+      std::cout << "c IG calls       : " << std::setw(width_int) << no_ig << std::endl;
+      std::cout << "c IG props       : " << std::setw(width_int) << no_ig_prop  << " (" << (float) no_ig_prop/no_ig << " props/call)" << std::endl;
       std::cout << "c " << std::endl;
 
       std::cout << "c GE time        : " << std::setw(width_time) << (float) linalg_time << " [s] (" << (float) 100*linalg_time/time << " [%])" << std::endl;
+      std::cout << "c IG time        : " << std::setw(width_time) << (float) ig_time << " [s] (" << (float) 100*ig_time/time << " [%])" << std::endl;
       std::cout << "c CA time        : " << std::setw(width_time) << (float) ca_time     << " [s] (" << (float) 100*ca_time/time << " [%])" << std::endl;
       std::cout << "c Total time     : " << std::setw(width_time) << time << " [s]" << std::endl;
     }

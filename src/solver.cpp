@@ -537,7 +537,7 @@ void solver::remove_fixed_alpha(const var_t upd_lt) {
         }
     }
     VERB(90, "c remove_fixed_alpha end" );
-    assert( assert_data_structs() );
+    assert_slow( assert_data_structs() );
 }
 
 void solver::remove_fixed_equiv() {
@@ -555,7 +555,7 @@ void solver::remove_fixed_equiv() {
             lin->reduce_no_tracking(alpha, alpha_dl, dl_count, equiv_lits);
             //if lin becomes assigning, push unto lineral_queue
             if(lin->is_assigning(alpha) || (opt.eq && lin->is_equiv())) {
-                queue_implied_lineral(lin, 0, true);
+                queue_implied_lineral(lin, 0, origin_t::LINERAL);
                 continue;
             }
         }
@@ -595,7 +595,7 @@ void solver::remove_fixed_equiv() {
                 // new lineral
                 // @todo use add_new_lineral
                 lineral_watches[0].emplace_back( std::move(xnf_clss[i].get_unit()), alpha, alpha_dl, dl_count, i, 0 );
-                queue_implied_lineral( std::prev(lineral_watches[0].end()), 0, false );
+                queue_implied_lineral( std::prev(lineral_watches[0].end()), 0, origin_t::CLAUSE );
                 if(xnf_clss[i].size()>0) watch_list[xnf_clss[i].get_wl0()].emplace_back( i );
                 assert(xnf_clss[i].size()<=1);
                 break;
@@ -607,11 +607,11 @@ void solver::remove_fixed_equiv() {
                 if(xnf_clss[i].size()>1) watch_list[xnf_clss[i].get_wl1()].emplace_back( i );
                 break;
             }
-            assert( xnf_clss[i].assert_data_struct(alpha, alpha_trail_pos, dl_count) );
+            assert_slower( xnf_clss[i].assert_data_struct(alpha, alpha_trail_pos, dl_count) );
         }
     }
     VERB(90, "c remove_fixed_equiv end" );
-    assert( assert_data_structs() );
+    assert_slower( assert_data_structs() );
   #ifdef DEBUG_SLOW
     const auto L_after = get_lineral_watches_lin_sys();
     assert( (L+L_after).to_str() == L_after.to_str() ); //ensure that L <= L_after
@@ -665,7 +665,7 @@ void solver::GCP(stats &s) noexcept {
                 assert( lin->is_assigning(alpha) );
                 assert( !lin->is_active(alpha) );
                 // update alpha
-                queue_implied_lineral(lin, dl, true, queue_t::IMPLIED_ALPHA);
+                queue_implied_lineral(lin, dl, origin_t::LINERAL, queue_t::IMPLIED_ALPHA);
                 break;
             case lineral_upd_ret::UNIT:
                 assert(!lin->is_assigning(alpha));
@@ -711,7 +711,7 @@ void solver::GCP(stats &s) noexcept {
                 // new lineral
                 // @todo use add_new_lineral
                 lineral_watches[dl].emplace_back( std::move(xnf_clss[i].get_unit()), alpha, alpha_dl, dl_count, i, dl);
-                queue_implied_lineral( std::prev(lineral_watches[dl].end()), dl, false );
+                queue_implied_lineral( std::prev(lineral_watches[dl].end()), dl, origin_t::CLAUSE );
                 break;
             case cls_upd_ret::NONE:
                 assert(xnf_clss[i].is_none(dl_count));
@@ -769,12 +769,12 @@ void solver::dpll_solve(stats &s) {
 
     // GCP -- before making decisions!
     GCP(s);
-    if( need_ge_inprocessing(s) && find_implications_by_GE(s) ) {
+    if( need_GE_inprocessing(s) && find_implications_by_GE(s) ) {
         //in case we did backtrack, fix dec_stack
         while(dec_stack.size()>dl) dec_stack.pop();
         goto dpll_gcp;
     }
-    if( need_xornado_inprocessing() && xornado_in_pre_processing() ) {
+    if( need_IG_inprocessing() && find_implications_by_IG(s) ) {
         goto dpll_gcp;
     }
 
@@ -830,12 +830,12 @@ void solver::dpll_solve(stats &s) {
             dpll_gcp:
             GCP(s);
             //linear algebra on linerals
-            if( need_ge_inprocessing(s) && find_implications_by_GE(s) ) {
+            if( need_GE_inprocessing(s) && find_implications_by_GE(s) ) {
                 //in case we did backtrack, fix dec_stack
                 while(dec_stack.size()>dl) dec_stack.pop();
                 goto dpll_gcp;
             }
-            if( need_xornado_inprocessing() && xornado_in_pre_processing() ) {
+            if( need_IG_inprocessing() && find_implications_by_IG(s) ) {
                 goto dpll_gcp;
             }
 
@@ -918,7 +918,7 @@ void solver::solve(stats &s) {
     // GCP -- before making decisions!
     do {
         GCP(s);
-    } while( !at_conflict() && ( (need_ge_inprocessing(s) && find_implications_by_GE(s)) || (need_xornado_inprocessing() && xornado_in_pre_processing()) ) );
+    } while( !at_conflict() && ( (need_GE_inprocessing(s) && find_implications_by_GE(s)) || (need_IG_inprocessing() && find_implications_by_IG(s)) ) );
     
 
     while (true) {
@@ -998,7 +998,7 @@ void solver::solve(stats &s) {
                     return;
                 }
                 GCP(s);
-            } while( !at_conflict() && ((need_ge_inprocessing(s) && find_implications_by_GE(s)) || (need_xornado_inprocessing() && xornado_in_pre_processing())) );
+            } while( !at_conflict() && ((need_GE_inprocessing(s) && find_implications_by_GE(s)) || (need_IG_inprocessing() && find_implications_by_IG(s))) );
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
@@ -1590,12 +1590,12 @@ bool solver::find_implications_by_GE(stats& s) {
     if(resolving_lvl < dl) {
       backtrack(resolving_lvl);
       assert(resolving_lvl==dl);
-      queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, true, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
+      queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::GE, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
       //return immediately
       break;
     }
     assert(resolving_lvl==dl);
-    queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, true, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
+    queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::GE, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
   }
 
   mzd_free(B);

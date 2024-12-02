@@ -1242,7 +1242,7 @@ void impl_graph::crGCP(xornado::stats& s, const upd_t upd_graph, const fls_t fls
             if(!fls.is_consistent()) return;
         }
     }
-    assert( !linsys.is_consistent() || is_DAG() );
+    assert_slow( !linsys.is_consistent() || is_DAG() );
 };
 
 
