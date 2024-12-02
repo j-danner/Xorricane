@@ -268,37 +268,7 @@ class impl_graph : public graph
 
     void bump_score(const lin_sys& new_xsys);
     void decay_score();
-
-    /**
-     * @brief computes all linerals implied by lit (calls crGCP with fls_no! modifies graph but backtracks afterwards!)
-     * 
-     * @param lit lineral that is assumed to be true
-     * @return lin_sys system of implied linerals
-     */
-    lin_sys implied_xlits(lineral& lit) {
-      //(1) save state
-      auto g_state = get_state();
-      auto vl_state = vl.get_state();
-      xsys_stack.emplace_back( std::list<lin_sys>() );
-      add_new_xsys( lit );
-
-      //(2) call crGCP
-      xornado::stats s;
-      crGCP_no_schedule(s);
-      //sum over all list els in xsys_stack.top
-      lin_sys implied_lits;
-      for(const auto& sys : xsys_stack.back()) implied_lits += sys;
-
-      //(3) backtrack state
-      vl.backtrack( std::move(vl_state), vl_stack.size() );
-      //revert assignments
-      xsys_stack.pop_back();
-      backtrack( std::move(g_state) );
-      assert( assert_data_structs() );
-
-      return implied_lits;
-    };
-
+    
     //memory-friendly sum of two linerals
     inline lineral Vxlit_sum(const var_t v1, const var_t v2) const {
       bool v1_contained = vl.contains(v1);
@@ -433,6 +403,46 @@ class impl_graph : public graph
 
     //preprocess
     [[maybe_unused]] void preprocess();
+
+    /**
+     * @brief computes all linerals implied by lit (calls crGCP with fls_no! modifies graph but backtracks afterwards!)
+     * 
+     * @param lit lineral that is assumed to be true
+     * @return lin_sys system of implied linerals
+     */
+    lin_sys implied_xlits(lineral& lit) { return implied_xlits( lin_sys(lit) ); }
+
+    /**
+     * @brief computes all linerals implied by lit (calls crGCP with fls_no! modifies graph but backtracks afterwards!)
+     * 
+     * @param L lin_sys that is assumed to be true
+     * @return lin_sys system of implied linerals
+     */
+    lin_sys implied_xlits(lin_sys&& L) {
+      //(1) save state
+      auto g_state = get_state();
+      auto vl_state = vl.get_state();
+      xsys_stack.emplace_back( std::list<lin_sys>() );
+      add_new_xsys( L );
+
+      //(2) call crGCP
+      xornado::stats s;
+      crGCP_no_schedule(s);
+      //sum over all list els in xsys_stack.top
+      lin_sys implied_lits;
+      for(const auto& sys : xsys_stack.back()) implied_lits += sys;
+
+      //(3) backtrack state
+      vl.backtrack( std::move(vl_state), vl_stack.size() );
+      //revert assignments
+      xsys_stack.pop_back();
+      backtrack( std::move(g_state) );
+
+      assert_slow( assert_data_structs() );
+
+      return implied_lits;
+    };
+
 
     //decision heuristics
 
