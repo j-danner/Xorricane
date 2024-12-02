@@ -344,7 +344,7 @@ class solver
         lin_sys implied_lins = IG.implied_xlits( std::move(L) );
         L.clear();
 
-        if( implied_lins.reduce( learnt_cls.linerals[idx] ).is_zero() ) {
+        if( !implied_lins.is_consistent() || implied_lins.reduce( learnt_cls.linerals[idx] ).is_zero() ) {
           fix_ws = true;
           //remove idx!
           learnt_cls.linerals[idx].clear();
