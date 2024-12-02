@@ -69,7 +69,15 @@ struct trie_repr {
   trie_repr(const trie_repr& o) noexcept : v_node(o.v_node), num_vs(o.num_vs) {};
   trie_repr(trie_repr&& o) noexcept : v_node(std::move(o.v_node)), num_vs(std::move(o.num_vs)) {};
   trie_repr(const child_map<var_t,n_t>& _v_node, const n_t _num_vs) noexcept : v_node(_v_node), num_vs(_num_vs) {};
-  ~trie_repr() {};
+  ~trie_repr() = default;
+
+  trie_repr& operator= (const trie_repr& o) {
+    if (this != &o) {
+      const_cast<child_map<var_t, n_t>&>(v_node) = o.v_node;
+      const_cast<n_t&>(num_vs) = o.num_vs;
+    }
+    return *this;
+  }
 };
 
 
@@ -92,6 +100,7 @@ struct node {
   node(const n_t _parent, const var_t _label) noexcept : parent(_parent), label(_label) {};
   node(const node& o) noexcept : parent(o.parent), label(o.label), children(o.children) {};
   node(node&& o) noexcept : parent(o.parent), label(o.label), children(std::move(o.children)) {};
+
   node& operator =(const node& o) noexcept { children=o.children; parent=o.parent; label=o.label; return *this; };
   node& operator =(node&& o) noexcept { children=std::move(o.children); parent=std::move(o.parent); label=std::move(o.label); return *this; };
 };
@@ -217,7 +226,7 @@ class vl_trie
     
     vl_trie(vl_trie&& tr) noexcept : nodes(std::move(tr.nodes)), v_node(std::move(tr.v_node)), assigned_vert(std::move(tr.assigned_vert)), num_vars(std::move(tr.num_vars)), num_vs(std::move(tr.num_vs)), unused_node_idxs(std::move(tr.unused_node_idxs)) {};
 
-    ~vl_trie() {};
+    ~vl_trie() = default;
 
     trie_repr get_state() const { return trie_repr(v_node, num_vs); };
 
@@ -382,12 +391,14 @@ class vl_trie
       return *this;
     };
 
-    vl_trie& operator =(const vl_trie&& o) noexcept {
-      v_node = child_map<var_t,n_t>(std::move(o.v_node));
-      nodes = vec< node >(std::move(o.nodes));
-      assigned_vert = child_map<n_t,var_t>(std::move(o.assigned_vert));
+    vl_trie& operator =(vl_trie&& o) noexcept {
+      nodes = std::move(o.nodes);
+      v_node = std::move(o.v_node);
+      assigned_vert = std::move(o.assigned_vert);
       num_vars = std::move(o.num_vars);
       num_vs = std::move(o.num_vs);
+      unused_node_idxs = std::move(o.unused_node_idxs);
+      nodes_in_dl = std::move(o.nodes_in_dl);
       return *this;
     };
 

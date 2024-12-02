@@ -33,14 +33,12 @@
 
 using namespace xornado;
 
-impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : graph(), opt(opt_) {
-    vec< vec<lineral> > clss = clss_;
-
-    //init stacks
-    graph_stack = std::stack< graph_repr >();
-    xsys_stack = std::list< std::list<lin_sys> >();
-    //init maps
-    vl_stack = std::stack< vert_label_repr >();
+impl_graph::impl_graph(const vec< vec<lineral> >& clss, const options& opt_) : graph(), opt(opt_) {
+    ////init stacks
+    //xsys_stack = std::list< std::list<lin_sys> >();
+    //graph_stack = std::stack< graph_repr >();
+    ////init maps
+    //vl_stack = std::stack< vert_label_repr >();
 
     auto E = vec< std::pair<var_t,var_t> >();
     E.reserve( (opt.ext==constr::extended ? 2 : 6) * clss.size() );
@@ -51,19 +49,19 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
     //init stacks
     vl = vert_label(clss.size()* (opt.ext==constr::extended ? 6 : 2), opt.num_vars);
     //vl_stack.push( vl_trie(clss.size()*6, opt.num_vars) ); //TODO better guess on number of verts?!
-    vec<lineral> _L = vec<lineral>();
+    vec<lineral> _L;
 
     //run through xor-clauses to find lineq and construct first entries in trie, also generate sigma and E
-    for (auto &cls : clss) {
+    for (const auto &cls : clss) {
         //we can only solve 2-XNFs!
         if(cls.size() == 1) { _L.push_back( cls.front() ); continue; }
         if(cls.size() > 2) continue; //ignore non-2XNF clauses
         assert(cls.size() <=2);
 
         //now cls must consists of exactly 2 elements, say cls = {f,g}
-        const lineral f = std::move(cls.front());
-        const lineral g = std::move(cls.back());
-        const lineral fpg = f+g;
+        lineral f = cls.front();
+        lineral g = cls.back();
+        lineral fpg = f+g;
 
         // if f=g, then we have a xor-literal
         if(f == g) _L.push_back( f );
@@ -72,8 +70,6 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
         //now clause is of degree 2 AND non-trivial
 
         lineral fp1 = f.plus_one();
-        lineral gp1 = g.plus_one();
-        lineral fpgp1 = fpg.plus_one();
 
         //generate f, g, f+1, g+1, f+g, f+g+1; their respective idxs, and sigma
         auto v_lits = (opt.ext==constr::extended) ? vec<lineral>({f, g, fpg}) : vec<lineral>({f, g});
@@ -102,21 +98,21 @@ impl_graph::impl_graph(const vec< vec<lineral> >& clss_, const options& opt_) : 
     init(E, no_v);
 
     //init backtrack-stacks
-    xsys_stack.push_back( std::list<lin_sys>({ lin_sys(_L) }) );
-    //vl_stack.push( vl.get_state() );
-    //graph_stack.push( get_state() );
+    xsys_stack.push_back( std::list<lin_sys>() );
+    xsys_stack.back().emplace_back( std::move(_L) );
+    //NOTE we skip initialization of vl_stack, graph_stack and activity_score, as they are not needed for only pre-/in-processing
+    vl_stack.push( vl.get_state() );
+    graph_stack.push( get_state() );
 
-    ////init activity_score, based on number of occurances as LTs
-    //activity_score = vec<unsigned int>(opt.num_vars+1, 1);
-    //for (const auto &v : get_v_range()) {
-    //    activity_score[ vl.Vxlit_LT(v) ]++;
-    //}
+    //init activity_score, based on number of occurances as LTs
+    activity_score = vec<unsigned int>(opt.num_vars+1, 1);
+    for (const auto &v : get_v_range()) {
+        activity_score[ vl.Vxlit_LT(v) ]++;
+    }
     assert( assert_data_structs() );
     
     //init done!
-    VERB(70, graph_stats());
-    //pre-process 
-    //preprocess();
+    VERB(40, "c initialized graph\n" << graph_stats());
 };
 
 #ifdef USE_TRIE

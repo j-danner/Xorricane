@@ -290,7 +290,7 @@ class graph_al {
 
     inline bool operator ==(const graph_al &other) const noexcept { return to_str() == other.to_str(); };
 
-    graph_al& operator=(graph_al& g) noexcept {
+    graph_al& operator=(const graph_al& g) noexcept {
       no_v = g.no_v;
       no_e = g.no_e;
       L = g.L;

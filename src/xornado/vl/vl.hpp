@@ -23,7 +23,8 @@
 #include "vl_trie.hpp"
 
 
-#ifdef USE_TRIE
+#ifdef USE_TRIE //throws SEGV on construction/desctruction...
+    assert(false);
     typedef trie_repr vert_label_repr;
     typedef vl_trie vert_label;
 #else

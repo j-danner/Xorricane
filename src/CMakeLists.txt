@@ -69,7 +69,7 @@ endif()
 
 # add impl_graph library
 # options
-option(USE_TRIE "Use trie for graph labels" ON)
+option(USE_TRIE "Use trie for graph labels" OFF) #SEGVs when turned on! ...something with ctor and dtor of vl_trie seems wrong...
 if(USE_TRIE)
     message("using trie data structure for graph labels!")
     add_definitions(-DUSE_TRIE)

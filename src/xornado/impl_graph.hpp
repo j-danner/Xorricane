@@ -27,6 +27,7 @@
 #include <memory>
 
 #include "misc.hpp"
+#include "../io.hpp" //for parsed_xnf
 #include "graph/graph.hpp"
 #include "../lineral.hpp"
 #include "../lin_sys.hpp"
@@ -36,9 +37,6 @@
 
 #include "vl/vl.hpp"
 
-//forward declare class solver
-class solver;
-
 namespace xornado {
 
 enum class dec_heu { fv, mp, mr, mbn, lex};
@@ -47,35 +45,6 @@ enum class upd_alg { ts, hf, par, hfd};
 enum class sc {active, inactive};
 enum class constr { simple, extended};
 enum class preproc { no, scc, fls_scc, fls_scc_ee };
-
-/**
- * @brief class that handles reordering according to guessing path
- */
-class reordering {
-  private:
-    //TODO use faster hashmap
-  #ifdef NDEBUG
-    robin_hood::unordered_flat_map<var_t,var_t> P;
-  #else
-    std::unordered_map<var_t,var_t> P;
-  #endif
-
-  public:
-    reordering() {};
-    reordering(const reordering& o) : P(o.P) {};
-    reordering(reordering&& o) : P(std::move(o.P)) {};
-
-    std::size_t size() const noexcept { return P.size(); };
-
-    void insert(const var_t& ind, const var_t& pos) {
-      if(at(pos)==ind) return;
-      const auto P_ind = at(ind);
-      const auto P_pos = at(pos);
-      P[pos] = P_ind;
-      P[ind] = P_pos;
-    };
-    const var_t& at(const var_t& ind) const noexcept { return P.contains(ind) ? P.at(ind) : ind; };
-};
 
 
 /**
@@ -98,15 +67,32 @@ struct options {
 
     int timeout = 0;
 
-    reordering P;
-
     //default settings
-    options() : num_vars(0), num_cls(0) {};
-    options(var_t n_vars) : num_vars(n_vars), num_cls(0) {};
+    options() = default;
+    options(var_t n_vars) : num_vars(n_vars) {};
     options(var_t n_vars, var_t n_cls) : num_vars(n_vars), num_cls(n_cls) {};
     options(var_t n_vars, var_t n_cls, dec_heu dh_, fls_alg fls_, upd_alg upd_, int verb_, int timeout_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), fls(fls_), upd(upd_), verb(verb_), timeout(timeout_) {};
+    options(var_t n_vars, fls_alg fls_, constr ext_, xornado_preproc pp_, int verb_) : num_vars(n_vars), dh(dec_heu::mr), fls(fls_), fls_s(1), upd(upd_alg::ts), score(sc::inactive), ext(ext_), verb(verb_), timeout(0) {
+      switch(pp_) {
+        case xornado_preproc::no:
+          pp = preproc::no;
+          break;
+        case xornado_preproc::scc:
+          pp = preproc::scc;
+          break;
+        case xornado_preproc::scc_fls:
+          pp = preproc::fls_scc;
+          break;
+      }
+    };
     options(var_t n_vars, var_t n_cls, dec_heu dh_, fls_alg fls_, int fls_s_, upd_alg upd_, sc score_, constr ext_, preproc pp_, int verb_, int timeout_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), fls(fls_), fls_s(fls_s_), upd(upd_), score(score_), ext(ext_), pp(pp_), verb(verb_), timeout(timeout_) {};
-    options(var_t n_vars, var_t n_cls, dec_heu dh_, fls_alg fls_, int fls_s_, upd_alg upd_, sc score_, constr ext_, preproc pp_, int verb_, int timeout_, reordering P_) : num_vars(n_vars), num_cls(n_cls), dh(dh_), fls(fls_), fls_s(fls_s_), upd(upd_), score(score_), ext(ext_), pp(pp_), verb(verb_), timeout(timeout_), P(P_) {};
+    options(const options& o) = default;
+    options(options&& o) = default;
+
+    ~options() = default;
+
+    //options& operator=(const options& o) = default;
+    //options& operator=(options&& o) = default;
 };
 
 
@@ -175,15 +161,6 @@ class stats {
       print_sol();
     }
     
-    void reorder_sol(const reordering& P) {
-      if(sol.size()==0) return;
-      vec<bool> Psol(sol);
-      for(var_t i=1; i <= sol.size(); ++i) {
-        Psol[i-1] = sol[P.at(i)-1];
-      }
-      sol = std::move(Psol);
-    }
-
     void print_sol() const {
       if(finished) {
           if(sat) {
@@ -202,9 +179,9 @@ class stats {
       }
     };
     
-    stats() {};
+    stats() = default;
     ~stats() { /*std::cout << "destroying stats!" << std::endl;*/ };
-    stats(stats& o) noexcept : finished(o.finished), sat(o.sat), sol(o.sol), no_dec(o.no_dec), no_confl(o.no_confl), no_vert_upd(o.no_vert_upd), no_restarts(o.no_restarts), new_px_scc(o.new_px_scc), new_px_fls(o.new_px_fls), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
+    stats(const stats& o) noexcept : finished(o.finished), sat(o.sat), sol(o.sol), no_dec(o.no_dec), no_confl(o.no_confl), no_vert_upd(o.no_vert_upd), no_restarts(o.no_restarts), new_px_scc(o.new_px_scc), new_px_fls(o.new_px_fls), new_px_upd(o.new_px_upd), begin(o.begin), end(o.end) {
       cancelled.store( o.cancelled.load() );
     }
     stats(stats&& o) noexcept : finished(std::move(o.finished)), sat(std::move(o.sat)), sol(std::move(o.sol)), no_dec(std::move(o.no_dec)), no_confl(std::move(o.no_confl)), no_vert_upd(std::move(o.no_vert_upd)), no_restarts(std::move(o.no_restarts)), new_px_scc(std::move(o.new_px_scc)), new_px_fls(std::move(o.new_px_fls)), new_px_upd(std::move(o.new_px_upd)), begin(std::move(o.begin)), end(std::move(o.end))  {
@@ -212,17 +189,29 @@ class stats {
     }
     stats(unsigned int no_dec_, unsigned int no_confl_, const vec<bool>& sol_) : sat(true), sol(sol_), no_dec(no_dec_), no_confl(no_confl_) {};
     stats(unsigned int no_dec_, unsigned int no_confl_) : sat(false), no_dec(no_dec_), no_confl(no_confl_) {};
+
+    //stats& operator=(const stats& o) = default;
+    //stats& operator=(const stats& o) {
+    //  finished = o.finished;
+    //  sat = o.sat;
+    //  sol = o.sol;
+    //  no_dec = o.no_dec;
+    //  no_confl = o.no_confl;
+    //  no_vert_upd = o.no_vert_upd;
+    //  no_restarts = o.no_restarts;
+    //  no_graph_upd = o.no_graph_upd;
+    //  no_crGCP = o.no_crGCP;
+    //  total_upd_no_v = o.total_upd_no_v;
+    //  total_upd_xsys_size = o.total_upd_xsys_size;
+    //  new_px_scc = o.new_px_scc;
+    //  new_px_fls = o.new_px_fls;
+    //  new_px_upd = o.new_px_upd;
+    //  begin = o.begin;
+    //  end = o.end;
+    //  cancelled.store( o.cancelled.load() );
+    //  return *this;
+    //}
 };
-
-struct parsed_xnf {
-    var_t num_vars;
-    var_t num_cls;
-    vec< vec<lineral> > cls;
-
-    parsed_xnf(var_t _num_vars, var_t _num_cls, vec< vec<lineral> > _cls) : num_vars(_num_vars), num_cls(_num_cls), cls(_cls) {};
-    parsed_xnf(const parsed_xnf& o) : num_vars(o.num_vars), num_cls(o.num_cls), cls(o.cls) {};
-};
-
 
 /**
  * @brief class for implication graph structures offering SCC-analysis and FL-search combined with quick O(1) backtracking
@@ -230,8 +219,6 @@ struct parsed_xnf {
  */
 class impl_graph : public graph
 {
-  friend class solver;
-
   private:
     vert_label vl;
     /**
@@ -445,7 +432,7 @@ class impl_graph : public graph
     lin_sys fls_full_implied();
 
     //preprocess
-    inline void preprocess();
+    [[maybe_unused]] void preprocess();
 
     //decision heuristics
 
@@ -498,6 +485,8 @@ class impl_graph : public graph
 
     options* get_opts() { return &opt; };
     const options* get_const_opts() const { return &opt; };
+
+    const auto& get_xsys_stack() const { return xsys_stack; };
 };
 
 }

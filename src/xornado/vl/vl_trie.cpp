@@ -26,7 +26,7 @@ n_t curr_node, new_node_idx;
 void vl_trie::backtrack(trie_repr&& r, [[maybe_unused]] const var_t dl) noexcept {
     v_node = std::move(r.v_node);
     assigned_vert.clear();
-    for(const auto [v_idx,n_idx] : v_node) assigned_vert.insert( {n_idx,v_idx} );
+    for(const auto& [v_idx,n_idx] : v_node) assigned_vert.insert( {n_idx,v_idx} );
     num_vs = std::move(r.num_vs);
     //prune trie
     prune(dl);

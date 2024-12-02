@@ -217,13 +217,13 @@ class vl_hmap
       return v_to_xl_stack.top().at( contains(v) ? v : SIGMA(v) ).LT();
     }
 
-    vl_hmap& operator =(vl_hmap& o) noexcept {
+    vl_hmap& operator =(const vl_hmap& o) noexcept {
       v_to_xl_stack = o.v_to_xl_stack;
       xl_to_v_stack = o.xl_to_v_stack;
       return *this;
     };
 
-    vl_hmap& operator =(const vl_hmap&& o) noexcept {
+    vl_hmap& operator =(vl_hmap&& o) noexcept {
       v_to_xl_stack = std::move(o.v_to_xl_stack);
       xl_to_v_stack = std::move(o.xl_to_v_stack);
       return *this;
