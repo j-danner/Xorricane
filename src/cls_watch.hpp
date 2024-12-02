@@ -30,10 +30,9 @@ class cls_watch
   friend class solver;
 private:
   /**
-   * @brief lits in the linerals that form a generating set for the associated vector space
+   * @brief linerals that form a generating set for the associated vector space
    */
   vec<lineral> linerals;
-  // TODO would it be better to store linerals NOT as objects of class lineral, but as UNSORTED vecs of var_t's ??
 
   /**
    * @brief shared part of WLIN0 and WLIN1
