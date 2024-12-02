@@ -793,6 +793,19 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     //}
 }
 
+TEST_CASE( "solving 2xnf test instances with preprocessing" , "[solver][preprocessing]" ) {
+    SECTION( "test_ascon.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test_ascon.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->pp = xornado_preproc::scc_fls;
+        slvr.get_opts()->verb = 80;
+
+        stats s = slvr.solve();
+        CHECK( s.is_sat() == true ); //instance is UNSAT
+        CHECK( s.no_dec == 0 );
+    }
+}
+
 TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     const bool cm = GENERATE(false, true);
 
@@ -1298,7 +1311,7 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
     
     SECTION( "test_simon_2.xnf -- 30s timeout" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon_2.xnf");
-        options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, true, -1, 0, 30, 1, guessing_path());
+        options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, xornado_preproc::no, true, -1, 0, 30, 1, guessing_path());
         //timeout 30secs; bug appeared after about 20secs
         stats s = solve(clss.cls, clss.num_vars, opts);
 
