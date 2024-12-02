@@ -297,6 +297,67 @@ class solver
       return i;
     }
 
+    inline void minimize(cls_watch_resolver& learnt_cls) {
+      VERB(70, "   '------> " << learnt_cls.to_str() );
+
+      //ensure each lvl has at most one element!
+      learnt_cls.reduction(1, alpha_dl, alpha_trail_pos, dl_count);
+
+      bool fix_ws = false;
+
+      lin_sys L;
+      auto it = learnt_cls.t_pos_to_idxs.begin();
+      while(it!=learnt_cls.t_pos_to_idxs.end()) {
+      //for(auto& [_, l] : learnt_cls.t_pos_to_idxs) {
+        auto& [_,l] = *it;
+        assert(l.size()==1);
+        ////implementation true to original MiniSAT paper for clause minimization -- ineffective in practice..
+        //var_t dl_ = learnt_cls.lineral_dl_count0[l.front()].first;
+        //lineral_watch lin = lineral_watch(learnt_cls.linerals[l.front()], alpha, alpha_dl, dl_count, dl_);
+        ////@todo optimize construction of clauses here?
+        //list<lin_w_it> rs_lins;
+        //vec<var_t> rs_clss_idxs;
+        //for(const auto& i : lin.get_idxs_()) {
+        //  rs_lins.push_back(alpha_lin[i]);
+        //}
+        //auto rs = get_reason(rs_lins, rs_clss_idxs);
+        //assert(rs.get_unit()==lin.to_lineral());
+
+        //const auto cls = get_reason(rs_lins, rs_clss_idxs).to_cls();
+        //if( std::all_of(cls.get_ass_VS().get_linerals().begin(), cls.get_ass_VS().get_linerals().end(),
+        //      [&L](const auto& lin){ return L.reduce(lin).is_zero(); })  ) {
+        //  //remove lin!
+        //  learnt_cls.linerals[l.front()].clear();
+        //  --learnt_cls.num_nz_lins;
+        //  l.clear();
+        //}
+
+        // write V_learnt_cls = L; then check for each l in L, if L \ {l}, xnf_clss |= l. In that case remove l from L.
+        // for performance reasons, we check |= only on the implication graph, i.e., on the binary clauses
+        // known as 'vivification' (?)
+        const auto idx = l.front();
+
+        for(var_t jdx = 0; jdx<learnt_cls.size(); ++jdx) {
+          if(idx!=jdx) L.add_lineral( learnt_cls.linerals[jdx] );
+        }
+
+        lin_sys implied_lins = IG.implied_xlits( std::move(L) );
+        L.clear();
+
+        if( implied_lins.reduce( learnt_cls.linerals[idx] ).is_zero() ) {
+          fix_ws = true;
+          //remove idx!
+          learnt_cls.linerals[idx].clear();
+          --learnt_cls.num_nz_lins;
+          l.clear();
+
+          it = learnt_cls.t_pos_to_idxs.erase(it);
+        } else {
+          ++it;
+        }
+      }
+      if(fix_ws) learnt_cls.fix_watched_idx(alpha_dl, alpha_trail_pos, dl_count);
+    }
 
     //saves the phase of the TRAIL in last_phase according to selected phase_option
     inline void save_phase() {

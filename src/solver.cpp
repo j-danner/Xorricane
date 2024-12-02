@@ -355,7 +355,7 @@ std::pair<var_t, cls_watch> solver::analyze() {
     if(opt.cm) {
         VERB(70, "   * minimize " << learnt_cls.to_str() );
         //minimization
-        learnt_cls.minimize(*this, alpha, alpha_dl, alpha_trail_pos, alpha_lin, dl_count);
+        minimize(learnt_cls);
         VERB(70, "   '------> " << learnt_cls.to_str() );
     }
 

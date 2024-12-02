@@ -70,6 +70,8 @@ private:
   }
 
 public:
+  friend class solver;
+
   cls_watch_resolver() = default;
   cls_watch_resolver(const cls_watch_resolver& o) = default;
   cls_watch_resolver(cls_watch_resolver&& o) = default;
