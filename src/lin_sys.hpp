@@ -28,7 +28,7 @@ class lin_sys
 
     void rref();
   public:
-    lin_sys() noexcept { linerals = list<lineral>(); };
+    lin_sys() noexcept {};
     lin_sys(const lineral& lit) noexcept : linerals(list<lineral>({lit})) { rref(); };
     lin_sys(lineral&& lit) noexcept : linerals(list<lineral>({std::move(lit)})) { rref(); };
     lin_sys(const vec<lineral>& linerals_) noexcept : linerals(linerals_.begin(),linerals_.end()) { rref(); };
@@ -43,7 +43,7 @@ class lin_sys
      * @note necessary to have the iterators point to the correct list as required in, e.g., cpy- and mv-ctor
      */
     inline void fix_pivot_poly_idx() {
-      assert_slow( to_str() == lin_sys(linerals).to_str() );
+      assert_slower( to_str() == lin_sys(linerals).to_str() );
       pivot_poly_its.clear();
       for(auto it = linerals.begin(); it!=linerals.end(); ++it) {
         pivot_poly_its[ it->LT() ] = it;
