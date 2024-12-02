@@ -220,6 +220,16 @@ enum class restart_opt { no, fixed, luby};
 enum class initial_prop_opt { no, nbu, full};
 
 /**
+ * @brief options for xornado pre-/in-processing
+ * no: no xornado/implication graph-based reasoning
+ * scc: only use strongly connected components
+ * scc_fls: use strongly connected components and failed lineral reasoning
+ * 
+ * @note pre-/inprocessing applied every time the solver does GCP in dl 0
+ */
+enum class xornado_preproc { no, scc, scc_fls};
+
+/**
  * @brief struct that holds options for the various heuristic choices
  * 
  */
@@ -231,7 +241,9 @@ struct options {
     bool cm = false;
 
     restart_opt rst = restart_opt::luby;
+
     initial_prop_opt ip = initial_prop_opt::no;
+    xornado_preproc pp = xornado_preproc::no;
 
     bool eq = true;
 
@@ -250,7 +262,8 @@ struct options {
     options(guessing_path P_) : P(P_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int gauss_elim_schedule_, int verb_, int timeout_=0) : dh(dh_), po(po_), ca(ca_), gauss_elim_schedule(gauss_elim_schedule_), verb(verb_), timeout(timeout_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int gauss_elim_schedule_, int verb_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), eq(eq_), gauss_elim_schedule(gauss_elim_schedule_), verb(verb_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int gauss_elim_schedule_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), eq(eq_), gauss_elim_schedule(gauss_elim_schedule_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, xornado_preproc pp_, bool eq_, int gauss_elim_schedule_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), pp(pp_), eq(eq_), gauss_elim_schedule(gauss_elim_schedule_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options(const options& o) = default;
 
     std::string to_str() const {
       std::string str = "";
@@ -294,6 +307,14 @@ struct options {
         case initial_prop_opt::no: str += "no"; break;
         case initial_prop_opt::nbu: str += "nbu"; break;
         case initial_prop_opt::full: str += "full"; break;
+      }
+      str += "\n";
+
+      str += "c xornado_preproc: ";
+      switch(xornado_preproc(pp)) {
+        case xornado_preproc::no: str += "no"; break;
+        case xornado_preproc::scc: str += "scc"; break;
+        case xornado_preproc::scc_fls: str += "scc_fls"; break;
       }
       str += "\n";
 

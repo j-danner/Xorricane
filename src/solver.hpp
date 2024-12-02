@@ -204,10 +204,8 @@ class solver
     const float decay = 0.95;
     Heap<VarOrderLt> order_heap_vsids{ VarOrderLt(activity_score) };
 
-    xornado::impl_graph IG;
-
     /**
-     * @brief checks 
+     * @brief checks whether solver is at conflict
      * 
      * @return true if current state is at conflict
      */
@@ -269,6 +267,11 @@ class solver
     var_t stepwise_lit_trail_length = 1;
 
     lin_queue<lineral_queue_elem> lineral_queue;
+
+    /**
+     * @brief pointer implication graph representation of all 2-XNF clauses at dl 0
+     */
+    xornado::impl_graph IG;
 
     var_t get_num_vars() const { return alpha.size()-1; };
     
@@ -579,9 +582,20 @@ class solver
     void bump_score(const lineral& lit);
     void decay_score();
     
-    inline void add_new_guess(lineral l) {
-      //update assignments
-      lineral_watches[dl].emplace_back( l, alpha, alpha_dl, dl_count, dl );
+    inline void add_new_lineral(lineral&& l, var_t lvl, queue_t type) {
+      assert(lvl==dl);
+      lineral_watches[lvl].emplace_back( std::move(l), alpha, alpha_dl, dl_count, lvl );
+      queue_implied_lineral( std::prev(lineral_watches[dl].end()), lvl, false, type);
+    };
+    
+    inline void add_new_lineral(const lineral& l, var_t lvl, queue_t type) {
+      assert(lvl==dl);
+      lineral_watches[lvl].emplace_back(l, alpha, alpha_dl, dl_count, lvl);
+      queue_implied_lineral( std::prev(lineral_watches[dl].end()), lvl, false, type);
+    };
+    
+    inline void add_new_guess(lineral&& l) {
+      lineral_watches[dl].emplace_back( std::move(l), alpha, alpha_dl, dl_count, dl );
       queue_implied_lineral( std::prev(lineral_watches[dl].end()), dl, true, queue_t::NEW_GUESS);
     };
 
@@ -886,6 +900,7 @@ class solver
           // NEW LIN-EQS
           //add on respective lvl!
           const var_t lvl = xnf_clss[i].get_unit_at_lvl();
+          // @todo use add_new_lineral
           lineral_watches[lvl].emplace_back( std::move(xnf_clss[i].get_unit()), alpha, alpha_dl, dl_count, i, lvl);
           queue_implied_lineral( std::prev(lineral_watches[lvl].end()), lvl, false, queue_t::NEW_UNIT );
           break;
@@ -959,7 +974,8 @@ class solver
     solver(parsed_xnf& p_xnf, guessing_path& P) noexcept : solver(p_xnf.cls, p_xnf.num_vars, options(P)) {};
 
     //copy ctor -- re-adds all clauses, i.e., looses precise state of watched vars and trail; but keeps activity_score and utility!
-    solver(const solver& o) noexcept : opt(o.opt), IG(o.IG), activity_score(o.activity_score), dl_count(o.dl_count), last_phase(o.last_phase) { 
+    solver(const solver& o) noexcept : opt(o.opt), activity_score(o.activity_score), dl_count(o.dl_count), last_phase(o.last_phase), IG(o.IG) { 
+    //solver(const solver& o) noexcept : opt(o.opt), activity_score(o.activity_score), dl_count(o.dl_count), last_phase(o.last_phase) { 
       opt.verb = 0;
       backtrack(0);
       // init data structures
@@ -1023,6 +1039,48 @@ class solver
       assert(dl==0);
       if( !need_ge_inprocessing(s) ) return false;
       return find_implications_by_GE(s);
+    };
+
+    /**
+     * @brief decide whether solver should perform xornado in/preprocessing
+     */
+    bool need_xornado_inprocessing() {
+      return dl==0 && opt.pp!=xornado_preproc::no;
+    }
+
+    /**
+     * @brief run xornado preprocessing on current state
+     * @note currently only works in dl 0, and only when opts.xornado is set
+     * 
+     */
+    bool xornado_in_pre_processing() {
+      assert(need_xornado_inprocessing());
+      VERB(50, "c Xornado in-processing");
+      if(dl!=0 || IG.get_no_e()==0) return false;
+      const auto IG_linsys_begin = std::prev( IG.get_xsys_stack().back().end() );
+      //call xornado-preprocessing
+      IG.preprocess();
+      //add new linerals
+      var_t count = 0;
+      for(auto it = std::next(IG_linsys_begin); it!=IG.get_xsys_stack().back().end(); ++it) {
+        for(auto it2 = it->get_linerals().begin(); it2 != it->get_linerals().end(); ++it2) {
+          const auto& l = *it2;
+          add_new_lineral(l, 0, queue_t::NEW_UNIT);
+          ++count;
+        }
+      }
+      VERB(50, "c Xornado in-processing deduced " << count << " new linerals");
+      return count>0;
+    }
+    
+    /**
+     * @brief performs implication graph based in/pre-processing;
+     * 
+     * @return bool true iff new lins were deduced
+     */
+    bool initial_xornado_pre_processing() {
+      if( !need_xornado_inprocessing() ) return false;
+      return xornado_in_pre_processing();
     };
 
     /**

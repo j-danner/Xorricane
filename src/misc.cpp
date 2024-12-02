@@ -97,7 +97,7 @@ std::string gcp_only(const vec< vec<lineral> >& xnf, const var_t num_vars, const
         std::future<int> f_solve = p1.get_future();
         std::thread thr([&out,&s,&sol](std::promise<int> p1)
             {
-                do { sol.GCP(s); } while( sol.initial_linalg_inprocessing(s) );
+                do { sol.GCP(s); } while( sol.initial_linalg_inprocessing(s) || sol.initial_xornado_pre_processing() );
                 out = sol.to_xnf_str();
                 p1.set_value_at_thread_exit(0);
             }, std::move(p1));
@@ -110,7 +110,7 @@ std::string gcp_only(const vec< vec<lineral> >& xnf, const var_t num_vars, const
             f_solve.wait(); //wait for thread to terminate fully!
         }
     } else {
-        do { sol.GCP(s); } while( sol.initial_linalg_inprocessing(s) );
+        do { sol.GCP(s); } while( sol.initial_linalg_inprocessing(s) || sol.initial_xornado_pre_processing() );
         out = sol.to_xnf_str();
     };
     

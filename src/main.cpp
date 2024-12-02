@@ -121,6 +121,14 @@ int main(int argc, char const *argv[])
         .choices("no", "nbu", "full")
         .nargs(1);
     
+    //preproc (SCC+FLS)
+    program.add_argument("-pp","--preprocess")
+        .help("proprocessing via implication graphs (see 2-Xornado); 'no' (no), 'scc' (strongly connected components), or 'scc_fls' (strongly connected components and failed linerals)")
+        .default_value(std::string("scc_fls"))
+        .choices("no", "scc", "scc_fls")
+        .nargs(1);
+    
+    
     
     //equiv opts
     program.add_argument("-no-eq","--no-equiv-lit")
@@ -189,6 +197,12 @@ int main(int argc, char const *argv[])
     else if(ip_str=="nbu") ip = initial_prop_opt::nbu;
     else if(ip_str=="full") ip = initial_prop_opt::full;
     
+    auto pp_str = program.get<std::string>("-pp");
+    xornado_preproc pp = xornado_preproc::scc_fls;
+    if(pp_str=="no") pp = xornado_preproc::no;
+    else if(pp_str=="scc") pp = xornado_preproc::scc;
+    else if(pp_str=="scc_fls") pp = xornado_preproc::scc_fls;
+    
     bool eq = !program.is_used("-no-eq");
 
     const bool only_gcp = program.is_used("-g");
@@ -216,7 +230,7 @@ int main(int argc, char const *argv[])
         assert( P.assert_data_struct() );
 
         //set upt options
-        options opts( dh, po, ca, cm, rh, ip, eq, gauss_elim_schedule, verb, time_out, sol_count, P );
+        options opts( dh, po, ca, cm, rh, ip, pp, eq, gauss_elim_schedule, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;

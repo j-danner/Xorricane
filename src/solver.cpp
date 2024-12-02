@@ -28,7 +28,7 @@ std::ostream& operator<<(std::ostream& os, const queue_t& t) {
     return os;
 }
 
-solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const options& opt_) noexcept : opt(opt_), IG(clss, xornado::options(num_vars, clss.size())) {
+solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const options& opt_) noexcept : opt(opt_), IG(clss, xornado::options(num_vars, xornado::fls_alg::full, xornado::constr::extended, opt.pp, opt.verb)) {
     vec< cls > clss_; clss_.reserve(clss.size());
     for(const auto& cls : clss) {
         clss_.emplace_back( cls );
@@ -56,8 +56,8 @@ solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const opti
     stepwise_lit_trail_length = 1;
     last_phase = vec<bool3>(num_vars + 1, bool3::None);
     //init last_phase according to init_phase of guessing_path:
-    for(var_t idx=0; idx<opt_.P.size(); ++idx) {
-        last_phase[opt_.P[idx]] = to_bool3( opt_.P.get_phase(idx) );
+    for(var_t idx=0; idx<opt.P.size(); ++idx) {
+        last_phase[opt.P[idx]] = to_bool3( opt.P.get_phase(idx) );
     }
 
     init_clss(clss_);
@@ -74,9 +74,10 @@ solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const opti
     //init restart params
     update_restart_schedule(0);
 
-    ////preprocess using IG
-    //const xornado::options x_opt(num_vars, clss.size(), xornado::dec_heu::fv, xornado::fls_alg::full, 1, xornado::upd_alg::hf, xornado::sc::active, xornado::constr::simple, xornado::preproc::fls_scc, opt.verb, opt.timeout);
-    //IG = xornado::impl_graph(clss, x_opt);
+    //prepare IG
+    xornado::options xopt = xornado::options(num_vars, clss.size());
+    xopt.verb = opt.verb;
+    xopt.ext = xornado::constr::simple;
 }
 
 void solver::init_clss(const vec< cls >& clss) noexcept {
@@ -592,6 +593,7 @@ void solver::remove_fixed_equiv() {
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral
+                // @todo use add_new_lineral
                 lineral_watches[0].emplace_back( std::move(xnf_clss[i].get_unit()), alpha, alpha_dl, dl_count, i, 0 );
                 queue_implied_lineral( std::prev(lineral_watches[0].end()), 0, false );
                 if(xnf_clss[i].size()>0) watch_list[xnf_clss[i].get_wl0()].emplace_back( i );
@@ -707,6 +709,7 @@ void solver::GCP(stats &s) noexcept {
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral
+                // @todo use add_new_lineral
                 lineral_watches[dl].emplace_back( std::move(xnf_clss[i].get_unit()), alpha, alpha_dl, dl_count, i, dl);
                 queue_implied_lineral( std::prev(lineral_watches[dl].end()), dl, false );
                 break;
@@ -761,15 +764,18 @@ void solver::dpll_solve(stats &s) {
     }
     
     // stack for lin_sys that store alternative dec
-    lin_sys new_lin_sys = lin_sys();
+    lin_sys new_lin_sys;
     std::stack<lineral> dec_stack;
 
     // GCP -- before making decisions!
     GCP(s);
-    if( !at_conflict() ) {
-        if( find_implications_by_GE(s) ) {
-            goto dpll_gcp;
-        }
+    if( need_ge_inprocessing(s) && find_implications_by_GE(s) ) {
+        //in case we did backtrack, fix dec_stack
+        while(dec_stack.size()>dl) dec_stack.pop();
+        goto dpll_gcp;
+    }
+    if( need_xornado_inprocessing() && xornado_in_pre_processing() ) {
+        goto dpll_gcp;
     }
 
     while (true) {
@@ -824,14 +830,14 @@ void solver::dpll_solve(stats &s) {
             dpll_gcp:
             GCP(s);
             //linear algebra on linerals
-            if( need_ge_inprocessing(s) ) {
-                if( find_implications_by_GE(s) ) {
-                    //in case we did backtrack, fix dec_stack
-                    while(dec_stack.size()>dl) dec_stack.pop();
-                    goto dpll_gcp;
-                }
+            if( need_ge_inprocessing(s) && find_implications_by_GE(s) ) {
+                //in case we did backtrack, fix dec_stack
+                while(dec_stack.size()>dl) dec_stack.pop();
+                goto dpll_gcp;
             }
-
+            if( need_xornado_inprocessing() && xornado_in_pre_processing() ) {
+                goto dpll_gcp;
+            }
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
@@ -842,6 +848,7 @@ void solver::dpll_solve(stats &s) {
             const auto L = get_lineral_watches_lin_sys();
             if (!L.is_consistent()) {
                 //enforce backtracking!
+                // @todo use add_new_lineral
                 lineral_watches[dl].emplace_back( lineral(cnst::one), alpha, alpha_dl, dl_count, dl );
                 process_lineral(std::prev(lineral_watches[dl].end()), dl, queue_t::NEW_GUESS);
             } else {
@@ -911,7 +918,7 @@ void solver::solve(stats &s) {
     // GCP -- before making decisions!
     do {
         GCP(s);
-    } while( !at_conflict() && find_implications_by_GE(s) );
+    } while( !at_conflict() && ( (need_ge_inprocessing(s) && find_implications_by_GE(s)) || (need_xornado_inprocessing() && xornado_in_pre_processing()) ) );
     
 
     while (true) {
@@ -986,8 +993,12 @@ void solver::solve(stats &s) {
 
             cdcl_gcp:
             do {
+                if (s.cancelled.load()) {
+                    VERB(10, "c cancelled");
+                    return;
+                }
                 GCP(s);
-            } while( !at_conflict() && need_ge_inprocessing(s) && find_implications_by_GE(s) );
+            } while( !at_conflict() && ((need_ge_inprocessing(s) && find_implications_by_GE(s)) || (need_xornado_inprocessing() && xornado_in_pre_processing())) );
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
