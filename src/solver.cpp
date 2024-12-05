@@ -81,32 +81,31 @@ solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const opti
 }
 
 void solver::init_clss(const vec< cls >& clss) noexcept {
-    // linsys of literals
-    lin_sys _Lsys;
-
-    xnf_clss = vec<cls_watch>(0);
     xnf_clss.reserve(2 * clss.size());
-    
+
     utility = vec<double>(0);
     utility.reserve(clss.size());
 
-    // temporarily store clss in _clss - before init of clss we might want to reduce with pure literals in _L (!)
+    // temporarily store clss in _clss - before init of xclss we might want to reduce with pure literals in _L (!)
     list<cls> _clss;
-    active_cls = 0; //value is managed by 'init_and_add_cls_watch'
+    list<lineral> Lsys_lins;
 
     // run through xor-clauses to find lineq and construct watch-literals
     for(const auto& cls : clss) {
         //check if clause reduces to unit
         if (cls.deg() == 1 || cls.is_one()) { // lin-eq!
-            _Lsys.add_lineral( std::move(cls.get_unit()) );
+            Lsys_lins.emplace_back( std::move(cls.get_unit()) );
         }
         if (!cls.is_zero()) _clss.emplace_back( cls );
     }
 
+    // linsys of literals
+    lin_sys _Lsys( std::move(Lsys_lins) );
+
     //reduce clss with _L
     if(opt.ip==initial_prop_opt::nbu) {
         lin_sys _L2;
-        //reduce all cls 
+        //reduce all cls
         for(auto it = _clss.begin(); it!=_clss.end(); ++it) {
             if(it->deg()>1) {
                 if( it->update_short(_Lsys) && it->deg()==1) {
@@ -131,6 +130,8 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
             _clss.emplace_back( std::move(*l_it) );
         }
     }
+
+    active_cls = 0; //value is managed by 'init_and_add_xcls_watch'
     //add (possibly) reduced clauses
     for(auto& cls : _clss) {
         if(!cls.is_zero()) init_and_add_cls_watch( std::move(cls), false );

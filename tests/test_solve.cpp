@@ -1386,6 +1386,17 @@ TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
     }
 }
 
+TEST_CASE( "read large instance", "[solver][parser]") {
+    auto fname = "../../benchmarks/instances/2xnfs/test_read.xnf";
+    auto p_xnf = parse_file(fname);
+    options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, xornado_preproc::no, true, -1, 0, 10, 1, guessing_path());
+    stats s = solve(p_xnf.cls, p_xnf.num_vars, opts);
+
+    CHECK( s.no_dec>10 ); //solving takes too long at the moment -- but: check that solving even started! (previously took ages for init!)
+    //CHECK( s.is_sat() == true );
+    //CHECK( check_sols(p_xnf.cls, s.sols) );
+}
+
 TEST_CASE( "solving simple instances", "[solver]") {
     auto fname = GENERATE("../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpgvgj2vfs.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmp3bjwevbm.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpxwh016x1.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpe4wzt2ga.xnf", "../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type4-n10-seed0.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpzw1cx_np.xnf" );
     auto p_xnf = parse_file(fname);
