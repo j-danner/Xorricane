@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.13)
 
 # set the project name
-project(xnf_cdcl_solver VERSION 0.2.7)
+project(xnf_cdcl_solver VERSION 0.4.0)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -19,10 +19,10 @@ if(VERBOSITY OR CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DVERBOSITY)
 endif()
 
-#static linking to libstdc++ and libgcc in case of Release build; otherwise give warnings!
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare -static-libgcc -static-libstdc++ -pthread" )# -ftree-vectorizer-verbose=5 -Weffc++")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ftree-loop-vectorize -ffast-math -DNDEBUG")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ffast-math -fasynchronous-unwind-tables -D_GLIBCXX_ASSERTIONS")# -D_FORTIFY_SOURCE=2 
+#set warnings and other default compiler options
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare -ffast-math -pthread" )# -ftree-vectorizer-verbose=5 -Weffc++")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ftree-loop-vectorize -DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fasynchronous-unwind-tables -D_GLIBCXX_ASSERTIONS")# -D_FORTIFY_SOURCE=2 
 
 #find jemalloc for linking
 find_package(PkgConfig REQUIRED QUIET)
@@ -31,8 +31,12 @@ if(JEMALLOC_FOUND)
     pkg_search_module(JEMALLOC REQUIRED jemalloc)
     message("jemalloc found!")
     include_directories(${JEMALLOC_INCLUDE_DIRS})
-    set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBRARIES})
-    #set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${JEMALLOC_INCLUDE_DIRS})
+    execute_process(COMMAND jemalloc-config --libdir OUTPUT_VARIABLE JEMALLOC_LIBDIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND jemalloc-config --libs OUTPUT_VARIABLE JEMALLOC_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
+    #link to static jemalloc -- libjemalloc_pic.a is the only one availabe on my arch system..
+    set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBDIR}/libjemalloc_pic.a ${JEMALLOC_LIBS})
+    #link to dynamic jemalloc
+    #set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBRARIES})
     add_definitions(-DUSING_JEMALLOC)
 else()
     message("jemalloc not found! (optional)")
@@ -47,7 +51,14 @@ add_executable(xnf_cdcl_solver src/main.cpp src/argparse/argparse.hpp)
 
 # link libs to xnf_cdcl_solver
 target_link_libraries(xnf_cdcl_solver PUBLIC ${EXTRA_LIBS} PRIVATE solver)
-target_include_directories( xnf_cdcl_solver PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
+target_include_directories(xnf_cdcl_solver PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
+
+#static option -- use with caution! leads to segv on algattack...
+option(STATIC "compile statically linked solver" OFF)
+if(STATIC) 
+    target_link_options(xnf_cdcl_solver PUBLIC -static-libstdc++ -static-libgcc -static)
+endif()
+
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
@@ -55,15 +66,17 @@ if(COMPILER_SUPPORTS_MARCH_NATIVE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native")
 endif()
 
+
 # set up unit tests with Catch2 - if found
 find_package(Catch2 3 QUIET)
 if(Catch2_FOUND)
     message("Catch2 found!")
-    set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED ON)
+    set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED OFF)
     include(CTest)
     include(Catch)
     # These tests can use the Catch2-provided main
-    add_executable(testing tests/test_xlit.cpp tests/test_xlit_watch.cpp tests/test_xcls_watch.cpp tests/test_xsys.cpp tests/test_solve.cpp tests/test_sres.cpp)
+    file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS "tests/test_*.cpp")
+    add_executable(testing ${test_sources})
     target_link_libraries(testing PUBLIC ${EXTRA_LIBS} PRIVATE solver Catch2::Catch2WithMain)
     target_include_directories(testing PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
     catch_discover_tests(testing)

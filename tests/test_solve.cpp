@@ -532,6 +532,15 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         CHECK( s.is_sat() == true ); //SAT!
         CHECK( check_sols(clss.cls, s.sols) );
     }
+    
+    SECTION( "test72.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test72.xnf"); //only one empty clause
+        CHECK(clss.num_cls==1);
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.is_sat() == false ); //UNSAT!
+    }
 }
 
 TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
@@ -784,6 +793,19 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     //}
 }
 
+TEST_CASE( "solving 2xnf test instances with preprocessing" , "[solver][preprocessing]" ) {
+    SECTION( "test_ascon.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test_ascon.xnf");
+        auto slvr = solver(clss);
+        slvr.get_opts()->pp = xornado_preproc::scc_fls;
+        slvr.get_opts()->verb = 80;
+
+        stats s = slvr.solve();
+        CHECK( s.is_sat() == true ); //instance is UNSAT
+        CHECK( s.no_dec == 0 );
+    }
+}
+
 TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     const bool cm = GENERATE(false, true);
 
@@ -876,23 +898,6 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
-    SECTION( "test56.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test56.xnf");
-        options opt;
-        opt.verb = 10;
-        opt.ca = ca_alg::fuip;
-        opt.ip = initial_prop_opt::nbu;
-        opt.rst = cm ? restart_opt::luby : restart_opt::no;
-        opt.dh = dec_heu::vsids;
-        opt.gauss_elim_schedule = 0;
-        opt.cm = cm;
-        auto slvr = solver(clss, opt);
-
-        stats s = slvr.solve();
-        CHECK( s.is_sat() == true );
-        CHECK( check_sols(clss.cls, s.sols) );
-    }
-    
     SECTION( "test57.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test57.xnf");
         options opt;
@@ -934,6 +939,23 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         opt.ca = ca_alg::fuip;
         opt.ip = initial_prop_opt::nbu;
         opt.rst = restart_opt::luby;
+        opt.dh = dec_heu::vsids;
+        opt.gauss_elim_schedule = 0;
+        opt.cm = cm;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.is_sat() == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test56.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test56.xnf");
+        options opt;
+        opt.verb = 80;
+        opt.ca = ca_alg::fuip;
+        opt.ip = initial_prop_opt::nbu;
+        opt.rst = cm ? restart_opt::luby : restart_opt::no;
         opt.dh = dec_heu::vsids;
         opt.gauss_elim_schedule = 0;
         opt.cm = cm;
@@ -1208,6 +1230,17 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         CHECK( check_sols(clss.cls, s.sols) );
     }
 
+    SECTION( "test71.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test71.xnf");
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, true, 0, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==5 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
     SECTION( "test68.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test68.xnf");
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::nbu, true, 0, 0);
@@ -1218,6 +1251,18 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         CHECK( s.sols.size()==2 );
         CHECK( check_sols(clss.cls, s.sols) );
     }
+    
+    SECTION( "test73.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test73.xnf"); //one clause that is trivially satisfied
+        CHECK(clss.num_cls==0);
+        options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::nbu, true, 0, 0);
+        opt.sol_count = -1;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.sols.size()==4 );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
 
 }
 
@@ -1225,7 +1270,7 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
     SECTION( "test_simon.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 10;
+        //slvr.get_opts()->verb = 10;
         slvr.get_opts()->ca = ca_alg::fuip;
         slvr.get_opts()->sol_count = 265;
         slvr.get_opts()->gauss_elim_schedule = 0;
@@ -1237,11 +1282,11 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
         CHECK( s.sols.size() == 264 );
         CHECK( check_sols(clss.cls, s.sols) );
     }
-
+    
     SECTION( "test_simon.xnf -la 28" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon.xnf");
         auto slvr = solver(clss);
-        slvr.get_opts()->verb = 85;
+        //slvr.get_opts()->verb = 85;
         slvr.get_opts()->ca = ca_alg::fuip;
         slvr.get_opts()->sol_count = 265;
         slvr.get_opts()->gauss_elim_schedule = 28;
@@ -1262,6 +1307,15 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
         stats s = slvr.solve();
         CHECK( s.sols.size() == 1 );
         CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
+    SECTION( "test_simon_2.xnf -- 30s timeout" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon_2.xnf");
+        options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, xornado_preproc::no, true, -1, 0, 30, 1, guessing_path());
+        //timeout 30secs; bug appeared after about 20secs
+        stats s = solve(clss.cls, clss.num_vars, opts);
+
+        CHECK( (s.finished==false && s.no_restarts>1) );
     }
 }
 
@@ -1330,6 +1384,17 @@ TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
         std::set< vec<bool> > sols(s.sols.begin(), s.sols.end());
         CHECK( sols.size()==s.sols.size() );
     }
+}
+
+TEST_CASE( "read large instance", "[solver][parser]") {
+    auto fname = "../../benchmarks/instances/2xnfs/test_read.xnf";
+    auto p_xnf = parse_file(fname);
+    options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, xornado_preproc::no, true, -1, 0, 10, 1, guessing_path());
+    stats s = solve(p_xnf.cls, p_xnf.num_vars, opts);
+
+    CHECK( s.no_dec>10 ); //solving takes too long at the moment -- but: check that solving even started! (previously took ages for init!)
+    //CHECK( s.is_sat() == true );
+    //CHECK( check_sols(p_xnf.cls, s.sols) );
 }
 
 TEST_CASE( "solving simple instances", "[solver]") {

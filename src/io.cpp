@@ -33,10 +33,13 @@ parsed_xnf parse_file(std::istream& file) {
     var_t num_vars = 0;
     var_t actual_num_vars = 0;
     var_t num_cls = 0;
+    var_t actual_num_cls = 0;
     
-    vec< vec<xlit> > cls;
-    vec< xlit > cl;
+    vec< vec<lineral> > cls;
+    vec< lineral > cl;
     std::set< var_t > idxs;
+
+    int v_ = 0;
 
     std::string line;
     while (std::getline(file, line)) {
@@ -52,10 +55,12 @@ parsed_xnf parse_file(std::istream& file) {
             }
             num_vars = stoi(words[2]);
             num_cls = stoi(words[3]);
-        } else {
+        } else if (words.size()>0) {
             //line contains clause
             cl.clear();
 
+            if(*(words.rbegin())!="0") { throw std::runtime_error("incorrectly terminated clause '" + line + "' encountered!"); }
+            
             //check if clause is in XOR-clause notation or XNF-notation!
             if(words[0] == "x") {
                 //convert to XNF-notation:
@@ -64,18 +69,17 @@ parsed_xnf parse_file(std::istream& file) {
                 words.resize(2);
             }
 
-            for (size_t i = 0; i < words.size(); i++)
-            {
-                //check if clause is terminated:
-                if (words[i]=="0" || words[i]=="\0") {
-                    break;
-                }
-                //otherwise read xlit
+            //parse linerals -- if there is none, we have an empty clause!
+            if(words.size()==1) {
+                cl.emplace_back( 0, false );
+            }
+            //otherwise process remaining linerals
+            for (size_t i = 0; i < words.size()-1; i++) {
                 auto lit = split(words[i], "+");
                 idxs.clear();
                 bool need_0 = true;
                 for (auto &&v : lit) {
-                    int v_ = stoi(v);
+                    v_ = stoi(v);
                     //std::cout << v << std::endl;
                     if (v_>0) {
                         if(idxs.contains(v_)) idxs.erase(v_);
@@ -85,17 +89,25 @@ parsed_xnf parse_file(std::istream& file) {
                         //not standardized (interpret '+0' as '-')
                         need_0 ^= true;
                     } else {
-                        if(idxs.contains(-v_)) idxs.erase(-v_);
-                        else                   idxs.emplace(-v_);
+                        v_ = -v_;
+                        if(idxs.contains(v_)) idxs.erase(v_);
+                        else                   idxs.emplace(v_);
                         need_0 ^= true;
-                        actual_num_vars = std::max( (var_t) -v_, actual_num_vars );
+                        actual_num_vars = std::max( (var_t) v_, actual_num_vars );
                     }
                 }
-                
-                if (idxs.size() > 0 || need_0) cl.emplace_back( vec<var_t>(idxs.begin(),idxs.end()), need_0, presorted::yes );
+                //put lineral into clause -- if it is not 0 (!)
+                if (idxs.size() > 0 || need_0) {
+                    cl.emplace_back( vec<var_t>(idxs.begin(),idxs.end()), need_0, presorted::yes );
+                } else {
+                    //clause contains 0-lineral, i.e., is trivially satisfied and can be skipped!
+                    cl.clear();
+                    break;
+                }
             }
-            //add clause to cls
+            //add clause to cls -- if non-empty!
             if (cl.size() > 0) cls.emplace_back( std::move(cl) );
+            else               { --num_cls; ++actual_num_cls; }
         }
     }
 
@@ -130,9 +142,9 @@ parsed_xnf parse_file(const std::string& fname) {
     }
 }
 
-std::string to_str(const vec< vec<xlit> >& xclss) {
+std::string to_str(const vec< vec<lineral> >& clss) {
     std::string str = "";
-    for (auto &cls : xclss) {
+    for (auto &cls : clss) {
         for (auto &&l : cls) {
             str.append( l.to_str() + " " );
         }

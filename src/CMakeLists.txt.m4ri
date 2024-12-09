@@ -1,0 +1,19 @@
+#get m4ri library
+#code adapted from 'https://gitlab.com/hatsya/open-source/f2reduce/-/blob/master/test/CMakeLists.txt.m4ri?ref_type=heads'
+
+cmake_minimum_required(VERSION 3.12)
+project(m4ri-download NONE)
+
+include(ExternalProject)
+ExternalProject_Add(m4ri_project
+    GIT_REPOSITORY https://github.com/malb/m4ri.git
+    GIT_TAG bb78acf
+    UPDATE_DISCONNECTED true
+    CONFIGURE_HANDLED_BY_BUILD true
+    SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src"
+    CONFIGURE_COMMAND cd "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src" && autoreconf --install && ./configure --disable-png --enable-static=yes --enable-shared=no
+    BUILD_COMMAND cd "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src" && make
+    INSTALL_COMMAND ""
+    TEST_COMMAND ""
+)
+

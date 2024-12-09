@@ -22,14 +22,31 @@
 #define BOOST_POOL_NO_MT //disable multithreading support
 #include <boost/pool/pool_alloc.hpp>
 
-//activate additional debugging
+
+#include "rang/rang.hpp"
+
+//activate additional debugging assertions
 //#define DEBUG_SLOW
+//#define DEBUG_SLOWER
 #ifdef NDEBUG
   #undef DEBUG_SLOW
+  #undef DEBUG_SLOWER
+#endif
+#ifdef DEBUG_SLOWER
+  #define DEBUG_SLOW
 #endif
 
-//activate special treatment of disjoint xcls_watch -- experiments showed little to no performance gain
-//#define TRACK_DISJOINT_XCLS
+#if defined(DEBUG_SLOW) && !defined(NDEBUG)
+  #define assert_slow(expr) assert(expr)
+#else
+  #define assert_slow(expr) {}
+#endif
+
+#if defined(DEBUG_SLOWER) && !defined(NDEBUG)
+  #define assert_slower(expr) assert(expr)
+#else
+  #define assert_slower(expr) {}
+#endif
 
 //verbosity output
 #ifdef VERBOSITY
@@ -38,14 +55,18 @@
   #define VERB(lvl, msg)
 #endif
 
-#define BOLD(str) ( std::string("\x1b[1m")+str+std::string("\x1b[0m") )
+#define BOLD(str) rang::style::bold << str << rang::style::reset
+#define ITALIC(str) rang::style::italic << str << rang::style::reset
+#define DIM(str) rang::style::dim << str << rang::style::reset
+#define UNDERLINE(str) rang::style::underline << str << rang::style::reset
 
-#if defined(DEBUG_SLOW) && !defined(NDEBUG)
-  #define assert_slow(expr) assert(expr)
-#else
-  #define assert_slow(expr) {}
-#endif
+#define GRAY(str) rang::fg::gray<< str << rang::style::reset
 
+
+
+//use 'non-optimized' computation of reason clauses -- tree-like without reordering and without skipping unneccessary repeated resolvents with the same clause
+//NOTE there are very rare known bugs in the old implementation
+#define TREE_LIKE_REASON_CLS_COMP
 
 
 //type for variable numbering (must be unsigned; as (var_t)-1 must be bigger than all other values...)
@@ -89,7 +110,7 @@ inline std::string b3_to_str(const bool3 b) { return b==bool3::None ? "None" : (
 inline bool b3_to_bool(const bool3 b) { assert(b!=bool3::None); return b==bool3::True; };
 
 
-class xlit_watch;
+class lineral_watch;
 
 /**
  * @brief structure for storing equivalence of vars; essentially a pair of ind and polarity
@@ -98,7 +119,7 @@ struct equivalence {
   var_t ind;
   var_t prev_ind;
   bool polarity;
-  list<xlit_watch>::iterator reason_lin;
+  list<lineral_watch>::iterator reason_lin;
   var_t lvl;
 
   equivalence() : ind(0), prev_ind(0), polarity(false), lvl(-1) {};
@@ -111,11 +132,11 @@ struct equivalence {
   void set_ind(const var_t _ind) { ind = _ind; };
   void set_prev_ind(const var_t _ind) { prev_ind = _ind; };
   void set_polarity(const bool _polarity) { polarity = _polarity; };
-  void set_lin(const list<xlit_watch>::iterator& reason_lin_) { reason_lin = reason_lin_; };
+  void set_lin(const list<lineral_watch>::iterator& reason_lin_) { reason_lin = reason_lin_; };
   void set_lvl(const var_t lvl_) { lvl = lvl_; };
 
   bool is_active() const { return ind>0; };
-  bool is_active(const var_t lvl_) const { return lvl<=lvl_ && ind>0; };
+  bool is_active(const var_t lvl_) const { return ind>0 && lvl<=lvl_; };
 
   void clear() { ind = 0; lvl=0; };
   std::string to_str(const var_t& idx) const { return "x" + std::to_string(idx) + "+x" + std::to_string(ind) + (polarity ? "+1" : ""); };
@@ -145,7 +166,7 @@ class guessing_path {
 
     void insert(const var_t& ind, const bool3 phase = bool3::False) {
       P.emplace_back(ind);
-      init_phase.emplace_back(phase);
+      init_phase.emplace_back(b3_to_bool(phase));
     };
     bool get_phase(const var_t& idx) const { return init_phase[idx]; };
 
@@ -199,6 +220,16 @@ enum class restart_opt { no, fixed, luby};
 enum class initial_prop_opt { no, nbu, full};
 
 /**
+ * @brief options for xornado pre-/in-processing
+ * no: no xornado/implication graph-based reasoning
+ * scc: only use strongly connected components
+ * scc_fls: use strongly connected components and failed lineral reasoning
+ * 
+ * @note pre-/inprocessing applied every time the solver does GCP in dl 0
+ */
+enum class xornado_preproc { no, scc, scc_fls};
+
+/**
  * @brief struct that holds options for the various heuristic choices
  * 
  */
@@ -210,7 +241,9 @@ struct options {
     bool cm = false;
 
     restart_opt rst = restart_opt::luby;
+
     initial_prop_opt ip = initial_prop_opt::no;
+    xornado_preproc pp = xornado_preproc::scc_fls;
 
     bool eq = true;
 
@@ -229,7 +262,8 @@ struct options {
     options(guessing_path P_) : P(P_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, int gauss_elim_schedule_, int verb_, int timeout_=0) : dh(dh_), po(po_), ca(ca_), gauss_elim_schedule(gauss_elim_schedule_), verb(verb_), timeout(timeout_) {};
     options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int gauss_elim_schedule_, int verb_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), eq(eq_), gauss_elim_schedule(gauss_elim_schedule_), verb(verb_) {};
-    options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, bool eq_, int gauss_elim_schedule_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), eq(eq_), gauss_elim_schedule(gauss_elim_schedule_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options(dec_heu dh_, phase_opt po_, ca_alg ca_, bool cm_, restart_opt rst_, initial_prop_opt ip_, xornado_preproc pp_, bool eq_, int gauss_elim_schedule_, int verb_, int timeout_, unsigned int sol_count_, guessing_path P_) : dh(dh_), po(po_), ca(ca_), cm(cm_), rst(rst_), ip(ip_), pp(pp_), eq(eq_), gauss_elim_schedule(gauss_elim_schedule_), verb(verb_), timeout(timeout_), sol_count(sol_count_), P(P_) {};
+    options(const options& o) = default;
 
     std::string to_str() const {
       std::string str = "";
@@ -276,6 +310,14 @@ struct options {
       }
       str += "\n";
 
+      str += "c xornado_preproc: ";
+      switch(xornado_preproc(pp)) {
+        case xornado_preproc::no: str += "no"; break;
+        case xornado_preproc::scc: str += "scc"; break;
+        case xornado_preproc::scc_fls: str += "scc_fls"; break;
+      }
+      str += "\n";
+
       str += "c gauss_elim_schedule: " + std::to_string(gauss_elim_schedule) + "\n";
 
       str += "c verb: " + std::to_string(verb) + "\n";
@@ -307,6 +349,8 @@ class stats {
     unsigned int no_confl = 0;
     unsigned int no_ge = 0;
     unsigned int no_ge_prop = 0;
+    unsigned int no_ig = 0;
+    unsigned int no_ig_prop = 0;
     unsigned int no_restarts = 0;
     unsigned int no_gcp = 0;
     unsigned int no_upd = 0;
@@ -317,13 +361,15 @@ class stats {
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::time_point::min();
     
     std::chrono::duration<double> total_linalg_time = std::chrono::duration<double>::zero();
+    std::chrono::duration<double> total_ig_time = std::chrono::duration<double>::zero();
     std::chrono::duration<double> total_ca_time = std::chrono::duration<double>::zero();
-
+    
     bool is_sat() const { return !sols.empty(); };
 
     void print_final() const {
       double time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
       double linalg_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_linalg_time).count())/1000.0f;
+      double ig_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_ig_time).count())/1000.0f;
       double ca_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_ca_time).count())/1000.0f;
       std::cout << std::fixed << std::setprecision(3);
       const auto width_time = std::to_string((int) time).length()+4;
@@ -335,9 +381,12 @@ class stats {
       std::cout << "c GCP props      : " << std::setw(width_int) << new_px_upd << std::endl;
       std::cout << "c GE calls       : " << std::setw(width_int) << no_ge << std::endl;
       std::cout << "c GE props       : " << std::setw(width_int) << no_ge_prop  << " (" << (float) no_ge_prop/no_ge << " props/call)" << std::endl;
+      std::cout << "c IG calls       : " << std::setw(width_int) << no_ig << std::endl;
+      std::cout << "c IG props       : " << std::setw(width_int) << no_ig_prop  << " (" << (float) no_ig_prop/no_ig << " props/call)" << std::endl;
       std::cout << "c " << std::endl;
 
       std::cout << "c GE time        : " << std::setw(width_time) << (float) linalg_time << " [s] (" << (float) 100*linalg_time/time << " [%])" << std::endl;
+      std::cout << "c IG time        : " << std::setw(width_time) << (float) ig_time << " [s] (" << (float) 100*ig_time/time << " [%])" << std::endl;
       std::cout << "c CA time        : " << std::setw(width_time) << (float) ca_time     << " [s] (" << (float) 100*ca_time/time << " [%])" << std::endl;
       std::cout << "c Total time     : " << std::setw(width_time) << time << " [s]" << std::endl;
     }
@@ -402,7 +451,7 @@ class stats {
 };
 
 //functions for solving
-class xlit;
+class lineral;
 
 /**
  * @brief solves xnf using provided opts
@@ -414,9 +463,9 @@ class xlit;
  * 
  * @return int exit code
  */
-int solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s);
+int solve(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& opts, stats& s);
 
-stats solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts);
+stats solve(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& opts);
 
 /**
  * @brief perform one GCP on xnf using provided opts
@@ -426,7 +475,7 @@ stats solve(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& op
  * @param num_vars number of variables
  * @param s stats to put statistics into
  */
-std::string gcp_only(const vec< vec<xlit> >& xnf, const var_t num_vars, const options& opts, stats& s);
+std::string gcp_only(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& opts, stats& s);
 
-bool check_sol(const vec< vec<xlit> >& clss, const vec<bool>& sol);
-bool check_sols(const vec< vec<xlit> >& clss, const list<vec<bool>>& sols);
+bool check_sol(const vec< vec<lineral> >& clss, const vec<bool>& sol);
+bool check_sols(const vec< vec<lineral> >& clss, const list<vec<bool>>& sols);

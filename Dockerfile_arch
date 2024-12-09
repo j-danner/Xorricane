@@ -1,7 +1,7 @@
 #dockerfile for solver
 FROM archlinux:base-devel
 COPY . /xnf_cdcl_solver
-RUN pacman -Syu --noconfirm && pacman -Syu --noconfirm base-devel jemalloc gcc-libs benchmark boost catch2 cmake m4ri && cd xnf_cdcl_solver && cmake . && make xnf_cdcl_solver
+RUN pacman -Syu --noconfirm && pacman -Syu --noconfirm base-devel jemalloc gcc-libs benchmark boost catch2 cmake git && cd xnf_cdcl_solver && cmake . && make xnf_cdcl_solver
 ENTRYPOINT [ "xnf_cdcl_solver/xnf_cdcl_solver" ]
 
 #

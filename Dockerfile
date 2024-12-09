@@ -1,7 +1,7 @@
 #dockerfile for solver
 FROM debian:bullseye-slim
 COPY . /xnf_cdcl_solver
-RUN apt update && apt install --assume-yes --no-install-recommends build-essential cmake pkg-config libm4ri-dev libboost-all-dev libjemalloc-dev && cd xnf_cdcl_solver && cmake . && make xnf_cdcl_solver
+RUN apt update && apt install --assume-yes --no-install-recommends build-essential cmake pkg-config libboost-all-dev libjemalloc-dev git ca-certificates libtool && cd xnf_cdcl_solver && cmake . && make xnf_cdcl_solver
 ENTRYPOINT [ "xnf_cdcl_solver/xnf_cdcl_solver" ]
 
 #

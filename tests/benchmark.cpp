@@ -1,4 +1,4 @@
-//file to test implementation of xcls
+//file to test implementation of cls
 #include "../src/misc.hpp"
 #include "../src/solver.hpp"
 #include "../src/io.hpp"
@@ -65,39 +65,39 @@ BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES
 BENCHMARK_CAPTURE(BM_cdcl_solve_cm, mq-toyexample-type1-n15,  concat(BENCH_FILES, "/instances/2xnfs/mq/toyexamples/ToyExample-type1-n15-seed4.xnf") )->Unit(benchmark::kMillisecond)->MinTime(2);
 
 
-static void xlit_performance(benchmark::State& state, var_t n, var_t prob, unsigned long k) {
-    //compute k random xlit additions in n vars
-    vec< xlit > xlits;
-    xlits.reserve(2*k);
+static void lineral_performance(benchmark::State& state, var_t n, var_t prob, unsigned long k) {
+    //compute k random lineral additions in n vars
+    vec< lineral > linerals;
+    linerals.reserve(2*k);
 
-    vec<var_t> xlit_set;
-    xlit_set.reserve(n);
+    vec<var_t> lineral_set;
+    lineral_set.reserve(n);
     srand((unsigned) 123456789);
     for(var_t j=0; j<2*k; j++) {
         for (var_t i=0; i < n; i++){
-            if( ((var_t) (rand() % 100)) <= prob ) xlit_set.emplace_back(i);
+            if( ((var_t) (rand() % 100)) <= prob ) lineral_set.emplace_back(i);
         }
-        xlits.emplace_back( xlit(xlit_set) );
-        xlit_set.clear();
+        linerals.emplace_back( lineral(lineral_set) );
+        lineral_set.clear();
     }
 
     //performance analysis:
-    vec<xlit> sums;
+    vec<lineral> sums;
     sums.reserve(k);
 
     for (auto _ : state) {
         for (unsigned int i = 0; i < k; i++) {
-            sums.emplace_back( xlits[2*i] + xlits[2*i+1] );
+            sums.emplace_back( linerals[2*i] + linerals[2*i+1] );
         }
     }
 }
 
 
-BENCHMARK_CAPTURE(xlit_performance, xlit-add-n100-d50-k1000, 100, 50, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
-BENCHMARK_CAPTURE(xlit_performance, xlit-add-n1000-d50-k1000, 1000, 50, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
-BENCHMARK_CAPTURE(xlit_performance, xlit-add-n10000-d50-k1000, 10000, 50, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
-BENCHMARK_CAPTURE(xlit_performance, xlit-add-n100-d1-k1000, 100, 1, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
-BENCHMARK_CAPTURE(xlit_performance, xlit-add-n1000-d1-k1000, 1000, 1, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
-BENCHMARK_CAPTURE(xlit_performance, xlit-add-n10000-d1-k1000, 10000, 1, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
+BENCHMARK_CAPTURE(lineral_performance, lineral-add-n100-d50-k1000, 100, 50, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
+BENCHMARK_CAPTURE(lineral_performance, lineral-add-n1000-d50-k1000, 1000, 50, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
+BENCHMARK_CAPTURE(lineral_performance, lineral-add-n10000-d50-k1000, 10000, 50, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
+BENCHMARK_CAPTURE(lineral_performance, lineral-add-n100-d1-k1000, 100, 1, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
+BENCHMARK_CAPTURE(lineral_performance, lineral-add-n1000-d1-k1000, 1000, 1, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
+BENCHMARK_CAPTURE(lineral_performance, lineral-add-n10000-d1-k1000, 10000, 1, 1000)->Unit(benchmark::kMillisecond)->MinTime(1);
 
 BENCHMARK_MAIN();
