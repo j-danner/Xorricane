@@ -949,12 +949,13 @@ void solver::solve(stats &s) {
                 s.total_ca_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
                 
 
-                if( lvl==dl-1 && std::get<0>(learnt_cls.get_unit().get_watch_tuple(alpha_dl, alpha_trail_pos)) != trails.back().front().ind ) {
-                    VERB(50, "c ")
-                    //add dpll-clause as well - if learnt clause is 'too' long?
-                    auto [_, cls] = analyze_dpll();
-                    add_learnt_cls( std::move(cls) );
-                }
+                //@heuristic; when to add this clause?!
+                //if( lvl==dl-1 && std::get<0>(learnt_cls.get_unit().get_watch_tuple(alpha_dl, alpha_trail_pos)) != trails.back().front().ind ) {
+                //    VERB(50, "c ")
+                //    //add dpll-clause as well - if learnt clause is 'too' long?
+                //    auto [_, cls] = analyze_dpll();
+                //    add_learnt_cls( std::move(cls) );
+                //}
                 // backtrack
                 const auto unit_lvl = learnt_cls.get_unit_at_lvl();
                 assert(lvl >= unit_lvl);
