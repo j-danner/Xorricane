@@ -10,7 +10,6 @@ add_library(
     cls.hpp
     #lin_sys
     lin_sys.hpp
-    lin_sys.cpp 
     #rang - library for colours in terminal
     rang/rang.hpp
 )
