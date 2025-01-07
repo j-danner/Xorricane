@@ -244,6 +244,7 @@ int main(int argc, char const *argv[])
 
         return solve(p_xnf.cls, p_xnf.num_vars, opts, s);
     } catch (std::exception &ex) {
+        std::cout << "c [EXCEPTION] " << ex.what() << std::endl;
         std::cout << "s INDEFINITE" << std::endl;
         return 1;
     }

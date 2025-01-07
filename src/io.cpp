@@ -131,8 +131,7 @@ parsed_xnf parse_file(const std::string& fname) {
     if(fname!=" ") {
         std::ifstream file(fname);
         if ( file.fail() || !file.is_open() ) {
-            std::cout << "c file \'" << fname << "\' not found!" << std::endl; //TODO do proper error handling, i.e., throw exception?!
-            throw std::runtime_error("file not found!");
+            throw std::runtime_error("file \'" + fname + "\' not found!");
         }
         const auto p_xnf = parse_file( file );
         file.close();
@@ -168,8 +167,7 @@ guessing_path parse_gp(const std::string& fname) {
 
     std::ifstream file(fname);
     if ( file.fail() ) {
-        std::cout << "c file \'" << fname << "\' not found!" << std::endl; //TODO do proper error handling, i.e., throw exception?!
-        throw std::runtime_error("file not found!");
+        throw std::runtime_error("file \'" + fname + "\' not found!");
     }
     std::set<var_t> already_inserted;
     if(file.is_open()) {
