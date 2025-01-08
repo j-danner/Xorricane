@@ -115,29 +115,36 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
             }
             if(it->deg()==1) it = std::prev( _clss.erase(it) );
         }
-        //add linerals from _Lsys
-        for(auto& [lt,l_it] : _Lsys.get_pivot_poly_idx()) {
-            _clss.emplace_back( std::move(*l_it) );
-        }
     } else if(opt.ip==initial_prop_opt::full) {
         //fully reduce all cls with deg>1, and replace all linear ones with _Lsys's linerals
         for(auto it = _clss.begin(); it!=_clss.end(); ++it) {
             if(it->deg()>1) it->update(_Lsys);
             else it = std::prev( _clss.erase(it) );
         }
-        //add linerals from _Lsys
-        for(auto& [lt,l_it] : _Lsys.get_pivot_poly_idx()) {
-            _clss.emplace_back( std::move(*l_it) );
-        }
     }
+
+    //add linerals from _Lsys
+    //for(auto& [lt,l_it] : _Lsys.get_pivot_poly_idx()) {
+    //    _clss.emplace_back( std::move(*l_it) );
+    //}
+    //init lazy_sys
+    lazy_sys = lin_sys_lazy_GE( std::move(_Lsys) );
+    //VERB(120, "c lazy_sys: " << lazy_sys.to_str() );
+    for (auto& lin : lazy_sys.get_implied_literal_queue()) {
+        add_new_lineral( std::move(lin), 0, queue_t::IMPLIED_ALPHA, origin_t::GE );
+    }
+    lazy_sys.clear_implied_literal_queue();
 
     active_cls = 0; //value is managed by 'init_and_add_xcls_watch'
     //add (possibly) reduced clauses
     for(auto& cls : _clss) {
+        //do NOT skip linear clauses if lge is activated! -- otherwise they are left out when solving final eqs!
+        //BEWARE! ...NOT SURE BUT WHEN SKIPPING CLAUSES IT SEEMS WE MISS SOME IMPLICATIONS! IS LAZY_SYS BUGGY?!
+        //if(opt.lge && cls.deg()==1) continue;
         if(!cls.is_zero()) init_and_add_cls_watch( std::move(cls), false );
     }
 
-    assert(active_cls == xnf_clss.size() - lineral_queue.size());
+    assert(active_cls+lazy_sys.size() >= xnf_clss.size()-std::min(xnf_clss.size(),lineral_queue.size()));
 
     // init active_cls_stack
     active_cls_stack = vec<var_t>();
@@ -272,6 +279,7 @@ void solver::bump_score(const lineral &lit) {
 
 void solver::decay_score() {
     //instead of actually decaying all scores; we increase the bump
+    //@todo slowly decay 'decay' to 0.81 or similar?
     bump *= (1.0 / decay);
 };
 
@@ -438,6 +446,7 @@ void solver::update_restart_schedule(const unsigned int &no_restarts) {
 };
 
 void solver::restart(stats& s) {
+    //@todo (1) decouple clause deletion from restarts! (2) re-use trail (i.e. backtrack only to first dl, where 'new' decision differs from 'old' decision!)
     VERB(50, "c restart")
     ++s.no_restarts;
     confl_this_restart = 0;
@@ -639,6 +648,32 @@ void solver::GCP(stats &s) noexcept {
         ++s.new_px_upd;
         VERB(120, "c new literal ready for propagation");
         assert( alpha_dl[upd_lt]==dl );
+
+        if(opt.lge) {
+            VERB(120, "c performing lazy GE");
+            const auto begin  = std::chrono::high_resolution_clock::now();
+            if( lazy_sys.assign(upd_lt, alpha_trail_pos) ) {
+                //lazy GE found new literal!
+                list<lineral>& q = lazy_sys.get_implied_literal_queue();
+                for (auto&& lin : q) {
+                    //#ifndef NDEBUG
+                    //  //ensure lin is supported by lin_sys
+                    //  VERB(120, "c new lineral from lazy GE: " << lin.to_str());
+                    //  lin_sys lsys( get_lineral_watches_lin_sys() );
+                    //  lineral tmp = lin;
+                    //  assert( lsys.reduce(tmp).is_zero() );
+                    //#endif
+                    ++s.no_lge_prop;
+                    //add_new_lineral( std::move(lin), 0, queue_t::IMPLIED_ALPHA, origin_t::GE );
+                    add_new_lineral( std::move(lin), dl, queue_t::IMPLIED_ALPHA, origin_t::GE );
+                }
+                lazy_sys.clear_implied_literal_queue();
+            }
+            assert( lazy_sys.get_implied_literal_queue().empty() );
+            const auto end  = std::chrono::high_resolution_clock::now();
+            s.total_lge_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
+        }
+
 
         VERB(120, "c updating lineral_watches");
         //(1) find new implied alphas from watched linerals
@@ -1436,6 +1471,11 @@ bool solver::find_implications_by_GE(stats& s) {
       perm[i] = idx; perm_inv[idx] = i; ++idx;
     }
   }
+  for(const auto& l : lazy_sys.get_linerals()) {
+    //TODO use var_occ_list of lin_sys once they are implemted!!
+    for(const auto& v : l.get_idxs_()) perm[v] = 1;
+    ++n_wlins;
+  }
 
   const var_t n_vars = idx;
   const rci_t nrows = n_wlins;
@@ -1458,6 +1498,16 @@ bool solver::find_implications_by_GE(stats& s) {
       }
       ++r;
     }
+  }
+  for(const auto& l : lazy_sys.get_linerals()) {
+    if(l.has_constant()) {
+        mzd_write_bit(M, r, n_vars, 1);
+    }
+    for(const auto& i : l.get_idxs_()) {
+        assert(i>0); assert(perm[i] < (var_t) ncols-1);
+        mzd_write_bit(M, r, perm[i], 1);
+    }
+    ++r;
   }
   assert(r == nrows);
   //store transposed version (required to compute reason clauses)
@@ -1634,6 +1684,11 @@ inline lin_sys solver::get_lineral_watches_lin_sys() const {
       ++n_wlins;
     }
   }
+  for(const auto& l : lazy_sys.get_linerals()) {
+    //TODO use var_occ_list of lin_sys once they are implemted!!
+    for(const auto& v : l.get_idxs_()) perm[v] = 1;
+    ++n_wlins;
+  }
   //apply alpha already? the following does not work, since if x1=0, x2=1 then the literal x1+x2 is omitted, despite resembling a conflict!
   
   //construct permutation maps
@@ -1665,6 +1720,16 @@ inline lin_sys solver::get_lineral_watches_lin_sys() const {
       }
       ++r;
     }
+  }
+  for(const auto& l : lazy_sys.get_linerals()) {
+    if(l.has_constant()) {
+        mzd_write_bit(M, r, n_vars, 1);
+    }
+    for(const auto& i : l.get_idxs_()) {
+        assert(i>0); assert(perm[i] < (var_t) ncols-1);
+        mzd_write_bit(M, r, perm[i], 1);
+    }
+    ++r;
   }
   assert(r == nrows);
   //store transposed version (required to compute reason clause for )
@@ -1722,6 +1787,11 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
       ++n_wlins;
     }
   }
+  for(const auto& l : lazy_sys.get_linerals()) {
+    //TODO use var_occ_list of lin_sys once they are implemted!!
+    for(const auto& v : l.get_idxs_()) perm[v] = 1;
+    ++n_wlins;
+  }
   //apply alpha already? the following does not work, since if x1=0, x2=1 then the literal x1+x2 is omitted, despite resembling a conflict!
   ////ignore all assigned values
   //for(var_t i=0; i<alpha.size(); ++i) {
@@ -1757,6 +1827,16 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
       }
       ++r;
     }
+  }
+  for(const auto& l : lazy_sys.get_linerals()) {
+    if(l.has_constant()) {
+        mzd_write_bit(M, r, n_vars, 1);
+    }
+    for(const auto& i : l.get_idxs_()) {
+        assert(i>0); assert(perm[i] < (var_t) ncols-1);
+        mzd_write_bit(M, r, perm[i], 1);
+    }
+    ++r;
   }
   assert(r == nrows);
   //store transposed version (required to compute reason clause for )

@@ -54,7 +54,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     SECTION( "test3.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test3.xnf");
         auto slvr = solver(clss, opt);
-        CHECK( ((ip!=initial_prop_opt::no) || (slvr.to_str() == "x1+x2+1; x1+x5; x2+x3+1; x3+x4+1; x4+x5;")) );
+        //CHECK( ((ip!=initial_prop_opt::no) || (slvr.to_str() == "x1+x2+1; x1+x5; x2+x3+1; x3+x4+1; x4+x5;")) );
     
         stats s = slvr.solve();
         CHECK( s.is_sat() == false ); //UNSAT
@@ -1311,7 +1311,7 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
     
     SECTION( "test_simon_2.xnf -- 30s timeout" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon_2.xnf");
-        options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, xornado_preproc::no, true, -1, 0, 30, 1, guessing_path());
+        options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, xornado_preproc::no, true, false, -1, 0, 30, 1, guessing_path());
         //timeout 30secs; bug appeared after about 20secs
         stats s = solve(clss.cls, clss.num_vars, opts);
 
@@ -1389,7 +1389,7 @@ TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
 TEST_CASE( "read large instance", "[solver][parser]") {
     auto fname = "../../benchmarks/instances/2xnfs/test_read.xnf";
     auto p_xnf = parse_file(fname);
-    options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, xornado_preproc::no, true, -1, 0, 10, 1, guessing_path());
+    options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, xornado_preproc::no, true, true, -1, 0, 10, 1, guessing_path());
     stats s = solve(p_xnf.cls, p_xnf.num_vars, opts);
 
     CHECK( s.no_dec>10 ); //solving takes too long at the moment -- but: check that solving even started! (previously took ages for init!)

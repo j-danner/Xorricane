@@ -14,6 +14,7 @@
 #include "lineral.hpp"
 #include "lineral_watch.hpp"
 #include "lin_sys.hpp"
+#include "lin_sys_lazy.hpp"
 #include "cls.hpp"
 #include "cls_watch.hpp"
 #include "cls_watch_resolver.hpp"
@@ -87,38 +88,42 @@ class lin_queue {
   //lin_queue structure: IMPLIED_ALPHA |  NEW_EQUIV  | NEW_UNIT
   public:
     list<T> q_confl;
+    list<T> q_alpha_lge;
     list<T> q_alpha;
     list<T> q_equiv;
     list<T> q_unit;
 
     lin_queue() noexcept {};
 
-    size_t size() const { return q_confl.size()+q_alpha.size()+q_equiv.size()+q_unit.size(); };
-    bool empty() const { return q_confl.empty() && q_alpha.empty() && q_equiv.empty() && q_unit.empty(); };
+    size_t size() const { return q_confl.size()+q_alpha_lge.size()+q_alpha.size()+q_equiv.size()+q_unit.size(); };
+    bool empty() const { return q_confl.empty() && q_alpha_lge.empty() && q_alpha.empty() && q_equiv.empty() && q_unit.empty(); };
 
     deque<T>::reference front() {
       assert(!empty());
-      if(!q_confl.empty())      return q_confl.front();
-      else if(!q_alpha.empty()) return q_alpha.front();
-      else if(!q_equiv.empty()) return q_equiv.front();
-      else                      return q_unit.front();
+      if(!q_confl.empty())          return q_confl.front();
+      else if(!q_alpha_lge.empty()) return q_alpha_lge.front();
+      else if(!q_alpha.empty())     return q_alpha.front();
+      else if(!q_equiv.empty())     return q_equiv.front();
+      else                          return q_unit.front();
     };
 
     void pop_front() {
       assert(!empty());
-      if(!q_confl.empty())      q_confl.pop_front();
-      else if(!q_alpha.empty()) q_alpha.pop_front();
-      else if(!q_equiv.empty()) q_equiv.pop_front();
-      else                      q_unit.pop_front();
+      if(!q_confl.empty())          q_confl.pop_front();
+      else if(!q_alpha_lge.empty()) q_alpha_lge.pop_front();
+      else if(!q_alpha.empty())     q_alpha.pop_front();
+      else if(!q_equiv.empty())     q_equiv.pop_front();
+      else                          q_unit.pop_front();
     };
     
     /**
-     * @brief clear all els in queue with too high level
+     * @brief clear all els in queue with too high level OR el comes from GE (then it might be useless on higher lvl!)
      * 
      * @param lvl max lvl that is allowed in queue
      */
     void clear(const var_t lvl) {
       q_confl.remove_if([lvl](const auto& q_el){ return q_el.lvl > lvl; });
+      q_alpha_lge.clear();
       q_alpha.remove_if([lvl](const auto& q_el){ return q_el.lvl > lvl; });
       q_equiv.remove_if([lvl](const auto& q_el){ return q_el.lvl > lvl; });
       q_unit.remove_if( [lvl](const auto& q_el){ return q_el.lvl > lvl; });
@@ -126,6 +131,7 @@ class lin_queue {
 
     void clear() {
       q_confl.clear();
+      q_alpha_lge.clear();
       q_alpha.clear();
       q_equiv.clear();
       q_unit.clear();
@@ -222,6 +228,11 @@ class solver
      * @note lineral_watches[lvl] contains all units added in dl lvl; used as stack
      */
     vec< list< lineral_watch > > lineral_watches;
+
+    /**
+     * @brief lazy-gauss-elim of XNF unit clauses, i.e., linerals
+     */
+    lin_sys_lazy_GE lazy_sys;
 
     /**
      * @brief current assignments of vars; assignments[i] contains lineral with LT i
@@ -664,9 +675,12 @@ class solver
      */
     inline void queue_implied_lineral(lin_w_it lin, const var_t lvl, const origin_t origin = origin_t::CLAUSE, const queue_t type = queue_t::NEW_UNIT) {
       assert(lin->assert_data_struct(alpha));
-      if(type==queue_t::NEW_GUESS) lineral_queue.q_alpha.emplace_front( lin, lvl, type );
-      else if(lin->LT()==0) {
+      if(type==queue_t::NEW_GUESS) {
+        lineral_queue.q_alpha.emplace_front( lin, lvl, type );
+      } else if(lin->LT()==0) {
         lineral_queue.q_confl.emplace_front( lin, lvl, queue_t::IMPLIED_ALPHA );
+      } else if(origin==origin_t::GE) {
+        lineral_queue.q_alpha_lge.emplace_back( lin, lvl, type );
       } else if(lin->is_assigning(alpha)) {
         lineral_queue.q_alpha.emplace_back( lin, lvl, type );
         //if(from_lineral_watch) lineral_queue.q_alpha.emplace_front( lin, lvl, type );
@@ -700,15 +714,15 @@ class solver
 
     
     inline void add_new_lineral(lineral&& l, var_t lvl, queue_t type, origin_t origin = origin_t::CLAUSE) {
-      assert(lvl==dl);
+      //assert(lvl==dl);
       lineral_watches[lvl].emplace_back( std::move(l), alpha, alpha_dl, dl_count, lvl );
-      queue_implied_lineral( std::prev(lineral_watches[dl].end()), lvl, origin, type);
+      queue_implied_lineral( std::prev(lineral_watches[lvl].end()), lvl, origin, type);
     };
     
     inline void add_new_lineral(const lineral& l, var_t lvl, queue_t type, origin_t origin = origin_t::CLAUSE) {
-      assert(lvl==dl);
+      //assert(lvl==dl);
       lineral_watches[lvl].emplace_back(l, alpha, alpha_dl, dl_count, lvl);
-      queue_implied_lineral( std::prev(lineral_watches[dl].end()), lvl, origin, type);
+      queue_implied_lineral( std::prev(lineral_watches[lvl].end()), lvl, origin, type);
     };
     
     inline void add_new_guess(lineral&& l) {

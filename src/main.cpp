@@ -114,6 +114,12 @@ int main(int argc, char const *argv[])
         .nargs(1);
     program.add_hidden_alias_for(arg_ge, "-la"); //old flag
     
+    //lazy gauss-elim
+    program.add_argument("-no-lge","--no-lazy-gauss-elim")
+        .help("deactivate lazy gauss-elim of unit clauses")
+        .flag();
+    
+
     //initial reduction opts
     program.add_argument("-ip","--initial-propagation")
         .help("initial propagation of non-forcing linerals; 'no' (no), 'nbu' (reduce if each linerals size does not blow up), or 'full' (full reduction)")
@@ -149,8 +155,6 @@ int main(int argc, char const *argv[])
         .help("applies GCP once and outputs result")
         .default_value(std::string("out.xnf"))
         .nargs(1);
-    
-
 
     try {
         program.parse_args(argc, argv);
@@ -184,6 +188,8 @@ int main(int argc, char const *argv[])
     else if(ca_str=="1uip+") ca = ca_alg::fuip_opt;
     
     bool cm = program.is_used("-cm");
+    
+    bool lge = !program.is_used("-no-lge");
     
     auto rh_str = program.get<std::string>("-rh");
     restart_opt rh = restart_opt::luby;
@@ -230,7 +236,7 @@ int main(int argc, char const *argv[])
         assert( P.assert_data_struct() );
 
         //set upt options
-        options opts( dh, po, ca, cm, rh, ip, pp, eq, gauss_elim_schedule, verb, time_out, sol_count, P );
+        options opts( dh, po, ca, cm, rh, ip, pp, eq, lge, gauss_elim_schedule, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;

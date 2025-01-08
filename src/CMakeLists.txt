@@ -34,6 +34,9 @@ add_library(
     lineral_watch.cpp
     cls_watch.hpp
     cls_watch_resolver.hpp
+    #linsys_watched
+    lin_sys_lazy.hpp
+    lin_sys_lazy.cpp
 )
 target_link_libraries(lineral_lazy PUBLIC ${EXTRA_LIBS} PRIVATE lineral)
 

@@ -19,8 +19,13 @@
 
 typedef list<lineral>::iterator linerals_it;
 
+//forward declare
+class lin_sys_lazy_GE;
+
 class lin_sys
 {
+  friend class lin_sys_lazy_GE;
+
   private:
     list< lineral > linerals;
 
