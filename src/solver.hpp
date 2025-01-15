@@ -893,7 +893,7 @@ class solver
     };
     
     inline bool need_LGE_update() {
-      return !linerals_to_be_added_to_LGJ.empty();
+      return dl==0 && !linerals_to_be_added_to_LGJ.empty();
     }
 
     inline bool find_implications_by_LGE_update(stats& s) {
@@ -1143,7 +1143,7 @@ class solver
     };
 
     ~solver() {
-      delete lazy_gauss_jordan;
+      if(opt.lge) delete lazy_gauss_jordan;
     };
 
     /**
