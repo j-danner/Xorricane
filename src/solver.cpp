@@ -116,7 +116,6 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
                     goto restart; //restart everytime a new lineral is added!
                 }
             }
-            if(it->deg()==1) it = std::prev( _clss.erase(it) );
         }
     } else if(opt.ip==initial_prop_opt::full) {
         //fully reduce all cls with deg>1, and replace all linear ones with _Lsys's linerals
@@ -131,12 +130,13 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
         //_clss.emplace_back( std::move(*l_it) );
         add_new_lineral( *l_it, 0, queue_t::NEW_UNIT, origin_t::INIT );
     }
-    //init lazy_gauss_jordan
+
     if(opt.lge) {
+        //init lazy_gauss_jordan
         lazy_gauss_jordan = new lin_sys_lazy_GE( std::move(_Lsys), get_num_vars() );
         VERB(120, "c lazy_gauss_jordan: " << lazy_gauss_jordan->to_str() );
-        //clear gauss_jordan queue -- all implied linerals already added by the above!
-        lazy_gauss_jordan->clear_implied_literal_queue();
+    } else {
+        lazy_gauss_jordan = new lin_sys_lazy_GE();
     }
 
     active_cls = 0; //value is managed by 'init_and_add_xcls_watch'
@@ -533,6 +533,7 @@ void solver::restart(stats& s) {
 };
 
 void solver::remove_fixed_alpha(const var_t upd_lt) {
+    assert(dl==0);
     assert_slow( assert_data_structs() );
     VERB(120, "c " << GREEN("remove_fixed_alpha start") );
     assert( alpha[upd_lt]!=bool3::None && alpha_dl[upd_lt]==0 );
@@ -654,25 +655,12 @@ void solver::GCP(stats &s) noexcept {
         assert( alpha_dl[upd_lt]==dl );
 
         if(opt.lge) {
-            VERB(120, "c performing lazy LGJ");
+            VERB(120, "c performing lazy gauss jordan elim");
             const auto begin  = std::chrono::high_resolution_clock::now();
             if( lazy_gauss_jordan->assign(upd_lt, alpha, dl) ) {
-                //lazy LGJ found new literal!
-                list<lineral>& q = lazy_gauss_jordan->get_implied_literal_queue();
-                for (auto&& lin : q) {
-                  #ifndef NDEBUG
-                    //ensure lin is supported by lin_sys
-                    VERB(120, "c new lineral from lazy LGJ: " << lin.to_str());
-                    lin_sys lsys( get_lineral_watches_lin_sys() );
-                    lineral tmp = lin;
-                    assert( lsys.reduce(tmp).is_zero() );
-                  #endif
-                    ++s.no_lge_prop;
-                    add_new_lineral( std::move(lin), dl, queue_t::IMPLIED_ALPHA, origin_t::LGJ );
-                }
-                lazy_gauss_jordan->clear_implied_literal_queue();
+                //LGJ found new literals
+                fetch_LGE_implications(s);
             }
-            assert( lazy_gauss_jordan->get_implied_literal_queue().empty() );
             const auto end  = std::chrono::high_resolution_clock::now();
             s.total_lge_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
         }
@@ -688,8 +676,8 @@ void solver::GCP(stats &s) noexcept {
                 it = L_watch_list[upd_lt].erase( it );
                 continue;
             }
-            //if lvl==0 and lge is active, then it can be skipped!
-            if(lvl==0 && opt.lge) { ++it; continue; }
+            //even if lge is active do NOT skip lvl==0 watches; remember that CMS-GJ seems to be incomplete.
+            if(lvl==0) { ++it; continue; }
             assert(lin->watches(upd_lt));
             if(!lin->is_active(dl_count)) { ++it; continue; }
             const auto& [new_wl, ret] = lin->update(upd_lt, alpha, dl, dl_count);
@@ -808,6 +796,8 @@ void solver::dpll_solve(stats &s) {
     lin_sys new_lin_sys;
     std::stack<lineral> dec_stack;
 
+    // before anything else: collect implications that were found during initialization in lazy_gauss_jordan.
+    if(need_LGJ_update()) find_implications_by_LGJ(s);
     // GCP -- before making decisions!
     goto dpll_gcp;
 
@@ -864,7 +854,7 @@ void solver::dpll_solve(stats &s) {
             GCP(s);
             if( !at_conflict() &&
                 ( (need_equiv_removal() && remove_fixed_equiv())
-                || (need_LGE_update() && find_implications_by_LGE_update(s))
+                || (need_LGJ_update() && find_implications_by_LGJ(s))
                 || (need_IG_inprocessing(s) && find_implications_by_IG(s))
                 )
               ) {
@@ -952,12 +942,14 @@ void solver::solve(stats &s) {
         break;
     }
     
+    // before anything else: collect implications that were found during initialization in lazy_gauss_jordan.
+    if(need_LGJ_update()) find_implications_by_LGJ(s);
     // GCP -- before making decisions!
     do {
         GCP(s);
     } while( !at_conflict() && 
         (  (need_equiv_removal() && remove_fixed_equiv())
-        || (need_LGE_update() && find_implications_by_LGE_update(s)) 
+        || (need_LGJ_update() && find_implications_by_LGJ(s)) 
         || (need_IG_inprocessing(s) && find_implications_by_IG(s)) 
         || (need_GE_inprocessing(s) && find_implications_by_GE(s))
         ) );
@@ -1043,7 +1035,7 @@ void solver::solve(stats &s) {
                 GCP(s);
             } while( !at_conflict() && 
                 (  (need_equiv_removal() && remove_fixed_equiv())
-                || (need_LGE_update() && find_implications_by_LGE_update(s)) 
+                || (need_LGJ_update() && find_implications_by_LGJ(s)) 
                 || (need_IG_inprocessing(s) && find_implications_by_IG(s)) 
                 || (need_GE_inprocessing(s) && find_implications_by_GE(s))
                 ) );
@@ -1858,7 +1850,7 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
   // (2) if 1 is contained in sys, construct reason cls!
   assert_slower(!L_.is_consistent());
 
-  VERB(80, "c watched linerals are inconsistent!");
+  VERB(80, "c check_lineral_watches_GE: " << RED("watched linerals are inconsistent!") );
 
   //solve for M^T x = 1
   mzd_t* b = mzd_init(std::max(ncols,nrows), 1);
