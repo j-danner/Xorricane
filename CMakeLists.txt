@@ -81,8 +81,6 @@ endif()
 find_package(Catch2 3 QUIET)
 if(Catch2_FOUND)
     message("Catch2 found!")
-    set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED OFF)
-    include(CTest)
     include(Catch)
     # These tests can use the Catch2-provided main
     add_executable(testing
