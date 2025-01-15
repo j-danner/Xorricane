@@ -703,14 +703,14 @@ class solver
         //put lin in queue for propagation in IG -- if it is does not originate from IG
         IG_linerals_to_be_propagated.add_lineral( lin->to_lineral() );
       }
-      if(lvl==0 && opt.lge && origin!=origin_t::LGJ && origin!=origin_t::INIT) {
+      if(lvl==0 && opt.lgj && origin!=origin_t::LGJ && origin!=origin_t::INIT) {
         //put lin in queue for propagation in IG -- if it is does not originate from LGJ (or INIT)
         linerals_to_be_added_to_LGJ.emplace_back( lin->to_lineral() );
       }
 
       var_t new_lt = process_lineral(lin, lvl, type, origin);
      #ifndef NDEBUG
-      if(opt.lge && (origin==origin_t::LGJ || origin==origin_t::INIT) && new_lt!=(var_t) -1) {
+      if(opt.lgj && (origin==origin_t::LGJ || origin==origin_t::INIT) && new_lt!=(var_t) -1) {
         //triggers a sanity check in lazy_gauss_jordan->cms
         lazy_gauss_jordan->assign(new_lt, alpha, dl);
       };
@@ -882,7 +882,7 @@ class solver
       alpha_trail_pos[lt2] = stepwise_lit_trail_length;
       ++stepwise_lit_trail_length;
       assert(type==queue_t::NEW_GUESS || !lin->is_reducible() || equiv_lits[lt2].ind==0 || alpha[equiv_lits[lt2].ind]!=bool3::None);
-      //assert( !opt.lge || origin!=origin_t::LGJ || lazy_gauss_jordan->check_cms_assignments(alpha) ); --skip this check: it sometimes fails and I do not know why :/ ...but we don't care about it as long as lazy_gauss_jordan->cms still propagates correctly! (and this is checked anyways as well!)
+      //assert( !opt.lgj || origin!=origin_t::LGJ || lazy_gauss_jordan->check_cms_assignments(alpha) ); --skip this check: it sometimes fails and I do not know why :/ ...but we don't care about it as long as lazy_gauss_jordan->cms still propagates correctly! (and this is checked anyways as well!)
       return lt2;
     };
 
@@ -1071,7 +1071,7 @@ class solver
     };
 
     ~solver() {
-      if(opt.lge) delete lazy_gauss_jordan;
+      if(opt.lgj) delete lazy_gauss_jordan;
     };
 
     /**
@@ -1111,41 +1111,41 @@ class solver
     list<lineral> linerals_to_be_added_to_LGJ;
 
     inline bool need_LGJ_update() {
-      return opt.lge && dl==0 && (!linerals_to_be_added_to_LGJ.empty() || !lazy_gauss_jordan->get_implied_literal_queue().empty());
+      return opt.lgj && dl==0 && (!linerals_to_be_added_to_LGJ.empty() || !lazy_gauss_jordan->get_implied_literal_queue().empty());
     }
 
     inline bool find_implications_by_LGJ(stats& s) {
       assert( need_LGJ_update() );
       if(!lazy_gauss_jordan->get_implied_literal_queue().empty()) {
         VERB(80, "c " << RED("find_implications_by_LGJ: retrieving " << lazy_gauss_jordan->get_implied_literal_queue().size() << " new linerals") );
-        fetch_LGE_implications(s);
+        fetch_LGJ_implications(s);
         return true;
       }
       assert(!linerals_to_be_added_to_LGJ.empty());
 
-      VERB(80, "c " << RED("find_implications_by_LGJ: adding " << linerals_to_be_added_to_LGJ.size() << " new linerals to LGE") );
+      VERB(80, "c " << RED("find_implications_by_LGJ: adding " << linerals_to_be_added_to_LGJ.size() << " new linerals to LGJ") );
 
       //add linerals to lazy_gauss_jordan
       var_t count = lazy_gauss_jordan->add_linerals( std::move(linerals_to_be_added_to_LGJ) );
       if(count>0) {
-        fetch_LGE_implications(s);
+        fetch_LGJ_implications(s);
       }
       linerals_to_be_added_to_LGJ.clear();
 
-      VERB(80, "c " << GREEN("find_implications_by_LGE_update: found " << count << " new assigning linerals") );
+      VERB(80, "c " << GREEN("find_implications_by_LGJ: found " << count << " new assigning linerals") );
 
       return count>0;
     }
 
-    void fetch_LGE_implications(stats& s) {
-      assert(opt.lge);
+    void fetch_LGJ_implications(stats& s) {
+      assert(opt.lgj);
       if(lazy_gauss_jordan->get_implied_literal_queue().empty()) return;
       list<lineral>& q = lazy_gauss_jordan->get_implied_literal_queue();
       for (auto&& lin : q) {
-          ++s.no_lge_prop;
+          ++s.no_lgj_prop;
           add_new_lineral( std::move(lin), dl, queue_t::NEW_UNIT, origin_t::LGJ );
           //While we KNOW that we have queue_t::IMPLIED_ALPHA, this implication might only be true under a sequence of assignments due to LGJ.
-          //example: say x1, x2, x1+x2+x3 are returned by LGE.
+          //example: say x1, x2, x1+x2+x3 are returned by LGJ.
           //         Now if we call process_lineral(x1) and process_lineral(x2) we set alpha[1] and alpha[2].
           //         When process_linerals(x1+x2+x3) is called, it will lead to errors if queue_t::IMPLIED_ALPHA,
           //         since it requires l.get_assignment(alpha) to return x3.
@@ -1167,7 +1167,7 @@ class solver
      */
     inline bool need_GE_inprocessing(stats& s) {
       if(at_conflict() || opt.gauss_elim_schedule==0) return false;
-      else if(dl==0) return true; //always use linear algebra on dl 0?
+      else if(dl==0) return true; //always use gauss-jordan-elim on dl 0?
       else if(opt.gauss_elim_schedule==-1) {
         //adaptive scheduling: decrease gauss_elim_schedule, if average usability decreased
         --checks_until_next_la;

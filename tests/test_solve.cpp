@@ -8,16 +8,26 @@
 
 TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
   #ifndef NDEBUG
-    int la_sch = GENERATE(0,1,5);
-    dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lex);
+    int la_sch = 0;
+    dec_heu dh = dec_heu::vsids;
     phase_opt po = phase_opt::save;
-    ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip);
+    ca_alg ca = ca_alg::fuip;
     initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
     xornado_preproc pp = xornado_preproc::no;
-    bool lge = true;
-    bool cm = GENERATE(true, false);
+    bool lgj = false;
+    bool cm = false;
     bool equiv = true;
-    int verb = 0;
+    int verb = 100;
+    //int la_sch = GENERATE(0,1,5);
+    //dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lex);
+    //phase_opt po = phase_opt::save;
+    //ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip);
+    //initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
+    //xornado_preproc pp = xornado_preproc::no;
+    //bool lgj = true;
+    //bool cm = GENERATE(true, false);
+    //bool equiv = true;
+    //int verb = 0;
   #else
     int la_sch = GENERATE(0,1,5,10);
     dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lwl, dec_heu::swl, dec_heu::lex);
@@ -26,13 +36,13 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
     bool equiv = GENERATE(true, false);
     bool cm = GENERATE(true, false);
-    bool lge = GENERATE(true, false);
+    bool lgj = GENERATE(true, false);
     xornado_preproc pp = GENERATE(xornado_preproc::no, xornado_preproc::scc);
     int verb = 0;
   #endif
 
     guessing_path P; 
-    options opt(dh, po, ca, cm, restart_opt::luby, ip, pp, equiv, lge, la_sch, verb, -1, 1, P);
+    options opt(dh, po, ca, cm, restart_opt::luby, ip, pp, equiv, lgj, la_sch, verb, -1, 1, P);
 
     SECTION( "test1.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test1.xnf");

@@ -131,7 +131,7 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
         add_new_lineral( *l_it, 0, queue_t::NEW_UNIT, origin_t::INIT );
     }
 
-    if(opt.lge) {
+    if(opt.lgj) {
         //init lazy_gauss_jordan
         lazy_gauss_jordan = new lin_sys_lazy_GE( std::move(_Lsys), get_num_vars() );
         VERB(120, "c lazy_gauss_jordan: " << lazy_gauss_jordan->to_str() );
@@ -654,15 +654,15 @@ void solver::GCP(stats &s) noexcept {
         VERB(120, "c new literal ready for propagation");
         assert( alpha_dl[upd_lt]==dl );
 
-        if(opt.lge) {
+        if(opt.lgj) {
             VERB(120, "c performing lazy gauss jordan elim");
             const auto begin  = std::chrono::high_resolution_clock::now();
             if( lazy_gauss_jordan->assign(upd_lt, alpha, dl) ) {
                 //LGJ found new literals
-                fetch_LGE_implications(s);
+                fetch_LGJ_implications(s);
             }
             const auto end  = std::chrono::high_resolution_clock::now();
-            s.total_lge_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
+            s.total_lgj_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
         }
 
 
@@ -676,7 +676,7 @@ void solver::GCP(stats &s) noexcept {
                 it = L_watch_list[upd_lt].erase( it );
                 continue;
             }
-            //even if lge is active do NOT skip lvl==0 watches; remember that CMS-GJ seems to be incomplete.
+            //even if lgj is active do NOT skip lvl==0 watches; remember that CMS-GJ seems to be incomplete.
             if(lvl==0) { ++it; continue; }
             assert(lin->watches(upd_lt));
             if(!lin->is_active(dl_count)) { ++it; continue; }
@@ -1249,7 +1249,7 @@ std::string solver::to_xnf_str() const noexcept {
             while(it != L_watch_list.end()) {
                 for([[maybe_unused]] auto [lvl, dl_c, lin] : *it) {
                     if(dl_count[lvl]>dl_c) continue;
-                    if(lvl==0 && opt.lge) continue;
+                    if(lvl==0 && opt.lgj) continue;
                     //ensure every lineral occurs in two watch-lists!
                     [[maybe_unused]] int idx2 = std::distance(lineral_watches[lvl].begin(), std::find_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; }));
                     [[maybe_unused]] var_t ct = watch_cnt.find({lvl,idx2})->second;
@@ -1272,8 +1272,8 @@ std::string solver::to_xnf_str() const noexcept {
             for(const auto& lw_dl : lineral_watches) {
                 for(const auto& lin : lw_dl) {
                     if(!at_conflict() && lineral_queue.empty() && !lin.is_assigning()) {
-                        assert( (lvl==0 && opt.lge) || std::any_of(L_watch_list[lin.get_wl0()].begin(), L_watch_list[lin.get_wl0()].end(), [&](auto& p){ return *p.lin==lin; }) );
-                        assert( (lvl==0 && opt.lge) || std::any_of(L_watch_list[lin.get_wl1()].begin(), L_watch_list[lin.get_wl1()].end(), [&](auto& p){ return *p.lin==lin; }) );
+                        assert( (lvl==0 && opt.lgj) || std::any_of(L_watch_list[lin.get_wl0()].begin(), L_watch_list[lin.get_wl0()].end(), [&](auto& p){ return *p.lin==lin; }) );
+                        assert( (lvl==0 && opt.lgj) || std::any_of(L_watch_list[lin.get_wl1()].begin(), L_watch_list[lin.get_wl1()].end(), [&](auto& p){ return *p.lin==lin; }) );
                     }
                 }
                 ++lvl;
@@ -1371,7 +1371,7 @@ std::string solver::to_xnf_str() const noexcept {
             }
         }
 
-        if(opt.lge) {
+        if(opt.lgj) {
             //check that the linerals in lazy_gauss_jordan are supported by the linerals in lineral_watches[0]
             lin_sys lin0 = lin_sys( list<lineral>(lineral_watches[0].begin(), lineral_watches[0].end()));
             for(const auto& l : lazy_gauss_jordan->get_linerals()) {

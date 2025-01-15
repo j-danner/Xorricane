@@ -115,8 +115,8 @@ int main(int argc, char const *argv[])
     program.add_hidden_alias_for(arg_ge, "-la"); //old flag
     
     //lazy gauss-elim
-    program.add_argument("-no-lge","--no-lazy-gauss-elim")
-        .help("deactivate lazy gauss-elim of unit clauses")
+    program.add_argument("-no-lgj","--no-lazy-gauss-jordan-elim")
+        .help("deactivate lazy gauss-jordan-elim of unit clauses")
         .flag();
     
 
@@ -189,7 +189,7 @@ int main(int argc, char const *argv[])
     
     bool cm = program.is_used("-cm");
     
-    bool lge = !program.is_used("-no-lge");
+    bool lgj = !program.is_used("-no-lgj");
     
     auto rh_str = program.get<std::string>("-rh");
     restart_opt rh = restart_opt::luby;
@@ -236,7 +236,7 @@ int main(int argc, char const *argv[])
         assert( P.assert_data_struct() );
 
         //set upt options
-        options opts( dh, po, ca, cm, rh, ip, pp, eq, lge, gauss_elim_schedule, verb, time_out, sol_count, P );
+        options opts( dh, po, ca, cm, rh, ip, pp, eq, lgj, gauss_elim_schedule, verb, time_out, sol_count, P );
 
         if(only_gcp) {
             stats s;

@@ -1,10 +1,11 @@
 //file to test implementation of lin_syys_watch
 #include "../src/lin_sys_lazy.hpp"
 #include "../src/solver.hpp"
+#include "../src/io.hpp"
 
 #include <catch2/catch_all.hpp>
 
-TEST_CASE( "lin_sys_lazy_GE basic operations" , "[lin_sys][assigning][propagation]" ) {
+TEST_CASE( "linsys_lazy_GE basic operations" , "[lin_sys][assigning][propagation]" ) {
     SECTION("simple") {
         lineral l1( vec<var_t>({1,2,3}) );
         lineral l2( vec<var_t>({2,3,4}) );
@@ -238,5 +239,27 @@ TEST_CASE( "lin_sys_lazy_GE basic operations" , "[lin_sys][assigning][propagatio
         //we just ignore it and check that all CMS output is consistent and CMS-GJE propagates correctly!
         ret = lsl.assign(1, alpha, 0);
         CHECK( !ret );
+    }
+}
+
+TEST_CASE( "linsys_lazy in solver", "[lin_sys][assigning][propagation][solver]") {
+    SECTION( "test4.xnf" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test4.xnf");
+        options opt;
+        opt.lgj = true;
+        opt.pp = xornado_preproc::scc_fls;
+        auto slvr = solver(clss, opt);
+        //slvr.get_opts()->verb = 90;
+
+        stats s;
+        //initial propagation
+        slvr.GCP(s);
+        //add lineral (which can be deduced using graph-preprocessing) to LGJ component
+        slvr.find_implications_by_IG(s);
+        slvr.linerals_to_be_added_to_LGJ.emplace_back( lineral(vec<var_t>({5,6})) );
+        slvr.find_implications_by_LGJ(s);
+        //should produce conflict after another call to GCP!
+        slvr.GCP(s);
+        CHECK( slvr.at_conflict() );
     }
 }
