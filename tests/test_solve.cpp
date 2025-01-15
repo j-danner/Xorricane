@@ -13,6 +13,8 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     phase_opt po = phase_opt::save;
     ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip);
     initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
+    xornado_preproc pp = xornado_preproc::no;
+    bool lge = true;
     bool cm = GENERATE(true, false);
     bool equiv = true;
     int verb = 0;
@@ -24,10 +26,13 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
     bool equiv = GENERATE(true, false);
     bool cm = GENERATE(true, false);
+    bool lge = GENERATE(true, false);
+    xornado_preproc pp = GENERATE(xornado_preproc::no, xornado_preproc::scc);
     int verb = 0;
   #endif
 
-    options opt(dh, po, ca, cm, restart_opt::luby, ip, equiv, la_sch, verb);
+    guessing_path P; 
+    options opt(dh, po, ca, cm, restart_opt::luby, ip, pp, equiv, lge, la_sch, verb, -1, 1, P);
 
     SECTION( "test1.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test1.xnf");
@@ -410,7 +415,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
 
     SECTION( "test43.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test43.xnf");
-        auto slvr = solver(clss);
+        auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
         CHECK( s.is_sat() == false );
@@ -418,7 +423,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     
     SECTION( "test44.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test44.xnf");
-        auto slvr = solver(clss);
+        auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
         CHECK( s.is_sat() == true );
@@ -427,7 +432,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     
     SECTION( "test45.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test45.xnf");
-        auto slvr = solver(clss);
+        auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
         CHECK( s.is_sat() == true );
@@ -436,7 +441,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     
     SECTION( "test47.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test47.xnf");
-        auto slvr = solver(clss);
+        auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
         CHECK( s.is_sat() == true );
@@ -445,7 +450,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     
     SECTION( "test48.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test48.xnf");
-        auto slvr = solver(clss);
+        auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
         CHECK( s.is_sat() == true );
@@ -454,7 +459,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     
     SECTION( "test49.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test49.xnf");
-        auto slvr = solver(clss);
+        auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
         CHECK( s.is_sat() == true );
@@ -463,7 +468,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     
     SECTION( "test50.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test50.xnf");
-        auto slvr = solver(clss);
+        auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
         CHECK( s.is_sat() == true );
@@ -472,7 +477,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     
     SECTION( "test51.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test51.xnf");
-        auto slvr = solver(clss);
+        auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
         CHECK( s.is_sat() == true );
@@ -481,7 +486,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     
     SECTION( "test52.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test52.xnf");
-        auto slvr = solver(clss);
+        auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
         CHECK( s.is_sat() == true );
@@ -490,7 +495,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     
     SECTION( "test53.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test53.xnf");
-        auto slvr = solver(clss);
+        auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
         CHECK( s.is_sat() == true );
@@ -499,7 +504,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
 
     SECTION( "test54.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test54.xnf");
-        auto slvr = solver(clss);
+        auto slvr = solver(clss, opt);
         //slvr.get_opts()->verb = 120;
 
         stats s = slvr.solve();
@@ -801,7 +806,7 @@ TEST_CASE( "solving 2xnf test instances with preprocessing" , "[solver][preproce
         slvr.get_opts()->verb = 80;
 
         stats s = slvr.solve();
-        CHECK( s.is_sat() == true ); //instance is UNSAT
+        CHECK( s.is_sat() == true );
         CHECK( s.no_dec == 0 );
     }
 }
