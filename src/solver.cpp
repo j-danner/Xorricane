@@ -293,6 +293,11 @@ std::pair<var_t, cls_watch> solver::analyze_exp() {
 };
 
 std::pair<var_t, cls_watch> solver::analyze() {
+    if(dl<=1) {
+        //reason clause is obvious -- negation of first decision!
+        return analyze_dpll();
+    }
+
     VERB(70, "**** analyzing conflict");
 #ifndef NDEBUG
     print_trail("    *");
