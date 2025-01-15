@@ -491,7 +491,6 @@ class lin_sys_lazy_GE
         return lins;
 
         //this messes up data structures!!
-        vec<lineral> lins;
         cms->start_getting_constraints(true,false);
         vector<CMSat::Lit> lits;
         bool is_xor; bool rhs;
