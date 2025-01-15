@@ -60,6 +60,13 @@
 #define UNDERLINE(str) rang::style::underline << str << rang::style::reset
 
 #define GRAY(str) rang::fg::gray<< str << rang::style::reset
+#define RED(str) rang::fg::red<< str << rang::style::reset
+#define GREEN(str) rang::fg::green<< str << rang::style::reset
+#define YELLOW(str) rang::fg::yellow<< str << rang::style::reset
+#define BLUE(str) rang::fg::blue<< str << rang::style::reset
+#define MAGENTA(str) rang::fg::magenta<< str << rang::style::reset
+#define CYAN(str) rang::fg::cyan<< str << rang::style::reset
+#define BLACK(str) rang::fg::black<< str << rang::style::reset
 
 
 

@@ -530,7 +530,7 @@ void solver::restart(stats& s) {
 
 void solver::remove_fixed_alpha(const var_t upd_lt) {
     assert_slow( assert_data_structs() );
-    VERB(90, "c remove_fixed_alpha start" );
+    VERB(90, "c " << GREEN("remove_fixed_alpha start") );
     assert( alpha[upd_lt]!=bool3::None && alpha_dl[upd_lt]==0 );
     assert(dl==0);
     const bool3 val = alpha[upd_lt];
@@ -548,14 +548,14 @@ void solver::remove_fixed_alpha(const var_t upd_lt) {
             assert( cls_w.assert_data_struct(alpha, alpha_trail_pos, dl_count) );
         }
     }
-    VERB(90, "c remove_fixed_alpha end" );
+    VERB(90, "c " << GREEN("remove_fixed_alpha end") );
     assert_slow( assert_data_structs() );
 }
 
 bool solver::remove_fixed_equiv() {
     assert(dl==0);
 
-    VERB(90, "c remove_fixed_equiv start" );
+    VERB(90, "c " << GREEN("remove_fixed_equiv start") );
   #ifdef DEBUG_SLOW
     const auto L = get_lineral_watches_lin_sys();
   #endif
@@ -625,7 +625,7 @@ bool solver::remove_fixed_equiv() {
             assert_slower( xnf_clss[i].assert_data_struct(alpha, alpha_trail_pos, dl_count) );
         }
     }
-    VERB(90, "c remove_fixed_equiv end" );
+    VERB(90, "c " << GREEN("remove_fixed_equiv end") );
     assert_slower( assert_data_structs() );
   #ifdef DEBUG_SLOW
     const auto L_after = get_lineral_watches_lin_sys();
@@ -1673,7 +1673,7 @@ inline lin_sys solver::get_lineral_watches_lin_sys() const {
 #endif
 
   //M4RI implementation
-  VERB(80, "c use M4RI to reduce watched linerals");
+  VERB(140, "c use M4RI to reduce watched linerals");
 
   //(1) reduce watched linerals
 
@@ -1741,7 +1741,7 @@ inline lin_sys solver::get_lineral_watches_lin_sys() const {
 
   lin_sys L = lin_sys( std::move(linerals_) );
   assert_slower( L_.to_str() == L.to_str() );
-  VERB(80, "c reduction done.");
+  VERB(140, "c reduction done.");
 
   mzd_free(M);
   mzd_free(M_tr);

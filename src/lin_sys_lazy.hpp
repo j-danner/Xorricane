@@ -294,10 +294,10 @@ class lin_sys_lazy_GE
             
         }
 
-        #ifndef NDEBUG
-            lin_sys sys( get_implied_literal_queue() );
-            std::cout << "found " << sys.to_str() << std::endl;
-        #endif
+        //#ifndef NDEBUG
+        //    lin_sys sys( get_implied_literal_queue() );
+        //    std::cout << "found " << sys.to_str() << std::endl;
+        //#endif
       
         return implied_literal_queue.size();
     }
@@ -372,7 +372,7 @@ class lin_sys_lazy_GE
                   if(lin.is_assigning() && !L_dec.reduce(lin).is_zero()) det_alpha.emplace_back( lin );
                 }
                 lin_sys L_det( det_alpha );
-                std::cout << "c LGJ should deduce: " << L_det.to_str() << std::endl;
+                std::cout << "c " << BLUE("LGJ should deduce: " << L_det.to_str()) << std::endl;
             #endif
 
             propagate();
@@ -389,7 +389,7 @@ class lin_sys_lazy_GE
                   if(lin.is_assigning() && !L_dec.reduce(lin).is_zero()) det_alpha2.emplace_back( lin );
                 }
                 lin_sys L_det2( det_alpha2 );
-                std::cout << "c LGJ could deduce: " << L_det2.to_str() << std::endl;
+                std::cout << "c " << BLUE("LGJ could deduce:  " << L_det2.to_str()) << std::endl;
                 assert( L_det.to_str() == L_det2.to_str() );
             #endif
         }
