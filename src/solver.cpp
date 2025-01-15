@@ -155,17 +155,16 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
 };
 
 void solver::backtrack(const var_t& lvl) {
-    VERB(90, "BACKTRACK start");
     if(lvl == dl) return;
     assert(lvl < dl);
-    VERB(50, "c backtracking to dl " << lvl);
+    VERB(50, "c " << CYAN("backtracking to dl " << lvl));
     if (dl - lvl > 1) {
         VERB(80, "c " << std::to_string(dl) << " : BACKJUMPING BY MORE THAN ON LEVEL!");
     }
     
     // trail and assignments!
   #ifndef NDEBUG
-    print_trail();
+    if(opt.verb>150) print_trail();
   #endif
 
     // update dl_count
@@ -193,11 +192,11 @@ void solver::backtrack(const var_t& lvl) {
     assert(active_cls == (var_t) std::count_if(xnf_clss.begin(), xnf_clss.end(), [&](const cls_watch &cls_w) { return cls_w.is_active(dl_count) && cls_w.is_irredundant(); }));
 
   #ifndef NDEBUG
-    print_trail();
+    if(opt.verb>150) print_trail();
   #endif
 
     VERB(201, to_str());
-    VERB(90, "BACKTRACK end");
+    VERB(150, "c backtracking finished!");
     assert(assert_data_structs());
 };
 
@@ -393,7 +392,7 @@ std::pair<var_t, cls_watch> solver::analyze() {
 };
 
 std::pair<var_t, cls_watch> solver::analyze_dpll() {
-    VERB(60, "analyze_dpll called!")
+    VERB(70, "**** analyzing dpll-style");
 #ifndef NDEBUG
     print_trail("    *");
 #endif
@@ -408,7 +407,7 @@ std::pair<var_t, cls_watch> solver::analyze_dpll() {
     VERB(70, "   * learnt clause is " << learnt_cls.to_str());
     learnt_cls.init_dpll(alpha, alpha_dl, alpha_trail_pos, dl_count);
 
-    return {dl>0 ? dl-1 : 0, std::move(learnt_cls) };
+    return {std::max<var_t>(dl-1, 0), std::move(learnt_cls) };
 };
 
 //code from CMS5!
@@ -530,7 +529,7 @@ void solver::restart(stats& s) {
 
 void solver::remove_fixed_alpha(const var_t upd_lt) {
     assert_slow( assert_data_structs() );
-    VERB(90, "c " << GREEN("remove_fixed_alpha start") );
+    VERB(120, "c " << GREEN("remove_fixed_alpha start") );
     assert( alpha[upd_lt]!=bool3::None && alpha_dl[upd_lt]==0 );
     assert(dl==0);
     const bool3 val = alpha[upd_lt];
@@ -548,14 +547,14 @@ void solver::remove_fixed_alpha(const var_t upd_lt) {
             assert( cls_w.assert_data_struct(alpha, alpha_trail_pos, dl_count) );
         }
     }
-    VERB(90, "c " << GREEN("remove_fixed_alpha end") );
+    VERB(90, "c " << GREEN("remove_fixed_alpha: x" << std::to_string(upd_lt) << " was removed") );
     assert_slow( assert_data_structs() );
 }
 
 bool solver::remove_fixed_equiv() {
     assert(dl==0);
 
-    VERB(90, "c " << GREEN("remove_fixed_equiv start") );
+    VERB(120, "c " << GREEN("remove_fixed_equiv start") );
   #ifdef DEBUG_SLOW
     const auto L = get_lineral_watches_lin_sys();
   #endif
@@ -580,7 +579,7 @@ bool solver::remove_fixed_equiv() {
     //empty watchlists
     for(auto& wl : watch_list) wl.clear();
 
-    bool ret = false;
+    var_t count = 0;
     //reduce all xnf_clss
     for(var_t i=0; i<xnf_clss.size(); ++i) {
         if(xnf_clss[i].is_active(dl_count)) {
@@ -600,7 +599,7 @@ bool solver::remove_fixed_equiv() {
                 decr_active_cls(i);
                 break;
             case cls_upd_ret::UNIT: //includes UNSAT case (i.e. get_unit() reduces with assignments to 1 !)
-                ret = true;
+                ++count;
                 assert(xnf_clss[i].is_unit(dl_count));
                 assert(xnf_clss[i].is_inactive(dl_count));
                 assert(xnf_clss[i].get_unit_at_lvl() == 0);
@@ -625,20 +624,20 @@ bool solver::remove_fixed_equiv() {
             assert_slower( xnf_clss[i].assert_data_struct(alpha, alpha_trail_pos, dl_count) );
         }
     }
-    VERB(90, "c " << GREEN("remove_fixed_equiv end") );
+    VERB(90, "c " << GREEN("remove_fixed_equiv: " << std::to_string(count) << " new linerals") );
     assert_slower( assert_data_structs() );
   #ifdef DEBUG_SLOW
     const auto L_after = get_lineral_watches_lin_sys();
     assert( (L+L_after).to_str() == L_after.to_str() ); //ensure that L <= L_after
   #endif
-    return ret;
+    return count>0;
 }
 
 lineral new_unit;
 //perform full GCP -- does not stop if conflict is found -- otherwise assert_data_struct will fail!
 void solver::GCP(stats &s) noexcept {
     s.no_gcp++;
-    VERB(90, "c GCP start");
+    VERB(90, "c " << YELLOW("GCP start"));
     while(!lineral_queue.empty() && !at_conflict()) {
         assert_slow(assert_data_structs());
 
@@ -763,7 +762,7 @@ void solver::GCP(stats &s) noexcept {
     assert(lineral_queue.empty() || at_conflict());
 
     VERB(201, to_str());
-    VERB(90, "c GCP end");
+    VERB(90, "c " << YELLOW("GCP end"));
     assert_slow(assert_data_structs());
 };
 
