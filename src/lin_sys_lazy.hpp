@@ -8,33 +8,25 @@
 #include "lineral.hpp"
 #include "lin_sys.hpp"
 
+#include "cryptominisat/src/solver.h"
+#include "cryptominisat/src/gaussian.h"
+
 class lin_sys_lazy_GE
 {
   private:
     /**
+     * @brief cryptominisat SAT solver; used for efficient lazy Gauss-Jordan Elimination
+     * @note it would be better to only use the code that is actually required (PropEngine::gauss_jordan_elim), but it depends on soo many other classes, that it is just much simpler to embed the 'whole' SAT solver and equip it only with the linerals for propagation...
+     */
+    CMSat::Solver* cms;
+    CMSat::SolverConf conf;
+    std::atomic<bool>* must_inter;
+    var_t num_vars;
+
+    /**
      * @brief linerals in lin_sys
      */
     vec<lineral> linerals;
-
-    /**
-     * @brief map from var to idx, where lineral[idx] is pivot for var; these simultaneously also are the first watches of each lineral!
-     */
-    pivot_map<var_t, var_t> pivot_poly;
-    
-    /**
-     * @brief firsst_watch[i] gives the 1st watch of lineral[i]; this coincides with pivot_poly's keys
-     */
-    vec<var_t> first_watch;
-    
-    /**
-     * @brief second_watch[i] gives the 2nd watch of lineral[i]
-     */
-    vec<var_t> second_watch;
-
-    /**
-     * @brief watch_list[var] contains all idxs, where lineral[idx] watches var
-     */
-    pivot_map< var_t, list<var_t> > watch_list;
 
     /**
      * @brief assigning linerals (literals), not yet fetched
@@ -42,363 +34,480 @@ class lin_sys_lazy_GE
     list<lineral> implied_literal_queue;
 
     /**
+     * @brief adds new alpha assignment to internal queue
+     * 
+     * @param var variable that is assigned
+     * @param val value it is assigned to
+     * @return true iff values is not yet assigned
+     */
+    bool enqueue_new_assignment(const var_t var, const bool val) {
+        if(cms->value(var) == CMSat::l_Undef) {
+            CMSat::Lit next_assignment(var, val);
+            cms->enqueue<false>(next_assignment);
+            return true;
+        } else {
+            //ensure that value is correctly assigned in cms
+            assert( (var==0) || (cms->value(var) == (val ? CMSat::l_False : CMSat::l_True)) );
+            return false;
+        }
+    }
+
+    /**
      * @brief initialises lin_sys_watch, fixes second watches
      * @note after init use get_implied_literal_queue to check if any literals could be deduced directly!
+     * 
+     * @return var_t number of new alpha assignments
      */
-    void init() {
-        //initialize first-watches
-        first_watch = vec<var_t>(linerals.size());
-        for(auto& [lt,row_idx] : pivot_poly) {
-            first_watch[row_idx] = lt;
+    var_t init() {
+        //set gaussconf settings -- copied from 'set_allow_otf_gauss()' in cryptominisat.cpp
+        //conf.doFindXors = true;
+        //conf.allow_elim_xor_vars = false;
+        //conf.gaussconf.max_num_matrices = 10;
+        //conf.gaussconf.max_matrix_columns = 10000000;
+        //conf.gaussconf.max_matrix_rows = 10000;
+        //conf.gaussconf.autodisable = false;
+        //conf.xor_detach_reattach = true;
+        //conf.allow_elim_xor_vars = false;
+
+        conf.doFindXors = true;
+        conf.allow_elim_xor_vars = false;
+        conf.gaussconf.autodisable = false;
+        conf.gaussconf.max_matrix_columns = 1000;
+        conf.gaussconf.max_matrix_rows = 10000;
+        conf.gaussconf.min_matrix_rows = 0;
+        conf.gaussconf.max_num_matrices = 1000;
+        conf.gaussconf.doMatrixFind = true;
+        conf.gaussconf.min_gauss_xor_clauses = 0;
+        conf.gaussconf.max_gauss_xor_clauses = 500000;
+        conf.verbosity = 120;
+
+        must_inter = new std::atomic<bool>();
+        cms = new CMSat::Solver(&conf, must_inter);
+        
+        //compute num_vars and add new vars to cms
+        if(num_vars==(var_t)-1) {
+            num_vars = 0;
+            for(const auto& l : linerals) num_vars = std::max(num_vars, l.get_idxs_()[l.size()-1]);
+        }
+        cms->new_vars( num_vars+1 );
+
+        //add dummy clause in 0th variable -- this ensures CMSat::CNF is properly initialized (and can be deleted as well)
+        cms->add_clause_outside({CMSat::Lit(0, false)});
+
+        //push non-assigning linerals to solver all others just enqueue!
+        list<const lineral*> linerals_assigning;
+        vec<unsigned> xor_clause;
+        for(const auto& l : linerals) {
+            if(l.is_zero()) continue;
+            if(!l.is_assigning()) {
+                xor_clause.clear(); xor_clause.reserve( l.size() );
+                for(const auto& i : l.get_idxs_()) xor_clause.emplace_back(i);
+                cms->add_xor_clause_outside( xor_clause, l.has_constant() );
+            } else {
+                linerals_assigning.push_back( &l );
+            }
+        }
+        cms->find_and_init_all_matrices();
+
+        for(const auto lp : linerals_assigning) {
+            implied_literal_queue.emplace_back( *lp );
+            if(!lp->is_one()) enqueue_new_assignment(lp->LT(), lp->has_constant());
         }
 
-        //initialize second-watches
-        second_watch = vec<var_t>(linerals.size());
-        for(var_t idx=0; idx<linerals.size(); ++idx) {
-            if(linerals[idx].is_assigning()) {
-                second_watch[idx] = first_watch[idx];
-                implied_literal_queue.emplace_back( linerals[idx] );
-                continue;
-            }
-            //there must be another variable to watch!
-            for(const auto& v : linerals[idx].get_idxs_()) {
-                if( v!=first_watch[idx] ) {
-                    assert(!pivot_poly.contains(v));
-                    second_watch[idx] = v;
-                    watch_list[v].push_back(idx);
-                    break;
-                }
-            }
-        }
+        const auto ret = propagate();
+
+        #ifndef NDEBUG
+            lin_sys sys_orig( linerals );
+            std::cout << "sys_orig " << sys_orig.to_str() << std::endl;
+            lin_sys sys_recv( get_recovered_linerals() );
+            std::cout << "sys_recv " << sys_recv.to_str() << std::endl;
+            //NOTE we might not recover ALL linerals, because (1) propagation can 'destroy them', and (2) binary clauses are not recovered at all!
+            for(const auto& l : sys_recv.get_linerals()) assert( sys_orig.reduce(l).is_zero() );
+        #endif
+
+        return ret;
     }
 
-    void rref() {
-        pivot_poly.clear();
-        for(var_t idx = 0; idx<linerals.size(); ++idx) {
-            //reduce new row (with non-zero pivot-rows)
-            for (const auto &[lt,row] : pivot_poly) {
-                if(linerals[idx][lt]) {
-                    linerals[idx] += linerals[row];
-                }
-            }
-            if(!(linerals[idx].is_zero()) ) {
-                //if non-zero, add to LT_to_row_idx-map
-                const var_t new_lt = linerals[idx].LT();
-                //add new LT to map
-                pivot_poly[ new_lt ] = idx;
+    vec<var_t> lineral_vars;
+    lineral confl_to_lineral(CMSat::PropBy confl) {
+        lineral_vars.clear();
 
-                //full-reduction of previous pivot-rows, i.e., reduce all previously found rows:
-                for (auto &[lt,row] : pivot_poly) {
-                    if (lt!=new_lt && linerals[row][new_lt]) linerals[row] += linerals[idx];
+        //find matrix and row responsible for propagation
+        assert( confl.getType()==CMSat::xor_t || confl.getType()==CMSat::binary_t || confl.getType()==CMSat::clause_t  );
+        switch(confl.getType()) {
+            case CMSat::xor_t:
+            {
+                //find (and construct) corresponding lineral
+                int32_t tmp_ID; //required for call to get_reasons -- otherwise unused and irrelevant for us!
+                const auto xor_reason = cms->get_xor_reason(confl, tmp_ID);
+
+                bool sign = true;
+                for(const auto& l : *xor_reason) {
+                    sign ^= l.sign();
+                    lineral_vars.emplace_back( l.var() );
                 }
+                return lineral( lineral_vars, sign, presorted::no );
             }
+            case CMSat::clause_t:
+            {
+                assert(false);
+                CMSat::Clause const* cl = cms->cl_alloc.ptr(confl.get_offset());
+
+                bool sign = true;
+                for(const auto& l : *cl) {
+                    sign ^= l.sign();
+                    lineral_vars.emplace_back( l.var() );
+                }
+                return lineral( lineral_vars, sign, presorted::no );
+            }
+            case CMSat::binary_t:
+            {
+                assert(false);
+                assert(false);
+                lineral_vars.emplace_back( confl.lit2().var() );
+                return lineral( lineral_vars, confl.lit2().sign(), presorted::no );
+            }
+            default:
+                assert(false);
         }
+        return lineral(cnst::one);
     }
 
-    void init_and_rref() {
-        rref();
-        init();
-        assert( assert_data_struct() );
+    lineral CMS_reason_to_lineral(CMSat::Lit trail_el) {
+        lineral_vars.clear();
+
+        //find matrix and row responsible for propagation
+        const CMSat::VarData& v_data = cms->varData[trail_el.var()];
+        assert( v_data.reason.getType()==CMSat::xor_t || v_data.reason.getType()==CMSat::binary_t || v_data.reason.getType()==CMSat::clause_t  );
+        switch(v_data.reason.getType()) {
+            case CMSat::xor_t:
+            {
+                //find (and construct) corresponding lineral
+                int32_t tmp_ID; //required for call to get_reasons -- otherwise unused and irrelevant for us!
+                const auto xor_reason = cms->get_xor_reason(v_data.reason, tmp_ID);
+
+                bool sign = true;
+                for(const auto& l : *xor_reason) {
+                    sign ^= l.sign();
+                    lineral_vars.emplace_back( l.var() );
+                }
+                return lineral( lineral_vars, sign, presorted::no );
+            }
+            case CMSat::clause_t:
+            {
+                assert(false);
+                CMSat::Clause const* cl = cms->cl_alloc.ptr(v_data.reason.get_offset());
+
+                bool sign = true;
+                for(const auto& l : *cl) {
+                    sign ^= l.sign();
+                    lineral_vars.emplace_back( l.var() );
+                    assert(l.var() < cms->nVars());
+                }
+                return lineral( lineral_vars, sign, presorted::no );
+            }
+            case CMSat::binary_t:
+            {
+                lineral_vars.emplace_back( trail_el.var() );
+                lineral_vars.emplace_back( v_data.reason.lit2().var() );
+                return lineral( lineral_vars, trail_el.sign()^!v_data.reason.lit2().sign(), presorted::no );
+            }
+            default:
+                assert(false);
+        }
+        return lineral(cnst::one);
+    }
+
+    //store linerals implying clash_variables -- as soon as we have 
+    std::map<var_t,lineral> clash_var_to_reason;
+    /**
+     * @brief propagate all enqueued decisions and updates implied_literal_queue appropriately
+     * 
+     * @return number of new alpha assignments
+     */
+    var_t propagate() {
+        //propagate with CMS and read propagations from trail
+        const auto trail_size_prev = cms->trail_size();
+        CMSat::PropBy confl = cms->propagate<false>();
+        
+        #ifndef NDEBUG
+            lin_sys sys_orig( linerals );
+            std::cout << "sys_orig " << sys_orig.to_str() << std::endl;
+        #endif
+
+        //iterate over new elements in trail
+        CMSat::Lit trail_el;
+        vec<var_t> lineral_vars;
+        for(size_t trail_pos = trail_size_prev; trail_pos<cms->trail_size(); ++trail_pos) {
+            trail_el = cms->trail_at(trail_pos);
+            lineral lin = CMS_reason_to_lineral(trail_el);
+
+            if(trail_el.var()>num_vars) {
+                //this is a clash variable -- store the reason clause for later!
+                clash_var_to_reason[trail_el.var()] = std::move(lin);
+            } else {
+                //a regular variable was implied; i.e. all its occuring clash variables must already be assigned
+                //thus we must reasons for them and the original lineral can be reconstructed!
+                //NOTE clash variables come last, i.e., there is a clash variable in lin iff the last one is a clash var!
+                while(!lin.get_idxs_().empty() && lin.get_idxs_().back()>num_vars) {
+                    const auto v = lin.get_idxs_().back();
+                    if(clash_var_to_reason.find(v)!=clash_var_to_reason.end()) {
+                        lin += clash_var_to_reason[v];
+                    }
+                }
+                assert( lin.get_idxs_().empty() || lin.get_idxs_().back()<=num_vars );
+
+                #ifndef NDEBUG
+                    //ensure that lin is implied by linerals
+                    lin_sys sys( linerals );
+                    assert( sys.reduce(lin).is_zero() );
+                #endif
+
+                implied_literal_queue.emplace_back( std::move(lin) );
+            }
+        }
+
+        //if we have a conflict, this corresponding PropBy is not found on trail, i.e., treat it now!
+        //(this has to be done ATER all other clauses are put in the queue s.t. confl is actually a conflict under the previously implied assignments)
+        if(!confl.isnullptr()) {
+            assert(cms->decisionLevel()==0);
+            //we have a conflict!
+            cms->ok = false;
+            lineral lin = confl_to_lineral(confl);
+
+            //remove possible clash variables from lin
+            while(!lin.get_idxs_().empty() && lin.get_idxs_().back()>num_vars) {
+                const auto v = lin.get_idxs_().back();
+                if(clash_var_to_reason.find(v)!=clash_var_to_reason.end()) {
+                    lin += clash_var_to_reason[v];
+                }
+            }
+            assert( lin.get_idxs_().empty() || lin.get_idxs_().back()<=num_vars );
+
+            #ifndef NDEBUG
+                //ensure that lin is implied by linerals
+                lin_sys sys( linerals );
+                assert( sys.reduce(lin).is_zero() );
+            #endif
+
+            implied_literal_queue.emplace_back( std::move(lin) );
+            
+        }
+
+        #ifndef NDEBUG
+            lin_sys sys( get_implied_literal_queue() );
+            std::cout << "found " << sys.to_str() << std::endl;
+        #endif
+      
+        return implied_literal_queue.size();
     }
 
   public:
-    lin_sys_lazy_GE() noexcept { init_and_rref(); };
+    lin_sys_lazy_GE() = delete;
     
-    lin_sys_lazy_GE(lin_sys&& sys) noexcept {
+    lin_sys_lazy_GE(lin_sys&& sys, const var_t _num_vars) noexcept : num_vars(_num_vars) {
         linerals.reserve( sys.linerals.size() );
         for(auto&& l : sys.linerals) linerals.emplace_back( std::move(l) );
-        //only init pivot_polys and init!
-        //init_and_rref(); -- not necessary!
-        for(var_t idx = 0; idx<linerals.size(); ++idx) {
-            pivot_poly[ linerals[idx].LT() ] = idx;
-        }
-
         init();
     };
-    lin_sys_lazy_GE(const vec<lineral>& linerals_) noexcept : linerals(linerals_.begin(),linerals_.end()) { init_and_rref(); };
-    ~lin_sys_lazy_GE() = default;
+    lin_sys_lazy_GE(const vec<lineral>& linerals_, const var_t _num_vars = (var_t) -1) noexcept :  num_vars(_num_vars), linerals(linerals_.begin(),linerals_.end()) { init(); };
+    ~lin_sys_lazy_GE() {
+        delete cms;
+        delete must_inter;
+    };
 
     list<lineral>& get_implied_literal_queue() { return implied_literal_queue; }
     void clear_implied_literal_queue() { implied_literal_queue.clear(); }
 
     const vec<lineral>& get_linerals() const { return linerals; }
-
-    /**
-     * @brief checks if linerals[idx] is inactive
-     * 
-     * @param idx index in linerals
-     * @param alpha current alpha-assignments
-     * @return true if and only if the clause has been set inactive
-     */
-    bool is_active(const var_t& idx, const vec<bool3>& alpha) {
-        return alpha[first_watch[idx]]==bool3::None;
-    }
-    bool is_active(const var_t& idx, const vec<var_t>& alpha_trail_pos) {
-        return alpha_trail_pos[first_watch[idx]]==(var_t) -1;
-    }
     
     /**
-     * @brief fix second watch of linerals[idx] after another linerals[jdx] was added to it; note: the first_watch cannot change by that, only the second one does!
+     * @brief checks whether the assignments of cms are correct
      * 
-     * @param idx index of lineral
-     * @param alpha current alpha assignment
-     * @return bool true iff clause linerals[idx] is inactive OR a second watch could be found, i.e., a lineral[idx] is not assigning under alpha
+     * @param alpha current alpha assignments
+     * @return true iff internal CMS is compatible with alpha
      */
-    bool fix_second_watch_after_addition(const var_t& idx, const vec<var_t>& alpha_trail_pos) {
-        //abort if currently inactive
-        //if( !is_active(idx, alpha_trail_pos) ) return true;
-        //early abort if second watch needs no update, i.e., it is not assigned!
-        //if( second_watch[idx]!=(var_t)-1 && alpha_trail_pos[second_watch[idx]]==(var_t) -1 ) return true;
-        
-        //rm pointer in watch_list (!)
-        watch_list[second_watch[idx]].remove(idx);
-
-        if(linerals[idx].is_assigning()) {
-            second_watch[idx] = first_watch[idx];
-            return false;
-        }
-        const auto& idxs = linerals[idx].get_idxs_();
-        var_t max_v = idxs[0];
-        var_t max_trail_pos = alpha_trail_pos[max_v];
-        for(const var_t& v : idxs) {
-          if(v==first_watch[idx]) continue;
-          if(alpha_trail_pos[v]==(var_t)-1) { 
-            //watch found!
-            assert(!pivot_poly.contains(v));
-            //update watch_list
-            second_watch[idx] = v;
-            watch_list[second_watch[idx]].push_back(idx);
-            return true;
-          }
-          if(alpha_trail_pos[v]>max_trail_pos) { 
-            max_v = v;
-            max_trail_pos = alpha_trail_pos[v];
-          }
-        }
-        //since linerals is not assigning, there is at least ONE other variable -- except first_watch[idx]!
-        assert(max_trail_pos<=(var_t)-1);
-        second_watch[idx] = max_v;
-        watch_list[second_watch[idx]].push_back(idx);
-        return false;
-    }
-    
-    /**
-     * @brief fix second watch of lineral[idx]
-     * @note does not update watch_lists!
-     * 
-     * @param idx index of lineral
-     * @param alpha current alpha assignment
-     * @return bool true iff clause linerals[idx] is inactive OR a second watch could be found, i.e., a lineral[idx] is not assigning under alpha
-     */
-    bool fix_second_watch(const var_t& idx, const vec<var_t>& alpha_trail_pos) {
-        //abort if currently inactive
-        if( !is_active(idx, alpha_trail_pos) ) return true;
-        //early abort if second watch needs no update, i.e., it is not assigned!
-        if( second_watch[idx]!=(var_t)-1 && alpha_trail_pos[second_watch[idx]]==(var_t) -1 ) return true;
-
-        //since there was no addition, the second watch EXISTS inside linerals[idx], i.e., if no new var to watch is found, we may keep it where it is!
-        assert( linerals[idx][second_watch[idx]] );
-
-        for(const auto& v : linerals[idx].get_idxs_()) {
-            if(v==first_watch[idx]) continue;
-            if(alpha_trail_pos[v]==(var_t)-1) { 
-                //watch found!
-                assert(!pivot_poly.contains(v));
-                //watch_list[second_watch[idx]].remove(idx);
-                second_watch[idx] = v;
-                //watch_list[second_watch[idx]].push_back(idx);
-                return true;
+    bool check_cms_assignments(const vec<bool3>& alpha) const {
+        for(var_t i = 1; i<alpha.size(); ++i) {
+            if( alpha[i]!=bool3::None && cms->value(i)!=(b3_to_bool(alpha[i]) ? CMSat::l_False : CMSat::l_True) ) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
-
-    var_t find_third_watch(const var_t& idx, const vec<var_t>& alpha_trail_pos) {
-        for(const auto& v : linerals[idx].get_idxs_()) {
-            if(v==first_watch[idx] || v==second_watch[idx]) continue;
-            if(alpha_trail_pos[v]==(var_t)-1) { 
-                //watch found!
-                assert(!pivot_poly.contains(v));
-                return v;
-            }
-        }
-        return (var_t) -1;
-    }
-
-
 
     /**
      * @brief assigns var, i.e., ensures it is not watched, and fixes row-echelon under alpha
      * 
      * @param var newly assigned variable
      * @param alpha current alpha-assignment
-     * @return bool true iff new alpha-assignments were deduced!
+     * @return bool true iff (var is newly assigned and new alpha assignments were deduced) or queue still has implications to be fetched
      */
-    bool assign(const var_t var, const vec<var_t>& alpha_trail_pos) {
-        //#ifndef NDEBUG
-        //  std::cout << "assigning x" << std::to_string(var) << " in " << to_str() << std::endl;
-        //  //add variables for all assigned vals
-        //  vec<lineral> tmp;
-        //  for(var_t idx=0; idx<alpha_trail_pos.size(); ++idx) {
-        //      if(alpha_trail_pos[idx]!=(var_t)-1) tmp.push_back( lineral(idx, false) );
-        //  }
-        //  std::copy(linerals.begin(), linerals.end(), std::back_inserter(tmp));
-        //  lin_sys sys(tmp);
-        //  std::cout << "we should find new assignments: " << std::endl;
-        //  for(const auto& lin : sys.get_linerals()) {
-        //      if(lin.is_assigning() && alpha_trail_pos[lin.LT()]==(var_t)-1) std::cout << lin.to_str() << std::endl;
-        //  }
-        //#endif
+    bool assign(const var_t var, const vec<bool3>& alpha, var_t dl) {
+        assert(implied_literal_queue.empty());
+        //backtrack or create new dl
+        if(cms->decisionLevel()>dl) backtrack(dl);
+        if(cms->decisionLevel()<dl) cms->new_decision_level();
+        assert( cms->decisionLevel()==dl );
 
-        std::set<var_t> new_lit_idxs;
-        //if var is watched by pivot, then update pivots!
-        if( pivot_poly.contains(var) ) {
-            //update pivot_poly_its
-            var_t idx = pivot_poly[var];
-
-            //early abort if linerals[idx] was already assigned previously!
-            assert(first_watch[idx]==var);
-            if(alpha_trail_pos[ second_watch[idx] ]!=(var_t)-1 && alpha_trail_pos[second_watch[idx]]<alpha_trail_pos[first_watch[idx]]) return false;
-            
-            // try to find a third watch in linerals[idx]
-            var_t third_watch = find_third_watch(idx, alpha_trail_pos);
-
-            if(third_watch==(var_t)-1 && alpha_trail_pos[first_watch[idx]]==(var_t)-1) {
-                //no third watch found => linerals[idx] is assigning under alpha & pivot-poly and watch_lists need no update!
-                new_lit_idxs.insert(idx);
-            } else {
-                //new wathchable var found => update pivot variable to third_watch! (this requires no update to watch_lists!)
-                pivot_poly.erase(var);
-                // pivot-var of linerals[idx] is 
-                pivot_poly[third_watch] = idx;
-                first_watch[idx] = third_watch;
-            }
-
-            //full-reduction with new pivot-row
-            //BEWARE this messes up our watch_list! (as of now!)
-            for(var_t jdx=0; jdx<linerals.size(); ++jdx) {
-                if(idx==jdx) continue;
-                if(third_watch!=(var_t) -1 && linerals[jdx][third_watch]) {
-                    linerals[jdx] += linerals[idx];
-                    //fix second watch -- note LTs cannot cancel -- only second watches need to be updated!
-                    if( !fix_second_watch_after_addition(jdx, alpha_trail_pos) ) new_lit_idxs.insert(jdx);
-                    //TODO remove old second watch!
-                } else if(second_watch[jdx]==var) {
-                    //fix second_watch
-                    if( fix_second_watch(jdx, alpha_trail_pos) ) {
-                        //second watch is found!
-                        watch_list[second_watch[jdx]].emplace_front(jdx);
-                        //TODO remove from old watch list!
-                    } else if (alpha_trail_pos[second_watch[jdx]]!=(var_t)-1) {
-                        new_lit_idxs.insert(jdx);
-                    }
-                }
-            }
-        } else {
-            //update all remaining second watches
-            for(auto it = watch_list[var].begin(); it!=watch_list[var].end();) {
-                if( var!=second_watch[*it] ) {
-                    //outdated watch, remove it!
-                    it = watch_list[var].erase(it);
-                    //assert(false); // can/should this even happen?!
-                } else if( fix_second_watch(*it, alpha_trail_pos) ) {
-                    //second watch is found
-                    watch_list[second_watch[*it]].emplace_front(*it);
-                    it = watch_list[var].erase(it);
-                } else {
-                    new_lit_idxs.insert(*it);
-                    ++it;
-                }
-            }
+        //add assignment to linerals if dl==0
+        if( dl==0 ) {
+            linerals.emplace_back( var, b3_to_bool(alpha[var]) );
         }
 
-        //add propagated literals to queue
-        for(const auto& idx : new_lit_idxs) implied_literal_queue.emplace_back( linerals[idx] );
+        //enqueue assignment and propagate if var is not yet assigned in cms
+        if( enqueue_new_assignment(var, b3_to_bool(alpha[var])) ) {
+            #ifdef DEBUG_SLOWER
+                //check that propagation finds ALL possible alpha assignments!
+                lin_sys L( linerals );
+                //add all decisions to L
+                lin_sys L_dec;
+                for(var_t i = 0; i<alpha.size(); ++i) {
+                  if(alpha[i]!=bool3::None) L_dec.add_lineral( lineral(i, b3_to_bool(alpha[i])) );
+                }
+                // find all uniquely determined alpha
+                L += L_dec;
+                vec<lineral> det_alpha;
+                for(const auto& lin : L.get_linerals()) {
+                  if(lin.is_assigning() && !L_dec.reduce(lin).is_zero()) det_alpha.emplace_back( lin );
+                }
+                lin_sys L_det( det_alpha );
+                std::cout << "c LGJ should deduce: " << L_det.to_str() << std::endl;
+            #endif
 
-        assert( assert_data_struct() );
+            propagate();
 
-      //#ifndef NDEBUG
-      //  sys = lin_sys( get_implied_literal_queue() );
-      //  std::cout << "found " << sys.to_str() << std::endl;
-      //#endif
+            #ifdef DEBUG_SLOWER
+                //ensure that all alpha-assignments are reflected correctly in cms!
+                assert( check_cms_assignments(alpha) );
+
+                //check we got all possible implications!
+                lin_sys L2( implied_literal_queue );
+                L2 += L_dec;
+                vec<lineral> det_alpha2;
+                for(const auto& lin : L2.get_linerals()) {
+                  if(lin.is_assigning() && !L_dec.reduce(lin).is_zero()) det_alpha2.emplace_back( lin );
+                }
+                lin_sys L_det2( det_alpha2 );
+                std::cout << "c LGJ could deduce: " << L_det2.to_str() << std::endl;
+                assert( L_det.to_str() == L_det2.to_str() );
+            #endif
+        }
         
-        return !new_lit_idxs.empty();
+        return !implied_literal_queue.empty();
     }
 
-    bool add_lineral(const lineral& l) {
-        assert(false);
-        //lin_sys::add_lineral(l);
-        //FIX data structs!
-        return true;
+    /**
+     * @brief add new lineral to lazy lin sys
+     * @note may only be used at dl 0 (!)
+     * 
+     * @param l lineral to be added
+     * @return var_t number of implied new alpha assignments
+     */
+    var_t add_lineral(lineral&& l) {
+      return add_linerals({std::move(l)});
     }
 
-    bool assert_data_struct() const {
-        //check that watches are present in linerals
-        for(var_t idx=0; idx<linerals.size(); ++idx) {
-            if(linerals[idx].is_constant()) continue;
-            assert( first_watch[idx]==(var_t)-1 || linerals[idx][first_watch[idx]] );
-            assert( second_watch[idx]==(var_t)-1 || linerals[idx][second_watch[idx]] );
-        }
+    /**
+     * @brief add new lineral to lazy lin sys
+     * @note may only be used at dl 0 (!)
+     * 
+     * @param ls list of linerals to be added
+     * @return var_t number of new alpha assignments
+     */
+    var_t add_linerals(list<lineral>&& ls) {
+        //BEWARE: not sure how to add linerals without destroying some internal structure in cms!
+        //        old code trying this can be found below - for now we just re-init the whole thing!
 
-        //check that second_watches are present in watch-list; it must be at least the the number of linerals
-        std::unordered_map< var_t, std::set<var_t> > idx_to_wlist_entries;
-        for(const auto& [v,s] : watch_list) {
-            for(const auto& idx : s) {
-                //assert( second_watch[idx]==v ); //must not hold, BUT every second_watch[idx] must be watched!
-                idx_to_wlist_entries[idx].insert( v );
+        assert(cms->decisionLevel() == 0);
+        if(ls.empty()) return 0;
+
+        delete cms;
+        delete must_inter;
+
+        //add new linerals
+        linerals.insert(linerals.end(), make_move_iterator(ls.begin()), make_move_iterator(ls.end()));
+
+        //re-init object
+        return init();
+
+        ///// OLD CODE //////
+        assert(cms->decisionLevel() == 0);
+        if(ls.empty()) return 0;
+
+        //proceed as follows: add linerals, rebuild gauss matrices, then propagate
+        cms->clear_gauss_matrices(false); //bool decides whether data for matrices is de-allocated!
+
+        //add new linerals
+        auto it = linerals.insert(linerals.end(), make_move_iterator(ls.begin()), make_move_iterator(ls.end()));
+
+        //push non-assigning linerals to solver all others just enqueue!
+        list<const lineral*> linerals_assigning;
+        vec<unsigned> xor_clause;
+        for(;it != linerals.end(); ++it) {
+            const auto& l = *it;
+            if(l.is_zero()) continue;
+            if(!l.is_assigning()) {
+                xor_clause.clear(); xor_clause.reserve( l.size() );
+                for(const auto& i : l.get_idxs_()) xor_clause.emplace_back(i);
+                cms->add_xor_clause_outside( xor_clause, l.has_constant() );
+            } else {
+                linerals_assigning.push_back( &l );
             }
         }
-        for([[maybe_unused]] const auto& [idx, s] : idx_to_wlist_entries) {
-            assert( std::any_of(s.begin(), s.end(), [&](const auto& v){ return second_watch[idx]==v; }) );
+        cms->xorclauses_updated = true;
+        
+        //re-init matrices + propagate
+        cms->find_and_init_all_matrices();
+
+        for(const auto lp : linerals_assigning) {
+            implied_literal_queue.emplace_back( *lp );
+            if(!lp->is_one()) enqueue_new_assignment(lp->LT(), lp->has_constant());
         }
 
-        //check that first_watch coincides with pivot_polys
-        for([[maybe_unused]] const auto& [v,idx] : pivot_poly) {
-            assert( v==first_watch[idx] );
+        return propagate();
+    }
+
+    void backtrack(var_t lvl) {
+        //go through trail of cms and remove all the lineral reasons for the clash variables!
+        auto trail_pos = (cms->trail_size())-1;
+        while(cms->varData[ cms->trail_at(trail_pos).var() ].level > lvl) {
+            const auto var = cms->trail_at(trail_pos).var();
+            if(var > num_vars) {
+                //this is a clash variable -- remove the reason clause for it!
+                clash_var_to_reason.erase(var);
+            }
+            --trail_pos;
         }
 
-        return true;
+        cms->cancelUntil<false, true>(lvl);
+        assert(cms->decisionLevel() == lvl);
+        implied_literal_queue.clear();
+    }
+
+    
+    vec<lineral> get_recovered_linerals() const {
+        vec<lineral> lins;
+        return lins;
+
+        //this messes up data structures!!
+        vec<lineral> lins;
+        cms->start_getting_constraints(true,false);
+        vector<CMSat::Lit> lits;
+        bool is_xor; bool rhs;
+        vec<var_t> vars;
+        while ( cms->get_next_constraint(lits, is_xor, rhs) ) {
+            if (!is_xor) continue;
+            //parse xor to lineral
+            vars.clear();
+            for(const auto& x : lits) vars.emplace_back( x.var() );
+            lins.push_back( lineral(vars, rhs, presorted::no) );
+        }
+        cms->end_getting_constraints();
+        return lins;
     }
 
     var_t size() const { return linerals.size(); };
 
     std::string to_str() const;
-};
-
-
-using sub_sys_it = list<lin_sys_lazy_GE>::iterator;
-
-/**
- * @brief lazy GJE for lin_sys under variable assignments; needs no updates on backtracking
- */
-class lin_sys_watch
-{
-    private:
-    /**
-     * @brief vector of linerals corresponding to each subsystem
-     * @note the total linsys is segmented into subsystems of linerals sharing variables
-     */
-    list< lin_sys_lazy_GE > lin_sub_systems;
-    // to separate us CMS5 code; pseudo-code available at 'https://www.msoos.org/largefiles/matesoos-satsmt-winterschool-2019.pdf' pg. 55
-
-    /**
-     * @brief get iterator to the subsystem a variable occurs in; whenever a lineral is added that corresponds to multiple subsystems, those have to be merged!
-     */
-    pivot_map< var_t, sub_sys_it > var_to_subsys;
-
-    /**
-     * @brief watch_list[i] contains all linerals that watch variable i
-     */
-    pivot_map< var_t, list<var_t> > watch_list;
-
-
-    public:
-    lin_sys_watch() {};
-
-    bool assert_data_struct() const {
-      for(const auto& l : lin_sub_systems) {
-        assert(l.assert_data_struct());
-      }
-      return true;
-    };
 };

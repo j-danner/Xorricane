@@ -1,31 +1,15 @@
 #include "lin_sys_lazy.hpp"
 
 
-//void lin_sys_lazy_GE::rref() {
-//    pivot_poly.clear();
-//    for(var_t idx = 0; idx<linerals.size(); ++idx) {
-//        //reduce new row (with non-zero pivot-rows)
-//        for (const auto &[lt,row] : pivot_poly) {
-//            if(linerals[idx][lt]) {
-//                linerals[idx] += linerals[row];
-//            }
-//        }
-//        if(!(linerals[idx].is_zero()) ) {
-//            //if non-zero, add to LT_to_row_idx-map
-//            const var_t new_lt = linerals[idx].LT();
-//            //add new LT to map
-//            pivot_poly[ new_lt ] = idx;
-//             
-//            //full-reduction of previous pivot-rows, i.e., reduce all previously found rows:
-//            for (auto &[lt,row] : pivot_poly) {
-//                if (lt!=new_lt && linerals[row][new_lt]) linerals[row] += linerals[idx];
-//            }
-//        }
-//    }
-//};
-
-
 std::string lin_sys_lazy_GE::to_str() const {
+    //vec<lineral> linerals;
+    //const auto& xors = cms->get_recovered_xors(false);
+    //for(const auto& [rhs,_,__,vars] : xors) {
+    //    vec<var_t>v_;
+    //    for(const auto& i : vars) v_.emplace_back((var_t) i);
+    //    linerals.push_back( lineral(v_, rhs, presorted::no) );
+    //};
+
     vec< std::string > str_linerals( linerals.size() );
     auto to_str = [](const lineral l) -> std::string {return l.to_str();};
     std::transform(linerals.begin(), linerals.end(), str_linerals.begin(), to_str);
