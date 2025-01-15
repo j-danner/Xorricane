@@ -197,4 +197,46 @@ TEST_CASE( "lin_sys_lazy_GE basic operations" , "[lin_sys][assigning][propagatio
         //this uniquely determines all other vars!
         lsl.clear_implied_literal_queue();
     }
+    
+    SECTION("test21-like") {
+        var_t num_vars = 4;
+        lineral l1( vec<var_t>({  1,2,  4}) );
+        lineral l2( vec<var_t>({0,    3}) );
+        lin_sys_lazy_GE lsl( vec<lineral>({l1, l2}) );
+        vec<bool3> alpha(num_vars+1, bool3::None);
+
+        CHECK(lsl.get_implied_literal_queue().size() == 1);
+        lin_sys sys( lsl.get_implied_literal_queue() );
+        CHECK(sys.to_str() == "x3+1");
+        lsl.clear_implied_literal_queue();
+
+        //set x3+1 to propagated
+        alpha[3] = bool3::True;
+        bool ret = lsl.assign(3, alpha, 0);
+        CHECK( !ret );
+
+        //propagate x2
+        alpha[2] = bool3::False;
+        ret = lsl.assign(2, alpha, 0);
+        CHECK( !ret );
+        auto q = lsl.get_implied_literal_queue();
+        CHECK( q.size() == 0 );
+
+        //propagate x4+1
+        alpha[4] = bool3::True; // x4+1
+        ret = lsl.assign(4, alpha, 0);
+        CHECK( ret );
+        q = lsl.get_implied_literal_queue();
+        CHECK( q.size() == 1 );
+        CHECK( q.front().reduced(alpha).to_str() == "x1+1" );
+        lsl.clear_implied_literal_queue();
+        q.clear();
+
+        //set x1+1 to propagated
+        alpha[1] = bool3::True; // x1+1
+        //CMS assigns x1 internally incorrectly!! not sure why :(
+        //we just ignore it and check that all CMS output is consistent and CMS-GJE propagates correctly!
+        ret = lsl.assign(1, alpha, 0);
+        CHECK( !ret );
+    }
 }
