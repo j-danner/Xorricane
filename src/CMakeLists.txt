@@ -25,6 +25,79 @@ message(STATUS "Boost version: ${Boost_VERSION}")
 target_include_directories(lineral PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(lineral PUBLIC ${EXTRA_LIBS})
 
+
+## NOT WORKING ##
+#add cryptominisat library
+#set(SHAREDCOMPILE ON)
+#set(SHAREDLIBS OFF)
+#set(NOZLIB ON)
+#add_subdirectory(cryptominisat EXCLUDE_FROM_ALL)
+## NOT WORKING ##
+
+##build cryptominisatlib
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cryptominisat/src/GitSHA1.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/cryptominisat/GitSHA1.cpp" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cryptominisat/src/GitSHA1.h" "${CMAKE_CURRENT_BINARY_DIR}/cryptominisat/src/GitSHA1.h")
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cryptominisat/cmake)
+find_package(GMP REQUIRED)
+include_directories( SYSTEM ${GMP_INCLUDE_DIR} )
+# Needed for PicoSAT trace generation
+add_definitions( -DTRACE )
+# main files for lib
+add_library(cms_lib
+    STATIC
+    cryptominisat/src/constants.h
+    cryptominisat/src/cnf.cpp
+    cryptominisat/src/probe.cpp
+    cryptominisat/src/oracle_use.cpp
+    cryptominisat/src/backbone.cpp
+    cryptominisat/src/frat.cpp
+    cryptominisat/src/propengine.cpp
+    cryptominisat/src/varreplacer.cpp
+    cryptominisat/src/clausecleaner.cpp
+    cryptominisat/src/occsimplifier.cpp
+    cryptominisat/src/gatefinder.cpp
+    cryptominisat/src/subsumestrengthen.cpp
+    cryptominisat/src/clauseallocator.cpp
+    cryptominisat/src/sccfinder.cpp
+    cryptominisat/src/solverconf.cpp
+    cryptominisat/src/distillerlong.cpp
+    cryptominisat/src/distillerlitrem.cpp
+    cryptominisat/src/distillerbin.cpp
+    cryptominisat/src/distillerlongwithimpl.cpp
+    cryptominisat/src/str_impl_w_impl.cpp
+    cryptominisat/src/solutionextender.cpp
+    cryptominisat/src/completedetachreattacher.cpp
+    cryptominisat/src/searcher.cpp
+    cryptominisat/src/solver.cpp
+    cryptominisat/src/hyperengine.cpp
+    cryptominisat/src/subsumeimplicit.cpp
+    cryptominisat/src/datasync.cpp
+    cryptominisat/src/reducedb.cpp
+    cryptominisat/src/intree.cpp
+    cryptominisat/src/searchstats.cpp
+    cryptominisat/src/xorfinder.cpp
+    cryptominisat/src/cardfinder.cpp
+    cryptominisat/src/cryptominisat_c.cpp
+    cryptominisat/src/sls.cpp
+    cryptominisat/src/sqlstats.cpp
+    cryptominisat/src/vardistgen.cpp
+    cryptominisat/src/ccnr.cpp
+    cryptominisat/src/ccnr_cms.cpp
+    cryptominisat/src/lucky.cpp
+    cryptominisat/src/get_clause_query.cpp
+    cryptominisat/src/gaussian.cpp
+    cryptominisat/src/packedrow.cpp
+    cryptominisat/src/matrixfinder.cpp
+    cryptominisat/src/mpicosat/mpicosat.c
+    cryptominisat/src/mpicosat/version.c
+    cryptominisat/src/oracle/oracle.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/cryptominisat/GitSHA1.cpp
+    cryptominisat/src/cryptominisat.cpp
+)
+target_link_libraries(cms_lib PUBLIC ${GMP_LIBRARIES})
+
+
 #setup library for lazy version of lineral
 add_library(
     lineral_lazy
@@ -37,24 +110,19 @@ add_library(
     #linsys_watched
     lin_sys_lazy.hpp
     lin_sys_lazy.cpp
+    cryptominisat/src/cryptominisat.h
+    cryptominisat/src/solver.h
+    cryptominisat/src/gaussian.h
 )
-target_link_libraries(lineral_lazy PUBLIC ${EXTRA_LIBS} PRIVATE lineral)
+add_dependencies(lineral_lazy cms_lib)
+
+#  # Ensure that libraries depending on cryptominisat are built after it
+#  add_dependencies(lineral_lazy cryptominisat)
+#  target_link_libraries(lineral_lazy PRIVATE ${CMS_LIB})
+
+target_link_libraries(lineral_lazy PUBLIC cms_lib ${EXTRA_LIBS} lineral)
 
 
-#setup library for solver
-add_library(
-    solver
-    STATIC
-    #solve
-    io.hpp
-    io.cpp
-    misc.cpp
-    solver.hpp
-    solver.cpp
-    #heap
-    order_heap/heap.h
-    order_heap/vec.h
-)
 
 # get m4ri library 
 configure_file(CMakeLists.txt.m4ri m4ri-download/CMakeLists.txt)
@@ -64,9 +132,10 @@ execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
 execute_process(COMMAND "${CMAKE_COMMAND}" --build .
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/m4ri-download"
 )
+#find_library(M4RI_LIBRARY NAMES m4ri) //load locally installed library -- not working as we need the latest git-fixes!
 find_library(M4RI_LIBRARY NAMES m4ri PATHS "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src/.libs" NO_DEFAULT_PATH)
 if(NOT M4RI_LIBRARY)
-    message(FATAL_ERROR "m4ri library not found!")
+    message(FATAL_ERROR "m4ri library could not be built!")
 endif()
 
 # add impl_graph library
@@ -102,11 +171,25 @@ add_library(
     xornado/robin_hood-3.11.5/robin_hood.h
 )
 
-target_link_libraries(impl_graph PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY} PRIVATE lineral)
+target_link_libraries(impl_graph PUBLIC ${EXTRA_LIBS} PRIVATE lineral ${M4RI_LIBRARY})
 target_include_directories(impl_graph PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src")
 
+#setup library for solver
+add_library(
+    solver
+    STATIC
+    #solve
+    io.hpp
+    io.cpp
+    misc.cpp
+    solver.hpp
+    solver.cpp
+    #heap
+    order_heap/heap.h
+    order_heap/vec.h
+)
 
 #generate 
-target_link_libraries(solver PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY} PRIVATE lineral_lazy impl_graph)
+target_link_libraries(solver PUBLIC ${EXTRA_LIBS} lineral_lazy impl_graph PRIVATE ${M4RI_LIBRARY})
 target_include_directories(solver PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src")
 

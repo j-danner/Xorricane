@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.17)
 
 # set the project name
-project(xnf_cdcl_solver VERSION 0.4.0)
+project(xnf_cdcl_solver VERSION 0.4.1.1)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -21,7 +21,7 @@ endif()
 
 #set warnings and other default compiler options
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wswitch -Wsign-compare -ffast-math -pthread" )# -ftree-vectorizer-verbose=5 -Weffc++")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ftree-loop-vectorize -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fasynchronous-unwind-tables -D_GLIBCXX_ASSERTIONS")# -D_FORTIFY_SOURCE=2 
 
 #find jemalloc for linking
@@ -42,6 +42,16 @@ else()
     message("jemalloc not found! (optional)")
 endif()
 
+#find ccache for faster dev-builds
+find_program(CCACHE_FOUND ccache)
+if (CCACHE_FOUND)
+  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    # without this compiler messages in `make` backend would be uncolored
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fdiagnostics-color=auto")
+  endif()
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "ccache")
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "ccache")
+endif()
 
 # add subdirectories
 add_subdirectory(src)
@@ -59,7 +69,7 @@ if(STATIC)
     target_link_options(xnf_cdcl_solver PUBLIC -static-libstdc++ -static-libgcc -static)
 endif()
 
-
+##enable march native
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
 if(COMPILER_SUPPORTS_MARCH_NATIVE)
@@ -75,8 +85,15 @@ if(Catch2_FOUND)
     include(CTest)
     include(Catch)
     # These tests can use the Catch2-provided main
-    file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS "tests/test_*.cpp")
-    add_executable(testing ${test_sources})
+    add_executable(testing
+        tests/test_cls_watch.cpp
+        tests/test_impl_graph.cpp 
+        tests/test_lin_sys_lazy.cpp
+        tests/test_lin_sys.cpp
+        tests/test_lineral_watch.cpp
+        tests/test_lineral.cpp
+        tests/test_solve.cpp
+    )
     target_link_libraries(testing PUBLIC ${EXTRA_LIBS} PRIVATE solver Catch2::Catch2WithMain)
     target_include_directories(testing PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
     catch_discover_tests(testing)
