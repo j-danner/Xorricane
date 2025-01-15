@@ -29,6 +29,8 @@ using lin_w_it = list<lineral_watch>::iterator;
 enum class trail_t { GUESS, ALPHA, EQUIV, UNIT };
 
 enum class queue_t { NEW_GUESS, IMPLIED_ALPHA, NEW_EQUIV, NEW_UNIT };
+    
+enum class origin_t { GUESS, CLAUSE, LINERAL, LGJ, IG, INIT };
 
 std::ostream& operator<<(std::ostream& os, const trail_t& t);
 
@@ -75,9 +77,13 @@ struct lineral_queue_elem {
    * @brief type of propagation: 'NEW_UNIT': reduce newly learnt unit + watch; 'NEW_GUESS': add new guess + watch; 'IMPLIED_UNIT': update alpha/alpha_dl data structures; 'NEW_EQUIV': reduce, update equiv_lits + watch;
    */
   queue_t type;
+  /**
+   * @brief type of origin
+   */
+  origin_t origin;
 
-  lineral_queue_elem() : lin(), lvl((var_t) -1), type(queue_t::NEW_UNIT) {};
-  lineral_queue_elem(lin_w_it _lin, const var_t _lvl, const queue_t& _type) : lin(_lin), lvl(_lvl), type(_type) {};
+  lineral_queue_elem() : lin(), lvl((var_t) -1), type(queue_t::NEW_UNIT), origin(origin_t::CLAUSE) {};
+  lineral_queue_elem(lin_w_it _lin, const var_t _lvl, const queue_t& _type, const origin_t& _origin) : lin(_lin), lvl(_lvl), type(_type), origin(_origin) {};
   lineral_queue_elem(const lineral_queue_elem& other) = default;
   lineral_queue_elem(lineral_queue_elem&& other) = default;
 };
@@ -85,23 +91,23 @@ struct lineral_queue_elem {
 //wrapper class that concats four queues
 template<class T>
 class lin_queue {
-  //lin_queue structure: IMPLIED_ALPHA |  NEW_EQUIV  | NEW_UNIT
+  //lin_queue structure: CONFL | LGJ_IMPLIED_ALPHA | IMPLIED_ALPHA |  NEW_EQUIV  | NEW_UNIT
   public:
     list<T> q_confl;
-    list<T> q_alpha_lge;
+    list<T> q_lgj;
     list<T> q_alpha;
     list<T> q_equiv;
     list<T> q_unit;
 
     lin_queue() noexcept {};
 
-    size_t size() const { return q_confl.size()+q_alpha_lge.size()+q_alpha.size()+q_equiv.size()+q_unit.size(); };
-    bool empty() const { return q_confl.empty() && q_alpha_lge.empty() && q_alpha.empty() && q_equiv.empty() && q_unit.empty(); };
+    size_t size() const { return q_confl.size()+q_lgj.size()+q_alpha.size()+q_equiv.size()+q_unit.size(); };
+    bool empty() const { return q_confl.empty() && q_lgj.empty() && q_alpha.empty() && q_equiv.empty() && q_unit.empty(); };
 
     deque<T>::reference front() {
       assert(!empty());
       if(!q_confl.empty())          return q_confl.front();
-      else if(!q_alpha_lge.empty()) return q_alpha_lge.front();
+      else if(!q_lgj.empty()) return q_lgj.front();
       else if(!q_alpha.empty())     return q_alpha.front();
       else if(!q_equiv.empty())     return q_equiv.front();
       else                          return q_unit.front();
@@ -110,20 +116,20 @@ class lin_queue {
     void pop_front() {
       assert(!empty());
       if(!q_confl.empty())          q_confl.pop_front();
-      else if(!q_alpha_lge.empty()) q_alpha_lge.pop_front();
+      else if(!q_lgj.empty()) q_lgj.pop_front();
       else if(!q_alpha.empty())     q_alpha.pop_front();
       else if(!q_equiv.empty())     q_equiv.pop_front();
       else                          q_unit.pop_front();
     };
     
     /**
-     * @brief clear all els in queue with too high level OR el comes from GE (then it might be useless on higher lvl!)
+     * @brief clear all els in queue with too high level
      * 
      * @param lvl max lvl that is allowed in queue
      */
     void clear(const var_t lvl) {
       q_confl.remove_if([lvl](const auto& q_el){ return q_el.lvl > lvl; });
-      q_alpha_lge.clear();
+      q_lgj.remove_if(  [lvl](const auto& q_el){ return q_el.lvl > lvl; });
       q_alpha.remove_if([lvl](const auto& q_el){ return q_el.lvl > lvl; });
       q_equiv.remove_if([lvl](const auto& q_el){ return q_el.lvl > lvl; });
       q_unit.remove_if( [lvl](const auto& q_el){ return q_el.lvl > lvl; });
@@ -131,7 +137,7 @@ class lin_queue {
 
     void clear() {
       q_confl.clear();
-      q_alpha_lge.clear();
+      q_lgj.clear();
       q_alpha.clear();
       q_equiv.clear();
       q_unit.clear();
@@ -232,7 +238,12 @@ class solver
     /**
      * @brief lazy-gauss-elim of XNF unit clauses, i.e., linerals
      */
-    lin_sys_lazy_GE lazy_sys;
+    lin_sys_lazy_GE* lazy_gauss_jordan;
+    
+    /**
+     * @brief linerals that are derived on dl 0 AND are not yet propagated in IG
+     */
+    list<lineral> linerals_to_be_added_to_LGJ;
 
     /**
      * @brief current assignments of vars; assignments[i] contains lineral with LT i
@@ -288,7 +299,7 @@ class solver
      * @brief linerals that are derived on dl 0 AND are not yet propagated in IG
      */
     lin_sys IG_linerals_to_be_propagated;
-
+    
     var_t get_num_vars() const { return alpha.size()-1; };
     
     std::pair<var_t,cls_watch> analyze();
@@ -658,11 +669,6 @@ class solver
     void bump_score(const var_t& ind);
     void bump_score(const lineral& lit);
     void decay_score();
-    
-    /**
-     * @brief enum class to pin down the origin of a lineral that is in the queue for propagation
-     */
-    enum class origin_t { GUESS, CLAUSE, LINERAL, GE, IG };
 
     /**
      * @brief queue implied lineral for propagation (one-by-one); update data using propagate_implied_lineral
@@ -676,26 +682,22 @@ class solver
     inline void queue_implied_lineral(lin_w_it lin, const var_t lvl, const origin_t origin = origin_t::CLAUSE, const queue_t type = queue_t::NEW_UNIT) {
       assert(lin->assert_data_struct(alpha));
       if(type==queue_t::NEW_GUESS) {
-        lineral_queue.q_alpha.emplace_front( lin, lvl, type );
+        lineral_queue.q_alpha.emplace_front( lin, lvl, type, origin );
       } else if(lin->LT()==0) {
-        lineral_queue.q_confl.emplace_front( lin, lvl, queue_t::IMPLIED_ALPHA );
-      } else if(origin==origin_t::GE) {
-        lineral_queue.q_alpha_lge.emplace_back( lin, lvl, type );
+        lineral_queue.q_confl.emplace_front( lin, lvl, queue_t::IMPLIED_ALPHA, origin );
+      } else if(origin==origin_t::LGJ) {
+        lineral_queue.q_lgj.emplace_back( lin, lvl, type, origin );
       } else if(lin->is_assigning(alpha)) {
-        lineral_queue.q_alpha.emplace_back( lin, lvl, type );
+        lineral_queue.q_alpha.emplace_back( lin, lvl, type, origin );
         //if(from_lineral_watch) lineral_queue.q_alpha.emplace_front( lin, lvl, type );
         //else                   lineral_queue.q_alpha.emplace_back( lin, lvl, type );
       } else if(lin->is_equiv()) {
         //TODO check if is_equiv() or is_equiv(alpha) performs better! -- the latter can increase the LBD of reason clause!
-        lineral_queue.q_equiv.emplace_back( lin, lvl, type );
+        lineral_queue.q_equiv.emplace_back( lin, lvl, type, origin );
         //if(from_lineral_watch) lineral_queue.q_equiv.emplace_front( lin, lvl, type );
         //else                   lineral_queue.q_equiv.emplace_back( lin, lvl, type );
       } else {
-        lineral_queue.q_unit.emplace_back( lin, lvl, type );
-      }
-      if(lvl==0 && opt.pp!=xornado_preproc::no && origin!=origin_t::IG) {
-        //put lin in queue for propagation in IG -- if it is does not originate from IG
-        IG_linerals_to_be_propagated.add_lineral( lin->to_lineral() );
+        lineral_queue.q_unit.emplace_back( lin, lvl, type, origin );
       }
     }
 
@@ -706,21 +708,37 @@ class solver
      */
     inline var_t propagate_implied_lineral() {
       assert(!lineral_queue.empty());
-      auto& [lin, lvl, type] = lineral_queue.front();
-      var_t new_lt = process_lineral(lin, lvl, type);
+      auto& [lin, lvl, type, origin] = lineral_queue.front();
+
+      //add lineral for propagation to IG and to LGJ
+      if(lvl==0 && opt.pp!=xornado_preproc::no && origin!=origin_t::IG && origin!=origin_t::LGJ) {
+        //put lin in queue for propagation in IG -- if it is does not originate from IG
+        IG_linerals_to_be_propagated.add_lineral( lin->to_lineral() );
+      }
+      if(lvl==0 && opt.lge && origin!=origin_t::LGJ && origin!=origin_t::INIT) {
+        //put lin in queue for propagation in IG -- if it is does not originate from LGJ (or INIT)
+        linerals_to_be_added_to_LGJ.emplace_back( lin->to_lineral() );
+      }
+
+      var_t new_lt = process_lineral(lin, lvl, type, origin);
+     #ifndef NDEBUG
+      if(opt.lge && (origin==origin_t::LGJ || origin==origin_t::INIT) && new_lt!=(var_t) -1) {
+        //triggers a sanity check in lazy_gauss_jordan->cms
+        lazy_gauss_jordan->assign(new_lt, alpha, dl);
+      };
+     #endif
+
       lineral_queue.pop_front();
       return new_lt;
     }
 
     
-    inline void add_new_lineral(lineral&& l, var_t lvl, queue_t type, origin_t origin = origin_t::CLAUSE) {
-      //assert(lvl==dl);
+    inline void add_new_lineral(lineral&& l, var_t lvl, queue_t type, origin_t origin) {
       lineral_watches[lvl].emplace_back( std::move(l), alpha, alpha_dl, dl_count, lvl );
       queue_implied_lineral( std::prev(lineral_watches[lvl].end()), lvl, origin, type);
     };
     
-    inline void add_new_lineral(const lineral& l, var_t lvl, queue_t type, origin_t origin = origin_t::CLAUSE) {
-      //assert(lvl==dl);
+    inline void add_new_lineral(const lineral& l, var_t lvl, queue_t type, origin_t origin) {
       lineral_watches[lvl].emplace_back(l, alpha, alpha_dl, dl_count, lvl);
       queue_implied_lineral( std::prev(lineral_watches[lvl].end()), lvl, origin, type);
     };
@@ -751,12 +769,12 @@ class solver
       auto dl_count_cpy = dl_count;
       for(var_t lvl = dl; lvl>0; --lvl) {
           ++dl_count_cpy[lvl];
-          cls reduced = clss[idx].to_cls().reduced(alpha,alpha_dl,lvl-1);
-          if(clss[idx].get_inactive_lvl(dl_count)<lvl) {
-            assert(!clss[idx].is_active(dl_count_cpy));
+          cls reduced = xnf_clss[idx].to_cls().reduced(alpha,alpha_dl,lvl-1);
+          if(xnf_clss[idx].get_inactive_lvl(dl_count)<lvl) {
+            assert(!xnf_clss[idx].is_active(dl_count_cpy));
             assert(reduced.is_unit() || reduced.is_zero());
           } else {
-            assert(clss[idx].is_active(dl_count_cpy));
+            assert(xnf_clss[idx].is_active(dl_count_cpy));
             //NOTE: we do not know whether clss[idx] is actually zero; it might
             //      happen that an unwatched lineral is reduced to zero already on a lower dl!
             //      Thus we cannot assume !reduced.is_unit() and !reduced.is_zero() (!)
@@ -775,7 +793,7 @@ class solver
      * 
      * @return var_t ind>=0 iff alpha[ind] is now assigned; ind==-1 means no new alpha-assignment
      */
-    inline var_t process_lineral(lin_w_it lin, const var_t lvl, const queue_t type = queue_t::NEW_UNIT) {
+    inline var_t process_lineral(lin_w_it lin, const var_t lvl, const queue_t type, const origin_t origin) {
       assert(lvl >= lin->get_lvl());
       VERB(65, "c " << std::to_string(lvl) << " : process_lineral " << type << lin->to_str() << " ~> " << lin->to_lineral().reduced(alpha,equiv_lits).to_str() << (lin->has_trivial_reason_cls() ? "" : (" with reason clause " + get_reason(lin, 1).to_str())) );
       if(lin->is_reducible() && type!=queue_t::IMPLIED_ALPHA) {
@@ -870,8 +888,31 @@ class solver
       alpha_trail_pos[lt2] = stepwise_lit_trail_length;
       ++stepwise_lit_trail_length;
       assert(type==queue_t::NEW_GUESS || !lin->is_reducible() || equiv_lits[lt2].ind==0 || alpha[equiv_lits[lt2].ind]!=bool3::None);
+      assert( !opt.lge || origin!=origin_t::LGJ || lazy_gauss_jordan->check_cms_assignments(alpha) );
       return lt2;
     };
+    
+    inline bool need_LGE_update() {
+      return !linerals_to_be_added_to_LGJ.empty();
+    }
+
+    inline bool find_implications_by_LGE_update(stats& s) {
+      assert(!linerals_to_be_added_to_LGJ.empty());
+
+      //add linerals to lazy_gauss_jordan
+      bool ret = lazy_gauss_jordan->add_linerals( std::move(linerals_to_be_added_to_LGJ) );
+      if(ret) {
+        //queue implied new linerals
+        for (auto&& lin : lazy_gauss_jordan->get_implied_literal_queue()) {
+            add_new_lineral( std::move(lin), 0, queue_t::IMPLIED_ALPHA, origin_t::LGJ );
+            ++s.no_lge_prop;
+        }
+        lazy_gauss_jordan->clear_implied_literal_queue();
+      }
+      linerals_to_be_added_to_LGJ.clear();
+
+      return ret;
+    }
 
     
     int ctr = 0;
@@ -943,7 +984,7 @@ class solver
       assert( !cls.is_zero() );
       cls_watch cls_w( std::move(cls) );
       cls_w.init(alpha, alpha_dl, alpha_trail_pos, dl_count);
-      return add_cls_watch( std::move(cls_w), redundant );
+      return add_cls_watch( std::move(cls_w), redundant, false );
     }
 
     /**
@@ -992,7 +1033,7 @@ class solver
           const var_t lvl = xnf_clss[i].get_unit_at_lvl();
           // @todo use add_new_lineral
           lineral_watches[lvl].emplace_back( std::move(xnf_clss[i].get_unit()), alpha, alpha_dl, dl_count, i, lvl);
-          queue_implied_lineral( std::prev(lineral_watches[lvl].end()), lvl, origin_t::CLAUSE, queue_t::NEW_UNIT );
+          queue_implied_lineral( std::prev(lineral_watches[lvl].end()), lvl, (learnt_cls ? origin_t::CLAUSE : origin_t::INIT), queue_t::NEW_UNIT );
           break;
       }
       case cls_upd_ret::NONE:
@@ -1101,7 +1142,9 @@ class solver
       assert(assert_data_structs());
     };
 
-    ~solver() = default;
+    ~solver() {
+      delete lazy_gauss_jordan;
+    };
 
     /**
      * @brief init solver
@@ -1110,11 +1153,23 @@ class solver
      */
     void init_clss(const vec< cls >& clss) noexcept;
 
-
     void remove_fixed_alpha(const var_t upd_lt);
 
+    inline bool need_equiv_removal() {
+      return dl==0 && remove_fixed_equiv_before_next_GCP;
+    }
+    
     bool remove_fixed_equiv_before_next_GCP = false;
-    void remove_fixed_equiv();
+    /**
+     * @brief remove all literal equivalence on dl 0 from clauses 
+     * 
+     * @return true iff a new lineral was derived
+     */
+    bool remove_fixed_equiv();
+
+
+
+    bool update_lazy_sys_linerals_before_next_GCP = false;
     
     void GCP(stats& s) noexcept;
 

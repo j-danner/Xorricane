@@ -90,13 +90,15 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
     list<cls> _clss;
     list<lineral> Lsys_lins;
 
-    // run through xor-clauses to find lineq and construct watch-literals
+    // run through XNF clauses to find lineq
     for(const auto& cls : clss) {
+        if(cls.is_zero()) continue;
         //check if clause reduces to unit
         if (cls.deg() == 1 || cls.is_one()) { // lin-eq!
             Lsys_lins.emplace_back( std::move(cls.get_unit()) );
+        } else {
+            _clss.emplace_back( cls );
         }
-        if (!cls.is_zero()) _clss.emplace_back( cls );
     }
 
     // linsys of literals
@@ -104,13 +106,14 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
 
     //reduce clss with _L
     if(opt.ip==initial_prop_opt::nbu) {
-        lin_sys _L2;
         //reduce all cls
+        restart:
         for(auto it = _clss.begin(); it!=_clss.end(); ++it) {
             if(it->deg()>1) {
                 if( it->update_short(_Lsys) && it->deg()==1) {
                     _Lsys.add_lineral( it->get_unit() );
-                    it = _clss.begin(); //restart everytime a new lineral is added!
+                    _clss.erase(it);
+                    goto restart; //restart everytime a new lineral is added!
                 }
             }
             if(it->deg()==1) it = std::prev( _clss.erase(it) );
@@ -123,32 +126,31 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
         }
     }
 
-    //add linerals from _Lsys
-    //for(auto& [lt,l_it] : _Lsys.get_pivot_poly_idx()) {
-    //    _clss.emplace_back( std::move(*l_it) );
-    //}
-    //init lazy_sys
-    lazy_sys = lin_sys_lazy_GE( std::move(_Lsys) );
-    //VERB(120, "c lazy_sys: " << lazy_sys.to_str() );
-    for (auto& lin : lazy_sys.get_implied_literal_queue()) {
-        add_new_lineral( std::move(lin), 0, queue_t::IMPLIED_ALPHA, origin_t::GE );
+    //add linerals from _Lsys to lineral_queue
+    for(auto& [lt,l_it] : _Lsys.get_pivot_poly_idx()) {
+        //_clss.emplace_back( std::move(*l_it) );
+        add_new_lineral( *l_it, 0, queue_t::NEW_UNIT, origin_t::INIT );
     }
-    lazy_sys.clear_implied_literal_queue();
+    //init lazy_gauss_jordan
+    if(opt.lge) {
+        lazy_gauss_jordan = new lin_sys_lazy_GE( std::move(_Lsys), get_num_vars() );
+        VERB(120, "c lazy_gauss_jordan: " << lazy_gauss_jordan->to_str() );
+        //clear gauss_jordan queue -- all implied linerals already added by the above!
+        lazy_gauss_jordan->clear_implied_literal_queue();
+    }
 
     active_cls = 0; //value is managed by 'init_and_add_xcls_watch'
     //add (possibly) reduced clauses
     for(auto& cls : _clss) {
-        //do NOT skip linear clauses if lge is activated! -- otherwise they are left out when solving final eqs!
-        //BEWARE! ...NOT SURE BUT WHEN SKIPPING CLAUSES IT SEEMS WE MISS SOME IMPLICATIONS! IS LAZY_SYS BUGGY?!
-        //if(opt.lge && cls.deg()==1) continue;
         if(!cls.is_zero()) init_and_add_cls_watch( std::move(cls), false );
     }
 
-    assert(active_cls+lazy_sys.size() >= xnf_clss.size()-std::min(xnf_clss.size(),lineral_queue.size()));
+    assert(active_cls+lazy_gauss_jordan->size() >= xnf_clss.size()-std::min(xnf_clss.size(),lineral_queue.size()));
 
     // init active_cls_stack
     active_cls_stack = vec<var_t>();
     active_cls_stack.emplace_back(active_cls);
+
     assert(assert_data_structs());
 };
 
@@ -550,7 +552,9 @@ void solver::remove_fixed_alpha(const var_t upd_lt) {
     assert_slow( assert_data_structs() );
 }
 
-void solver::remove_fixed_equiv() {
+bool solver::remove_fixed_equiv() {
+    assert(dl==0);
+
     VERB(90, "c remove_fixed_equiv start" );
   #ifdef DEBUG_SLOW
     const auto L = get_lineral_watches_lin_sys();
@@ -575,10 +579,12 @@ void solver::remove_fixed_equiv() {
     }
     //empty watchlists
     for(auto& wl : watch_list) wl.clear();
+
+    bool ret = false;
     //reduce all xnf_clss
     for(var_t i=0; i<xnf_clss.size(); ++i) {
         if(xnf_clss[i].is_active(dl_count)) {
-            const auto ret = xnf_clss[i].reduce_equiv(alpha, equiv_lits, dl_count);
+            const auto reduce_ret = xnf_clss[i].reduce_equiv(alpha, equiv_lits, dl_count);
             //ensure all reductions are made
           #ifdef DEBUG_SLOW
             for(auto& l : xnf_clss[i].get_linerals()) {
@@ -586,7 +592,7 @@ void solver::remove_fixed_equiv() {
             }
           #endif
             //propagate as in GCP -- if clause became UNIT or SAT
-            switch (ret) {
+            switch (reduce_ret) {
             case cls_upd_ret::SAT:
                 assert(xnf_clss[i].is_sat(dl_count));
                 assert(xnf_clss[i].is_inactive(dl_count));
@@ -594,6 +600,7 @@ void solver::remove_fixed_equiv() {
                 decr_active_cls(i);
                 break;
             case cls_upd_ret::UNIT: //includes UNSAT case (i.e. get_unit() reduces with assignments to 1 !)
+                ret = true;
                 assert(xnf_clss[i].is_unit(dl_count));
                 assert(xnf_clss[i].is_inactive(dl_count));
                 assert(xnf_clss[i].get_unit_at_lvl() == 0);
@@ -603,9 +610,7 @@ void solver::remove_fixed_equiv() {
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral
-                // @todo use add_new_lineral
-                lineral_watches[0].emplace_back( std::move(xnf_clss[i].get_unit()), alpha, alpha_dl, dl_count, i, 0 );
-                queue_implied_lineral( std::prev(lineral_watches[0].end()), 0, origin_t::CLAUSE );
+                add_new_lineral( std::move(xnf_clss[i].get_unit()), 0, queue_t::NEW_UNIT, origin_t::CLAUSE );
                 if(xnf_clss[i].size()>0) watch_list[xnf_clss[i].get_wl0()].emplace_back( i );
                 assert(xnf_clss[i].size()<=1);
                 break;
@@ -626,6 +631,7 @@ void solver::remove_fixed_equiv() {
     const auto L_after = get_lineral_watches_lin_sys();
     assert( (L+L_after).to_str() == L_after.to_str() ); //ensure that L <= L_after
   #endif
+    return ret;
 }
 
 lineral new_unit;
@@ -633,15 +639,9 @@ lineral new_unit;
 void solver::GCP(stats &s) noexcept {
     s.no_gcp++;
     VERB(90, "c GCP start");
-    while((!lineral_queue.empty() || remove_fixed_equiv_before_next_GCP) && !at_conflict()) {
+    while(!lineral_queue.empty() && !at_conflict()) {
         assert_slow(assert_data_structs());
-        if(lineral_queue.empty() && dl==0 && remove_fixed_equiv_before_next_GCP) {
-            //remove equivs only AFTER all linerals have been propagated
-            assert(dl==0);
-            remove_fixed_equiv_before_next_GCP = false;
-            remove_fixed_equiv();
-            if(lineral_queue.empty()) break;
-        }
+
         const var_t& upd_lt = propagate_implied_lineral();
         if(upd_lt == (var_t) -1) continue; //nothing new to propagate!
         if(upd_lt == 0) { assert(at_conflict()); continue; } //at conflict!
@@ -650,26 +650,25 @@ void solver::GCP(stats &s) noexcept {
         assert( alpha_dl[upd_lt]==dl );
 
         if(opt.lge) {
-            VERB(120, "c performing lazy GE");
+            VERB(120, "c performing lazy LGJ");
             const auto begin  = std::chrono::high_resolution_clock::now();
-            if( lazy_sys.assign(upd_lt, alpha_trail_pos) ) {
-                //lazy GE found new literal!
-                list<lineral>& q = lazy_sys.get_implied_literal_queue();
+            if( lazy_gauss_jordan->assign(upd_lt, alpha, dl) ) {
+                //lazy LGJ found new literal!
+                list<lineral>& q = lazy_gauss_jordan->get_implied_literal_queue();
                 for (auto&& lin : q) {
-                    //#ifndef NDEBUG
-                    //  //ensure lin is supported by lin_sys
-                    //  VERB(120, "c new lineral from lazy GE: " << lin.to_str());
-                    //  lin_sys lsys( get_lineral_watches_lin_sys() );
-                    //  lineral tmp = lin;
-                    //  assert( lsys.reduce(tmp).is_zero() );
-                    //#endif
+                  #ifndef NDEBUG
+                    //ensure lin is supported by lin_sys
+                    VERB(120, "c new lineral from lazy LGJ: " << lin.to_str());
+                    lin_sys lsys( get_lineral_watches_lin_sys() );
+                    lineral tmp = lin;
+                    assert( lsys.reduce(tmp).is_zero() );
+                  #endif
                     ++s.no_lge_prop;
-                    //add_new_lineral( std::move(lin), 0, queue_t::IMPLIED_ALPHA, origin_t::GE );
-                    add_new_lineral( std::move(lin), dl, queue_t::IMPLIED_ALPHA, origin_t::GE );
+                    add_new_lineral( std::move(lin), dl, queue_t::IMPLIED_ALPHA, origin_t::LGJ );
                 }
-                lazy_sys.clear_implied_literal_queue();
+                lazy_gauss_jordan->clear_implied_literal_queue();
             }
-            assert( lazy_sys.get_implied_literal_queue().empty() );
+            assert( lazy_gauss_jordan->get_implied_literal_queue().empty() );
             const auto end  = std::chrono::high_resolution_clock::now();
             s.total_lge_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
         }
@@ -685,6 +684,8 @@ void solver::GCP(stats &s) noexcept {
                 it = L_watch_list[upd_lt].erase( it );
                 continue;
             }
+            //if lvl==0 and lge is active, then it can be skipped!
+            if(lvl==0 && opt.lge) { ++it; continue; }
             assert(lin->watches(upd_lt));
             if(!lin->is_active(dl_count)) { ++it; continue; }
             const auto& [new_wl, ret] = lin->update(upd_lt, alpha, dl, dl_count);
@@ -804,15 +805,7 @@ void solver::dpll_solve(stats &s) {
     std::stack<lineral> dec_stack;
 
     // GCP -- before making decisions!
-    GCP(s);
-    if( need_GE_inprocessing(s) && find_implications_by_GE(s) ) {
-        //in case we did backtrack, fix dec_stack
-        while(dec_stack.size()>dl) dec_stack.pop();
-        goto dpll_gcp;
-    }
-    if( need_IG_inprocessing(s) && find_implications_by_IG(s) ) {
-        goto dpll_gcp;
-    }
+    goto dpll_gcp;
 
     while (true) {
         if (s.cancelled.load()) {
@@ -865,13 +858,17 @@ void solver::dpll_solve(stats &s) {
 
             dpll_gcp:
             GCP(s);
-            //linear algebra on linerals
+            if( !at_conflict() &&
+                ( (need_equiv_removal() && remove_fixed_equiv())
+                || (need_LGE_update() && find_implications_by_LGE_update(s))
+                || (need_IG_inprocessing(s) && find_implications_by_IG(s))
+                )
+              ) {
+                goto dpll_gcp;
+            }
             if( need_GE_inprocessing(s) && find_implications_by_GE(s) ) {
                 //in case we did backtrack, fix dec_stack
                 while(dec_stack.size()>dl) dec_stack.pop();
-                goto dpll_gcp;
-            }
-            if( need_IG_inprocessing(s) && find_implications_by_IG(s) ) {
                 goto dpll_gcp;
             }
 
@@ -886,7 +883,7 @@ void solver::dpll_solve(stats &s) {
                 //enforce backtracking!
                 // @todo use add_new_lineral
                 lineral_watches[dl].emplace_back( lineral(cnst::one), alpha, alpha_dl, dl_count, dl );
-                process_lineral(std::prev(lineral_watches[dl].end()), dl, queue_t::NEW_GUESS);
+                process_lineral(std::prev(lineral_watches[dl].end()), dl, queue_t::NEW_GUESS, origin_t::GUESS);
             } else {
                 solve_L(L, s);
 
@@ -954,7 +951,12 @@ void solver::solve(stats &s) {
     // GCP -- before making decisions!
     do {
         GCP(s);
-    } while( !at_conflict() && ( (need_GE_inprocessing(s) && find_implications_by_GE(s)) || (need_IG_inprocessing(s) && find_implications_by_IG(s)) ) );
+    } while( !at_conflict() && 
+        (  (need_equiv_removal() && remove_fixed_equiv())
+        || (need_LGE_update() && find_implications_by_LGE_update(s)) 
+        || (need_IG_inprocessing(s) && find_implications_by_IG(s)) 
+        || (need_GE_inprocessing(s) && find_implications_by_GE(s))
+        ) );
     
 
     while (true) {
@@ -1035,7 +1037,12 @@ void solver::solve(stats &s) {
                     return;
                 }
                 GCP(s);
-            } while( !at_conflict() && ((need_GE_inprocessing(s) && find_implications_by_GE(s)) || (need_IG_inprocessing(s) && find_implications_by_IG(s))) );
+            } while( !at_conflict() && 
+                (  (need_equiv_removal() && remove_fixed_equiv())
+                || (need_LGE_update() && find_implications_by_LGE_update(s)) 
+                || (need_IG_inprocessing(s) && find_implications_by_IG(s)) 
+                || (need_GE_inprocessing(s) && find_implications_by_GE(s))
+                ) );
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
@@ -1246,6 +1253,7 @@ std::string solver::to_xnf_str() const noexcept {
             while(it != L_watch_list.end()) {
                 for([[maybe_unused]] auto [lvl, dl_c, lin] : *it) {
                     if(dl_count[lvl]>dl_c) continue;
+                    if(lvl==0 && opt.lge) continue;
                     //ensure every lineral occurs in two watch-lists!
                     [[maybe_unused]] int idx2 = std::distance(lineral_watches[lvl].begin(), std::find_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; }));
                     [[maybe_unused]] var_t ct = watch_cnt.find({lvl,idx2})->second;
@@ -1264,13 +1272,15 @@ std::string solver::to_xnf_str() const noexcept {
             assert(2*lins_cnt == sum_cnt); //ensures all lins are watched!
 
             //check that each lineral occurs in corresponding watch-lists!
+            var_t lvl = 0;
             for(const auto& lw_dl : lineral_watches) {
                 for(const auto& lin : lw_dl) {
                     if(!at_conflict() && lineral_queue.empty() && !lin.is_assigning()) {
-                        assert( std::any_of(L_watch_list[lin.get_wl0()].begin(), L_watch_list[lin.get_wl0()].end(), [&](auto& p){ return *p.lin==lin; }) );
-                        assert( std::any_of(L_watch_list[lin.get_wl1()].begin(), L_watch_list[lin.get_wl1()].end(), [&](auto& p){ return *p.lin==lin; }) );
+                        assert( (lvl==0 && opt.lge) || std::any_of(L_watch_list[lin.get_wl0()].begin(), L_watch_list[lin.get_wl0()].end(), [&](auto& p){ return *p.lin==lin; }) );
+                        assert( (lvl==0 && opt.lge) || std::any_of(L_watch_list[lin.get_wl1()].begin(), L_watch_list[lin.get_wl1()].end(), [&](auto& p){ return *p.lin==lin; }) );
                     }
                 }
+                ++lvl;
             }
         }
 
@@ -1362,6 +1372,14 @@ std::string solver::to_xnf_str() const noexcept {
                 assert( equiv_lits[i].reason_lin->is_equiv() );
                 assert( equiv_lits[i].reason_lin->get_equiv_lit()==equiv_lits[i].ind );
                 assert( equiv_lits[i].reason_lin->LT()==i );
+            }
+        }
+
+        if(opt.lge) {
+            //check that the linerals in lazy_gauss_jordan are supported by the linerals in lineral_watches[0]
+            lin_sys lin0 = lin_sys( list<lineral>(lineral_watches[0].begin(), lineral_watches[0].end()));
+            for(const auto& l : lazy_gauss_jordan->get_linerals()) {
+                assert( lin0.reduce(l).is_zero() );
             }
         }
         
@@ -1471,11 +1489,6 @@ bool solver::find_implications_by_GE(stats& s) {
       perm[i] = idx; perm_inv[idx] = i; ++idx;
     }
   }
-  for(const auto& l : lazy_sys.get_linerals()) {
-    //TODO use var_occ_list of lin_sys once they are implemted!!
-    for(const auto& v : l.get_idxs_()) perm[v] = 1;
-    ++n_wlins;
-  }
 
   const var_t n_vars = idx;
   const rci_t nrows = n_wlins;
@@ -1498,16 +1511,6 @@ bool solver::find_implications_by_GE(stats& s) {
       }
       ++r;
     }
-  }
-  for(const auto& l : lazy_sys.get_linerals()) {
-    if(l.has_constant()) {
-        mzd_write_bit(M, r, n_vars, 1);
-    }
-    for(const auto& i : l.get_idxs_()) {
-        assert(i>0); assert(perm[i] < (var_t) ncols-1);
-        mzd_write_bit(M, r, perm[i], 1);
-    }
-    ++r;
   }
   assert(r == nrows);
   //store transposed version (required to compute reason clauses)
@@ -1642,12 +1645,12 @@ bool solver::find_implications_by_GE(stats& s) {
     if(resolving_lvl < dl) {
       backtrack(resolving_lvl);
       assert(resolving_lvl==dl);
-      queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::GE, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
+      queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LGJ, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
       //return immediately
       break;
     }
     assert(resolving_lvl==dl);
-    queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::GE, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
+    queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LGJ, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
   }
 
   mzd_free(B);
@@ -1684,11 +1687,6 @@ inline lin_sys solver::get_lineral_watches_lin_sys() const {
       ++n_wlins;
     }
   }
-  for(const auto& l : lazy_sys.get_linerals()) {
-    //TODO use var_occ_list of lin_sys once they are implemted!!
-    for(const auto& v : l.get_idxs_()) perm[v] = 1;
-    ++n_wlins;
-  }
   //apply alpha already? the following does not work, since if x1=0, x2=1 then the literal x1+x2 is omitted, despite resembling a conflict!
   
   //construct permutation maps
@@ -1720,16 +1718,6 @@ inline lin_sys solver::get_lineral_watches_lin_sys() const {
       }
       ++r;
     }
-  }
-  for(const auto& l : lazy_sys.get_linerals()) {
-    if(l.has_constant()) {
-        mzd_write_bit(M, r, n_vars, 1);
-    }
-    for(const auto& i : l.get_idxs_()) {
-        assert(i>0); assert(perm[i] < (var_t) ncols-1);
-        mzd_write_bit(M, r, perm[i], 1);
-    }
-    ++r;
   }
   assert(r == nrows);
   //store transposed version (required to compute reason clause for )
@@ -1787,11 +1775,6 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
       ++n_wlins;
     }
   }
-  for(const auto& l : lazy_sys.get_linerals()) {
-    //TODO use var_occ_list of lin_sys once they are implemted!!
-    for(const auto& v : l.get_idxs_()) perm[v] = 1;
-    ++n_wlins;
-  }
   //apply alpha already? the following does not work, since if x1=0, x2=1 then the literal x1+x2 is omitted, despite resembling a conflict!
   ////ignore all assigned values
   //for(var_t i=0; i<alpha.size(); ++i) {
@@ -1827,16 +1810,6 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
       }
       ++r;
     }
-  }
-  for(const auto& l : lazy_sys.get_linerals()) {
-    if(l.has_constant()) {
-        mzd_write_bit(M, r, n_vars, 1);
-    }
-    for(const auto& i : l.get_idxs_()) {
-        assert(i>0); assert(perm[i] < (var_t) ncols-1);
-        mzd_write_bit(M, r, perm[i], 1);
-    }
-    ++r;
   }
   assert(r == nrows);
   //store transposed version (required to compute reason clause for )
