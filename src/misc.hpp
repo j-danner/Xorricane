@@ -13,7 +13,6 @@
 #include <set>
 #include <deque>
 //other
-#include <omp.h>
 
 #include <boost/container/vector.hpp>
 #include <boost/container/stable_vector.hpp>
