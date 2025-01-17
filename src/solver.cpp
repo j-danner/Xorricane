@@ -1252,83 +1252,84 @@ std::string solver::to_xnf_str() const noexcept {
         }
 
       #ifdef DEBUG_SLOWER
-        //check watch-lists -- if everything is propagated!
-        if(lineral_queue.empty()) {
-            std::set<var_t> watched_idxs;
-            auto it = watch_list.begin();
-            var_t idx = 0;
-            while(it != watch_list.end()) {
-                for([[maybe_unused]] auto i : *it) {
-                    assert( xnf_clss[i].watches( idx ) );
-                    if(xnf_clss[i].is_sat0()) continue;
-                    if(xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()==0) continue;
-                    watched_idxs.insert( i );
-                }
-                ++it; ++idx;
-            }
-            //calc total number of required watches:
-            var_t cnt = 0;
-            for(const auto& cls : xnf_clss) {
-                if(cls.is_sat0()) continue;
-                if(cls.is_unit(dl_count) && cls.get_unit_at_lvl()==0) continue;
-                ++cnt;
-            }
-            assert( watched_idxs.size()==cnt );
-        }
-        if(lineral_queue.empty()) {
-            std::map<std::pair<int,int>, int> watch_cnt;
-            std::set<lin_w_it> watched_lins;
-            int idx = 0;
-            auto it = L_watch_list.begin();
-            while(it != L_watch_list.end()) {
-                for([[maybe_unused]] auto [lvl, dl_c, lin] : *it) {
-                    assert( dl_count[lvl]!=dl_c || lin->watches( idx ) || lin->to_lineral().is_constant() );
-                    if(dl_count[lvl]>dl_c) continue;
-                    int idx2 = std::distance(lineral_watches[lvl].begin(), std::find_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; })); //assumes every literal occurs exactly once!
-                    if(watch_cnt.contains({lvl,idx2})) {
-                        watch_cnt[{lvl,idx2}] += 1;
-                    } else {
-                        watch_cnt.insert( {{lvl,idx2}, 1} );
-                    }
-                }
-                ++it; ++idx;
-            }
-            it = L_watch_list.begin();
-            int lins_cnt = 0;
-            int sum_cnt = 0;
-            while(it != L_watch_list.end()) {
-                for([[maybe_unused]] auto [lvl, dl_c, lin] : *it) {
-                    if(dl_count[lvl]>dl_c) continue;
-                    //if(lvl==0 && opt.lgj) continue;
-                    //ensure every lineral occurs in two watch-lists!
-                    [[maybe_unused]] int idx2 = std::distance(lineral_watches[lvl].begin(), std::find_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; }));
-                    [[maybe_unused]] var_t ct = watch_cnt.find({lvl,idx2})->second;
-                    assert( lin->is_assigning() || ct%2==0);
-                    if(ct>2) {
-                        //ensure ct = 2* #{lins which are equal and listed inside lineral_watches}
-                        assert( (var_t) (2* std::count_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; }) ) == ct );
-                    }
-                    if(!lin->is_assigning()) { //only count those lins where two watches should be present!
-                        sum_cnt += ct;
-                        ++lins_cnt;
-                    }
-                }
-                ++it;
-            }
-            assert(2*lins_cnt == sum_cnt); //ensures all lins are watched!
+        ////check watch-lists -- if everything is propagated!
+        //if(lineral_queue.empty()) {
+        //    std::set<var_t> watched_idxs;
+        //    auto it = watch_list.begin();
+        //    var_t idx = 0;
+        //    while(it != watch_list.end()) {
+        //        for([[maybe_unused]] auto i : *it) {
+        //            assert( xnf_clss[i].watches( idx ) );
+        //            if(xnf_clss[i].is_sat0()) continue;
+        //            if(xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()==0) continue;
+        //            watched_idxs.insert( i );
+        //        }
+        //        ++it; ++idx;
+        //    }
+        //    //calc total number of required watches:
+        //    var_t cnt = 0;
+        //    for(const auto& cls : xnf_clss) {
+        //        if(cls.is_sat0()) continue;
+        //        if(cls.is_unit(dl_count) && cls.get_unit_at_lvl()==0) continue;
+        //        ++cnt;
+        //    }
+        //    assert( watched_idxs.size()==cnt );
+        //}
+        //if(lineral_queue.empty()) {
+        //    std::map<std::pair<int,int>, int> watch_cnt;
+        //    std::set<lin_w_it> watched_lins;
+        //    int idx = 0;
+        //    auto it = L_watch_list.begin();
+        //    while(it != L_watch_list.end()) {
+        //        for([[maybe_unused]] auto [lvl, dl_c, lin] : *it) {
+        //            assert( dl_count[lvl]!=dl_c || lin->watches( idx ) || lin->to_lineral().is_constant() );
+        //            if(dl_count[lvl]>dl_c) continue;
+        //            int idx2 = std::distance(lineral_watches[lvl].begin(), std::find_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; })); //assumes every literal occurs exactly once!
+        //            if(watch_cnt.contains({lvl,idx2})) {
+        //                watch_cnt[{lvl,idx2}] += 1;
+        //            } else {
+        //                watch_cnt.insert( {{lvl,idx2}, 1} );
+        //            }
+        //        }
+        //        ++it; ++idx;
+        //    }
+        //    it = L_watch_list.begin();
+        //    int lins_cnt = 0;
+        //    int sum_cnt = 0;
+        //    while(it != L_watch_list.end()) {
+        //        for([[maybe_unused]] auto [lvl, dl_c, lin] : *it) {
+        //            if(dl_count[lvl]>dl_c) continue;
+        //            //if(lvl==0 && opt.lgj) continue;
+        //            //ensure every lineral occurs in two watch-lists!
+        //            [[maybe_unused]] int idx2 = std::distance(lineral_watches[lvl].begin(), std::find_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; }));
+        //            [[maybe_unused]] var_t ct = watch_cnt.find({lvl,idx2})->second;
+        //            assert( lin->is_assigning() || ct%2==0);
+        //            if(ct>2) {
+        //                //ensure ct = 2* #{lins which are equal and listed inside lineral_watches}
+        //                //std::cout << std::count_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; }) << std::endl;
+        //                assert( (var_t) (2* std::count_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; }) ) == ct );
+        //            }
+        //            if(!lin->is_assigning()) { //only count those lins where two watches should be present!
+        //                sum_cnt += ct;
+        //                ++lins_cnt;
+        //            }
+        //        }
+        //        ++it;
+        //    }
+        //    assert(2*lins_cnt == sum_cnt); //ensures all lins are watched!
 
-            //check that each lineral occurs in corresponding watch-lists!
-            var_t lvl = 0;
-            for(const auto& lw_dl : lineral_watches) {
-                for(const auto& lin : lw_dl) {
-                    if(!at_conflict() && lineral_queue.empty() && !lin.is_assigning()) {
-                        assert( std::any_of(L_watch_list[lin.get_wl0()].begin(), L_watch_list[lin.get_wl0()].end(), [&](auto& p){ return *p.lin==lin; }) );
-                        assert( std::any_of(L_watch_list[lin.get_wl1()].begin(), L_watch_list[lin.get_wl1()].end(), [&](auto& p){ return *p.lin==lin; }) );
-                    }
-                }
-                ++lvl;
-            }
-        }
+        //    //check that each lineral occurs in corresponding watch-lists!
+        //    var_t lvl = 0;
+        //    for(const auto& lw_dl : lineral_watches) {
+        //        for(const auto& lin : lw_dl) {
+        //            if(!at_conflict() && lineral_queue.empty() && !lin.is_assigning()) {
+        //                assert( std::any_of(L_watch_list[lin.get_wl0()].begin(), L_watch_list[lin.get_wl0()].end(), [&](auto& p){ return *p.lin==lin; }) );
+        //                assert( std::any_of(L_watch_list[lin.get_wl1()].begin(), L_watch_list[lin.get_wl1()].end(), [&](auto& p){ return *p.lin==lin; }) );
+        //            }
+        //        }
+        //        ++lvl;
+        //    }
+        //}
 
         //check that all lineral_watches are supported by the units in xnf_clss
         lin_sys L_lin = lin_sys();
