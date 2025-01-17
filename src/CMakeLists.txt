@@ -44,7 +44,7 @@ include_directories( SYSTEM ${GMP_INCLUDE_DIR} )
 # Needed for PicoSAT trace generation
 add_definitions( -DTRACE )
 # main files for lib
-add_library(cms_lib
+add_library(cms
     STATIC
     cryptominisat/src/constants.h
     cryptominisat/src/cnf.cpp
@@ -95,7 +95,7 @@ add_library(cms_lib
     ${CMAKE_CURRENT_BINARY_DIR}/cryptominisat/GitSHA1.cpp
     cryptominisat/src/cryptominisat.cpp
 )
-target_link_libraries(cms_lib PUBLIC ${GMP_LIBRARIES})
+target_link_libraries(cms PUBLIC ${GMP_LIBRARIES})
 
 
 #setup library for lazy version of lineral
@@ -114,13 +114,8 @@ add_library(
     cryptominisat/src/solver.h
     cryptominisat/src/gaussian.h
 )
-add_dependencies(lineral_lazy cms_lib)
-
-#  # Ensure that libraries depending on cryptominisat are built after it
-#  add_dependencies(lineral_lazy cryptominisat)
-#  target_link_libraries(lineral_lazy PRIVATE ${CMS_LIB})
-
-target_link_libraries(lineral_lazy PUBLIC cms_lib ${EXTRA_LIBS} lineral)
+add_dependencies(lineral_lazy cms)
+target_link_libraries(lineral_lazy PUBLIC cms ${EXTRA_LIBS} lineral)
 
 
 

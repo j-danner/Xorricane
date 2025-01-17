@@ -6,6 +6,7 @@
 #include "misc.hpp"
 
 #include "lineral.hpp"
+#include "lineral_watch.hpp"
 #include "lin_sys.hpp"
 
 #include "cryptominisat/src/solver.h"
@@ -55,8 +56,10 @@ class lin_sys_lazy_GE
     /**
      * @brief initialises lin_sys_watch, fixes second watches
      * @note after init use propagate() to finish initialization
+     * 
+     * @param alpha current alpha-assignment
      */
-    void init() {
+    void init(const vec<bool3>& alpha) {
         //set gaussconf settings -- copied from 'set_allow_otf_gauss()' in cryptominisat.cpp
         //conf.doFindXors = true;
         //conf.allow_elim_xor_vars = false;
@@ -77,7 +80,7 @@ class lin_sys_lazy_GE
         conf.gaussconf.doMatrixFind = true;
         conf.gaussconf.min_gauss_xor_clauses = 0;
         conf.gaussconf.max_gauss_xor_clauses = 500000;
-        conf.verbosity = 120;
+        conf.verbosity = 0;
 
         must_inter = new std::atomic<bool>();
         cms = new CMSat::Solver(&conf, must_inter);
@@ -108,6 +111,9 @@ class lin_sys_lazy_GE
         cms->find_and_init_all_matrices();
 
         for(const auto lp : linerals_assigning) {
+            if(alpha.size()>0 && alpha[lp->LT()]!=bool3::None) {
+                continue; //skip already assigned variables
+            }
             implied_literal_queue.emplace_back( *lp );
             if(!lp->is_one()) enqueue_new_assignment(lp->LT(), lp->has_constant());
         }
@@ -156,9 +162,7 @@ class lin_sys_lazy_GE
             }
             case CMSat::binary_t:
             {
-                assert(false);
-                lineral_vars.emplace_back( confl.lit2().var() );
-                return lineral( lineral_vars, confl.lit2().sign(), presorted::no );
+                return lineral( (var_t) confl.lit2().var(), !confl.lit2().sign() );
             }
             default:
                 assert(false);
@@ -216,19 +220,41 @@ class lin_sys_lazy_GE
     /**
      * @brief propagate all enqueued decisions and updates implied_literal_queue appropriately
      * 
+     * @param alpha current alpha-assignments
+     * 
      * @return number of new alpha assignments
      */
-    var_t propagate() {
+    var_t propagate(const vec<bool3>& alpha) {
+        #ifdef DEBUG_SLOWER
+            //check that propagation finds ALL possible alpha assignments!
+            lin_sys L( linerals );
+            //add all decisions to L
+            lin_sys L_dec;
+            for(var_t i = 0; i<alpha.size(); ++i) {
+              if(alpha[i]!=bool3::None) L_dec.add_lineral( lineral(i, b3_to_bool(alpha[i])) );
+            }
+            // find all uniquely determined alpha
+            L += L_dec;
+            vec<lineral> det_alpha;
+            for(const auto& lin : L.get_linerals()) {
+              if(lin.is_assigning() && !L_dec.reduce(lin).is_zero()) det_alpha.emplace_back( lin );
+            }
+            lin_sys L_det( det_alpha );
+            std::cout << "c " << BLUE("LGJ should deduce: " << L_det.to_str()) << std::endl;
+        #endif
+
         //propagate with CMS and read propagations from trail
         const auto trail_size_prev = cms->trail_size();
         CMSat::PropBy confl = cms->propagate<true>();
         
-        #ifndef NDEBUG
-            std::cout << "sys_orig ";
-            for(const auto& l: linerals) std::cout << l.to_str() << " ";
-            std::cout << std::endl;
-            lin_sys sys_orig( linerals );
-            std::cout << "sys_orig " << sys_orig.to_str() << "  (reduced)" << std::endl;
+        #ifdef DEBUG_SLOWER
+            if(L_det.dim()>0) { //only print when there is anything to deduce...
+                std::cout << "sys_orig ";
+                for(const auto& l: linerals) std::cout << l.to_str() << " ";
+                std::cout << std::endl;
+                lin_sys sys_orig( linerals );
+                std::cout << "sys_orig " << sys_orig.to_str() << "  (reduced)" << std::endl;
+            }
         #endif
 
         //iterate over new elements in trail
@@ -236,7 +262,13 @@ class lin_sys_lazy_GE
         vec<var_t> lineral_vars;
         for(size_t trail_pos = trail_size_prev; trail_pos<cms->trail_size(); ++trail_pos) {
             trail_el = cms->trail_at(trail_pos);
+
+            if(alpha.size()>0 && alpha[trail_el.var()]!=bool3::None) {
+                continue; //skip already assigned variables
+            }
+
             lineral lin = CMS_reason_to_lineral(trail_el);
+
 
             if(trail_el.var()>num_vars) {
                 //this is a clash variable -- store the reason clause for later!
@@ -266,7 +298,6 @@ class lin_sys_lazy_GE
         //if we have a conflict, this corresponding PropBy is not found on trail, i.e., treat it now!
         //(this has to be done ATER all other clauses are put in the queue s.t. confl is actually a conflict under the previously implied assignments)
         if(!confl.isnullptr()) {
-            assert(cms->decisionLevel()==0);
             //we have a conflict!
             cms->ok = false;
             lineral lin = confl_to_lineral(confl);
@@ -287,13 +318,27 @@ class lin_sys_lazy_GE
             #endif
 
             implied_literal_queue.emplace_back( std::move(lin) );
-            
         }
 
-        //#ifndef NDEBUG
-        //    lin_sys sys( get_implied_literal_queue() );
-        //    std::cout << "found " << sys.to_str() << std::endl;
-        //#endif
+        #ifdef DEBUG_SLOWER
+            //ensure that all alpha-assignments are reflected correctly in cms!
+            //assert( check_cms_assignments(alpha) ); // skip this check -- until I have a better understanding of how CMS works!
+
+            //check we got all possible implications!
+            lin_sys L2( implied_literal_queue );
+            L2 += L_dec;
+            vec<lineral> det_alpha2;
+            for(const auto& lin : L2.get_linerals()) {
+              if(lin.is_assigning() && !L_dec.reduce(lin).is_zero()) det_alpha2.emplace_back( lin );
+            }
+            lin_sys L_det2( det_alpha2 );
+            //we might miss conflicts here due to binary clauses/equivalent xors missing in the matrices!
+            std::cout << "c " << BLUE("LGJ could deduce:  " << L_det2.to_str()) << std::endl;
+            if( L_det.to_str() != L_det2.to_str() ) {
+                std::cout << "c " << RED("WARNING") << BLUE(" LGJ deduction incomplete!") << std::endl;
+            }
+        #endif
+
       
         return implied_literal_queue.size();
     }
@@ -304,13 +349,15 @@ class lin_sys_lazy_GE
     lin_sys_lazy_GE(lin_sys&& sys, const var_t _num_vars) noexcept : num_vars(_num_vars) {
         linerals.reserve( sys.linerals.size() );
         for(auto&& l : sys.linerals) linerals.emplace_back( std::move(l) );
-        init();
-        propagate();
+        vec<bool3> alpha;
+        init(alpha);
+        propagate(alpha);
     };
 
     lin_sys_lazy_GE(const vec<lineral>& linerals_, const var_t _num_vars = (var_t) -1) noexcept :  num_vars(_num_vars), linerals(linerals_.begin(),linerals_.end()) {
-        init();
-        propagate();
+        vec<bool3> alpha;
+        init(alpha);
+        propagate(alpha);
     };
 
     ~lin_sys_lazy_GE() {
@@ -321,7 +368,9 @@ class lin_sys_lazy_GE
     list<lineral>& get_implied_literal_queue() { return implied_literal_queue; }
     void clear_implied_literal_queue() { implied_literal_queue.clear(); }
 
-    const vec<lineral>& get_linerals() const { return linerals; }
+    vec<lineral>& get_linerals() { return linerals; }
+    
+    const vec<lineral>& get_linerals_const() const { return linerals; }
     
     /**
      * @brief checks whether the assignments of cms are correct
@@ -359,58 +408,48 @@ class lin_sys_lazy_GE
 
         //enqueue assignment and propagate if var is not yet assigned in cms
         if( enqueue_new_assignment(var, b3_to_bool(alpha[var])) ) {
-            #ifdef DEBUG_SLOWER
-                //check that propagation finds ALL possible alpha assignments!
-                lin_sys L( linerals );
-                //add all decisions to L
-                lin_sys L_dec;
-                for(var_t i = 0; i<alpha.size(); ++i) {
-                  if(alpha[i]!=bool3::None) L_dec.add_lineral( lineral(i, b3_to_bool(alpha[i])) );
-                }
-                // find all uniquely determined alpha
-                L += L_dec;
-                vec<lineral> det_alpha;
-                for(const auto& lin : L.get_linerals()) {
-                  if(lin.is_assigning() && !L_dec.reduce(lin).is_zero()) det_alpha.emplace_back( lin );
-                }
-                lin_sys L_det( det_alpha );
-                std::cout << "c " << BLUE("LGJ should deduce: " << L_det.to_str()) << std::endl;
-            #endif
-
-            propagate();
-
-            #ifdef DEBUG_SLOWER
-                //ensure that all alpha-assignments are reflected correctly in cms!
-                //assert( check_cms_assignments(alpha) ); // skip this check -- until I have a better understanding of how CMS works!
-
-                //check we got all possible implications!
-                lin_sys L2( implied_literal_queue );
-                L2 += L_dec;
-                vec<lineral> det_alpha2;
-                for(const auto& lin : L2.get_linerals()) {
-                  if(lin.is_assigning() && !L_dec.reduce(lin).is_zero()) det_alpha2.emplace_back( lin );
-                }
-                lin_sys L_det2( det_alpha2 );
-                //we might miss conflicts here due to binary clauses/equivalent xors missing in the matrices!
-                std::cout << "c " << BLUE("LGJ could deduce:  " << L_det2.to_str()) << std::endl;
-                if( L_det.to_str() != L_det2.to_str() ) {
-                    std::cout << "c " << RED("WARNING") << BLUE(" LGJ deduction incomplete!") << std::endl;
-                }
-            #endif
+            propagate(alpha);
         }
         
         return !implied_literal_queue.empty();
     }
+    
+    ///**
+    // * @brief re-init with given linerals
+    // * 
+    // * @param ls list of linerals to be used for re-initialization
+    // * @param alpha current alpha-assignments
+    // */
+    //var_t reinit(const list<lineral_watch>& lins, const vec<bool3>& alpha) {
+    //    assert(cms->decisionLevel() == 0);
+    //    if(lins.empty()) return 0;
+
+    //    delete cms;
+    //    delete must_inter;
+
+    //    //add new linerals
+    //    linerals.clear();
+    //    linerals.insert(linerals.end(), lins.begin(), lins.end());
+
+    //    //re-init object
+    //    init(alpha);
+
+    //    //@todo optimize filter out previously known implied assignments -- otherwise they have to be treated again!
+    //    return propagate(alpha);
+    //}
+
+
 
     /**
      * @brief add new lineral to lazy lin sys
      * @note may only be used at dl 0 (!)
      * 
      * @param l lineral to be added
+     * @param alpha current alpha-assignments
      * @return var_t number of implied new alpha assignments
      */
-    var_t add_lineral(lineral&& l) {
-      return add_linerals({std::move(l)});
+    inline var_t add_lineral(lineral&& l, const vec<bool3>& alpha) {
+      return add_linerals({std::move(l)}, alpha);
     }
 
     /**
@@ -418,9 +457,10 @@ class lin_sys_lazy_GE
      * @note may only be used at dl 0 (!)
      * 
      * @param ls list of linerals to be added
+     * @param alpha current alpha-assignments
      * @return var_t number of new alpha assignments
      */
-    var_t add_linerals(list<lineral>&& ls) {
+    var_t add_linerals(vec<lineral>&& ls, const vec<bool3>& alpha) {
         //BEWARE: not sure how to add linerals without destroying some internal structure in cms!
         //        old code trying this can be found below - for now we just re-init the whole thing!
 
@@ -434,46 +474,46 @@ class lin_sys_lazy_GE
         linerals.insert(linerals.end(), make_move_iterator(ls.begin()), make_move_iterator(ls.end()));
 
         //re-init object
-        init();
+        init(alpha);
 
         //@todo optimize filter out previously known implied assignments -- otherwise they have to be treated again!
-        return propagate();
+        return propagate(alpha);
 
-        ///// OLD CODE //////
-        assert(cms->decisionLevel() == 0);
-        if(ls.empty()) return 0;
+        /////// OLD CODE //////
+        //assert(cms->decisionLevel() == 0);
+        //if(ls.empty()) return 0;
 
-        //proceed as follows: add linerals, rebuild gauss matrices, then propagate
-        cms->clear_gauss_matrices(false); //bool decides whether data for matrices is de-allocated!
+        ////proceed as follows: add linerals, rebuild gauss matrices, then propagate
+        //cms->clear_gauss_matrices(false); //bool decides whether data for matrices is de-allocated!
 
-        //add new linerals
-        auto it = linerals.insert(linerals.end(), make_move_iterator(ls.begin()), make_move_iterator(ls.end()));
+        ////add new linerals
+        //auto it = linerals.insert(linerals.end(), make_move_iterator(ls.begin()), make_move_iterator(ls.end()));
 
-        //push non-assigning linerals to solver all others just enqueue!
-        list<const lineral*> linerals_assigning;
-        vec<unsigned> xor_clause;
-        for(;it != linerals.end(); ++it) {
-            const auto& l = *it;
-            if(l.is_zero()) continue;
-            if(!l.is_assigning()) {
-                xor_clause.clear(); xor_clause.reserve( l.size() );
-                for(const auto& i : l.get_idxs_()) xor_clause.emplace_back(i);
-                cms->add_xor_clause_outside( xor_clause, l.has_constant() );
-            } else {
-                linerals_assigning.push_back( &l );
-            }
-        }
-        cms->xorclauses_updated = true;
+        ////push non-assigning linerals to solver all others just enqueue!
+        //list<const lineral*> linerals_assigning;
+        //vec<unsigned> xor_clause;
+        //for(;it != linerals.end(); ++it) {
+        //    const auto& l = *it;
+        //    if(l.is_zero()) continue;
+        //    if(!l.is_assigning()) {
+        //        xor_clause.clear(); xor_clause.reserve( l.size() );
+        //        for(const auto& i : l.get_idxs_()) xor_clause.emplace_back(i);
+        //        cms->add_xor_clause_outside( xor_clause, l.has_constant() );
+        //    } else {
+        //        linerals_assigning.push_back( &l );
+        //    }
+        //}
+        //cms->xorclauses_updated = true;
         
-        //re-init matrices + propagate
-        cms->find_and_init_all_matrices();
+        ////re-init matrices + propagate
+        //cms->find_and_init_all_matrices();
 
-        for(const auto lp : linerals_assigning) {
-            implied_literal_queue.emplace_back( *lp );
-            if(!lp->is_one()) enqueue_new_assignment(lp->LT(), lp->has_constant());
-        }
+        //for(const auto lp : linerals_assigning) {
+        //    implied_literal_queue.emplace_back( *lp );
+        //    if(!lp->is_one()) enqueue_new_assignment(lp->LT(), lp->has_constant());
+        //}
 
-        return propagate();
+        //return propagate(alpha);
     }
 
     void backtrack(var_t lvl) {

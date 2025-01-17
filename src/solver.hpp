@@ -36,6 +36,8 @@ std::ostream& operator<<(std::ostream& os, const trail_t& t);
 
 std::ostream& operator<<(std::ostream& os, const queue_t& t);
 
+std::ostream& operator<<(std::ostream& os, const origin_t& t);
+
 struct trail_elem {
   /**
    * @brief indeterminate that is affected by this trail elem
@@ -46,20 +48,25 @@ struct trail_elem {
    */
   trail_t type;
   /**
+   * @brief origin of trail elem
+   */
+  origin_t origin;
+  /**
    * @brief pointer to associated lineral_watch
    */
   lin_w_it lin;
 
   trail_elem() : ind(0) {};
-  trail_elem(const var_t& _ind, const trail_t& _type, lin_w_it _lin) : ind(_ind), type(_type), lin(_lin) {};
-  trail_elem(const trail_elem& other) : ind(other.ind), type(other.type), lin(other.lin) {};
-  trail_elem(trail_elem&& other) : ind(other.ind), type(other.type), lin(other.lin) {};
+  trail_elem(const var_t& _ind, const trail_t& _type, const origin_t& _origin, lin_w_it _lin) : ind(_ind), type(_type), origin(_origin), lin(_lin) {};
+  trail_elem(const trail_elem& other) : ind(other.ind), type(other.type), origin(other.origin), lin(other.lin) {};
+  trail_elem(trail_elem&& other) : ind(other.ind), type(other.type), origin(other.origin), lin(other.lin) {};
 
   constexpr trail_elem& operator=(const trail_elem& o) = default;
   
   void swap(trail_elem& o) noexcept {
     std::swap(ind, o.ind);
     std::swap(type, o.type);
+    std::swap(origin, o.origin);
     std::swap(lin, o.lin);
   };
 };
@@ -673,7 +680,7 @@ class solver
         lineral_queue.q_alpha.emplace_front( lin, lvl, type, origin );
       } else if(lin->LT()==0) {
         lineral_queue.q_confl.emplace_front( lin, lvl, queue_t::IMPLIED_ALPHA, origin );
-      } else if(origin==origin_t::LGJ) {
+      } else if(origin==origin_t::LGJ || origin==origin_t::INIT) {
         lineral_queue.q_lgj.emplace_back( lin, lvl, type, origin );
       } else if(lin->is_assigning(alpha)) {
         lineral_queue.q_alpha.emplace_back( lin, lvl, type, origin );
@@ -698,24 +705,8 @@ class solver
       assert(!lineral_queue.empty());
       auto& [lin, lvl, type, origin] = lineral_queue.front();
 
-      //add lineral for propagation to IG and to LGJ
-      if(lvl==0 && opt.pp!=xornado_preproc::no && origin!=origin_t::IG && origin!=origin_t::LGJ) {
-        //put lin in queue for propagation in IG -- if it is does not originate from IG
-        IG_linerals_to_be_propagated.add_lineral( lin->to_lineral() );
-      }
-      if(lvl==0 && opt.lgj && origin!=origin_t::LGJ && origin!=origin_t::INIT) {
-        //put lin in queue for propagation in IG -- if it is does not originate from LGJ (or INIT)
-        linerals_to_be_added_to_LGJ.emplace_back( lin->to_lineral() );
-      }
-
-      var_t new_lt = process_lineral(lin, lvl, type, origin);
-     #ifndef NDEBUG
-      if(opt.lgj && (origin==origin_t::LGJ || origin==origin_t::INIT) && new_lt!=(var_t) -1) {
-        //triggers a sanity check in lazy_gauss_jordan->cms
-        lazy_gauss_jordan->assign(new_lt, alpha, dl);
-      };
-     #endif
-
+      const var_t new_lt = process_lineral(lin, lvl, type, origin);
+      
       lineral_queue.pop_front();
       return new_lt;
     }
@@ -783,24 +774,7 @@ class solver
      */
     inline var_t process_lineral(lin_w_it lin, const var_t lvl, const queue_t type, const origin_t origin) {
       assert(lvl >= lin->get_lvl());
-      VERB(65, "c " << std::to_string(lvl) << " : process_lineral " << type << lin->to_str() << " ~> " << lin->to_lineral().reduced(alpha,equiv_lits).to_str() << (lin->has_trivial_reason_cls() ? "" : (" with reason clause " + get_reason(lin, 1).to_str())) );
-      if(lin->is_reducible() && type!=queue_t::IMPLIED_ALPHA && origin!=origin_t::LGJ) {
-        assert(lvl==lin->get_lvl());
-        assert_slow(lvl==0 || get_reason(lin).get_unit().reduced(alpha)==lin->to_lineral().reduced(alpha));
-        //reduce lin -- but only if type is NOT guess -- otherwise reason clause is not computed correctly!
-        if(opt.eq && type!=queue_t::NEW_GUESS) lin->reduce(alpha, alpha_dl, dl_count, equiv_lits, lvl);
-        else                                   lin->reduce(alpha, alpha_dl, dl_count, lvl);
-        assert_slow(lvl==0 || lin->is_zero() || get_reason(lin).get_unit().reduced(alpha)==lin->to_lineral().reduced(alpha));
-      }
-      if(lin->is_zero(alpha)) {
-        if(lin->is_zero()) lineral_watches[lvl].erase( lin ); //remove lin when it is zero on its respective level
-        return -1;
-      }
-      
-      //TODO should we always reduce?! consider the following:
-      //we already have UNIT x1+x2+x3 and now get x1; full reduction would give x2+x3, even though x1 would be assigning!
-      //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
-      //@todo heuristically reduce less active variables; i.e. decrease number of 'inactive' vars and increase the active ones
+      assert(dl >= lvl);
 
       lineral_watch& l = *lin;
 
@@ -810,13 +784,39 @@ class solver
         assert(l.is_assigning(alpha));
       }
 
+      if(l.to_str() == "x1+x5+x6+1") {
+        std::cout << "stop here!" << std::endl;
+      }
+
+      VERB(65, "c " << std::to_string(lvl) << " : process_lineral " << type << origin << l.to_str() << " ~> " << l.to_lineral().reduced(alpha,equiv_lits).to_str() << (l.has_trivial_reason_cls() ? "" : (" with reason clause " + get_reason(lin, 1).to_str())) );
+      if(l.is_reducible() && type!=queue_t::IMPLIED_ALPHA && origin!=origin_t::LGJ) {
+        assert(lvl==l.get_lvl());
+        assert_slow(lvl==0 || get_reason(lin).get_unit().reduced(alpha)==l.to_lineral().reduced(alpha));
+        //reduce lin -- but only if type is NOT guess -- otherwise reason clause is not computed correctly!
+        if(opt.eq && type!=queue_t::NEW_GUESS) l.reduce(alpha, alpha_dl, dl_count, equiv_lits, lvl);
+        else                                   l.reduce(alpha, alpha_dl, dl_count, lvl);
+        assert_slow(lvl==0 || l.is_zero() || get_reason(lin).get_unit().reduced(alpha)==l.to_lineral().reduced(alpha));
+      }
+      if(l.is_zero(alpha)) {
+        //remove the lineral if it is actually just zero OR if it comes from LGJ -- then it just holds redundant info anyways
+        if(l.is_zero() || origin==origin_t::LGJ) {
+          lineral_watches[lvl].erase( lin );
+        }
+        return -1;
+      }
+      
+      //TODO should we always reduce?! consider the following:
+      //we already have UNIT x1+x2+x3 and now get x1; full reduction would give x2+x3, even though x1 would be assigning!
+      //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
+      //@todo heuristically reduce less active variables; i.e. decrease number of 'inactive' vars and increase the active ones
+
       //add to watch list if non-assigning AND not 'IMPLIED_ALPHA' (since this means it comes from a already watched lineral!)
       if(type!=queue_t::IMPLIED_ALPHA && !l.is_assigning()) {
         assert(l.size()>1);
         L_watch_list[ l.get_wl0() ].emplace_back( lvl, dl_count[lvl], lin );
         L_watch_list[ l.get_wl1() ].emplace_back( lvl, dl_count[lvl], lin );
-        assert_slow( l.size()==0 || lin->watches( l.get_wl0() ) || lin->to_lineral().is_constant() );
-        assert_slow( l.size()<=1 || lin->watches( l.get_wl1() ) || lin->to_lineral().is_constant() );
+        assert_slow( l.size()==0 || l.watches( l.get_wl0() ) || l.to_lineral().is_constant() );
+        assert_slow( l.size()<=1 || l.watches( l.get_wl1() ) || l.to_lineral().is_constant() );
       }
 
       if(l.is_active(alpha)) {
@@ -832,10 +832,10 @@ class solver
           equiv_lits[lt_other].set_prev_ind( lt );
           equiv_lits[lt].set_polarity( l.has_constant() );
           equiv_lits[lt].set_lin( lin );
-          lin->set_reducibility(false);
+          l.set_reducibility(false);
           assert( l.get_equiv_lvl(alpha_dl) <= lvl );
           //add to trail
-          trails[lvl].emplace_back( lt, trail_t::EQUIV, lin );
+          trails[lvl].emplace_back( lt, trail_t::EQUIV, origin, lin );
           VERB(65, "c " << std::to_string(lvl) << " : new EQUIV " << l.to_str() )
           //if we learn the equiv on lvl 0, schedule remove_fixed_equiv with next GCP on dl 0
           if(lvl==0) {
@@ -847,8 +847,17 @@ class solver
           //only add to trail when it is a GUESS - learning only requires the lite literal trail
           //trails[lvl].emplace_back( l.LT(), type==queue_t::NEW_GUESS ? trail_t::GUESS : trail_t::UNIT, lin);
           if(type==queue_t::NEW_GUESS) {
-            trails[lvl].emplace_back( l.LT(), trail_t::GUESS, lin);
+            trails[lvl].emplace_back( l.LT(), trail_t::GUESS, origin, lin);
           }
+        }
+        //add lineral for propagation to IG and to LGJ
+        if(lvl==0 && opt.pp!=xornado_preproc::no && origin!=origin_t::IG && origin!=origin_t::LGJ) {
+          //put lin in queue for propagation in IG -- if it is does not originate from IG
+          IG_linerals_to_be_propagated.add_lineral( l.to_lineral() );
+        }
+        if(lvl==0 && opt.lgj && origin!=origin_t::LGJ && origin!=origin_t::INIT) {
+          //put lin in queue for propagation in IG -- if it is does not originate from LGJ (or INIT) - and is not assigning! (otherwise it will be added trough assign in GCP (!))
+          linerals_to_be_added_to_LGJ.emplace_back( l.to_lineral() );
         }
         return -1;
       }
@@ -861,7 +870,7 @@ class solver
       assert(l.is_assigning(alpha));
       const var_t assigning_lvl = std::max(lvl, l.get_assigning_lvl(alpha_dl));
       //if assignment on higher dl (e.g. when learning UNIT on prev dl + reduction with other lins leads to assignment!), backtrack properly!
-      VERB(70, "c " << std::to_string(assigning_lvl) << " : new ALPHA " << l.get_assigning_lineral(alpha).to_str() << " from UNIT " << l.to_str() << (type!=queue_t::NEW_GUESS  && !lin->has_trivial_reason_cls() && assigning_lvl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
+      VERB(70, "c " << std::to_string(assigning_lvl) << " : new ALPHA " << l.get_assigning_lineral(alpha).to_str() << " from UNIT " << l.to_str() << (type!=queue_t::NEW_GUESS  && !l.has_trivial_reason_cls() && assigning_lvl>0 ? (" with reason clause " + get_reason(lin).to_str()) : "") );
       if(assigning_lvl < dl){
         VERB(70, "c " << std::to_string(assigning_lvl) << " : backtracking to " << std::to_string(assigning_lvl) << " as ALPHA was obtained on lower dl!" );
         backtrack(assigning_lvl);
@@ -871,7 +880,7 @@ class solver
       //get alpha-assignment
       const auto [lt2,val] = l.get_assignment(alpha);
       assert(l.is_assigning(alpha) && val!=bool3::None);
-      trails[assigning_lvl].emplace_back( lt2, trail_t::ALPHA, lin );
+      trails[assigning_lvl].emplace_back( lt2, trail_t::ALPHA, origin, lin );
       l.set_reducibility(false);
       assert( alpha[lt2]==val || alpha[lt2]==bool3::None );
       alpha[lt2] = val;
@@ -881,7 +890,7 @@ class solver
       assert(alpha_trail_pos[lt2] == (var_t) -1);
       alpha_trail_pos[lt2] = stepwise_lit_trail_length;
       ++stepwise_lit_trail_length;
-      assert(type==queue_t::NEW_GUESS || !lin->is_reducible() || equiv_lits[lt2].ind==0 || alpha[equiv_lits[lt2].ind]!=bool3::None);
+      assert(type==queue_t::NEW_GUESS || !l.is_reducible() || equiv_lits[lt2].ind==0 || alpha[equiv_lits[lt2].ind]!=bool3::None);
       //assert( !opt.lgj || origin!=origin_t::LGJ || lazy_gauss_jordan->check_cms_assignments(alpha) ); --skip this check: it sometimes fails and I do not know why :/ ...but we don't care about it as long as lazy_gauss_jordan->cms still propagates correctly! (and this is checked anyways as well!)
       return lt2;
     };
@@ -1089,8 +1098,27 @@ class solver
      */
     inline bool at_conflict() const { return alpha[0]==bool3::True; };
 
+    inline bool need_alpha_removal() {
+      return dl==0 && remove_fixed_equiv_before_next_GCP;
+    }
 
+
+
+    /**
+     * @brief vars that can be removed (as they are assigned at dl 0)
+     */
+    vec<var_t> vars_to_be_removed;
+
+    /**
+     * @brief remove all fixed assignments on dl 0 from clauses
+     * @note removing fixed assignments CANNOT deduce new linerals, hence output is always false!
+     * @note the corresponding assignments must first be propagated + removes only those vars in vars_to_be_removed
+     * 
+     * @return true iff a new lineral was derived
+     */
+    bool remove_fixed_alpha();
     void remove_fixed_alpha(const var_t upd_lt);
+
 
     inline bool need_equiv_removal() {
       return dl==0 && remove_fixed_equiv_before_next_GCP;
@@ -1108,7 +1136,7 @@ class solver
     /**
      * @brief linerals that are derived on dl 0 AND are not yet propagated in IG
      */
-    list<lineral> linerals_to_be_added_to_LGJ;
+    vec<lineral> linerals_to_be_added_to_LGJ;
 
     inline bool need_LGJ_update() {
       return opt.lgj && dl==0 && (!linerals_to_be_added_to_LGJ.empty() || !lazy_gauss_jordan->get_implied_literal_queue().empty());
@@ -1124,9 +1152,10 @@ class solver
       assert(!linerals_to_be_added_to_LGJ.empty());
 
       VERB(80, "c " << RED("find_implications_by_LGJ: adding " << linerals_to_be_added_to_LGJ.size() << " new linerals to LGJ") );
+      VERB(100, "c " << RED("adding: " << linerals_to_be_added_to_LGJ.size() << " new linerals to LGJ") );
 
       //add linerals to lazy_gauss_jordan
-      var_t count = lazy_gauss_jordan->add_linerals( std::move(linerals_to_be_added_to_LGJ) );
+      var_t count = lazy_gauss_jordan->add_linerals( std::move(linerals_to_be_added_to_LGJ), alpha );
       if(count>0) {
         fetch_LGJ_implications(s);
       }
@@ -1199,6 +1228,36 @@ class solver
      */
     bool find_implications_by_GE(stats& s);
 
+    /**
+     * @brief performs GCP; with basic in-processing on dl 0 (LGJ, IG, removal of fixed assignments and equivs) + GE on higher dl
+     * @note inprocessing methods are chosen via the options of the solver.
+     * 
+     * @param s stats
+     */
+    void GCP_inprocess(stats &s) noexcept {
+        do {
+            if (s.cancelled.load()) {
+                VERB(10, "c cancelled");
+                return;
+            }
+            GCP(s);
+        } while( !at_conflict() && 
+            (  (need_LGJ_update()       && find_implications_by_LGJ(s))
+            || (need_IG_inprocessing(s) && find_implications_by_IG(s)) 
+            || (need_GE_inprocessing(s) && find_implications_by_GE(s))
+            || (need_alpha_removal()    && remove_fixed_alpha())
+            || (need_equiv_removal()    && remove_fixed_equiv())
+            ) );
+        //NOTE: LGJ update must be BEFORE removing fixed equivs, as new equivs first need to be added
+        //      before they are 'removed' -- otherwise LGJ might become inconsistent with latest props...
+    }
+
+    
+    /**
+     * @brief performs GCP
+     * 
+     * @param s stats
+     */
     void GCP(stats& s) noexcept;
 
     /**

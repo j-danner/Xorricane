@@ -8,26 +8,16 @@
 
 TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
   #ifndef NDEBUG
-    int la_sch = 0;
-    dec_heu dh = dec_heu::vsids;
+    int la_sch = GENERATE(0,1,5);
+    dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lex);
     phase_opt po = phase_opt::save;
-    ca_alg ca = ca_alg::fuip;
+    ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip);
     initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
     xornado_preproc pp = xornado_preproc::no;
-    bool lgj = false;
-    bool cm = false;
+    bool lgj = true;
+    bool cm = GENERATE(true, false);
     bool equiv = true;
-    int verb = 100;
-    //int la_sch = GENERATE(0,1,5);
-    //dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lex);
-    //phase_opt po = phase_opt::save;
-    //ca_alg ca = GENERATE(ca_alg::no, ca_alg::fuip);
-    //initial_prop_opt ip = GENERATE(initial_prop_opt::no, initial_prop_opt::nbu, initial_prop_opt::full);
-    //xornado_preproc pp = xornado_preproc::no;
-    //bool lgj = true;
-    //bool cm = GENERATE(true, false);
-    //bool equiv = true;
-    //int verb = 0;
+    int verb = 0;
   #else
     int la_sch = GENERATE(0,1,5,10);
     dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lwl, dec_heu::swl, dec_heu::lex);

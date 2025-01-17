@@ -28,6 +28,18 @@ std::ostream& operator<<(std::ostream& os, const queue_t& t) {
     return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const origin_t& t) {
+    switch (t) {
+        case origin_t::CLAUSE:  os << "(CLS)  "; break;
+        case origin_t::GUESS:   os << "(DEC)  "; break;
+        case origin_t::IG:      os << "(IG)   "; break;
+        case origin_t::INIT:    os << "(INIT) "; break;
+        case origin_t::LGJ:     os << "(LGJ)  "; break;
+        case origin_t::LINERAL: os << "(LIN)  "; break;
+    }
+    return os;
+}
+
 solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const options& opt_) noexcept : opt(opt_), IG(clss, xornado::options(num_vars, xornado::fls_alg::full, xornado::constr::extended, opt.pp, opt.verb)) {
     vec< cls > clss_; clss_.reserve(clss.size());
     for(const auto& cls : clss) {
@@ -128,6 +140,7 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
     //add linerals from _Lsys to lineral_queue
     for(auto& [lt,l_it] : _Lsys.get_pivot_poly_idx()) {
         //_clss.emplace_back( std::move(*l_it) );
+        VERB(90, "c adding new lineral: " << BOLD(l_it->to_str()) << "  --> gives with current assignments: "<<l_it->reduced(alpha).to_str());
         add_new_lineral( *l_it, 0, queue_t::NEW_UNIT, origin_t::INIT );
     }
 
@@ -182,6 +195,9 @@ void solver::backtrack(const var_t& lvl) {
         active_cls_stack.pop_back();
     }
     assert(dl==lvl);
+
+    //backtrack GJE
+    if(opt.lgj) lazy_gauss_jordan->backtrack(lvl);
 
     //cleanup lineral_queue
     lineral_queue.clear(lvl);
@@ -532,16 +548,26 @@ void solver::restart(stats& s) {
   #endif
 };
 
+
+bool solver::remove_fixed_alpha() {
+    for(const auto& v : vars_to_be_removed) {
+        assert(alpha[v]!=bool3::None);
+        assert(alpha_dl[v]==0);
+        remove_fixed_alpha(v);
+    }
+    VERB(90, "c " << GREEN("remove_fixed_alpha: removed " << std::to_string(vars_to_be_removed.size()) << " variables") );
+    vars_to_be_removed.clear();
+    return false;
+}
+
 void solver::remove_fixed_alpha(const var_t upd_lt) {
     assert(dl==0);
     assert_slow( assert_data_structs() );
-    VERB(120, "c " << GREEN("remove_fixed_alpha start") );
     assert( alpha[upd_lt]!=bool3::None && alpha_dl[upd_lt]==0 );
-    assert(dl==0);
     const bool3 val = alpha[upd_lt];
     //rm upd_lt from lineral_watches[0] (all other levels are empty!)
     for(lin_w_it lin = lineral_watches[0].begin(); lin!=lineral_watches[0].end(); ++lin) {
-        if(lin->is_active(alpha) && !lin->watches(upd_lt)) {
+        if(lin->is_active(alpha) && !lin->is_equiv() && !lin->watches(upd_lt)) {
             lin->rm(upd_lt, val);
         }
     }
@@ -554,17 +580,38 @@ void solver::remove_fixed_alpha(const var_t upd_lt) {
         }
     }
     VERB(90, "c " << GREEN("remove_fixed_alpha: x" << std::to_string(upd_lt) << " was removed") );
+
+    //BUGGY! -> we might reduce the 'reason' linerals of assignments and loose the corresponding lineral altogether! -> how to determine which linerals to reduce?!?
+    ////reduce fixed_alpha also in LGJ
+    //if(opt.lgj) {
+    //  #ifdef DEBUG_SLOW
+    //    lin_sys sys_prev( lazy_gauss_jordan->get_linerals_const() );
+    //  #endif
+    //    for(auto& lin : lazy_gauss_jordan->get_linerals()) {
+    //        if(!lin.is_assigning()) {
+    //            lin.rm(upd_lt, val);
+    //        }
+    //    }
+    //  #ifdef DEBUG_SLOW
+    //    lin_sys sys_after( lazy_gauss_jordan->get_linerals_const() );
+    //    assert( sys_prev == sys_after );
+    //  #endif
+    //}
+
     assert_slow( assert_data_structs() );
 }
 
 bool solver::remove_fixed_equiv() {
     assert(dl==0);
+    assert_slower( assert_data_structs() );
 
     VERB(120, "c " << GREEN("remove_fixed_equiv start") );
   #ifdef DEBUG_SLOW
     const auto L = get_lineral_watches_lin_sys();
   #endif
     assert(dl==0);
+
+    var_t count = 0;
     //clear L_watch_list
     for(auto& l : L_watch_list) l.clear();
     //rm upd_lt from lineral_watches[0] (all other levels are empty!)
@@ -575,6 +622,7 @@ bool solver::remove_fixed_equiv() {
             //if lin becomes assigning, push unto lineral_queue
             if(lin->is_assigning(alpha) || (opt.eq && lin->is_equiv())) {
                 queue_implied_lineral(lin, 0, origin_t::LINERAL);
+                ++count;
                 continue;
             }
         }
@@ -585,7 +633,6 @@ bool solver::remove_fixed_equiv() {
     //empty watchlists
     for(auto& wl : watch_list) wl.clear();
 
-    var_t count = 0;
     //reduce all xnf_clss
     for(var_t i=0; i<xnf_clss.size(); ++i) {
         if(xnf_clss[i].is_active(dl_count)) {
@@ -631,6 +678,27 @@ bool solver::remove_fixed_equiv() {
         }
     }
     VERB(90, "c " << GREEN("remove_fixed_equiv: " << std::to_string(count) << " new linerals") );
+
+    //// BUGGY! too many lins are reduced! -- how to determine quickly which ones to reduce?!
+    ////reduce fixed_equiv also in LGJ
+    //if(opt.lgj) {
+    //  #ifdef DEBUG_SLOWER
+    //    lin_sys sys_prev( lazy_gauss_jordan->get_linerals_const() );
+    //    for(const auto& eq : equiv_lits) {
+    //        if(eq.is_active()) sys_prev.add_lineral( *eq.reason_lin );
+    //    }
+    //  #endif
+    //    for(auto& lin : lazy_gauss_jordan->get_linerals()) {
+    //        if(!lin.is_assigning() && !lin.is_equiv()) {
+    //            lin.reduce(equiv_lits);
+    //        }
+    //    }
+    //  #ifdef DEBUG_SLOWER
+    //    lin_sys sys_after( lazy_gauss_jordan->get_linerals_const() );
+    //    assert( sys_prev == sys_after );
+    //  #endif
+    //}
+
     assert_slower( assert_data_structs() );
   #ifdef DEBUG_SLOW
     const auto L_after = get_lineral_watches_lin_sys();
@@ -640,14 +708,13 @@ bool solver::remove_fixed_equiv() {
 }
 
 lineral new_unit;
-//perform full GCP -- does not stop if conflict is found -- otherwise assert_data_struct will fail!
 void solver::GCP(stats &s) noexcept {
     s.no_gcp++;
     VERB(90, "c " << YELLOW("GCP start"));
     while(!lineral_queue.empty() && !at_conflict()) {
         assert_slow(assert_data_structs());
 
-        const var_t& upd_lt = propagate_implied_lineral();
+        const var_t upd_lt = propagate_implied_lineral();
         if(upd_lt == (var_t) -1) continue; //nothing new to propagate!
         if(upd_lt == 0) { assert(at_conflict()); continue; } //at conflict!
         ++s.new_px_upd;
@@ -677,7 +744,6 @@ void solver::GCP(stats &s) noexcept {
                 continue;
             }
             //even if lgj is active do NOT skip lvl==0 watches; remember that CMS-GJ seems to be incomplete.
-            if(lvl==0) { ++it; continue; }
             assert(lin->watches(upd_lt));
             if(!lin->is_active(dl_count)) { ++it; continue; }
             const auto& [new_wl, ret] = lin->update(upd_lt, alpha, dl, dl_count);
@@ -750,7 +816,8 @@ void solver::GCP(stats &s) noexcept {
         }
         
         //if we propagated on dl 0, remove all upd_lt from lineral_watches AND from xnf_clss, so that they only occur in the watched clauses.
-        if(dl == 0) remove_fixed_alpha(upd_lt);
+        assert_slower(assert_data_structs());
+        if(dl == 0) vars_to_be_removed.emplace_back(upd_lt);
     }
     assert(lineral_queue.empty() || at_conflict());
 
@@ -851,6 +918,7 @@ void solver::dpll_solve(stats &s) {
             }
 
             dpll_gcp:
+            //TODO switch to GCP_inprocess and pop dec_stack if necessary afterwards!
             GCP(s);
             if( !at_conflict() &&
                 ( (need_equiv_removal() && remove_fixed_equiv())
@@ -945,14 +1013,7 @@ void solver::solve(stats &s) {
     // before anything else: collect implications that were found during initialization in lazy_gauss_jordan.
     if(need_LGJ_update()) find_implications_by_LGJ(s);
     // GCP -- before making decisions!
-    do {
-        GCP(s);
-    } while( !at_conflict() && 
-        (  (need_equiv_removal() && remove_fixed_equiv())
-        || (need_LGJ_update() && find_implications_by_LGJ(s)) 
-        || (need_IG_inprocessing(s) && find_implications_by_IG(s)) 
-        || (need_GE_inprocessing(s) && find_implications_by_GE(s))
-        ) );
+    GCP_inprocess(s);
     
 
     while (true) {
@@ -1027,18 +1088,7 @@ void solver::solve(stats &s) {
             }
 
             cdcl_gcp:
-            do {
-                if (s.cancelled.load()) {
-                    VERB(10, "c cancelled");
-                    return;
-                }
-                GCP(s);
-            } while( !at_conflict() && 
-                (  (need_equiv_removal() && remove_fixed_equiv())
-                || (need_LGJ_update() && find_implications_by_LGJ(s)) 
-                || (need_IG_inprocessing(s) && find_implications_by_IG(s)) 
-                || (need_GE_inprocessing(s) && find_implications_by_GE(s))
-                ) );
+            GCP_inprocess(s);
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
@@ -1050,7 +1100,7 @@ void solver::solve(stats &s) {
             if (!L.is_consistent()) {
                 backtrack( r_cls.get_assigning_lvl(alpha_dl) );
                 add_learnt_cls( std::move(r_cls), false );
-                GCP(s);
+                GCP_inprocess(s);
                 if(!at_conflict()) ++s.no_confl; //count as conflict here only if we do not need another conflict analysis
             } else {
                 solve_L(L, s);
@@ -1202,8 +1252,8 @@ std::string solver::to_xnf_str() const noexcept {
         }
 
       #ifdef DEBUG_SLOWER
-        //check watch-lists
-        {
+        //check watch-lists -- if everything is propagated!
+        if(lineral_queue.empty()) {
             std::set<var_t> watched_idxs;
             auto it = watch_list.begin();
             var_t idx = 0;
@@ -1225,7 +1275,7 @@ std::string solver::to_xnf_str() const noexcept {
             }
             assert( watched_idxs.size()==cnt );
         }
-        {
+        if(lineral_queue.empty()) {
             std::map<std::pair<int,int>, int> watch_cnt;
             std::set<lin_w_it> watched_lins;
             int idx = 0;
@@ -1249,7 +1299,7 @@ std::string solver::to_xnf_str() const noexcept {
             while(it != L_watch_list.end()) {
                 for([[maybe_unused]] auto [lvl, dl_c, lin] : *it) {
                     if(dl_count[lvl]>dl_c) continue;
-                    if(lvl==0 && opt.lgj) continue;
+                    //if(lvl==0 && opt.lgj) continue;
                     //ensure every lineral occurs in two watch-lists!
                     [[maybe_unused]] int idx2 = std::distance(lineral_watches[lvl].begin(), std::find_if(lineral_watches[lvl].begin(), lineral_watches[lvl].end(), [&](auto& l){ return l==*lin; }));
                     [[maybe_unused]] var_t ct = watch_cnt.find({lvl,idx2})->second;
@@ -1272,8 +1322,8 @@ std::string solver::to_xnf_str() const noexcept {
             for(const auto& lw_dl : lineral_watches) {
                 for(const auto& lin : lw_dl) {
                     if(!at_conflict() && lineral_queue.empty() && !lin.is_assigning()) {
-                        assert( (lvl==0 && opt.lgj) || std::any_of(L_watch_list[lin.get_wl0()].begin(), L_watch_list[lin.get_wl0()].end(), [&](auto& p){ return *p.lin==lin; }) );
-                        assert( (lvl==0 && opt.lgj) || std::any_of(L_watch_list[lin.get_wl1()].begin(), L_watch_list[lin.get_wl1()].end(), [&](auto& p){ return *p.lin==lin; }) );
+                        assert( std::any_of(L_watch_list[lin.get_wl0()].begin(), L_watch_list[lin.get_wl0()].end(), [&](auto& p){ return *p.lin==lin; }) );
+                        assert( std::any_of(L_watch_list[lin.get_wl1()].begin(), L_watch_list[lin.get_wl1()].end(), [&](auto& p){ return *p.lin==lin; }) );
                     }
                 }
                 ++lvl;
@@ -1338,11 +1388,11 @@ std::string solver::to_xnf_str() const noexcept {
 
         //check trail
         for(var_t lvl = 0; lvl<dl; lvl++) {
-            for(const auto& [ind, type, rs] : trails[lvl]) {
+            for(const auto& [ind, type, origin, rs] : trails[lvl]) {
                 assert( alpha[ind]==bool3::None || alpha_dl[ind]<=dl );
             }
         }
-        for(const auto& [ind, type, rs] : trails[dl]) {
+        for(const auto& [ind, type, origin, rs] : trails[dl]) {
             assert( alpha[ind]==bool3::None || alpha_dl[ind]<=dl );
         }
         dl_c_t cnt = 1;
@@ -1374,7 +1424,10 @@ std::string solver::to_xnf_str() const noexcept {
         if(opt.lgj) {
             //check that the linerals in lazy_gauss_jordan are supported by the linerals in lineral_watches[0]
             lin_sys lin0 = lin_sys( list<lineral>(lineral_watches[0].begin(), lineral_watches[0].end()));
-            for(const auto& l : lazy_gauss_jordan->get_linerals()) {
+            for(const auto& l : lazy_gauss_jordan->get_linerals_const()) {
+                assert( lin0.reduce(l).is_zero() );
+            }
+            for(const auto& l : lazy_gauss_jordan->get_recovered_linerals()) {
                 assert( lin0.reduce(l).is_zero() );
             }
         }
@@ -1404,7 +1457,7 @@ std::string solver::to_xnf_str() const noexcept {
 #endif
 
 
-
+#define LEAD YELLOW(lead)
 void solver::print_trail(std::string lead) const noexcept {
     const auto to_string = [](var_t i, var_t width) {
         std::stringstream ss;
@@ -1414,30 +1467,30 @@ void solver::print_trail(std::string lead) const noexcept {
     };
   
     if(this->opt.verb < 80) return;
-    VERB(80, lead);
-    VERB(80, lead<<" trail");
-    VERB(80, lead<<" dl pos type");
+    VERB(80, LEAD);
+    VERB(80, LEAD<<" trail");
+    VERB(80, LEAD<<" dl pos type");
 
     var_t w = std::to_string(alpha.size()).length();
 
     var_t lvl = 0;
     for(const auto& t_dl : trails) {
         var_t i = 0;
-        VERB(80, lead<<" -");
+        VERB(80, LEAD << YELLOW(" -"));
         for (const auto& t : t_dl) {
             assert( (t.type!=trail_t::ALPHA) || alpha_dl[t.ind] == lvl );
             switch(t.type) {
               case trail_t::EQUIV:
-                VERB(80, lead<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << "x" << to_string(t.ind,w) << " -> x" << to_string(equiv_lits[t.ind].ind,w) << (equiv_lits[t.ind].polarity ? "+1" : "  ") << " from " << get_reason(t, 1).to_str());
+                VERB(80, LEAD<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << t.origin << "x" << to_string(t.ind,w) << " -> x" << to_string(equiv_lits[t.ind].ind,w) << (equiv_lits[t.ind].polarity ? "+1" : "  ") << " from " << get_reason(t, 1).to_str());
                 break;
               case trail_t::UNIT:
-                VERB(80, lead<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " <<  t.lin->to_str() << ( lvl>0 ? (" from " + get_reason(t, 1).to_str() ) : "") );
+                VERB(80, LEAD<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << t.origin <<  t.lin->to_str() << ( lvl>0 ? (" from " + get_reason(t, 1).to_str() ) : "") );
                 break;
               case trail_t::ALPHA:
-                VERB(80, lead<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << "x" << to_string(t.ind,w) << " -> " << (b3_to_bool(alpha[t.ind]) ? "1" : "0") << "  from " << get_reason(t, 1).to_str());
+                VERB(80, LEAD<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << t.origin << "x" << to_string(t.ind,w) << " -> " << (b3_to_bool(alpha[t.ind]) ? "1" : "0") << "  from " << get_reason(t, 1).to_str());
                 break;
               case trail_t::GUESS:
-                VERB(80, lead<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << "x" << to_string(t.ind,w) << "    " << " from " << get_reason(t, 1).to_str());
+                VERB(80, LEAD<<" " << GRAY(to_string(lvl,w)) << " " << GRAY(to_string(i,w)) << " " << t.type << " " << t.origin << "x" << to_string(t.ind,w) << "    " << " from " << get_reason(t, 1).to_str());
                 break;
             }
             ++i;
@@ -1641,12 +1694,12 @@ bool solver::find_implications_by_GE(stats& s) {
     if(resolving_lvl < dl) {
       backtrack(resolving_lvl);
       assert(resolving_lvl==dl);
-      queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LGJ, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
+      queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LINERAL, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
       //return immediately
       break;
     }
     assert(resolving_lvl==dl);
-    queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LGJ, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
+    queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LINERAL, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
   }
 
   mzd_free(B);
