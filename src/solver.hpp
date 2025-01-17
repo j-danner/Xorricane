@@ -680,7 +680,7 @@ class solver
         lineral_queue.q_alpha.emplace_front( lin, lvl, type, origin );
       } else if(lin->LT()==0) {
         lineral_queue.q_confl.emplace_front( lin, lvl, queue_t::IMPLIED_ALPHA, origin );
-      } else if(origin==origin_t::LGJ || origin==origin_t::INIT) {
+      } else if(origin==origin_t::LGJ || origin==origin_t::INIT || origin==origin_t::IG) {
         lineral_queue.q_lgj.emplace_back( lin, lvl, type, origin );
       } else if(lin->is_assigning(alpha)) {
         lineral_queue.q_alpha.emplace_back( lin, lvl, type, origin );
@@ -693,6 +693,16 @@ class solver
         //else                   lineral_queue.q_equiv.emplace_back( lin, lvl, type );
       } else {
         lineral_queue.q_unit.emplace_back( lin, lvl, type, origin );
+      }
+
+      //add lineral for propagation to IG and to LGJ
+      if(lvl==0 && opt.pp!=xornado_preproc::no && origin!=origin_t::IG && origin!=origin_t::LGJ) {
+        //put lin in queue for propagation in IG -- if it is does not originate from IG
+        IG_linerals_to_be_propagated.add_lineral( lin->to_lineral() );
+      }
+      if(lvl==0 && opt.lgj && origin!=origin_t::LGJ && origin!=origin_t::INIT) {
+        //put lin in queue for propagation in IG -- if it is does not originate from LGJ (or INIT) - and is not assigning! (otherwise it will be added trough assign in GCP (!))
+        linerals_to_be_added_to_LGJ.emplace_back( lin->to_lineral() );
       }
     }
 
@@ -784,10 +794,6 @@ class solver
         assert(l.is_assigning(alpha));
       }
 
-      if(l.to_str() == "x1+x5+x6+1") {
-        std::cout << "stop here!" << std::endl;
-      }
-
       VERB(65, "c " << std::to_string(lvl) << " : process_lineral " << type << origin << l.to_str() << " ~> " << l.to_lineral().reduced(alpha,equiv_lits).to_str() << (l.has_trivial_reason_cls() ? "" : (" with reason clause " + get_reason(lin, 1).to_str())) );
       if(l.is_reducible() && type!=queue_t::IMPLIED_ALPHA && origin!=origin_t::LGJ) {
         assert(lvl==l.get_lvl());
@@ -849,15 +855,6 @@ class solver
           if(type==queue_t::NEW_GUESS) {
             trails[lvl].emplace_back( l.LT(), trail_t::GUESS, origin, lin);
           }
-        }
-        //add lineral for propagation to IG and to LGJ
-        if(lvl==0 && opt.pp!=xornado_preproc::no && origin!=origin_t::IG && origin!=origin_t::LGJ) {
-          //put lin in queue for propagation in IG -- if it is does not originate from IG
-          IG_linerals_to_be_propagated.add_lineral( l.to_lineral() );
-        }
-        if(lvl==0 && opt.lgj && origin!=origin_t::LGJ && origin!=origin_t::INIT) {
-          //put lin in queue for propagation in IG -- if it is does not originate from LGJ (or INIT) - and is not assigning! (otherwise it will be added trough assign in GCP (!))
-          linerals_to_be_added_to_LGJ.emplace_back( l.to_lineral() );
         }
         return -1;
       }
@@ -1166,6 +1163,11 @@ class solver
       return count>0;
     }
 
+    /**
+     * @brief fetches latest linerals from LGJ module
+     * 
+     * @param s stats
+     */
     void fetch_LGJ_implications(stats& s) {
       assert(opt.lgj);
       if(lazy_gauss_jordan->get_implied_literal_queue().empty()) return;
