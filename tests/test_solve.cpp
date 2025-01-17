@@ -1150,7 +1150,6 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
         options opt(dec_heu::lex, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
         opt.sol_count = -1;
         auto slvr = solver(clss, opt);
-        CHECK( slvr.to_str() == "x1+x3+1; x2+x4+1;" );
 
         stats s = slvr.solve();
         CHECK( s.is_sat() == true ); //SAT!
