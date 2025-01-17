@@ -12,6 +12,9 @@
 #include "cryptominisat/src/solver.h"
 #include "cryptominisat/src/gaussian.h"
 
+
+#define DEBUG_SLOW
+
 class lin_sys_lazy_GE
 {
   private:
@@ -33,6 +36,13 @@ class lin_sys_lazy_GE
      * @brief assigning linerals (literals), not yet fetched
      */
     list<lineral> implied_literal_queue;
+
+    #ifdef DEBUG_SLOW
+    /**
+     * @brief lin_sys representing linerals
+     */
+    lin_sys sys;
+    #endif
 
     /**
      * @brief adds new alpha assignment to internal queue
@@ -118,13 +128,11 @@ class lin_sys_lazy_GE
             if(!lp->is_one()) enqueue_new_assignment(lp->LT(), lp->has_constant());
         }
 
-        #ifndef NDEBUG
-            lin_sys sys_orig( linerals );
-            //std::cout << "sys_orig " << sys_orig.to_str() << std::endl;
+        #ifdef DEBUG_SLOW
+            sys = lin_sys(linerals);
             lin_sys sys_recv( get_recovered_linerals() );
-            //std::cout << "sys_recv " << sys_recv.to_str() << std::endl;
             //NOTE we might not recover ALL linerals, because (1) propagation can 'destroy them', and (2) binary clauses are not recovered at all!
-            for(const auto& l : sys_recv.get_linerals()) assert( sys_orig.reduce(l).is_zero() );
+            for(const auto& l : sys_recv.get_linerals()) assert( sys.reduce(l).is_zero() );
         #endif
     }
 
@@ -226,9 +234,8 @@ class lin_sys_lazy_GE
      */
     var_t propagate(const vec<bool3>& alpha) {
         #ifdef DEBUG_SLOWER
-            //check that propagation finds ALL possible alpha assignments!
-            lin_sys L( linerals );
             //add all decisions to L
+            lin_sys L = sys;
             lin_sys L_dec;
             for(var_t i = 0; i<alpha.size(); ++i) {
               if(alpha[i]!=bool3::None) L_dec.add_lineral( lineral(i, b3_to_bool(alpha[i])) );
@@ -252,8 +259,7 @@ class lin_sys_lazy_GE
                 std::cout << "sys_orig ";
                 for(const auto& l: linerals) std::cout << l.to_str() << " ";
                 std::cout << std::endl;
-                lin_sys sys_orig( linerals );
-                std::cout << "sys_orig " << sys_orig.to_str() << "  (reduced)" << std::endl;
+                std::cout << "sys_orig " << sys.to_str() << "  (reduced)" << std::endl;
             }
         #endif
 
@@ -285,9 +291,8 @@ class lin_sys_lazy_GE
                 }
                 assert( lin.get_idxs_().empty() || lin.get_idxs_().back()<=num_vars );
 
-                #ifndef NDEBUG
+                #ifdef DEBUG_SLOW
                     //ensure that lin is implied by linerals
-                    lin_sys sys( linerals );
                     assert( sys.reduce(lin).is_zero() );
                 #endif
 
@@ -311,9 +316,8 @@ class lin_sys_lazy_GE
             }
             assert( lin.get_idxs_().empty() || lin.get_idxs_().back()<=num_vars );
 
-            #ifndef NDEBUG
+            #ifdef DEBUG_SLOW
                 //ensure that lin is implied by linerals
-                lin_sys sys( linerals );
                 assert( sys.reduce(lin).is_zero() );
             #endif
 

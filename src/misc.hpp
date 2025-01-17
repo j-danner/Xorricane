@@ -26,7 +26,7 @@
 
 //activate additional debugging assertions
 //#define DEBUG_SLOW
-#define DEBUG_SLOWER
+//#define DEBUG_SLOWER
 #ifdef NDEBUG
   #undef DEBUG_SLOW
   #undef DEBUG_SLOWER
