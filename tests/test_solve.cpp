@@ -903,6 +903,24 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
+    SECTION( "test55.xnf 2" ) {
+        auto clss = parse_file("../../benchmarks/instances/2xnfs/test55.xnf");
+        options opt;
+        opt.verb = 80;
+        opt.ca = ca_alg::no;
+        opt.ip = initial_prop_opt::no;
+        opt.pp = xornado_preproc::no;
+        opt.rst = restart_opt::no;
+        opt.dh = dec_heu::lex;
+        opt.gauss_elim_schedule = 0;
+        opt.cm = cm;
+        auto slvr = solver(clss, opt);
+
+        stats s = slvr.solve();
+        CHECK( s.is_sat() == true );
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+    
     SECTION( "test57.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test57.xnf");
         options opt;
