@@ -12,8 +12,11 @@
 #include "cryptominisat/src/solver.h"
 #include "cryptominisat/src/gaussian.h"
 
+#undef DEBUG_SLOW
+#undef DEBUG_SLOWER
 
-#define DEBUG_SLOW
+// #define DEBUG_SLOW
+// #define DEBUG_SLOWER
 
 class lin_sys_lazy_GE
 {
