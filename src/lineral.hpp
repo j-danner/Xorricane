@@ -108,6 +108,8 @@ class lineral
         lineral reduced(const vec<bool3>& alpha, const vec<equivalence>& equiv_lits) const { lineral ret(*this); ret.reduce(alpha, equiv_lits); return ret; };
         vec<var_t> reducers(const vec<lineral>& assignments) const;
 
+        inline var_t get_max_var() const { return idxs.empty() ? 0 : idxs.back(); };
+
         inline vec<var_t> get_idxs() const { vec<var_t> r = idxs; if(p1){ r.insert(r.begin(), 0); } return r; };
         inline const vec<var_t>& get_idxs_() const { return idxs; };
 

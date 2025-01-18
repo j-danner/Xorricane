@@ -5,7 +5,11 @@
 #include <list>
 
 #include "lineral.hpp"
+#undef DEBUG_SLOW
+#undef DEBUG_SLOWER
 
+// #define DEBUG_SLOW
+// #define DEBUG_SLOWER
 
 #ifdef NDEBUG
   template<class K, class V>
@@ -32,6 +36,8 @@ class lin_sys
     pivot_map<var_t, linerals_it > pivot_poly_its;
 
     void rref();
+    void rref_native();
+    void rref_m4ri();
   public:
     lin_sys() noexcept {};
     lin_sys(const lineral& lit) noexcept : linerals(list<lineral>({lit})) { rref(); };

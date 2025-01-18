@@ -2,8 +2,18 @@
 
 #include "lin_sys.hpp"
 
+#include <m4ri/m4ri.h>
 
 void lin_sys::rref() {
+    //use M4RI if system is large
+    if(linerals.size()>99) {
+        rref_m4ri();
+    } else {
+        rref_native();
+    }
+}
+
+void lin_sys::rref_native() {
     pivot_poly_its.clear();
     for(linerals_it it = linerals.begin(); it!=linerals.end();) {
         //reduce new row (with non-zero pivot-rows)
@@ -32,6 +42,58 @@ void lin_sys::rref() {
         }
     }
 };
+
+void lin_sys::rref_m4ri() {
+    //get max num of inds
+    var_t num_vars = 0;
+    for(const auto& l : linerals) {
+        num_vars = std::max(num_vars, l.get_max_var());
+    }   
+
+    const var_t n_vars = num_vars;
+    const rci_t nrows = linerals.size();
+    const rci_t ncols = n_vars+1;
+
+    mzd_t* M = mzd_init(nrows, ncols);
+    assert( mzd_is_zero(M) );
+
+    //fill with linerals
+    rci_t r = 0;
+    for(const auto& l : linerals) {
+        //std::cout << l.to_str() << std::endl;
+        if(l.has_constant()) {
+            mzd_write_bit(M, r, n_vars, 1);
+        }
+        for(const auto& i : l.get_idxs_()) {
+            assert(i>0); assert(i-1 < (var_t) ncols-1);
+            mzd_write_bit(M, r, i-1, 1);
+        }
+        ++r;
+    }
+    assert(r == nrows);
+    
+    //compute rref
+    const rci_t rank = mzd_echelonize_m4ri(M, true, 0); //should we use mzd_echelonize instead?
+
+    //mzd_print(M);
+ 
+    //read results
+    pivot_poly_its.clear();
+    auto it = linerals.begin();
+    vec<var_t> idxs;
+    for(rci_t r = 0; r<rank; ++r) {
+      idxs.clear();
+      for(rci_t c=0; (unsigned)c<n_vars; ++c) {
+          if( mzd_read_bit(M, r, c) ) idxs.push_back(c+1);
+      }
+      *it = lineral( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::yes );
+      assert(!it->is_zero());
+      pivot_poly_its[ it->LT() ] = it;
+      ++it;
+    }
+    linerals.erase(it, linerals.end());
+    mzd_free(M);
+}
 
 lineral lin_sys::reduce(const lineral& l) const {
     lineral l_(l);

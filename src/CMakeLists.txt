@@ -1,3 +1,19 @@
+
+# get m4ri library 
+configure_file(CMakeLists.txt.m4ri m4ri-download/CMakeLists.txt)
+execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/m4ri-download"
+)
+execute_process(COMMAND "${CMAKE_COMMAND}" --build .
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/m4ri-download"
+)
+#find_library(M4RI_LIBRARY NAMES m4ri) //load locally installed library -- not working as we need the latest git-fixes!
+find_library(M4RI_LIBRARY NAMES m4ri PATHS "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src/.libs" NO_DEFAULT_PATH)
+if(NOT M4RI_LIBRARY)
+    message(FATAL_ERROR "m4ri library could not be built!")
+endif()
+
+
 #setup library for linerals
 add_library(
     lineral
@@ -22,17 +38,9 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.67 COMPONENTS container REQUIRED)
 message(STATUS "Boost version: ${Boost_VERSION}")
 
-target_include_directories(lineral PUBLIC ${Boost_INCLUDE_DIRS})
-target_link_libraries(lineral PUBLIC ${EXTRA_LIBS})
+target_include_directories(lineral PUBLIC ${Boost_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR}/m4ri-src)
+target_link_libraries(lineral PUBLIC ${EXTRA_LIBS} ${M4RI_LIBRARY})
 
-
-## NOT WORKING ##
-#add cryptominisat library
-#set(SHAREDCOMPILE ON)
-#set(SHAREDLIBS OFF)
-#set(NOZLIB ON)
-#add_subdirectory(cryptominisat EXCLUDE_FROM_ALL)
-## NOT WORKING ##
 
 ##build cryptominisatlib
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cryptominisat/src/GitSHA1.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/cryptominisat/GitSHA1.cpp" @ONLY)
@@ -119,20 +127,6 @@ target_link_libraries(lineral_lazy PUBLIC cms ${EXTRA_LIBS} lineral)
 
 
 
-# get m4ri library 
-configure_file(CMakeLists.txt.m4ri m4ri-download/CMakeLists.txt)
-execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/m4ri-download"
-)
-execute_process(COMMAND "${CMAKE_COMMAND}" --build .
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/m4ri-download"
-)
-#find_library(M4RI_LIBRARY NAMES m4ri) //load locally installed library -- not working as we need the latest git-fixes!
-find_library(M4RI_LIBRARY NAMES m4ri PATHS "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src/.libs" NO_DEFAULT_PATH)
-if(NOT M4RI_LIBRARY)
-    message(FATAL_ERROR "m4ri library could not be built!")
-endif()
-
 # add impl_graph library
 # options
 option(USE_TRIE "Use trie for graph labels" OFF) #SEGVs when turned on! ...something with ctor and dtor of vl_trie seems wrong...
@@ -167,7 +161,7 @@ add_library(
 )
 
 target_link_libraries(impl_graph PUBLIC ${EXTRA_LIBS} PRIVATE lineral ${M4RI_LIBRARY})
-target_include_directories(impl_graph PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src")
+target_include_directories(impl_graph PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/m4ri-src)
 
 #setup library for solver
 add_library(
@@ -186,5 +180,5 @@ add_library(
 
 #generate 
 target_link_libraries(solver PUBLIC ${EXTRA_LIBS} lineral_lazy impl_graph PRIVATE ${M4RI_LIBRARY})
-target_include_directories(solver PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/m4ri-src")
+target_include_directories(solver PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/m4ri-src)
 
