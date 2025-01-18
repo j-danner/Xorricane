@@ -170,7 +170,9 @@ class lin_sys_lazy_GE
             }
             case CMSat::binary_t:
             {
-                return lineral( (var_t) confl.lit2().var(), !confl.lit2().sign() );
+                lineral_vars.emplace_back( cms->failBinLit.var() );
+                lineral_vars.emplace_back( confl.lit2().var() );
+                return lineral( lineral_vars, cms->failBinLit.sign()^!confl.lit2().sign(), presorted::no );
             }
             default:
                 assert(false);
