@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 
 # set the project name
-project(xnf_cdcl_solver VERSION 0.4.1.1)
+project(xnf_cdcl_solver VERSION 0.4.2)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
