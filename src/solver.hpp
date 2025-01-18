@@ -293,7 +293,7 @@ class solver
     /**
      * @brief linerals that are derived on dl 0 AND are not yet propagated in IG
      */
-    lin_sys IG_linerals_to_be_propagated;
+    list<lineral> IG_linerals_to_be_propagated;
     
     var_t get_num_vars() const { return alpha.size()-1; };
     
@@ -809,7 +809,7 @@ class solver
       //add lineral for propagation to IG
       if(lvl==0 && opt.pp!=xornado_preproc::no && origin!=origin_t::IG && origin!=origin_t::LGJ) {
         //put lin in queue for propagation in IG -- if it is does not originate from IG
-        IG_linerals_to_be_propagated.add_lineral( lin->to_lineral() );
+        IG_linerals_to_be_propagated.emplace_back( lin->to_lineral() );
       }
 
       //add to watch list if non-assigning AND not 'IMPLIED_ALPHA' (since this means it comes from a already watched lineral!)
@@ -1295,9 +1295,11 @@ class solver
       const auto begin  = std::chrono::high_resolution_clock::now();
       VERB(50, "c implication graph in-processing -- propagating " << IG_linerals_to_be_propagated.size() << " new linerals.");
       if(IG_linerals_to_be_propagated.size()>0) {
-        IG.add_new_xsys( std::move(IG_linerals_to_be_propagated) );
+        lin_sys sys( std::move(IG_linerals_to_be_propagated) );
+        IG.add_new_xsys( std::move(sys) );
       }
       IG_linerals_to_be_propagated.clear();
+
       const auto IG_linsys_begin = std::prev( IG.get_xsys_stack().back().end() );
       //call xornado-preprocessing
       IG.preprocess();
