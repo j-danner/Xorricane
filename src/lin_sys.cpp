@@ -48,7 +48,7 @@ void lin_sys::rref_m4ri() {
     var_t num_vars = 0;
     for(const auto& l : linerals) {
         num_vars = std::max(num_vars, l.get_max_var());
-    }   
+    } 
 
     const var_t n_vars = num_vars;
     const rci_t nrows = linerals.size();
