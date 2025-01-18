@@ -694,16 +694,6 @@ class solver
       } else {
         lineral_queue.q_unit.emplace_back( lin, lvl, type, origin );
       }
-
-      //add lineral for propagation to IG and to LGJ
-      if(lvl==0 && opt.pp!=xornado_preproc::no && origin!=origin_t::IG && origin!=origin_t::LGJ) {
-        //put lin in queue for propagation in IG -- if it is does not originate from IG
-        IG_linerals_to_be_propagated.add_lineral( lin->to_lineral() );
-      }
-      if(lvl==0 && opt.lgj && origin!=origin_t::LGJ && origin!=origin_t::INIT) {
-        //put lin in queue for propagation in IG -- if it is does not originate from LGJ (or INIT) - and is not assigning! (otherwise it will be added trough assign in GCP (!))
-        linerals_to_be_added_to_LGJ.emplace_back( lin->to_lineral() );
-      }
     }
 
     /**
@@ -816,6 +806,12 @@ class solver
       //DO NOT REDUCE WITH TOO LONG XORs otherwise it might blow up!
       //@todo heuristically reduce less active variables; i.e. decrease number of 'inactive' vars and increase the active ones
 
+      //add lineral for propagation to IG
+      if(lvl==0 && opt.pp!=xornado_preproc::no && origin!=origin_t::IG && origin!=origin_t::LGJ) {
+        //put lin in queue for propagation in IG -- if it is does not originate from IG
+        IG_linerals_to_be_propagated.add_lineral( lin->to_lineral() );
+      }
+
       //add to watch list if non-assigning AND not 'IMPLIED_ALPHA' (since this means it comes from a already watched lineral!)
       if(type!=queue_t::IMPLIED_ALPHA && !l.is_assigning()) {
         assert(l.size()>1);
@@ -855,6 +851,12 @@ class solver
           if(type==queue_t::NEW_GUESS) {
             trails[lvl].emplace_back( l.LT(), trail_t::GUESS, origin, lin);
           }
+        }
+
+        //add lineral for propagation to LGJ
+        if(lvl==0 && opt.lgj && origin!=origin_t::LGJ && origin!=origin_t::INIT) {
+          //put lin in queue for propagation in IG -- if it is does not originate from LGJ (or INIT) - and is not assigning! (otherwise it will be added trough assign in GCP (!))
+          linerals_to_be_added_to_LGJ.emplace_back( lin->to_lineral() );
         }
         return -1;
       }
