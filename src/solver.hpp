@@ -114,7 +114,7 @@ class lin_queue {
     deque<T>::reference front() {
       assert(!empty());
       if(!q_confl.empty())          return q_confl.front();
-      else if(!q_lgj.empty()) return q_lgj.front();
+      else if(!q_lgj.empty())       return q_lgj.front();
       else if(!q_alpha.empty())     return q_alpha.front();
       else if(!q_equiv.empty())     return q_equiv.front();
       else                          return q_unit.front();
