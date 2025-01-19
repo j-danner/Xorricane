@@ -397,8 +397,8 @@ class stats {
       std::cout << "c restarts       : " << std::setw(width_int) << no_restarts << " (" << (float) no_confl/no_restarts  << " confl/rst)" << std::endl;
       std::cout << "c " << std::endl;
 
-      std::cout << "c GCP props      : " << std::setw(width_int) << new_px_upd << std::endl;
-      std::cout << "c LGJ props      : " << std::setw(width_int) << no_lgj_prop  << " (" << (float) no_lgj_prop/no_dec << " props/dec)" << std::endl;
+      std::cout << "c CGP props      : " << std::setw(width_int) << new_px_upd  << " (" << (float) no_lgj_prop/no_dec << " props/dec)" << std::endl;
+      std::cout << "c LGJ props      : " << std::setw(width_int) << no_lgj_prop  << std::endl;
       std::cout << "c GE calls       : " << std::setw(width_int) << no_ge << std::endl;
       std::cout << "c GE props       : " << std::setw(width_int) << no_ge_prop  << " (" << (float) no_ge_prop/no_ge << " props/call)" << std::endl;
       std::cout << "c IG calls       : " << std::setw(width_int) << no_ig << std::endl;
