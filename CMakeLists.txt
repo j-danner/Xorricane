@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 
 # set the project name
-project(xnf_cdcl_solver VERSION 0.4.2)
+project(xorricane VERSION 0.4.2)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -57,16 +57,16 @@ endif()
 add_subdirectory(src)
 
 # add the main executable
-add_executable(xnf_cdcl_solver src/main.cpp src/argparse/argparse.hpp)
+add_executable(xorricane src/main.cpp src/argparse/argparse.hpp)
 
-# link libs to xnf_cdcl_solver
-target_link_libraries(xnf_cdcl_solver PUBLIC ${EXTRA_LIBS} PRIVATE solver)
-target_include_directories(xnf_cdcl_solver PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
+# link libs to xorricane
+target_link_libraries(xorricane PUBLIC ${EXTRA_LIBS} PRIVATE solver)
+target_include_directories(xorricane PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
 
 #static option -- use with caution! leads to segv on algattack...
 option(STATIC "compile statically linked solver" OFF)
 if(STATIC) 
-    target_link_options(xnf_cdcl_solver PUBLIC -static-libstdc++ -static-libgcc -static)
+    target_link_options(xorricane PUBLIC -static-libstdc++ -static-libgcc -static)
 endif()
 
 ##enable march native
