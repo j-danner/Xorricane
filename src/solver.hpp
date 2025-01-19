@@ -112,10 +112,11 @@ class lin_queue {
     bool empty() const { return q_confl.empty() && q_lgj.empty() && q_alpha.empty() && q_equiv.empty() && q_unit.empty(); };
 
     deque<T>::reference front() {
+      //when changing order here, reflect the cahnge in pop_front() as well!
       assert(!empty());
       if(!q_confl.empty())          return q_confl.front();
-      else if(!q_lgj.empty())       return q_lgj.front();
       else if(!q_alpha.empty())     return q_alpha.front();
+      else if(!q_lgj.empty())       return q_lgj.front();
       else if(!q_equiv.empty())     return q_equiv.front();
       else                          return q_unit.front();
     };
