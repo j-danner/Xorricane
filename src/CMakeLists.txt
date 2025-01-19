@@ -104,6 +104,7 @@ add_library(cms
     cryptominisat/src/cryptominisat.cpp
 )
 target_link_libraries(cms PUBLIC ${GMP_LIBRARIES})
+target_compile_options(cms PUBLIC "-Wno-all" )
 
 
 #setup library for lazy version of lineral
