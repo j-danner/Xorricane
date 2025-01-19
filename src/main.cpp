@@ -131,7 +131,7 @@ int main(int argc, char const *argv[])
     //preproc (SCC+FLS)
     program.add_argument("-pp","--preprocess")
         .help("proprocessing via implication graphs (see 2-Xornado); 'no' (no), 'scc' (strongly connected components), or 'scc_fls' (strongly connected components and failed linerals)")
-        .default_value(std::string("scc"))
+        .default_value(std::string("scc_fls"))
         .choices("no", "scc", "scc_fls")
         .nargs(1);
     

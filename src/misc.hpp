@@ -249,7 +249,7 @@ struct options {
     restart_opt rst = restart_opt::luby;
 
     initial_prop_opt ip = initial_prop_opt::no;
-    xornado_preproc pp = xornado_preproc::scc;
+    xornado_preproc pp = xornado_preproc::scc_fls;
 
     bool eq = true;
 
