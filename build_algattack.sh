@@ -11,7 +11,7 @@ export CXX=~/gcc13/bin/g++
 export CC=~/gcc13/bin/gcc
 
 #cmake -DCMAKE_BUILD_TYPE=Debug -S . -B _build
-cmake -DCMAKE_BUILD_TYPE=Release -S . -B _build
+cmake -DCMAKE_BUILD_TYPE=Release -S . -B _build -Wno-dev
 VERBOSE=1 make -C _build xorricane testing bench -j8 --no-print-directory
 
 rm -rf build

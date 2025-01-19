@@ -6,7 +6,7 @@ mkdir build
 
 set -e #exit on error -- cleanup is then done by trap
 
-cmake -DCMAKE_BUILD_TYPE=Release -S . -B _build
+cmake -DCMAKE_BUILD_TYPE=Release -S . -B _build -Wno-dev
 VERBOSE=1 make -C _build xorricane testing bench -j10 --no-print-directory
 
 rm -rf build
