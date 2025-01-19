@@ -270,7 +270,6 @@ class lin_sys_lazy_GE
 
         //iterate over new elements in trail
         CMSat::Lit trail_el;
-        vec<var_t> lineral_vars;
         for(size_t trail_pos = trail_size_prev; trail_pos<cms->trail_size(); ++trail_pos) {
             trail_el = cms->trail_at(trail_pos);
 
