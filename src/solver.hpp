@@ -1251,9 +1251,9 @@ class solver
             }
             GCP(s);
         } while( !at_conflict() && 
-            (  (need_LGJ_update()       && find_implications_by_LGJ(s))
+            ( (need_GE_inprocessing(s) && find_implications_by_GE(s))
             || (need_IG_inprocessing(s) && find_implications_by_IG(s)) 
-            || (need_GE_inprocessing(s) && find_implications_by_GE(s))
+            || (need_LGJ_update()       && find_implications_by_LGJ(s))
             || (need_alpha_removal()    && remove_fixed_alpha())
             || (need_equiv_removal()    && remove_fixed_equiv())
             ) );
