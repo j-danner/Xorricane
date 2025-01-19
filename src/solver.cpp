@@ -918,21 +918,9 @@ void solver::dpll_solve(stats &s) {
             }
 
             dpll_gcp:
-            //TODO switch to GCP_inprocess and pop dec_stack if necessary afterwards!
-            GCP(s);
-            if( !at_conflict() &&
-                ( (need_equiv_removal() && remove_fixed_equiv())
-                || (need_LGJ_update() && find_implications_by_LGJ(s))
-                || (need_IG_inprocessing(s) && find_implications_by_IG(s))
-                )
-              ) {
-                goto dpll_gcp;
-            }
-            if( need_GE_inprocessing(s) && find_implications_by_GE(s) ) {
-                //in case we did backtrack, fix dec_stack
-                while(dec_stack.size()>dl) dec_stack.pop();
-                goto dpll_gcp;
-            }
+            GCP_inprocess(s);
+            //in case we did backtrack inside find_implications_by_GE: fix dec_stack!
+            while(dec_stack.size()>dl) dec_stack.pop();
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
