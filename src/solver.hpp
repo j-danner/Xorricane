@@ -122,10 +122,11 @@ class lin_queue {
     };
 
     void pop_front() {
+      //when changing order here, reflect the cahnge in front() as well!
       assert(!empty());
       if(!q_confl.empty())          q_confl.pop_front();
-      else if(!q_lgj.empty()) q_lgj.pop_front();
       else if(!q_alpha.empty())     q_alpha.pop_front();
+      else if(!q_lgj.empty())       q_lgj.pop_front();
       else if(!q_equiv.empty())     q_equiv.pop_front();
       else                          q_unit.pop_front();
     };
@@ -990,7 +991,7 @@ class solver
       return i;
     }
 
-    const unsigned int confl_until_restart_default = 1<<7; //number of conflicts between restarts
+    const unsigned int confl_until_restart_default = 150; //number of conflicts between restarts
     unsigned int confl_until_restart = 0; //number of conflicts between restarts
     /**
      * @brief checks if a restart is needed
