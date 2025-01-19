@@ -115,9 +115,10 @@ int main(int argc, char const *argv[])
     program.add_hidden_alias_for(arg_ge, "-la"); //old flag
     
     //lazy gauss-elim
-    program.add_argument("-no-lgj","--no-lazy-gauss-jordan-elim")
+    auto& arg_lgj= program.add_argument("-no-lgj","--no-lazy-gauss-jordan-elim")
         .help("deactivate lazy gauss-jordan-elim of unit clauses")
         .flag();
+    program.add_hidden_alias_for(arg_lgj, "-no-lge"); //old flag
     
 
     //initial reduction opts
