@@ -1315,7 +1315,7 @@ class solver
           const auto& l = *it2;
           add_new_lineral(l, 0, queue_t::NEW_UNIT, origin_t::IG);
           ++count;
-          if(l.is_assigning() && !l.is_zero()) ++s.no_ig_prop;
+          if(!l.is_zero()) ++s.no_ig_prop;
         }
       }
       VERB(50, "c Xornado in-processing deduced " << count << " new linerals");
