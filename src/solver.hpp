@@ -1142,10 +1142,13 @@ class solver
     }
 
     inline bool find_implications_by_LGJ(stats& s) {
+      const auto begin  = std::chrono::high_resolution_clock::now();
       assert( need_LGJ_update() );
       if(!lazy_gauss_jordan->get_implied_literal_queue().empty()) {
         VERB(80, "c " << RED("find_implications_by_LGJ: retrieving " << lazy_gauss_jordan->get_implied_literal_queue().size() << " new linerals") );
         fetch_LGJ_implications(s);
+        const auto end  = std::chrono::high_resolution_clock::now();
+        s.total_lgj_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
         return true;
       }
       assert(!linerals_to_be_added_to_LGJ.empty());
@@ -1162,6 +1165,8 @@ class solver
 
       VERB(80, "c " << GREEN("find_implications_by_LGJ: found " << count << " new assigning linerals") );
 
+      const auto end  = std::chrono::high_resolution_clock::now();
+      s.total_lgj_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
       return count>0;
     }
 
