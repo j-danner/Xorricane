@@ -1099,10 +1099,8 @@ class solver
     inline bool at_conflict() const { return alpha[0]==bool3::True; };
 
     inline bool need_alpha_removal() {
-      return dl==0 && remove_fixed_equiv_before_next_GCP;
+      return dl==0 && !vars_to_be_removed.empty();
     }
-
-
 
     /**
      * @brief vars that can be removed (as they are assigned at dl 0)
