@@ -963,7 +963,6 @@ class solver
           assert(xnf_clss[i].is_inactive(dl_count));
           //update utility
           ++utility[i];
-          //utility[i] = -clss[i].LBD(alpha_dl);
           // IGNORE THIS CLAUSE FROM NOW ON
           decr_active_cls(i);
           // NEW LIN-EQS
