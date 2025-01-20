@@ -869,13 +869,15 @@ public:
     return size() <= 1 ? 0 : lineral_dl_count0[idx[1]].first;
   }
 
+  var_t lbd = (var_t) -1;
   /**
    * @brief computes the LBD (literal-block-distance) of the lineral; i.e., the number of different dl's occuring in idxs
    * 
    * @param alpha_dl current alpha dl
    * @return var_t LBD value
    */
-  var_t LBD(const vec<var_t>& alpha_dl) const {
+  var_t LBD(const vec<var_t>& alpha_dl) {
+    if(lbd != (var_t) -1) return lbd;
     std::set<var_t> l;
     //for(const auto& [lvl,lvl_c] : lineral_dl_count0) {
     //  l.insert(lvl);
@@ -888,8 +890,13 @@ public:
         l.insert(alpha_dl[i]);
       }
     }
-    return l.size();
+    lbd = l.size();
+    return lbd;
   };
+  var_t recompute_LBD(const vec<var_t>& alpha_dl) {
+    lbd = (var_t) -1;
+    return LBD(alpha_dl);
+  }
 
 #ifndef NDEBUG
   var_t compute_unit_assigning_lvl(const vec<var_t>& alpha_dl) const {
