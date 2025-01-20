@@ -698,6 +698,8 @@ bool solver::remove_fixed_equiv() {
     //    assert( sys_prev == sys_after );
     //  #endif
     //}
+    
+    remove_fixed_equiv_before_next_GCP = false;
 
     assert_slower( assert_data_structs() );
   #ifdef DEBUG_SLOW
