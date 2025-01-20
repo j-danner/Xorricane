@@ -98,18 +98,18 @@ struct lineral_queue_elem {
 //wrapper class that concats four queues
 template<class T>
 class lin_queue {
-  //lin_queue structure: CONFL | LGJ_IMPLIED_ALPHA | IMPLIED_ALPHA |  NEW_EQUIV  | NEW_UNIT
+  //lin_queue structure: CONFL | IMPLIED_ALPHA | NEW_EQUIV | LGJ_IMPLIED_ALPHA | NEW_UNIT
   public:
     list<T> q_confl;
-    list<T> q_lgj;
     list<T> q_alpha;
     list<T> q_equiv;
+    list<T> q_lgj;
     list<T> q_unit;
 
     lin_queue() noexcept {};
 
-    size_t size() const { return q_confl.size()+q_lgj.size()+q_alpha.size()+q_equiv.size()+q_unit.size(); };
-    bool empty() const { return q_confl.empty() && q_lgj.empty() && q_alpha.empty() && q_equiv.empty() && q_unit.empty(); };
+    size_t size() const { return q_confl.size()+q_alpha.size()+q_equiv.size()+q_lgj.size()+q_unit.size(); };
+    bool empty() const { return q_confl.empty() && q_alpha.empty() && q_equiv.empty() && q_lgj.empty() && q_unit.empty(); };
 
     deque<T>::reference front() {
       //when changing order here, reflect the cahnge in pop_front() as well!
@@ -138,17 +138,17 @@ class lin_queue {
      */
     void clear(const var_t lvl) {
       q_confl.remove_if([lvl](const auto& q_el){ return q_el.lvl > lvl; });
-      q_lgj.remove_if(  [lvl](const auto& q_el){ return q_el.lvl > lvl; });
       q_alpha.remove_if([lvl](const auto& q_el){ return q_el.lvl > lvl; });
       q_equiv.remove_if([lvl](const auto& q_el){ return q_el.lvl > lvl; });
+      q_lgj.remove_if(  [lvl](const auto& q_el){ return q_el.lvl > lvl; });
       q_unit.remove_if( [lvl](const auto& q_el){ return q_el.lvl > lvl; });
     }
 
     void clear() {
       q_confl.clear();
-      q_lgj.clear();
       q_alpha.clear();
       q_equiv.clear();
+      q_lgj.clear();
       q_unit.clear();
     }
 };
