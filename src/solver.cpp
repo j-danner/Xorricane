@@ -658,7 +658,6 @@ bool solver::remove_fixed_equiv() {
                 assert(xnf_clss[i].get_unit_at_lvl() == 0);
                 //update utility
                 ++utility[i];
-                //utility[i] = -xnf_clss[i].LBD(alpha_dl);
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral
@@ -802,7 +801,6 @@ void solver::GCP(stats &s) noexcept {
                 assert(xnf_clss[i].get_unit_at_lvl() == dl);
                 //increase utility
                 ++utility[i];
-                //utility[i] = -xnf_clss[i].LBD(alpha_dl);
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral
