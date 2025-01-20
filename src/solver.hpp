@@ -944,6 +944,10 @@ class solver
         for(auto& a_cls : active_cls_stack) ++a_cls;
         ++active_cls;
       }
+      //set tier for learnt cls
+      if(learnt_cls) tier.emplace_back( lbd_to_tier(xnf_clss[i].LBD(alpha_dl)) );
+      else           tier.emplace_back( 0 );
+      ++tier_count[tier.back()];
       //update cls
       VERB(90, "c adding new clause: " << BOLD(xnf_clss[i].to_str()) << "  --> gives with current assignments: "<<xnf_clss[i].to_cls().reduced(alpha).to_str());
       if(learnt_cls) VERB(90, "c XNF : " << xnf_clss[i].to_xnf_str());
@@ -999,6 +1003,15 @@ class solver
     bool need_restart() const;
 
     unsigned int confl_this_restart = 0; //number of conflicts since last restart
+    vec<var_t> tier;
+    var_t tier_count[3];
+    var_t tier0_limit = 2;
+    var_t tier1_limit = 6;
+    var_t lbd_to_tier (const var_t lbd) {
+      if(lbd<=tier0_limit) return 0;
+      if(lbd<=tier1_limit) return 1;
+      else                 return 2;
+    };
     /**
      * @brief restarts the solver; i.e. rm all assignments and backtracks to dl 0
      */
