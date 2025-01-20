@@ -157,7 +157,8 @@ class lin_sys_lazy_GE
                     sign ^= l.sign();
                     lineral_vars.emplace_back( l.var() );
                 }
-                return lineral( lineral_vars, sign, presorted::no );
+                assert( std::is_sorted(lineral_vars.begin(), lineral_vars.end()) );
+                return lineral( lineral_vars, sign, presorted::yes );
             }
             case CMSat::clause_t:
             {
@@ -201,7 +202,8 @@ class lin_sys_lazy_GE
                     sign ^= l.sign();
                     lineral_vars.emplace_back( l.var() );
                 }
-                return lineral( lineral_vars, sign, presorted::no );
+                assert( std::is_sorted(lineral_vars.begin(), lineral_vars.end()) );
+                return lineral( lineral_vars, sign, presorted::yes );
             }
             case CMSat::clause_t:
             {
