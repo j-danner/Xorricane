@@ -428,7 +428,7 @@ std::pair<var_t, cls_watch> solver::analyze_dpll() {
     VERB(70, "   * learnt clause is " << learnt_cls.to_str());
     learnt_cls.init_dpll(alpha, alpha_dl, alpha_trail_pos, dl_count);
 
-    return {std::max<var_t>(dl-1, 0), std::move(learnt_cls) };
+    return {dl>0 ? dl-1 : 0, std::move(learnt_cls) };
 };
 
 //code from CMS5!
