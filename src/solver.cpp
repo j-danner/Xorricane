@@ -493,6 +493,21 @@ void solver::restart(stats& s) {
 
     //go to dl 0
     const unsigned int no_cls = xnf_clss.size();
+    
+    ////warm restart: put all inds from trail back into order_heap_vsids and determine how many dl are identical, i.e., with identical decisions!
+    //for(var_t i=1; i<alpha.size(); ++i) {
+    //    if(!order_heap_vsids.inHeap(i)) order_heap_vsids.insert( i );
+    //}
+    //for(var_t lvl=1; lvl<dl; ++lvl) {
+    //    auto it = trails[lvl].begin();
+    //    while(it!=trails[lvl].end()) {
+    //        if(it->type==trail_t::ALPHA) {
+    //            order_heap_vsids.remove(it->ind);
+    //        }
+    //        ++it;
+    //    }
+    //}
+
     backtrack(0);
 
     //tier 0 clauses: keep all of them!
