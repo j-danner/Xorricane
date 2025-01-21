@@ -126,10 +126,9 @@ class lin_sys_lazy_GE
                 linerals_assigning.push_back( &l );
             }
         }
-        cms->find_and_init_all_matrices();
         //const std::string strategy = "must-scc-vrepl";
         //cms->simplify_with_assumptions(nullptr, &strategy);
-        //cms->find_and_init_all_matrices();
+        cms->find_and_init_all_matrices();
 
         for(const auto lp : linerals_assigning) {
             if(!alpha.empty() && alpha[lp->LT()]!=bool3::None) {
