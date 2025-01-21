@@ -1264,9 +1264,9 @@ class solver
         } while( !at_conflict() && 
             ( (need_GE_inprocessing(s) && find_implications_by_GE(s))
             || (need_IG_inprocessing(s) && find_implications_by_IG(s)) 
-            || (need_LGJ_update()       && find_implications_by_LGJ(s))
-            || (need_alpha_removal()    && remove_fixed_alpha())
-            || (need_equiv_removal()    && remove_fixed_equiv())
+            //|| (need_LGJ_update()       && find_implications_by_LGJ(s)) //BEWARE uncommenting this line has (currently) quite some negative impact -- not sure why though!!
+            //|| (need_alpha_removal()    && remove_fixed_alpha()) //moved into GCP!
+            //|| (need_equiv_removal()    && remove_fixed_equiv()) //moved into GCP!
             ) );
         //NOTE: LGJ update must be BEFORE removing fixed equivs, as new equivs first need to be added
         //      before they are 'removed' -- otherwise LGJ might become inconsistent with latest props...

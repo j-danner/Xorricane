@@ -799,6 +799,7 @@ lineral new_unit;
 void solver::GCP(stats &s) noexcept {
     s.no_gcp++;
     VERB(90, "c " << YELLOW("GCP start"));
+    start:
     while(!lineral_queue.empty() && !at_conflict()) {
         assert_slow(assert_data_structs());
 
@@ -904,7 +905,10 @@ void solver::GCP(stats &s) noexcept {
         
         //if we propagated on dl 0, remove all upd_lt from lineral_watches AND from xnf_clss, so that they only occur in the watched clauses.
         assert_slower(assert_data_structs());
-        if(dl == 0) vars_to_be_removed.emplace_back(upd_lt);
+        if(dl == 0) remove_fixed_alpha(upd_lt);
+    }
+    if(need_equiv_removal() && lineral_queue.empty()) {
+        if( remove_fixed_equiv() ) goto start;
     }
     assert(lineral_queue.empty() || at_conflict());
 
