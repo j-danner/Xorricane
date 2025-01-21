@@ -786,7 +786,7 @@ class solver
       }
 
       VERB(65, "c " << std::to_string(lvl) << " : process_lineral " << type << origin << l.to_str() << " ~> " << l.to_lineral().reduced(alpha,equiv_lits).to_str() << (l.has_trivial_reason_cls() ? "" : (" with reason clause " + get_reason(lin, 1).to_str())) );
-      if(l.is_reducible() && type!=queue_t::IMPLIED_ALPHA && origin!=origin_t::LGJ) {
+      if(l.is_reducible() && type!=queue_t::IMPLIED_ALPHA && (origin!=origin_t::LGJ || (l.is_equiv() && !l.is_assigning(alpha)))) {
         assert(lvl==l.get_lvl());
         assert_slow(lvl==0 || get_reason(lin).get_unit().reduced(alpha)==l.to_lineral().reduced(alpha));
         //reduce lin -- but only if type is NOT guess -- otherwise reason clause is not computed correctly!
@@ -993,7 +993,7 @@ class solver
       return i;
     }
 
-    const unsigned int confl_until_restart_default = 150; //number of conflicts between restarts
+    const unsigned int confl_until_restart_default = 2<<7; //number of conflicts between restarts
     unsigned int confl_until_restart = 0; //number of conflicts between restarts
     /**
      * @brief checks if a restart is needed
