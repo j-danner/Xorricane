@@ -75,7 +75,8 @@ TEST_CASE( "linsys_lazy_GE basic operations" , "[lin_sys][assigning][propagation
         lineral l3( vec<var_t>({0,4}) );
         lineral l4( vec<var_t>({0,1,2}) );
         lin_sys_lazy_GE lsl( vec<lineral>({l1, l2, l3, l4}) );
-        CHECK(lsl.get_implied_literal_queue().size() == 4);
+        lin_sys sys( lsl.get_implied_literal_queue() );
+        CHECK(sys.to_str() == "x1+1 x2 x3+1 x4+1");
     }
     
     SECTION("simpler conflict!") {
@@ -85,7 +86,8 @@ TEST_CASE( "linsys_lazy_GE basic operations" , "[lin_sys][assigning][propagation
         lineral l4( vec<var_t>({0,1,2}) );
         lineral l5( vec<var_t>({1,3}) );
         lin_sys_lazy_GE lsl( vec<lineral>({l1, l2, l3, l4, l5}) );
-        CHECK(lsl.get_implied_literal_queue().size() == 5);
+        lin_sys sys( lsl.get_implied_literal_queue() );
+        CHECK(!sys.is_consistent());
     }
     
     SECTION("cascading") {
