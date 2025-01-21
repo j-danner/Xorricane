@@ -188,12 +188,12 @@ class solver
     /**
      * @brief watch_list[i] contains all idxs j s.t. clss[j] watches indet i
      */
-    vec< list<var_t> > watch_list;
+    vec< vec<var_t> > watch_list;
     
     /**
      * @brief L_watch_list[lt] stores elements of the form [lvl, dl_c, lin]; indicating that lt is watched in *lin IFF dl_count[lvl]==dl_c
      */
-    vec< list< watch_list_elem > > L_watch_list;
+    vec< vec< watch_list_elem > > L_watch_list;
 
     /**
      * @brief options for heuristics of solver (and more)
@@ -667,6 +667,11 @@ class solver
     void bump_score(const lineral& lit);
     void decay_score();
 
+    void prefetch(var_t upd_lt) {
+      __builtin_prefetch( &L_watch_list[upd_lt] );
+      __builtin_prefetch( &watch_list[upd_lt] );
+    }
+
     /**
      * @brief queue implied lineral for propagation (one-by-one); update data using propagate_implied_lineral
      * @note highest priority is conflict, followed by alpha and then equivs
@@ -680,12 +685,14 @@ class solver
       assert(lin->assert_data_struct(alpha));
       if(type==queue_t::NEW_GUESS) {
         lineral_queue.q_alpha.emplace_front( lin, lvl, type, origin );
+        prefetch( lin->get_assigning_ind() );
       } else if(lin->LT()==0) {
         lineral_queue.q_confl.emplace_front( lin, lvl, queue_t::IMPLIED_ALPHA, origin );
       } else if(origin==origin_t::LGJ || origin==origin_t::INIT || origin==origin_t::IG) {
         lineral_queue.q_lgj.emplace_back( lin, lvl, type, origin );
       } else if(lin->is_assigning(alpha)) {
         lineral_queue.q_alpha.emplace_back( lin, lvl, type, origin );
+        prefetch( lin->get_assigning_ind() );
         //if(from_lineral_watch) lineral_queue.q_alpha.emplace_front( lin, lvl, type );
         //else                   lineral_queue.q_alpha.emplace_back( lin, lvl, type );
       } else if(lin->is_equiv()) {
@@ -879,6 +886,7 @@ class solver
       }
       //get alpha-assignment
       const auto [lt2,val] = l.get_assignment(alpha);
+      prefetch( lt2 );
       assert(l.is_assigning(alpha) && val!=bool3::None);
       trails[assigning_lvl].emplace_back( lt2, trail_t::ALPHA, origin, lin );
       l.set_reducibility(false);

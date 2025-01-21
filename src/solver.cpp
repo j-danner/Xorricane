@@ -824,66 +824,67 @@ void solver::GCP(stats &s) noexcept {
 
         VERB(120, "c updating lineral_watches");
         //(1) find new implied alphas from watched linerals
-        auto it = L_watch_list[upd_lt].begin();
-        while(it != L_watch_list[upd_lt].end()) {
-            const auto& [lvl, dl_c, lin] = *it;
+        var_t i = 0;
+        var_t len = L_watch_list[upd_lt].size();
+        while(i < len) {
+            const auto& [lvl, dl_c, lin] = L_watch_list[upd_lt][i];
             //if *lin might habe been removed and the watching scheme must now be fixed
             if(dl_count[lvl] != dl_c) {
-                it = L_watch_list[upd_lt].erase( it );
+                std::swap(L_watch_list[upd_lt][i], L_watch_list[upd_lt][len-1]);
+                --len;
+                //it = L_watch_list[upd_lt].erase( it );
                 continue;
             }
-            //even if lgj is active do NOT skip lvl==0 watches; remember that CMS-GJ seems to be incomplete.
             assert(lin->watches(upd_lt));
-            if(!lin->is_active(dl_count)) { ++it; continue; }
+            if(!lin->is_active(dl_count)) {
+                ++i;
+                continue;
+            }
             const auto& [new_wl, ret] = lin->update(upd_lt, alpha, dl, dl_count);
             //if watched-literal has changed, i.e., new_wl != 0; update watch-list
-            if(new_wl != upd_lt) {
-                //@todo this case only occurs for ret-type UNIT, doesn't it?! --> refactor code!
-                //mv *it from current watch-list to new watch-list + advance it
-                L_watch_list[new_wl].splice( L_watch_list[new_wl].end(), L_watch_list[upd_lt], it++ );
-            } else {
-                ++it;
-            }
             switch (ret) {
             case lineral_upd_ret::ASSIGNING:
+                assert( new_wl == upd_lt );
                 assert( lin->is_assigning(alpha) );
                 assert( !lin->is_active(alpha) );
                 // update alpha
                 queue_implied_lineral(lin, dl, origin_t::LINERAL, queue_t::IMPLIED_ALPHA);
+                ++i;
                 break;
             case lineral_upd_ret::UNIT:
+                assert( new_wl != upd_lt );
                 assert(!lin->is_assigning(alpha));
+                //move to different watch-list
+                L_watch_list[new_wl].emplace_back( std::move(L_watch_list[upd_lt][i]) );
+                std::swap(L_watch_list[upd_lt][i], L_watch_list[upd_lt][len-1]);
+                --len;
                 break;
             }
         }
+        L_watch_list[upd_lt].resize(len);
 
         VERB(120, "c updating clauses");
         //(2) find new implied linerals from watched clauses
-        auto it2 = watch_list[upd_lt].begin();
-        while(it2 != watch_list[upd_lt].end()) {
+        var_t i2 = 0;
+        var_t len2 = watch_list[upd_lt].size();
+        while(i2 < len2) {
             //assert(assert_data_structs());
-            const var_t& i = *it2;
+            const var_t& i = watch_list[upd_lt][i2];
             assert(xnf_clss[i].watches(upd_lt));
-            if(!xnf_clss[i].is_active(dl_count)) { ++it2; continue; }
+            if(!xnf_clss[i].is_active(dl_count)) { ++i2; continue; }
             const auto& [new_wl, ret] = xnf_clss[i].update(upd_lt, alpha, alpha_dl, alpha_trail_pos, dl_count);
             //if watched-literal has changed, i.e., new_wl != 0; update watch-list
-            if(new_wl != upd_lt) {
-                //@todo this case only occurs for ret-type NONE, doesn't it?! --> refactor code!
-                //rm *it from current watch-list:
-                it2 = watch_list[upd_lt].erase(it2);
-                //add i to newly watched literal:
-                watch_list[new_wl].push_back(i);
-            } else {
-                ++it2;
-            }
             switch (ret) {
             case cls_upd_ret::SAT:
+                assert( upd_lt == new_wl );
                 assert(xnf_clss[i].is_sat(dl_count));
                 assert(xnf_clss[i].is_inactive(dl_count));
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
+                ++i2;
                 break;
             case cls_upd_ret::UNIT: //includes UNSAT case (i.e. get_unit() reduces with assignments to 1 !)
+                assert( upd_lt == new_wl );
                 assert(xnf_clss[i].is_unit(dl_count));
                 assert(xnf_clss[i].is_inactive(dl_count));
                 assert(xnf_clss[i].get_unit_at_lvl() == dl);
@@ -895,13 +896,20 @@ void solver::GCP(stats &s) noexcept {
                 // @todo use add_new_lineral
                 lineral_watches[dl].emplace_back( std::move(xnf_clss[i].get_unit()), alpha, alpha_dl, dl_count, i, dl);
                 queue_implied_lineral( std::prev(lineral_watches[dl].end()), dl, origin_t::CLAUSE );
+                ++i2;
                 break;
             case cls_upd_ret::NONE:
+                assert( upd_lt != new_wl );
                 assert(xnf_clss[i].is_none(dl_count));
                 assert(xnf_clss[i].is_active(dl_count));
+                //move i to watch-list of new_wl
+                watch_list[new_wl].emplace_back(i);
+                std::swap(watch_list[upd_lt][i2], watch_list[upd_lt][len2-1]);
+                --len2;
                 break;
             }
         }
+        watch_list[upd_lt].resize(len2);
         
         //if we propagated on dl 0, remove all upd_lt from lineral_watches AND from xnf_clss, so that they only occur in the watched clauses.
         assert_slower(assert_data_structs());
