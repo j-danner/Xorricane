@@ -9,6 +9,7 @@
 #include "lineral_watch.hpp"
 #include "lin_sys.hpp"
 
+#include "cryptominisat/src/varreplacer.h"
 #include "cryptominisat/src/solver.h"
 #include "cryptominisat/src/gaussian.h"
 
@@ -72,7 +73,7 @@ class lin_sys_lazy_GE
      * 
      * @param alpha current alpha-assignment
      */
-    void init(const vec<bool3>& alpha) {
+    var_t init_and_propagate(const vec<bool3>& alpha) {
         //set gaussconf settings -- copied from 'set_allow_otf_gauss()' in cryptominisat.cpp
         //conf.doFindXors = true;
         //conf.allow_elim_xor_vars = false;
@@ -84,7 +85,7 @@ class lin_sys_lazy_GE
         //conf.allow_elim_xor_vars = false;
 
         conf.doFindXors = true;
-        conf.allow_elim_xor_vars = true;
+        conf.allow_elim_xor_vars = false;
         conf.gaussconf.autodisable = false;
         conf.gaussconf.max_matrix_columns = 1000;
         conf.gaussconf.max_matrix_rows = 10000;
@@ -111,6 +112,7 @@ class lin_sys_lazy_GE
         //push non-assigning linerals to solver all others just enqueue!
         list<const lineral*> linerals_assigning;
         vec<unsigned> xor_clause;
+        //vec<CMSat::Lit> assignments;
         for(const auto& l : linerals) {
             if(l.is_zero()) continue;
             if(!l.is_assigning()) {
@@ -118,13 +120,19 @@ class lin_sys_lazy_GE
                 for(const auto& i : l.get_idxs_()) xor_clause.emplace_back(i);
                 cms->add_xor_clause_outside( xor_clause, l.has_constant() );
             } else {
+                //assignments.clear();
+                //assignments.emplace_back( l.LT(), l.has_constant() );
+                //cms->add_clause_outside(assignments);
                 linerals_assigning.push_back( &l );
             }
         }
         cms->find_and_init_all_matrices();
+        //const std::string strategy = "must-scc-vrepl";
+        //cms->simplify_with_assumptions(nullptr, &strategy);
+        //cms->find_and_init_all_matrices();
 
         for(const auto lp : linerals_assigning) {
-            if(alpha.size()>0 && alpha[lp->LT()]!=bool3::None) {
+            if(!alpha.empty() && alpha[lp->LT()]!=bool3::None) {
                 continue; //skip already assigned variables
             }
             implied_literal_queue.emplace_back( *lp );
@@ -137,6 +145,35 @@ class lin_sys_lazy_GE
             //NOTE we might not recover ALL linerals, because (1) propagation can 'destroy them', and (2) binary clauses are not recovered at all!
             for(const auto& l : sys_recv.get_linerals()) assert( sys.reduce(l).is_zero() );
         #endif
+
+        ////get all forced assignments
+        //for(var_t i = 1; i<=num_vars; ++i) {
+        //    if((alpha.empty() || alpha[i]==bool3::None)) {
+        //        //implied_literal_queue.emplace_back( vec<var_t>({i}), cms->value(i)!=CMSat::l_True, presorted::no );
+        //        auto lit = cms->varReplacer->get_lit_replaced_with_outer( CMSat::Lit(i, cm->) );
+        //        if(cms->value(lit.var()) != CMSat::l_Undef) {
+        //            implied_literal_queue.emplace_back( vec<var_t>({i}), cms->value(lit.var())!=CMSat::l_True, presorted::no );
+        //            assert_slow( sys.reduce(implied_literal_queue.back()).is_zero() );
+        //        }
+        //    }
+        //}
+
+        var_t ct = propagate(alpha);
+
+        //slows down overall solving!
+        ////collect all binary xors:
+        //for(auto& [l1,l2] : cms->get_all_binary_xors()) {
+        //    implied_literal_queue.emplace_back( vec<var_t>({l1.var(), l2.var()}), l1.sign()^l2.sign(), presorted::no );
+        //    ++ct;
+        //}
+
+        //add 'conflict' if cms->okay() is false
+        if(!cms->okay()) {
+            implied_literal_queue.emplace_front( cnst::one );
+            ++ct;
+        }
+
+        return ct;
     }
 
     vec<var_t> lineral_vars;
@@ -281,29 +318,31 @@ class lin_sys_lazy_GE
 
             lineral lin = CMS_reason_to_lineral(trail_el);
 
+            assert(lin.get_idxs_().back()<=num_vars);
+            implied_literal_queue.emplace_back( std::move(lin) );
 
-            if(trail_el.var()>num_vars) {
-                //this is a clash variable -- store the reason clause for later!
-                clash_var_to_reason[trail_el.var()] = std::move(lin);
-            } else {
-                //a regular variable was implied; i.e. all its occuring clash variables must already be assigned
-                //thus we must reasons for them and the original lineral can be reconstructed!
-                //NOTE clash variables come last, i.e., there is a clash variable in lin iff the last one is a clash var!
-                while(!lin.get_idxs_().empty() && lin.get_idxs_().back()>num_vars) {
-                    const auto v = lin.get_idxs_().back();
-                    if(clash_var_to_reason.find(v)!=clash_var_to_reason.end()) {
-                        lin += clash_var_to_reason[v];
-                    }
-                }
-                assert( lin.get_idxs_().empty() || lin.get_idxs_().back()<=num_vars );
+            //if(trail_el.var()>num_vars) {
+            //    //this is a clash variable -- store the reason clause for later!
+            //    clash_var_to_reason[trail_el.var()] = std::move(lin);
+            //} else {
+            //    //a regular variable was implied; i.e. all its occuring clash variables must already be assigned
+            //    //thus we must reasons for them and the original lineral can be reconstructed!
+            //    //NOTE clash variables come last, i.e., there is a clash variable in lin iff the last one is a clash var!
+            //    while(!lin.get_idxs_().empty() && lin.get_idxs_().back()>num_vars) {
+            //        const auto v = lin.get_idxs_().back();
+            //        if(clash_var_to_reason.find(v)!=clash_var_to_reason.end()) {
+            //            lin += clash_var_to_reason[v];
+            //        }
+            //    }
+            //    assert( lin.get_idxs_().empty() || lin.get_idxs_().back()<=num_vars );
 
-                #ifdef DEBUG_SLOW
-                    //ensure that lin is implied by linerals
-                    assert( sys.reduce(lin).is_zero() );
-                #endif
+            //    #ifdef DEBUG_SLOW
+            //        //ensure that lin is implied by linerals
+            //        assert( sys.reduce(lin).is_zero() );
+            //    #endif
 
-                implied_literal_queue.emplace_back( std::move(lin) );
-            }
+            //    implied_literal_queue.emplace_back( std::move(lin) );
+            //}
         }
 
         //if we have a conflict, this corresponding PropBy is not found on trail, i.e., treat it now!
@@ -312,22 +351,24 @@ class lin_sys_lazy_GE
             //we have a conflict!
             cms->ok = false;
             lineral lin = confl_to_lineral(confl);
-
-            //remove possible clash variables from lin
-            while(!lin.get_idxs_().empty() && lin.get_idxs_().back()>num_vars) {
-                const auto v = lin.get_idxs_().back();
-                if(clash_var_to_reason.find(v)!=clash_var_to_reason.end()) {
-                    lin += clash_var_to_reason[v];
-                }
-            }
-            assert( lin.get_idxs_().empty() || lin.get_idxs_().back()<=num_vars );
-
-            #ifdef DEBUG_SLOW
-                //ensure that lin is implied by linerals
-                assert( sys.reduce(lin).is_zero() );
-            #endif
-
+            assert( lin.get_idxs_().back()<=num_vars );
             implied_literal_queue.emplace_back( std::move(lin) );
+
+            ////remove possible clash variables from lin
+            //while(!lin.get_idxs_().empty() && lin.get_idxs_().back()>num_vars) {
+            //    const auto v = lin.get_idxs_().back();
+            //    if(clash_var_to_reason.find(v)!=clash_var_to_reason.end()) {
+            //        lin += clash_var_to_reason[v];
+            //    }
+            //}
+            //assert( lin.get_idxs_().empty() || lin.get_idxs_().back()<=num_vars );
+
+            //#ifdef DEBUG_SLOW
+            //    //ensure that lin is implied by linerals
+            //    assert( sys.reduce(lin).is_zero() );
+            //#endif
+
+            //implied_literal_queue.emplace_back( std::move(lin) );
         }
 
         #ifdef DEBUG_SLOWER
@@ -360,20 +401,32 @@ class lin_sys_lazy_GE
         linerals.reserve( sys.linerals.size() );
         for(auto&& l : sys.linerals) linerals.emplace_back( std::move(l) );
         vec<bool3> alpha;
-        init(alpha);
-        propagate(alpha);
+        init_and_propagate(alpha);
     };
 
     lin_sys_lazy_GE(const vec<lineral>& linerals_, const var_t _num_vars = (var_t) -1) noexcept :  num_vars(_num_vars), linerals(linerals_.begin(),linerals_.end()) {
         vec<bool3> alpha;
-        init(alpha);
-        propagate(alpha);
+        init_and_propagate(alpha);
     };
 
     ~lin_sys_lazy_GE() {
         delete cms;
         delete must_inter;
     };
+
+    /**
+     * @brief Returns reason lineral for given var
+     * 
+     * @param var that is assigned by linerals under the current assignments
+     * @return lineral which is the reason for the assignment of var
+     */
+    lineral get_reason(var_t var) {
+        assert( cms->varData[var].propagated );
+        assert( !cms->varData[var].reason.isnullptr() );
+
+        CMSat::Lit lit = CMSat::Lit(var, cms->value(var) == CMSat::l_False);
+        return CMS_reason_to_lineral(lit);
+    }
 
     list<lineral>& get_implied_literal_queue() { return implied_literal_queue; }
     void clear_implied_literal_queue() { implied_literal_queue.clear(); }
@@ -484,10 +537,7 @@ class lin_sys_lazy_GE
         linerals.insert(linerals.end(), make_move_iterator(ls.begin()), make_move_iterator(ls.end()));
 
         //re-init object
-        init(alpha);
-
-        //@todo optimize filter out previously known implied assignments -- otherwise they have to be treated again!
-        return propagate(alpha);
+        return init_and_propagate(alpha);
 
         /////// OLD CODE //////
         //assert(cms->decisionLevel() == 0);
@@ -527,16 +577,16 @@ class lin_sys_lazy_GE
     }
 
     void backtrack(var_t lvl) {
-        //go through trail of cms and remove all the lineral reasons for the clash variables!
-        auto trail_pos = (cms->trail_size())-1;
-        while(cms->varData[ cms->trail_at(trail_pos).var() ].level > lvl) {
-            const auto var = cms->trail_at(trail_pos).var();
-            if(var > num_vars) {
-                //this is a clash variable -- remove the reason clause for it!
-                clash_var_to_reason.erase(var);
-            }
-            --trail_pos;
-        }
+        ////go through trail of cms and remove all the lineral reasons for the clash variables!
+        //auto trail_pos = cms->trail_size()>0 ? (cms->trail_size())-1, : 0;
+        //while(cms->varData[ cms->trail_at(trail_pos).var() ].level > lvl) {
+        //    const auto var = cms->trail_at(trail_pos).var();
+        //    if(var > num_vars) {
+        //        //this is a clash variable -- remove the reason clause for it!
+        //        clash_var_to_reason.erase(var);
+        //    }
+        //    --trail_pos;
+        //}
 
         cms->cancelUntil<false, true>(lvl);
         assert(cms->decisionLevel() == lvl);
