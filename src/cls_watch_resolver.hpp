@@ -44,7 +44,7 @@ private:
     //recalculate ws[0] and ws[1] if necessary! - can be skipped in theory, as ws[0] and ws[1] are not used + updated correctly either during 'resolve', but definitely during 'finalize' (!)
     //                                          - in practice, however, it is necessary when running in debug mode due to sanity checks on ptr_cache and ws !
   #ifndef NDEBUG
-    if(ptr_cache[0]!=WLIN0.get_idxs_()[ws[0]]) ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), ptr_cache[0]));
+    if(size()>0 && ptr_cache[0]!=WLIN0.get_idxs_()[ws[0]]) ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), ptr_cache[0]));
     if(size()>1 && ptr_cache[1]!=WLIN1.get_idxs_()[ws[1]]) ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), ptr_cache[1]));
   #endif
 
