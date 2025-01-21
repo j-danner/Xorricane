@@ -338,6 +338,10 @@ std::pair<var_t, cls_watch> solver::analyze() {
     //fix the ws[0] watch - so far it need not watch the variable with highest alpha_trail_pos
     rs.fix_ws0(alpha, alpha_dl, alpha_trail_pos);
     assert(rs.assert_data_struct(alpha, alpha_trail_pos, dl_count));
+
+    //early abort if clause is already conflict!
+    if(rs.size()==1 && rs.linerals[0].is_one()) return {0, std::move(rs)};
+
     //go through trail of current dl -- skip over irrelevant parts
     cls_watch_resolver learnt_cls(std::move(rs));
     assert(learnt_cls.assert_data_struct(alpha, alpha_trail_pos, dl_count) && learnt_cls.is_unit(dl_count));
