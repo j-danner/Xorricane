@@ -1335,16 +1335,6 @@ class solver
       s.total_ig_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
       return count>0;
     }
-    
-    /**
-     * @brief performs implication graph based in/pre-processing;
-     * 
-     * @return bool true iff new lins were deduced
-     */
-    bool initial_IG_processing(stats& s) {
-      if(dl!=0 || opt.pp!=xornado_preproc::no) return false;
-      return find_implications_by_IG(s);
-    };
 
     /**
      * @brief backtracks to dl
