@@ -782,8 +782,7 @@ class solver
 
       if(origin == origin_t::LGJ) {
         l.init(alpha,alpha_dl,dl_count);
-        assert(!l.is_active(alpha));
-        assert(l.is_assigning(alpha));
+        assert((!l.is_active(alpha) && l.is_assigning(alpha)) || l.is_equiv());
       }
 
       VERB(65, "c " << std::to_string(lvl) << " : process_lineral " << type << origin << l.to_str() << " ~> " << l.to_lineral().reduced(alpha,equiv_lits).to_str() << (l.has_trivial_reason_cls() ? "" : (" with reason clause " + get_reason(lin, 1).to_str())) );
@@ -1307,7 +1306,7 @@ class solver
      * 
      */
     bool find_implications_by_IG(stats& s) {
-      if(dl>0) return false;
+      assert(dl==0);
       ++s.no_ig;
       const auto begin  = std::chrono::high_resolution_clock::now();
       VERB(50, "c implication graph in-processing -- propagating " << IG_linerals_to_be_propagated.size() << " new linerals.");
