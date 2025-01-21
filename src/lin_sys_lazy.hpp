@@ -295,7 +295,7 @@ class lin_sys_lazy_GE
 
         //propagate with CMS and read propagations from trail
         const auto trail_size_prev = cms->trail_size();
-        CMSat::PropBy confl = cms->propagate<true>();
+        CMSat::PropBy confl = cms->propagate<false>();
         
         #ifdef DEBUG_SLOWER
             if(L_det.dim()>0) { //only print when there is anything to deduce...
