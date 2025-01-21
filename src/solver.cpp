@@ -95,9 +95,6 @@ solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const opti
 void solver::init_clss(const vec< cls >& clss) noexcept {
     xnf_clss.reserve(2 * clss.size());
 
-    utility = vec<double>(0);
-    utility.reserve(clss.size());
-
     // temporarily store clss in _clss - before init of xclss we might want to reduce with pure literals in _L (!)
     list<cls> _clss;
     list<lineral> Lsys_lins;
@@ -152,6 +149,11 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
         lazy_gauss_jordan = new lin_sys_lazy_GE();
     }
 
+    //init utility and tier
+    utility = vec<double>(0);
+    utility.reserve(xnf_clss.size());
+    tier = vec<var_t>(0);
+    tier.reserve(xnf_clss.size());
     active_cls = 0; //value is managed by 'init_and_add_xcls_watch'
     //add (possibly) reduced clauses
     for(auto& cls : _clss) {
@@ -477,22 +479,67 @@ void solver::restart(stats& s) {
     const unsigned int no_cls = xnf_clss.size();
     backtrack(0);
 
-    //update util_cutoff -- TODO should we use quantiles?
-    double avg_util_redundant = 0;
+    //tier 0 clauses: keep all of them!
+    //tier 1 clauses: move less used quarter to tier 3
+    //tier 2 clauses: remove less used half
+    VERB(80, "c " << CYAN("restart: tier0 " << std::to_string(tier_count[0]) << " tier1 " << std::to_string(tier_count[1]) << " tier2 " << std::to_string(tier_count[2]) ) );
+
+    //compute average utilities in each tier:
+    double avg_util_tier[3];
     for(var_t i=0; i<xnf_clss.size(); ++i) {
-        if(!xnf_clss[i].is_irredundant()) avg_util_redundant += utility[i];
+        avg_util_tier[tier[i]] += utility[i];
     }
-    avg_util_redundant /= active_cls;
-    util_cutoff = decay*avg_util_redundant;
-    //rm 'useless' cls:
-    VERB(50, "c clean clause database")
-    //mark clauses to be deleted
-    for(var_t i=0; i<xnf_clss.size(); ++i) {
-        if(xnf_clss[i].is_sat(dl_count) || (!xnf_clss[i].is_irredundant() && utility[i] < util_cutoff && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) ) {
-            xnf_clss[i].mark_for_removal();
-            assert( xnf_clss[i].is_sat(dl_count) || xnf_clss[i].to_cls().deg()!=1 );
+    avg_util_tier[0] /= tier_count[0];
+    avg_util_tier[1] /= tier_count[1];
+    avg_util_tier[2] /= tier_count[2];
+    VERB(80, "c " << CYAN("avg util: tier0 " << std::to_string(avg_util_tier[0]) << " tier1 " << std::to_string(avg_util_tier[1]) << " tier2 " << std::to_string(avg_util_tier[2]) ) );
+
+    //create copy for later removal!
+    vec<cls_watch> cpy; cpy.reserve(xnf_clss.size());
+    vec<var_t> tier_cpy; tier_cpy.reserve(xnf_clss.size());
+
+    if(false) {
+        double util_cutoff_move   = 0.125 * avg_util_tier[1];
+        double util_cutoff_delete = 0.750 * avg_util_tier[2];
+
+        //mark tier 2 clauses for deletion && move tier 1 clauses to tier 2
+        for(var_t i=0; i<xnf_clss.size(); ++i) {
+            //if(xnf_clss[i].is_sat(dl_count) || (!xnf_clss[i].is_irredundant() && utility[i] < util_cutoff && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) ) {
+            if(tier[i]==1) {
+                if(utility[i] < util_cutoff_move && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) {
+                    tier[i] = 2;
+                    --tier_count[1];
+                    ++tier_count[2];
+                }
+            } else if(tier[i]==2) {
+                if(utility[i] < util_cutoff_delete && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) {
+                    xnf_clss[i].mark_for_removal();
+                    --tier_count[2];
+                    assert( xnf_clss[i].is_sat(dl_count) || xnf_clss[i].to_cls().deg()!=1 );
+                }
+            }
+        }
+    } else {
+        //update util_cutoff -- TODO should we use quantiles?
+        double avg_util_redundant = 0;
+        for(var_t i=0; i<xnf_clss.size(); ++i) {
+            if(!xnf_clss[i].is_irredundant()) avg_util_redundant += utility[i];
+        }
+        avg_util_redundant /= active_cls;
+        util_cutoff = decay*avg_util_redundant;
+        //rm 'useless' cls:
+        VERB(50, "c clean clause database")
+        //mark clauses to be deleted
+        for(var_t i=0; i<xnf_clss.size(); ++i) {
+            if(xnf_clss[i].is_sat(dl_count) || (!xnf_clss[i].is_irredundant() && utility[i] < util_cutoff && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) ) {
+                xnf_clss[i].mark_for_removal();
+                assert( xnf_clss[i].is_sat(dl_count) || xnf_clss[i].to_cls().deg()!=1 );
+                //adapt tier_count
+                --tier_count[tier[i]];
+            }
         }
     }
+
     VERB(50, "c rm clauses")
     assert_slow( assert_data_structs() );
   #ifndef NDEBUG
@@ -506,12 +553,12 @@ void solver::restart(stats& s) {
 
     //remove all xnf_clss marked for removal + prepare lookup-table for new idxs of reason_clss
     vec<var_t> new_idx; new_idx.reserve(xnf_clss.size());
-    vec<cls_watch> cpy; cpy.reserve(xnf_clss.size());
     vec<double> util_cpy; util_cpy.reserve(xnf_clss.size());
     for(var_t i=0; i<xnf_clss.size(); ++i) {
         if(!xnf_clss[i].is_marked_for_removal()) {
             cpy.emplace_back(std::move(xnf_clss[i]));
             util_cpy.emplace_back( utility[i] );
+            tier_cpy.emplace_back( tier[i] );
             new_idx.emplace_back( cpy.size()-1 );
         } else {
             new_idx.emplace_back( (var_t)-1 );
@@ -521,13 +568,15 @@ void solver::restart(stats& s) {
     //fix reason_cls idxs for all lineral_watch in lineral_watches[0]
     for(lin_w_it it=lineral_watches[0].begin(); it!=lineral_watches[0].end(); ++it) {
         it->shift_reason_idxs( new_idx );
-      #ifndef NDEBUG
+      #ifdef DEBUG_SLOWER
         const auto rs = get_reason( it );
         assert( (rs.is_unit(dl_count) && (rs.get_unit().reduced(alpha,equiv_lits) + it->to_lineral().reduced(alpha,equiv_lits)).reduced(alpha,equiv_lits).is_zero()) );
         //BEWARE this assertion may fail for some 'restart' calls of solver_cpy(!)
       #endif
     }
     utility = std::move(util_cpy);
+    tier = std::move(tier_cpy);
+    VERB(80, "c " << CYAN("done:    tier0 " << std::to_string(tier_count[0]) << " tier1 " << std::to_string(tier_count[1]) << " tier2 " << std::to_string(tier_count[2]) ) );
     VERB(50, "c re-init watch_lists")
     //empty watchlists
     for(auto& wl : watch_list) wl.clear();
@@ -540,6 +589,13 @@ void solver::restart(stats& s) {
     assert( assert_data_structs() );
     
     VERB(50, "c removed " << std::to_string( (double) (no_cls-xnf_clss.size()) / no_cls) << "\% clauses.")
+
+  #ifdef DEBUG_SLOW
+    //ensure that tier counts match
+    assert( (var_t) std::count_if(tier.begin(), tier.end(), [&](const auto &t) { return t==0; }) == tier_count[0] );
+    assert( (var_t) std::count_if(tier.begin(), tier.end(), [&](const auto &t) { return t==1; }) == tier_count[1] );
+    assert( (var_t) std::count_if(tier.begin(), tier.end(), [&](const auto &t) { return t==2; }) == tier_count[2] );
+  #endif
 
     update_restart_schedule(s.no_restarts);
     VERB(90, "c restart finished")
