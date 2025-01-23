@@ -34,7 +34,7 @@ class lin_sys_lazy_GE
     /**
      * @brief linerals in lin_sys
      */
-    vec<lineral> linerals;
+    lin_sys linerals;
 
     /**
      * @brief assigning linerals (literals), not yet fetched
@@ -102,7 +102,7 @@ class lin_sys_lazy_GE
         //compute num_vars and add new vars to cms
         if(num_vars==(var_t)-1) {
             num_vars = 0;
-            for(const auto& l : linerals) num_vars = std::max(num_vars, l.get_idxs_()[l.size()-1]);
+            for(const auto& l : linerals.get_linerals()) num_vars = std::max(num_vars, l.get_idxs_()[l.size()-1]);
         }
         cms->new_vars( num_vars+1 );
 
@@ -113,7 +113,7 @@ class lin_sys_lazy_GE
         list<const lineral*> linerals_assigning;
         vec<unsigned> xor_clause;
         //vec<CMSat::Lit> assignments;
-        for(const auto& l : linerals) {
+        for(const auto& l : linerals.get_linerals()) {
             if(l.is_zero()) continue;
             if(!l.is_assigning()) {
                 xor_clause.clear(); xor_clause.reserve( l.size() );
@@ -126,8 +126,8 @@ class lin_sys_lazy_GE
                 linerals_assigning.push_back( &l );
             }
         }
-        //const std::string strategy = "must-scc-vrepl";
-        //cms->simplify_with_assumptions(nullptr, &strategy);
+        const std::string strategy = "must-scc-vrepl";
+        cms->simplify_with_assumptions(nullptr, &strategy);
         cms->find_and_init_all_matrices();
 
         for(const auto lp : linerals_assigning) {
@@ -139,10 +139,9 @@ class lin_sys_lazy_GE
         }
 
         #ifdef DEBUG_SLOW
-            sys = lin_sys(linerals);
             lin_sys sys_recv( get_recovered_linerals() );
             //NOTE we might not recover ALL linerals, because (1) propagation can 'destroy them', and (2) binary clauses are not recovered at all!
-            for(const auto& l : sys_recv.get_linerals()) assert( sys.reduce(l).is_zero() );
+            for(const auto& l : sys_recv.get_linerals()) assert( linerals.reduce(l).is_zero() );
         #endif
 
         ////get all forced assignments
@@ -300,7 +299,7 @@ class lin_sys_lazy_GE
         #ifdef DEBUG_SLOWER
             if(L_det.dim()>0) { //only print when there is anything to deduce...
                 std::cout << "sys_orig ";
-                for(const auto& l: linerals) std::cout << l.to_str() << " ";
+                for(const auto& l: linerals.get_linerals()) std::cout << l.to_str() << " ";
                 std::cout << std::endl;
                 std::cout << "sys_orig " << sys.to_str() << "  (reduced)" << std::endl;
             }
@@ -396,14 +395,12 @@ class lin_sys_lazy_GE
   public:
     lin_sys_lazy_GE() {};
     
-    lin_sys_lazy_GE(lin_sys&& sys, const var_t _num_vars) noexcept : num_vars(_num_vars) {
-        linerals.reserve( sys.linerals.size() );
-        for(auto&& l : sys.linerals) linerals.emplace_back( std::move(l) );
+    lin_sys_lazy_GE(lin_sys&& sys, const var_t _num_vars) noexcept : num_vars(_num_vars), linerals(sys) {
         vec<bool3> alpha;
         init_and_propagate(alpha);
     };
 
-    lin_sys_lazy_GE(const vec<lineral>& linerals_, const var_t _num_vars = (var_t) -1) noexcept :  num_vars(_num_vars), linerals(linerals_.begin(),linerals_.end()) {
+    lin_sys_lazy_GE(const vec<lineral>& linerals_, const var_t _num_vars = (var_t) -1) noexcept :  num_vars(_num_vars), linerals(linerals_) {
         vec<bool3> alpha;
         init_and_propagate(alpha);
     };
@@ -430,9 +427,7 @@ class lin_sys_lazy_GE
     list<lineral>& get_implied_literal_queue() { return implied_literal_queue; }
     void clear_implied_literal_queue() { implied_literal_queue.clear(); }
 
-    vec<lineral>& get_linerals() { return linerals; }
-    
-    const vec<lineral>& get_linerals_const() const { return linerals; }
+    const list<lineral>& get_linerals() const { return linerals.get_linerals(); }
     
     /**
      * @brief checks whether the assignments of cms are correct
@@ -465,7 +460,7 @@ class lin_sys_lazy_GE
 
         //add assignment to linerals if dl==0
         if( dl==0 ) {
-            linerals.emplace_back( var, b3_to_bool(alpha[var]) );
+            linerals.add_lineral( lineral(var, b3_to_bool(alpha[var])) );
         }
 
         //enqueue assignment and propagate if var is not yet assigned in cms
@@ -476,32 +471,6 @@ class lin_sys_lazy_GE
         return !implied_literal_queue.empty();
     }
     
-    ///**
-    // * @brief re-init with given linerals
-    // * 
-    // * @param ls list of linerals to be used for re-initialization
-    // * @param alpha current alpha-assignments
-    // */
-    //var_t reinit(const list<lineral_watch>& lins, const vec<bool3>& alpha) {
-    //    assert(cms->decisionLevel() == 0);
-    //    if(lins.empty()) return 0;
-
-    //    delete cms;
-    //    delete must_inter;
-
-    //    //add new linerals
-    //    linerals.clear();
-    //    linerals.insert(linerals.end(), lins.begin(), lins.end());
-
-    //    //re-init object
-    //    init(alpha);
-
-    //    //@todo optimize filter out previously known implied assignments -- otherwise they have to be treated again!
-    //    return propagate(alpha);
-    //}
-
-
-
     /**
      * @brief add new lineral to lazy lin sys
      * @note may only be used at dl 0 (!)
@@ -533,7 +502,8 @@ class lin_sys_lazy_GE
         delete must_inter;
 
         //add new linerals
-        linerals.insert(linerals.end(), make_move_iterator(ls.begin()), make_move_iterator(ls.end()));
+        lin_sys new_lins(std::move(ls));
+        linerals += new_lins;
 
         //re-init object
         return init_and_propagate(alpha);
