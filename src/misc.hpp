@@ -367,6 +367,7 @@ class stats {
     unsigned int no_ig = 0;
     unsigned int no_ig_prop = 0;
     unsigned int no_restarts = 0;
+    unsigned int no_deletions = 0;
     unsigned int no_gcp = 0;
     unsigned int no_upd = 0;
     //newly learnt pure-xors via upd

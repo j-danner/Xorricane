@@ -83,7 +83,8 @@ solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const opti
         order_heap_vsids.insert( i );
     }
 
-    //init restart params
+    //init params
+    init_cleaning_params();
     update_restart_schedule(0);
 
     //prepare IG
@@ -166,6 +167,9 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
     utility.reserve(xnf_clss.size());
     tier = vec<var_t>(0);
     tier.reserve(xnf_clss.size());
+    tier_count[0] = 0;
+    tier_count[1] = 0;
+    tier_count[2] = 0;
     active_cls = 0; //value is managed by 'init_and_add_xcls_watch'
     //add (possibly) reduced clauses
     for(auto& cls : _clss) {
@@ -485,35 +489,16 @@ void solver::update_restart_schedule(const unsigned int &no_restarts) {
     }
 };
 
-void solver::restart(stats& s) {
-    //@todo (1) decouple clause deletion from restarts! (2) re-use trail (i.e. backtrack only to first dl, where 'new' decision differs from 'old' decision!)
-    VERB(50, "c restart")
-    ++s.no_restarts;
-    confl_this_restart = 0;
+void solver::clause_cleaning(stats& s) {
+    ++s.no_deletions;
 
     //go to dl 0
     const unsigned int no_cls = xnf_clss.size();
-    
-    ////warm restart: put all inds from trail back into order_heap_vsids and determine how many dl are identical, i.e., with identical decisions!
-    //for(var_t i=1; i<alpha.size(); ++i) {
-    //    if(!order_heap_vsids.inHeap(i)) order_heap_vsids.insert( i );
-    //}
-    //for(var_t lvl=1; lvl<dl; ++lvl) {
-    //    auto it = trails[lvl].begin();
-    //    while(it!=trails[lvl].end()) {
-    //        if(it->type==trail_t::ALPHA) {
-    //            order_heap_vsids.remove(it->ind);
-    //        }
-    //        ++it;
-    //    }
-    //}
-
-    backtrack(0);
 
     //tier 0 clauses: keep all of them!
     //tier 1 clauses: move less used quarter to tier 3
     //tier 2 clauses: remove less used half
-    VERB(80, "c " << CYAN("restart: tier0 " << std::to_string(tier_count[0]) << " tier1 " << std::to_string(tier_count[1]) << " tier2 " << std::to_string(tier_count[2]) ) );
+    VERB(80, "c " << CYAN("clause-cleaning: tier0 " << std::to_string(tier_count[0]) << " tier1 " << std::to_string(tier_count[1]) << " tier2 " << std::to_string(tier_count[2]) ) );
 
     //compute average utilities in each tier:
     double avg_util_tier[3];
@@ -621,12 +606,43 @@ void solver::restart(stats& s) {
     
     VERB(50, "c removed " << std::to_string( (double) (no_cls-xnf_clss.size()) / no_cls) << "\% clauses.")
 
+    update_cleaning_params();
+
   #ifdef DEBUG_SLOW
+    assert(tier.size() == xnf_clss.size());
     //ensure that tier counts match
     assert( (var_t) std::count_if(tier.begin(), tier.end(), [&](const auto &t) { return t==0; }) == tier_count[0] );
     assert( (var_t) std::count_if(tier.begin(), tier.end(), [&](const auto &t) { return t==1; }) == tier_count[1] );
     assert( (var_t) std::count_if(tier.begin(), tier.end(), [&](const auto &t) { return t==2; }) == tier_count[2] );
   #endif
+
+    assert_slow(assert_data_structs());
+}
+
+void solver::restart(stats& s) {
+    VERB(50, "c restart")
+    ++s.no_restarts;
+    confl_this_restart = 0;
+
+    ////warm restart: put all inds from trail back into order_heap_vsids and determine how many dl are identical, i.e., with identical decisions!
+    //for(var_t i=1; i<alpha.size(); ++i) {
+    //    if(!order_heap_vsids.inHeap(i)) order_heap_vsids.insert( i );
+    //}
+    //for(var_t lvl=1; lvl<dl; ++lvl) {
+    //    auto it = trails[lvl].begin();
+    //    while(it!=trails[lvl].end()) {
+    //        if(it->type==trail_t::ALPHA) {
+    //            order_heap_vsids.remove(it->ind);
+    //        }
+    //        ++it;
+    //    }
+    //}
+
+    backtrack(0);
+    
+    if(need_cleaning(s)) {
+        clause_cleaning(s);
+    }
 
     update_restart_schedule(s.no_restarts);
     VERB(90, "c restart finished")
@@ -1512,13 +1528,20 @@ std::string solver::to_xnf_str() const noexcept {
         if(opt.lgj) {
             //check that the linerals in lazy_gauss_jordan are supported by the linerals in lineral_watches[0]
             lin_sys lin0 = lin_sys( list<lineral>(lineral_watches[0].begin(), lineral_watches[0].end()));
-            for(const auto& l : lazy_gauss_jordan->get_linerals_const()) {
+            for(const auto& l : lazy_gauss_jordan->get_linerals()) {
                 assert( lin0.reduce(l).is_zero() );
             }
             for(const auto& l : lazy_gauss_jordan->get_recovered_linerals()) {
                 assert( lin0.reduce(l).is_zero() );
             }
         }
+
+        //check tier_count-consistency with tier!
+        assert(tier.size() == xnf_clss.size());
+        //ensure that tier counts match
+        assert( (var_t) std::count_if(tier.begin(), tier.end(), [&](const auto &t) { return t==0; }) == tier_count[0] );
+        assert( (var_t) std::count_if(tier.begin(), tier.end(), [&](const auto &t) { return t==1; }) == tier_count[1] );
+        assert( (var_t) std::count_if(tier.begin(), tier.end(), [&](const auto &t) { return t==2; }) == tier_count[2] );
         
         // check solution! (for rand-10-20.xnf) -- may help in debugging!
         /*

@@ -952,7 +952,7 @@ class solver
         ++active_cls;
       }
       //set tier for learnt cls
-      if(learnt_cls) tier.emplace_back( lbd_to_tier(xnf_clss[i].LBD(alpha_dl)) );
+      if(learnt_cls) tier.emplace_back( cls_idx_to_tier(i) );
       else           tier.emplace_back( 0 );
       ++tier_count[tier.back()];
       //update cls
@@ -1001,6 +1001,37 @@ class solver
       return i;
     }
 
+    vec<var_t> tier;
+    var_t tier_count[3];
+    var_t tier0_limit = 2;
+    var_t tier1_limit = 6;
+    var_t cls_idx_to_tier(const var_t i) {
+      if(xnf_clss[i].LBD(alpha_dl)<=tier0_limit || xnf_clss[i].size()<=2) return 0;
+      if(xnf_clss[i].LBD(alpha_dl)<=tier1_limit) return 1;
+      else return 2;
+    };
+
+    double multiplier = 1.05;
+    var_t tier2_size_limit;
+    var_t tier3_size_limit;
+    void init_cleaning_params() {
+      tier2_size_limit = xnf_clss.size()*0.5;
+      tier3_size_limit = xnf_clss.size()*0.25;
+    }
+    void update_cleaning_params() {
+      tier2_size_limit *= multiplier;
+      tier3_size_limit *= multiplier;
+    }
+    bool need_cleaning(stats&s) {
+      return dl==0 && (tier_count[2]>tier2_size_limit || tier_count[3]>tier3_size_limit);
+    }
+
+    /**
+     * @brief clause database cleaning
+     * @note may only be used in dl 0!
+     */
+    void clause_cleaning(stats& s);
+
     const unsigned int confl_until_restart_default = 2<<7; //number of conflicts between restarts
     unsigned int confl_until_restart = 0; //number of conflicts between restarts
     /**
@@ -1010,15 +1041,6 @@ class solver
     bool need_restart() const;
 
     unsigned int confl_this_restart = 0; //number of conflicts since last restart
-    vec<var_t> tier;
-    var_t tier_count[3];
-    var_t tier0_limit = 2;
-    var_t tier1_limit = 6;
-    var_t lbd_to_tier (const var_t lbd) {
-      if(lbd<=tier0_limit) return 0;
-      if(lbd<=tier1_limit) return 1;
-      else                 return 2;
-    };
     /**
      * @brief restarts the solver; i.e. rm all assignments and backtracks to dl 0
      */
