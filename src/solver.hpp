@@ -896,6 +896,7 @@ class solver
       alpha[lt2] = val;
       alpha_dl[lt2] = assigning_lvl;
       alpha_lin[lt2] = lin;
+      ++assigned_var_count;
       assert(lt2==0 || alpha_dl[lt2] == std::max(l.get_assigning_lvl(alpha_dl), lvl));
       assert(alpha_trail_pos[lt2] == (var_t) -1);
       alpha_trail_pos[lt2] = stepwise_lit_trail_length;
