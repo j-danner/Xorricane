@@ -641,21 +641,33 @@ void solver::restart(stats& s) {
     ++s.no_restarts;
     confl_this_restart = 0;
 
-    ////warm restart: put all inds from trail back into order_heap_vsids and determine how many dl are identical, i.e., with identical decisions!
-    //for(var_t i=1; i<alpha.size(); ++i) {
-    //    if(!order_heap_vsids.inHeap(i)) order_heap_vsids.insert( i );
-    //}
-    //for(var_t lvl=1; lvl<dl; ++lvl) {
-    //    auto it = trails[lvl].begin();
-    //    while(it!=trails[lvl].end()) {
-    //        if(it->type==trail_t::ALPHA) {
-    //            order_heap_vsids.remove(it->ind);
-    //        }
-    //        ++it;
-    //    }
-    //}
+    //warm restart: put all inds from trail back into order_heap_vsids and determine how many dl are identical, i.e., with identical decisions!
+    //currently only works for dh_vsids!
+    var_t backtrack_lvl = dl;
+    if(opt.dh == dec_heu::vsids) {
+        for(var_t i=1; i<alpha.size(); ++i) {
+            if(!order_heap_vsids.inHeap(i)) order_heap_vsids.insert( i );
+        }
+        //removeMin one-by-one until they do not correspond to the decisions of the corresponding dl!
+        var_t lvl = 1;
+        while(lvl<dl) {
+            auto decision_on_lvl = trails[lvl].front().ind;
+            //query next ind from order_heap_vsids which was NOT assigned on previous dl
+            var_t ind = 0;
+            while(ind==0 || (alpha_dl[ind] < lvl && !order_heap_vsids.empty() )) {
+                ind = order_heap_vsids.removeMin();
+            }
+            if(ind!=decision_on_lvl) {
+                //heuristic would choose a different decision on this lvl! i.e. we can only backtrack to lvl-1 (!)
+                backtrack_lvl = lvl-1;
+                order_heap_vsids.insert( ind );
+                break;
+            }
+            ++lvl;
+        }
+    }
 
-    backtrack(0);
+    backtrack(backtrack_lvl);
     
     if(need_cleaning(s)) {
         clause_cleaning(s);
