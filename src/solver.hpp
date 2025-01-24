@@ -28,7 +28,7 @@ using lin_w_it = list<lineral_watch>::iterator;
 
 enum class trail_t { GUESS, ALPHA, EQUIV, UNIT };
 
-enum class queue_t { NEW_GUESS, IMPLIED_ALPHA, NEW_EQUIV, NEW_UNIT };
+enum class queue_t { NEW_GUESS, IMPLIED_ALPHA, NEW_UNIT };
     
 enum class origin_t { GUESS, CLAUSE, LINERAL, LGJ, IG, INIT };
 
@@ -81,7 +81,7 @@ struct lineral_queue_elem {
    */
   var_t lvl;
   /**
-   * @brief type of propagation: 'NEW_UNIT': reduce newly learnt unit + watch; 'NEW_GUESS': add new guess + watch; 'IMPLIED_UNIT': update alpha/alpha_dl data structures; 'NEW_EQUIV': reduce, update equiv_lits + watch;
+   * @brief type of propagation: 'NEW_UNIT': reduce newly learnt unit + watch; 'NEW_GUESS': add new guess + watch; 'IMPLIED_UNIT': update alpha/alpha_dl data structures;
    */
   queue_t type;
   /**
@@ -783,7 +783,7 @@ class solver
      * 
      * @return var_t ind>=0 iff alpha[ind] is now assigned; ind==-1 means no new alpha-assignment
      */
-    inline var_t process_lineral(lin_w_it lin, const var_t lvl, const queue_t type, const origin_t origin) {
+    inline var_t process_lineral(lin_w_it lin, const var_t lvl, queue_t type, origin_t origin) {
       assert(lvl >= lin->get_lvl());
       assert(dl >= lvl);
 
@@ -795,7 +795,7 @@ class solver
       }
 
       VERB(65, "c " << std::to_string(lvl) << " : process_lineral " << type << origin << l.to_str() << " ~> " << l.to_lineral().reduced(alpha,equiv_lits).to_str() << (l.has_trivial_reason_cls() ? "" : (" with reason clause " + get_reason(lin, 1).to_str())) );
-      if(l.is_reducible() && type!=queue_t::IMPLIED_ALPHA && (origin!=origin_t::LGJ || (l.is_equiv() && !l.is_assigning(alpha)))) {
+      if(l.is_reducible() && type!=queue_t::IMPLIED_ALPHA && origin!=origin_t::LGJ) {
         assert(lvl==l.get_lvl());
         assert_slow(lvl==0 || get_reason(lin).get_unit().reduced(alpha)==l.to_lineral().reduced(alpha));
         //reduce lin -- but only if type is NOT guess -- otherwise reason clause is not computed correctly!

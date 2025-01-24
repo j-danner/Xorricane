@@ -22,7 +22,6 @@ std::ostream& operator<<(std::ostream& os, const queue_t& t) {
     switch (t) {
         case queue_t::NEW_GUESS:     os << BOLD("GUESS "); break;
         case queue_t::IMPLIED_ALPHA: os << BOLD("ALPHA "); break;
-        case queue_t::NEW_EQUIV:     os << "NEW_EQUIV "; break;
         case queue_t::NEW_UNIT:      os << BOLD("UNIT  "); break;
     }
     return os;
@@ -1792,7 +1791,6 @@ bool solver::find_implications_by_GE(stats& s) {
     assert((tmp+lit).reduced(alpha).is_zero());
     ++idx;
     //add lineral to lineral_watches
-    const bool equiv = lit.is_equiv();
     lineral_watches[resolving_lvl].emplace_back( std::move(lit), alpha, alpha_dl, dl_count, std::move(rs_lins), resolving_lvl );
 
   #ifndef NDEBUG
@@ -1808,12 +1806,12 @@ bool solver::find_implications_by_GE(stats& s) {
     if(resolving_lvl < dl) {
       backtrack(resolving_lvl);
       assert(resolving_lvl==dl);
-      queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LINERAL, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
+      queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LINERAL, queue_t::NEW_UNIT);
       //return immediately
       break;
     }
     assert(resolving_lvl==dl);
-    queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LINERAL, equiv ? queue_t::NEW_EQUIV : queue_t::NEW_UNIT);
+    queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LINERAL, queue_t::NEW_UNIT);
   }
 
   mzd_free(B);
