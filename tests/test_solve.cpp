@@ -18,6 +18,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     bool cm = GENERATE(true, false);
     bool equiv = true;
     int verb = 0;
+    restart_opt rh = restart_opt::luby;
   #else
     int la_sch = GENERATE(0,1,5,10);
     dec_heu dh = GENERATE(dec_heu::vsids, dec_heu::lwl, dec_heu::swl, dec_heu::lex);
@@ -29,10 +30,11 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     bool lgj = GENERATE(true, false);
     xornado_preproc pp = GENERATE(xornado_preproc::no, xornado_preproc::scc);
     int verb = 0;
+    restart_opt rh = restart_opt::luby;
   #endif
 
     guessing_path P; 
-    options opt(dh, po, ca, cm, restart_opt::luby, ip, pp, equiv, lgj, la_sch, verb, -1, 1, P);
+    options opt(dh, po, ca, cm, rh, ip, pp, equiv, lgj, la_sch, verb, -1, 1, P);
 
     SECTION( "test1.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test1.xnf");
@@ -1288,7 +1290,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
 
 }
 
-TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
+TEST_CASE( "solving harder instances", "[solver][maxsol][small][long]") {
     SECTION( "test_simon.xnf" ) {
         auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon.xnf");
         auto slvr = solver(clss);
@@ -1339,6 +1341,16 @@ TEST_CASE( "solving harder 2xnf", "[solver][maxsol][small][long]") {
 
         CHECK( (s.finished==false && s.no_restarts>1) );
     }
+
+    SECTION( "test_prince.xnf -- 10s timeout" ) {
+        auto clss = parse_file("../../benchmarks/instances/xnfs/test_prince.xnf");
+        options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, 0, restart_opt::luby, initial_prop_opt::no, xornado_preproc::scc_fls, true, false, -1, 0, 10, 1, guessing_path());
+        auto slvr = solver(clss, opts);
+
+        stats s = slvr.solve();
+        CHECK( check_sols(clss.cls, s.sols) );
+    }
+
 }
 
 TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {

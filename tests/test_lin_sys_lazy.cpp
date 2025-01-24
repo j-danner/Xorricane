@@ -10,7 +10,10 @@ TEST_CASE( "linsys_lazy_GE basic operations" , "[lin_sys][assigning][propagation
         lineral l1( vec<var_t>({1,2,3}) );
         lineral l2( vec<var_t>({2,3,4}) );
         lin_sys_lazy_GE lsl( vec<lineral>({l1, l2}) );
-        CHECK(lsl.get_implied_literal_queue().size() == 0);
+        CHECK(lsl.get_implied_literal_queue().size() == 1);
+        //one equivalence
+        CHECK(lsl.get_implied_literal_queue().front().to_str() == "x1+x4");
+        lsl.clear_implied_literal_queue();
 
         vec<bool3> alpha(7, bool3::None);
 
@@ -40,7 +43,9 @@ TEST_CASE( "linsys_lazy_GE basic operations" , "[lin_sys][assigning][propagation
         lineral l1( vec<var_t>({1,2,3,4}) );
         lineral l2( vec<var_t>({2,3,4,5}) );
         lin_sys_lazy_GE lsl( vec<lineral>({l1, l2}) );
-        CHECK(lsl.get_implied_literal_queue().size() == 0);
+        CHECK(lsl.get_implied_literal_queue().size() == 1);
+        CHECK(lsl.get_implied_literal_queue().front().to_str() == "x1+x5");
+        lsl.clear_implied_literal_queue();
 
         vec<bool3> alpha(7, bool3::None);
 
@@ -84,7 +89,7 @@ TEST_CASE( "linsys_lazy_GE basic operations" , "[lin_sys][assigning][propagation
         lineral l2( vec<var_t>({2,3,4}) );
         lineral l3( vec<var_t>({0,4}) );
         lineral l4( vec<var_t>({0,1,2}) );
-        lineral l5( vec<var_t>({1,3}) );
+        lineral l5( vec<var_t>({0,1,3}) );
         lin_sys_lazy_GE lsl( vec<lineral>({l1, l2, l3, l4, l5}) );
         lin_sys sys( lsl.get_implied_literal_queue() );
         CHECK(!sys.is_consistent());
@@ -131,9 +136,10 @@ TEST_CASE( "linsys_lazy_GE basic operations" , "[lin_sys][assigning][propagation
         lineral l4( vec<var_t>({0,      4,  6,7}) );
         lineral l5( vec<var_t>({0,1,  3,      7}) );
         lin_sys_lazy_GE lsl( vec<lineral>({l1, l2, l3, l4, l5}) );
-        CHECK(lsl.get_implied_literal_queue().size() == 0);
+        CHECK(lsl.get_implied_literal_queue().size() == 3);
         lin_sys sys( lsl.get_implied_literal_queue() );
-        CHECK(sys.to_str() == "0");
+        CHECK(sys.to_str() == "x2+x7+1 x3+x6 x5+x7+1");
+        lsl.clear_implied_literal_queue();
 
         vec<bool3> alpha(num_vars+1, bool3::None);
 
@@ -157,9 +163,9 @@ TEST_CASE( "linsys_lazy_GE basic operations" , "[lin_sys][assigning][propagation
         //sys = lin_sys( q );
         //CHECK( sys.to_str() == "x1+x5+x6 x2+x5 x3+x6" );
         //lsl.clear_implied_literal_queue();
-        CHECK( q.size() == 4 );
+        CHECK( q.size() == 1 );
         sys = lin_sys( q );
-        CHECK( sys.to_str() == "x1+x6+x7+1 x2+x7+1 x3+x6 x5+x7+1" );
+        CHECK( sys.to_str() == "x1+x5+x6" );
         //this uniquely determines all other vars!
         lsl.clear_implied_literal_queue();
     }
@@ -172,9 +178,10 @@ TEST_CASE( "linsys_lazy_GE basic operations" , "[lin_sys][assigning][propagation
         lineral l4( vec<var_t>({0,1,    4,  6,7}) );
         lineral l5( vec<var_t>({0,1,  3,      7}) );
         lin_sys_lazy_GE lsl( vec<lineral>({l1, l2, l3, l4, l5}) );
-        CHECK(lsl.get_implied_literal_queue().size() == 0);
+        CHECK(lsl.get_implied_literal_queue().size() == 3);
         lin_sys sys( lsl.get_implied_literal_queue() );
-        CHECK(sys.to_str() == "0");
+        CHECK(sys.to_str() == "x1+x6 x2+x7+1 x4+x7+1");
+        lsl.clear_implied_literal_queue();
 
         vec<bool3> alpha(num_vars+1, bool3::None);
 
@@ -194,9 +201,9 @@ TEST_CASE( "linsys_lazy_GE basic operations" , "[lin_sys][assigning][propagation
         ret = lsl.assign(5, alpha, 1);
         CHECK( ret );
         q = lsl.get_implied_literal_queue();
-        CHECK( q.size() == 4 );
+        CHECK( q.size() == 2 );
         sys = lin_sys( q );
-        CHECK( sys.to_str() == "x2+x7+1 x3+x6+x7+1 x4+x7+1 x5+x6+x7+1" );
+        CHECK( sys.to_str() == "x3+x5 x4+x5+x6" );
         //this uniquely determines all other vars!
         lsl.clear_implied_literal_queue();
     }
