@@ -1026,7 +1026,8 @@ class solver
       tier3_size_limit *= multiplier;
     }
     bool need_cleaning(stats&s) {
-      return dl==0 && (tier_count[2]>tier2_size_limit || tier_count[3]>tier3_size_limit);
+      return true; //always clean on restart!
+      //return dl==0 && (tier_count[2]>tier2_size_limit || tier_count[3]>tier3_size_limit);
     }
 
     /**
