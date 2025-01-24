@@ -670,8 +670,8 @@ class solver
     void decay_score();
 
     void prefetch(var_t upd_lt) {
-      __builtin_prefetch( &L_watch_list[upd_lt] );
-      __builtin_prefetch( &watch_list[upd_lt] );
+      //__builtin_prefetch( &L_watch_list[upd_lt] );
+      //__builtin_prefetch( &watch_list[upd_lt] );
     }
 
     /**
@@ -1342,7 +1342,7 @@ class solver
         } while( !at_conflict() && 
             ( (need_GE_inprocessing(s) && find_implications_by_GE(s))
             || (need_IG_inprocessing(s) && find_implications_by_IG(s)) 
-            //|| (need_LGJ_update()       && find_implications_by_LGJ(s)) //BEWARE uncommenting this line has (currently) quite some negative impact -- not sure why though!!
+            || (need_LGJ_update()       && find_implications_by_LGJ(s))
             //|| (need_alpha_removal()    && remove_fixed_alpha()) //moved into GCP!
             //|| (need_equiv_removal()    && remove_fixed_equiv()) //moved into GCP!
             ) );
