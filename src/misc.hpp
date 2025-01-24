@@ -214,8 +214,9 @@ enum class ca_alg { no, dpll, fuip, fuip_opt };
  * no: no restarts
  * fixed: restart after a fixed number of conflicts
  * luby: restarts based on paper 'Optimal Speedup of Las Vegas Algorithms' by Luby et al.
+ * lbd: exponential moving average LBD-based forcing/blocking restarts
  */
-enum class restart_opt { no, fixed, luby};
+enum class restart_opt { no, fixed, luby, lbd};
 
 /**
  * @brief options for initial propagation of non-forcing linerals
@@ -246,7 +247,7 @@ struct options {
     ca_alg ca = ca_alg::fuip;
     bool cm = false;
 
-    restart_opt rst = restart_opt::luby;
+    restart_opt rst = restart_opt::lbd;
 
     initial_prop_opt ip = initial_prop_opt::no;
     xornado_preproc pp = xornado_preproc::scc_fls;
@@ -307,6 +308,7 @@ struct options {
         case restart_opt::no: str += "no"; break;
         case restart_opt::fixed: str += "fixed"; break;
         case restart_opt::luby: str += "luby"; break;
+        case restart_opt::lbd: str += "lbd"; break;
       }
       str += "\n";
       
@@ -367,6 +369,7 @@ class stats {
     unsigned int no_ig = 0;
     unsigned int no_ig_prop = 0;
     unsigned int no_restarts = 0;
+    unsigned int no_blocked_restarts = 0;
     unsigned int no_deletions = 0;
     unsigned int no_gcp = 0;
     unsigned int no_upd = 0;
@@ -396,6 +399,7 @@ class stats {
       std::cout << "c decisions      : " << std::setw(width_int) << no_dec << " (" << (float) no_dec/time  << " dec/sec)" << std::endl;
       std::cout << "c conflicts      : " << std::setw(width_int) << no_confl << " (" << (float) no_dec/no_confl  << " dec/confl)" << std::endl;
       std::cout << "c restarts       : " << std::setw(width_int) << no_restarts << " (" << (float) no_confl/no_restarts  << " confl/rst)" << std::endl;
+      std::cout << "c blocked rst    : " << std::setw(width_int) << no_blocked_restarts << std::endl;
       std::cout << "c " << std::endl;
 
       std::cout << "c CGP props      : " << std::setw(width_int) << new_px_upd  << " (" << (float) no_lgj_prop/no_dec << " props/dec)" << std::endl;

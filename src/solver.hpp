@@ -1038,22 +1038,66 @@ class solver
 
     const unsigned int confl_until_restart_default = 2<<7; //number of conflicts between restarts
     unsigned int confl_until_restart = 0; //number of conflicts between restarts
+
+    double forcing_fast = 0; //fast moving average of lbds of conflict clauses (short-term focus)
+    double forcing_slow = 0; //slow moving average of lbds of conflict clauses (long-term focus)
+    const unsigned int shift_fast = 6;
+    const double alpha_fast = (double) 1/(2<<shift_fast);
+    const unsigned int shift_slow = 12;
+    const double alpha_slow = (double) 1/(2<<shift_slow);
+    double blocking = 0; //moving average of number of assigned vars
+    const unsigned int shift_blocking = 12;
+    const double alpha_blocking = (double) 1/(2<<shift_blocking);
+
+    /**
+     * @brief update exponential moving average scores for evaluating restarts
+     * @note method and params based on paper 'Evaluating CDCL Restart Schemes' by A. Biere & A. Fröhlich
+     * 
+     * @param lbd new glue/lbd level
+     * @param s current stats
+     */
+    void update_lbd_restart_vals(const var_t lbd, const stats& s) {
+      if(s.no_confl<shift_fast) {
+        const double alpha_fast_tmp = (double) 1/(2<<s.no_confl);
+        forcing_fast = alpha_fast_tmp * lbd + (1-alpha_fast_tmp) * forcing_fast;
+      } else {
+        forcing_fast = alpha_fast * lbd + (1-alpha_fast) * forcing_fast;
+      }
+      if(s.no_confl<shift_slow) {
+        const double alpha_slow_tmp = (double) 1/(2<<s.no_confl);
+        forcing_slow = alpha_slow_tmp * lbd + (1-alpha_slow_tmp) * forcing_slow;
+      } else {
+        forcing_slow = alpha_slow * lbd + (1-alpha_slow) * forcing_slow;
+      }
+      if(s.no_confl<shift_blocking) {
+        const double alpha_blocking_tmp = (double) 1/(2<<s.no_confl);
+        blocking = alpha_blocking_tmp * assigned_var_count + (1-alpha_blocking_tmp) * blocking;
+      } else {
+        blocking = alpha_blocking * assigned_var_count + (1-alpha_blocking) * blocking;
+      }
+
+      assert(forcing_fast>0 && forcing_slow>0);
+
+      VERB(60, "c lbd: " << std::to_string(lbd) << " forcing_fast: " << forcing_fast << " forcing_slow: " << forcing_slow << " blocking: " << blocking);
+    }
+
+
     /**
      * @brief checks if a restart is needed
      * @return true iff we should restart now
      */
-    bool need_restart() const;
+    bool need_restart(stats& s) const;
+
+    /**
+     * @brief update params confl_unitl_restart according to restart heuristic; should be called after every call to restart()
+     */
+    void update_restart_schedule(const unsigned int& no_restarts);
 
     unsigned int confl_this_restart = 0; //number of conflicts since last restart
     /**
      * @brief restarts the solver; i.e. rm all assignments and backtracks to dl 0
      */
     void restart(stats& s);
-
-    /**
-     * @brief update params confl_unitl_restart according to restart heuristic; should be called after every call to restart()
-     */
-    void update_restart_schedule(const unsigned int& no_restarts);
     
   public:
     /**

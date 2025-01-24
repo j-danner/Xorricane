@@ -469,13 +469,25 @@ double luby(double y, int x) {
     return std::pow(y, seq);
 }
 
-bool solver::need_restart() const {
-    return confl_this_restart > confl_until_restart;
+bool solver::need_restart(stats& s) const {
+    if(opt.rst==restart_opt::lbd) {
+        if(confl_this_restart > confl_until_restart && forcing_fast > 1.15 * forcing_slow) {
+            //restart -- unless blocked!
+            if(assigned_var_count <= 1.4 * blocking) {
+                return true;
+            } else {
+                ++s.no_blocked_restarts;
+                return false;
+            }
+        }
+    } else {
+        return confl_this_restart > confl_until_restart;
+    }
 };
 
 void solver::update_restart_schedule(const unsigned int &no_restarts) {
     //update confl_until_restart
-    switch(get_const_opts()->rst) {
+    switch(opt.rst) {
         case restart_opt::no:
             confl_until_restart = (unsigned int) -1;
             break;
@@ -484,6 +496,9 @@ void solver::update_restart_schedule(const unsigned int &no_restarts) {
             break;
         case restart_opt::luby:
             confl_until_restart = luby(2, no_restarts) * confl_until_restart_default;
+            break;
+        case restart_opt::lbd:
+            confl_until_restart = 100; //at least 50 conflicts before next restart!
             break;
     }
 };
@@ -513,14 +528,17 @@ void solver::clause_cleaning(stats& s) {
     vec<cls_watch> cpy; cpy.reserve(xnf_clss.size());
     vec<var_t> tier_cpy; tier_cpy.reserve(xnf_clss.size());
 
-    if(false) {
+    if(true) {
         double util_cutoff_move   = 0.125 * avg_util_tier[1];
         double util_cutoff_delete = 0.750 * avg_util_tier[2];
 
         //mark tier 2 clauses for deletion && move tier 1 clauses to tier 2
         for(var_t i=0; i<xnf_clss.size(); ++i) {
             //if(xnf_clss[i].is_sat(dl_count) || (!xnf_clss[i].is_irredundant() && utility[i] < util_cutoff && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) ) {
-            if(tier[i]==1) {
+            if(xnf_clss[i].is_zero() || xnf_clss[i].is_sat0() ) {
+                xnf_clss[i].mark_for_removal(); //remove all clauses which are zero or satisfied in dl0!
+                --tier_count[tier[i]];
+            } else if(tier[i]==1) {
                 if(utility[i] < util_cutoff_move && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) {
                     tier[i] = 2;
                     --tier_count[1];
@@ -597,7 +615,7 @@ void solver::clause_cleaning(stats& s) {
     for(auto& wl : watch_list) wl.clear();
     //re-fill watchlists!
     for(var_t i=0; i<xnf_clss.size(); ++i) {
-        assert( !xnf_clss[i].is_sat(dl_count) );
+        assert( xnf_clss[i].is_irredundant() || !xnf_clss[i].is_sat(dl_count) );
         if(xnf_clss[i].size()>0) watch_list[xnf_clss[i].get_wl0()].emplace_back( i );
         if(xnf_clss[i].size()>1) watch_list[xnf_clss[i].get_wl1()].emplace_back( i );
     }
@@ -1162,6 +1180,9 @@ void solver::solve(stats &s) {
                     backtrack( lvl );
                 }
 
+                // update lbd-based restart values
+                if(opt.rst==restart_opt::lbd) update_lbd_restart_vals(learnt_cls.LBD(alpha_dl), s);
+
                 // add learnt_cls
                 add_learnt_cls( std::move(learnt_cls) );
                 // decay score
@@ -1169,7 +1190,7 @@ void solver::solve(stats &s) {
 
                 VERB(201, to_str());
                 //restart?
-                if( need_restart() ) {
+                if( need_restart(s) ) {
                     restart(s);
                 }
             } else {

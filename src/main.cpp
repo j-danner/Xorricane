@@ -101,9 +101,9 @@ int main(int argc, char const *argv[])
     
     //restart opts
     program.add_argument("-rh","--restart-heuristic")
-        .help("restart schedule; 'no' (never), 'fixed' (after fixed number of conflicts) or 'luby' (theoretical optimal)")
-        .default_value(std::string("luby"))
-        .choices("no", "fixed", "luby")
+        .help("restart schedule; 'no' (never), 'fixed' (after fixed number of conflicts), 'luby' (theoretical optimal), 'lbd' (dynamic lbd-based restarts)")
+        .default_value(std::string("lbd"))
+        .choices("no", "fixed", "luby", "lbd")
         .nargs(1);
 
     //linalg-in-processing options
@@ -197,6 +197,7 @@ int main(int argc, char const *argv[])
     if(rh_str=="no") rh = restart_opt::no;
     else if(rh_str=="fixed") rh = restart_opt::fixed;
     else if(rh_str=="luby") rh = restart_opt::luby;
+    else if(rh_str=="lbd") rh = restart_opt::lbd;
     
     auto ip_str = program.get<std::string>("-ip");
     initial_prop_opt ip = initial_prop_opt::no;

@@ -403,7 +403,7 @@ public:
    * @brief mark clause for removal, i.e., remove clause on cleanup
    * @note clause is not marked if it is irredundant -- except if it is satisfied on dl 0
    */
-  void mark_for_removal() { if(!irredundant || is_sat0()) { delete_on_cleanup = true; } };
+  void mark_for_removal() { if(!irredundant || is_sat0() || is_zero()) { delete_on_cleanup = true; } };
 
   bool is_marked_for_removal() const { return delete_on_cleanup; };
   bool is_irredundant() const { return irredundant; };
