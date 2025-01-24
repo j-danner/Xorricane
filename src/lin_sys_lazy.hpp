@@ -2,6 +2,7 @@
 
 #include <set>
 #include <sstream>
+#include <algorithm>
 
 #include "misc.hpp"
 
@@ -49,18 +50,17 @@ class lin_sys_lazy_GE
      * @return true iff values is not yet assigned
      */
     bool enqueue_new_assignment(const var_t var, const bool val) {
-        if(cms->value(var) == CMSat::l_Undef) {
-            CMSat::Lit next_assignment(var, val);
-            //const auto next_assignment_replaced = cms->varReplacer->get_lit_replaced_with_outer(next_assignment);
-            //if(next_assignment!=next_assignment_replaced) {
-            //    //binary XOR/EQUIV propagates!
-            //    lineral_vars.clear();
-            //    lineral_vars.emplace_back( trail_el.var() );
-            //    lineral_vars.emplace_back( v_data.reason.lit2().var() );
-            //    return lineral( lineral_vars, trail_el.sign()^!v_data.reason.lit2().sign(), presorted::no );
-            //    implied_literal_queue.emplace_back(  )
-            //}
-            cms->enqueue<false>(next_assignment);
+        CMSat::Lit lit(var, val);
+        const auto lit_replaced = cms->varReplacer->get_lit_replaced_with_outer(lit);
+        if(lit!=lit_replaced) {
+            //binary XOR/EQUIV propagates!
+            lineral_vars.clear();
+            lineral_vars.emplace_back( var );
+            lineral_vars.emplace_back( lit_replaced.var() );
+            implied_literal_queue.emplace_back( lineral_vars,  val^lit_replaced.sign(), presorted::no );
+        }
+        if(cms->value(lit_replaced.var()) == CMSat::l_Undef) {
+            cms->enqueue<false>(lit_replaced);
             return true;
         } else {
             //ensure that value is correctly assigned in cms
@@ -104,7 +104,7 @@ class lin_sys_lazy_GE
         //compute num_vars and add new vars to cms
         if(num_vars==(var_t)-1) {
             num_vars = 0;
-            for(const auto& l : linerals.get_linerals()) num_vars = std::max(num_vars, l.get_idxs_()[l.size()-1]);
+            for(const auto& l : linerals.get_linerals()) if(!l.is_constant()) num_vars = std::max(num_vars, l.get_idxs_()[l.size()-1]);
         }
         cms->new_vars( num_vars+1 );
 
@@ -128,8 +128,9 @@ class lin_sys_lazy_GE
                 linerals_assigning.push_back( &l );
             }
         }
-        const std::string strategy = "must-scc-vrepl";
-        cms->simplify_with_assumptions(nullptr, &strategy);
+        ////without this it is faster!
+        //const std::string strategy = "must-scc-vrepl";
+        //cms->simplify_with_assumptions(nullptr, &strategy);
         cms->find_and_init_all_matrices();
 
         for(const auto lp : linerals_assigning) {
@@ -161,11 +162,11 @@ class lin_sys_lazy_GE
         var_t ct = propagate(alpha);
 
         //slows down overall solving!
-        ////collect all binary xors:
-        //for(auto& [l1,l2] : cms->get_all_binary_xors()) {
-        //    implied_literal_queue.emplace_back( vec<var_t>({l1.var(), l2.var()}), l1.sign()^l2.sign(), presorted::no );
-        //    ++ct;
-        //}
+        //collect all binary xors:
+        for(auto& [l1,l2] : cms->get_all_binary_xors()) {
+            implied_literal_queue.emplace_back( vec<var_t>({l1.var(), l2.var()}), l1.sign()^l2.sign(), presorted::no );
+            ++ct;
+        }
 
         //add 'conflict' if cms->okay() is false
         if(!cms->okay()) {
