@@ -12,7 +12,8 @@ std::string lin_sys_lazy_GE::to_str() const {
 
     vec< std::string > str_linerals( linerals.size() );
     auto to_str = [](const lineral l) -> std::string {return l.to_str();};
-    std::transform(linerals.begin(), linerals.end(), str_linerals.begin(), to_str);
+    const auto lins = linerals.get_linerals_vec();
+    std::transform(lins.begin(), lins.end(), str_linerals.begin(), to_str);
     std::sort(str_linerals.begin(), str_linerals.end());
     //rotate if 1 is first element
     if(str_linerals.size()>0 && str_linerals[0]=="1") std::rotate(str_linerals.begin(), str_linerals.begin()+1, str_linerals.end());

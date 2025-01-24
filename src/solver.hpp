@@ -246,6 +246,7 @@ class solver
      * @brief current assignments of vars; assignments[i] contains lineral with LT i
      */
     vec< bool3 > alpha;
+    var_t assigned_var_count = 0;
     
     /**
      * @brief phase of last assignment - phase saving
@@ -414,6 +415,7 @@ class solver
         save_phase();
         alpha[TRAIL.back().ind] = bool3::None;
         alpha_dl[TRAIL.back().ind] = (var_t) -1;
+        --assigned_var_count;
         alpha_trail_pos[TRAIL.back().ind] = (var_t) -1;
         --stepwise_lit_trail_length;
         break;

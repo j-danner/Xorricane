@@ -41,13 +41,6 @@ class lin_sys_lazy_GE
      */
     list<lineral> implied_literal_queue;
 
-    #ifdef DEBUG_SLOW
-    /**
-     * @brief lin_sys representing linerals
-     */
-    lin_sys sys;
-    #endif
-
     /**
      * @brief adds new alpha assignment to internal queue
      * 
@@ -58,6 +51,15 @@ class lin_sys_lazy_GE
     bool enqueue_new_assignment(const var_t var, const bool val) {
         if(cms->value(var) == CMSat::l_Undef) {
             CMSat::Lit next_assignment(var, val);
+            //const auto next_assignment_replaced = cms->varReplacer->get_lit_replaced_with_outer(next_assignment);
+            //if(next_assignment!=next_assignment_replaced) {
+            //    //binary XOR/EQUIV propagates!
+            //    lineral_vars.clear();
+            //    lineral_vars.emplace_back( trail_el.var() );
+            //    lineral_vars.emplace_back( v_data.reason.lit2().var() );
+            //    return lineral( lineral_vars, trail_el.sign()^!v_data.reason.lit2().sign(), presorted::no );
+            //    implied_literal_queue.emplace_back(  )
+            //}
             cms->enqueue<false>(next_assignment);
             return true;
         } else {
@@ -184,16 +186,12 @@ class lin_sys_lazy_GE
             case CMSat::xor_t:
             {
                 //find (and construct) corresponding lineral
-                int32_t tmp_ID; //required for call to get_reasons -- otherwise unused and irrelevant for us!
-                const auto xor_reason = cms->get_xor_reason(confl, tmp_ID);
+                int32_t tmp_ID; //required for call to get_reasons -- irrelevant for us!
+                auto xor_reason = cms->get_xor_reason_xorricane(confl, tmp_ID);
 
-                bool sign = true;
-                for(const auto& l : *xor_reason) {
-                    sign ^= l.sign();
-                    lineral_vars.emplace_back( l.var() );
-                }
-                assert( std::is_sorted(lineral_vars.begin(), lineral_vars.end()) );
-                return lineral( lineral_vars, sign, presorted::yes );
+                assert( std::is_sorted(xor_reason->vars.begin(), xor_reason->vars.end()) );
+                std::copy( xor_reason->begin(), xor_reason->end(), std::back_inserter(lineral_vars) );
+                return lineral( lineral_vars, xor_reason->rhs, presorted::yes );
             }
             case CMSat::clause_t:
             {
@@ -229,16 +227,12 @@ class lin_sys_lazy_GE
             case CMSat::xor_t:
             {
                 //find (and construct) corresponding lineral
-                int32_t tmp_ID; //required for call to get_reasons -- otherwise unused and irrelevant for us!
-                const auto xor_reason = cms->get_xor_reason(v_data.reason, tmp_ID);
+                int32_t tmp_ID; //required for call to get_reasons -- irrelevant for us!
+                auto xor_reason = cms->get_xor_reason_xorricane(v_data.reason, tmp_ID);
 
-                bool sign = true;
-                for(const auto& l : *xor_reason) {
-                    sign ^= l.sign();
-                    lineral_vars.emplace_back( l.var() );
-                }
-                assert( std::is_sorted(lineral_vars.begin(), lineral_vars.end()) );
-                return lineral( lineral_vars, sign, presorted::yes );
+                assert( std::is_sorted(xor_reason->vars.begin(), xor_reason->vars.end()) );
+                std::copy( xor_reason->begin(), xor_reason->end(), std::back_inserter(lineral_vars) );
+                return lineral( lineral_vars, xor_reason->rhs, presorted::yes );
             }
             case CMSat::clause_t:
             {
@@ -277,7 +271,7 @@ class lin_sys_lazy_GE
     var_t propagate(const vec<bool3>& alpha) {
         #ifdef DEBUG_SLOWER
             //add all decisions to L
-            lin_sys L = sys;
+            lin_sys L = linerals;
             lin_sys L_dec;
             for(var_t i = 0; i<alpha.size(); ++i) {
               if(alpha[i]!=bool3::None) L_dec.add_lineral( lineral(i, b3_to_bool(alpha[i])) );
@@ -298,10 +292,8 @@ class lin_sys_lazy_GE
         
         #ifdef DEBUG_SLOWER
             if(L_det.dim()>0) { //only print when there is anything to deduce...
-                std::cout << "sys_orig ";
+                std::cout << "linerals (reduced) : ";
                 for(const auto& l: linerals.get_linerals()) std::cout << l.to_str() << " ";
-                std::cout << std::endl;
-                std::cout << "sys_orig " << sys.to_str() << "  (reduced)" << std::endl;
             }
         #endif
 
@@ -315,6 +307,11 @@ class lin_sys_lazy_GE
             }
 
             lineral lin = CMS_reason_to_lineral(trail_el);
+
+            #ifdef DEBUG_SLOW
+                //ensure that lin is implied by linerals
+                assert( linerals.reduce(lin).is_zero() );
+            #endif
 
             assert(lin.get_idxs_().back()<=num_vars);
             implied_literal_queue.emplace_back( std::move(lin) );

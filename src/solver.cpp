@@ -1347,6 +1347,9 @@ std::string solver::to_xnf_str() const noexcept {
         //sanity check on alpha_dl
         for([[maybe_unused]] const auto lvl : alpha_dl) assert( lvl <= dl || lvl == (var_t) -1 );
 
+        //check assigned_var_count
+        assert( (var_t) std::count_if(alpha.begin(), alpha.end(), [](const auto val){ return val!=bool3::None; }) == assigned_var_count );
+
         // check data structs of xnf_clss
         for (var_t i = 0; i < xnf_clss.size(); i++) {
             assert(xnf_clss[i].assert_data_struct());
