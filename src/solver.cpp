@@ -477,9 +477,9 @@ bool solver::need_restart(stats& s) const {
                 return true;
             } else {
                 ++s.no_blocked_restarts;
-                return false;
             }
         }
+        return false;
     } else {
         return confl_this_restart > confl_until_restart;
     }
