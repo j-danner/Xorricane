@@ -641,30 +641,34 @@ void solver::restart(stats& s) {
     ++s.no_restarts;
     confl_this_restart = 0;
 
-    //warm restart: put all inds from trail back into order_heap_vsids and determine how many dl are identical, i.e., with identical decisions!
-    //currently only works for dh_vsids!
-    var_t backtrack_lvl = dl;
-    if(opt.dh == dec_heu::vsids) {
-        for(var_t i=1; i<alpha.size(); ++i) {
-            if(!order_heap_vsids.inHeap(i)) order_heap_vsids.insert( i );
-        }
-        //removeMin one-by-one until they do not correspond to the decisions of the corresponding dl!
-        var_t lvl = 1;
-        while(lvl<dl) {
-            auto decision_on_lvl = trails[lvl].front().ind;
-            //query next ind from order_heap_vsids which was NOT assigned on previous dl
-            var_t ind = 0;
-            while(ind==0 || (alpha_dl[ind] < lvl && !order_heap_vsids.empty() )) {
-                ind = order_heap_vsids.removeMin();
+    var_t backtrack_lvl = 0;
+    //warm restart: put all inds from trail back into order_heap_vsids_warm_restart and determine how many dl are identical, i.e., with identical decisions!
+    if(opt.warm_restart) {
+        //currently only works for dh_vsids! + CURRENTLY leads to crashes in more complex examples!!
+        if(opt.dh == dec_heu::vsids) {
+            //removeMin one-by-one until they do not correspond to the decisions of the corresponding dl!
+            vec<var_t> removed; removed.reserve(alpha.size()/2);
+            var_t lvl = 1;
+            while(lvl<dl) {
+                auto decision_on_lvl = trails[lvl].front().ind;
+                //query next ind from order_heap_vsids which was NOT assigned on previous dl
+                var_t ind = 0;
+                while(ind==0 || (alpha_dl[ind] < lvl && !order_heap_vsids.empty() )) {
+                    ind = order_heap_vsids.removeMin();
+                    removed.emplace_back( ind );
+                }
+                if(ind!=decision_on_lvl) {
+                    //heuristic would choose a different decision on this lvl! i.e. we can only backtrack to lvl-1 (!)
+                    backtrack_lvl = lvl-1;
+                    order_heap_vsids.insert( ind );
+                    break;
+                }
+                ++lvl;
             }
-            if(ind!=decision_on_lvl) {
-                //heuristic would choose a different decision on this lvl! i.e. we can only backtrack to lvl-1 (!)
-                backtrack_lvl = lvl-1;
-                order_heap_vsids.insert( ind );
-                break;
-            }
-            ++lvl;
+            //reset order_heap_vsids
+            for(auto& r : removed) order_heap_vsids.insert(r);
         }
+        if(backtrack_lvl>0) VERB(50, "c warm restart: backtracking to dl " << std::to_string(backtrack_lvl) << " instead of dl 0");
     }
 
     backtrack(backtrack_lvl);

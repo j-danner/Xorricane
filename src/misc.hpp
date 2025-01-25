@@ -266,6 +266,8 @@ struct options {
 
     guessing_path P;
 
+    const bool warm_restart = true;
+
     //default settings
     options() {};
     options(guessing_path P_) : P(P_) {};
