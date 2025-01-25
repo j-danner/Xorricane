@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.2.3
+
+separated restarts from clause deletion
+new default clause deletion strategy: LBD-based deletion using tiers
+new default restart scheduling: glue/LBD-based exponential moving average
+
 ## v0.4.2.2
 
 change watch-lists from 'list' to 'vec'
