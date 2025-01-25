@@ -1231,7 +1231,7 @@ void solver::solve(stats &s) {
 
             assert((var_t)active_cls_stack.size() == dl + 1);
             assert((var_t)trails.size() == dl + 1);
-            assert(assert_data_structs());
+            assert_slow(assert_data_structs());
         } else {
             VERB(25, "c " << std::to_string(dl) << " : " << "no more active clauses --> solution or backtrack!")
             //now active_cls == 0 AND !at_conflict(); however the latter only means that alpha[0]!=bool3::True at the moment
@@ -1388,9 +1388,9 @@ std::string solver::to_xnf_str() const noexcept {
 
         // check data structs of xnf_clss
         for (var_t i = 0; i < xnf_clss.size(); i++) {
-            assert(xnf_clss[i].assert_data_struct());
+            assert_slow(xnf_clss[i].assert_data_struct());
             //only check advanced conditions if lineral_queue is empty!
-            if(!at_conflict() && lineral_queue.empty()) assert(xnf_clss[i].assert_data_struct(alpha, alpha_trail_pos, dl_count));
+            if(!at_conflict() && lineral_queue.empty()) assert_slow(xnf_clss[i].assert_data_struct(alpha, alpha_trail_pos, dl_count));
         }
 
       #ifdef DEBUG_SLOWER
