@@ -1041,12 +1041,12 @@ class solver
 
     double forcing_fast = 0; //fast moving average of lbds of conflict clauses (short-term focus)
     double forcing_slow = 0; //slow moving average of lbds of conflict clauses (long-term focus)
-    const unsigned int shift_fast = 6;
+    const unsigned int shift_fast = 5; //5 opt
     const double alpha_fast = (double) 1/(2<<shift_fast);
     const unsigned int shift_slow = 12;
     const double alpha_slow = (double) 1/(2<<shift_slow);
     double blocking = 0; //moving average of number of assigned vars
-    const unsigned int shift_blocking = 12;
+    const unsigned int shift_blocking = 13; //13 opt
     const double alpha_blocking = (double) 1/(2<<shift_blocking);
 
     /**
