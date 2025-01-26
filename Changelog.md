@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.2.4
+
+undo changes in 0.4.2.2 ?
+
 ## v0.4.2.3
 
 separated restarts from clause deletion
