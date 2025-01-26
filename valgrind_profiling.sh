@@ -14,7 +14,8 @@ echo "profiling xnf_solver"
 #valgrind --tool=callgrind build/xorricane ../benchmarks/instances/2xnfs/bivium/bivium-t150-g40.xnf -t 30 -ca 1uip -rh luby -la 30
 #valgrind --tool=callgrind build/xorricane ../benchmarks/instances/2xnfs/rand/rand-20-60.xnf -dh vsids -ca 1uip -rh luby
 #valgrind --tool=callgrind build/xorricane ../benchmarks/instances/2xnfs/rand/rand-20-60.xnf -dh vsids -ca 1uip -rh no -t 30 -cm
-valgrind --tool=callgrind --dump-instr=yes --simulate-cache=yes --collect-jumps=yes build/xorricane ../benchmarks/bench_instances/bivium/tmp04_lvzwb.xnf -ca 1uip -po save -ip nbu -rh luby -dh vsids
+#valgrind --tool=callgrind --dump-instr=yes --simulate-cache=yes --collect-jumps=yes build/xorricane ../benchmarks/bench_instances/bivium/tmp04_lvzwb.xnf -ca 1uip -po save -ip nbu -rh luby -dh vsids -no-lgj -t 60
+valgrind --tool=callgrind --dump-instr=yes --simulate-cache=yes --collect-jumps=yes build/xorricane ../benchmarks/bench_instances/rand_qp/tmpt9coke09.xnf -ca 1uip -po save -pp no -ip no -rh luby -dh vsids -t 60
 #valgrind --tool=callgrind --dump-instr=yes build/xorricane ../benchmarks/generate_instances/bivium/bivium-t354-g55.2xnf -ca 1uip -po save -ip nbu -rh luby -dh vsids
 
 kcachegrind callgrind.out.*
