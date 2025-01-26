@@ -348,6 +348,7 @@ std::pair<var_t, cls_watch> solver::analyze() {
     }
 #endif
 
+    bump_reason(TRAIL.back().lin);
     cls_watch rs = get_reason(TRAIL.back());
     assert(rs.is_unit(dl_count));
     //fix the ws[0] watch - so far it need not watch the variable with highest alpha_trail_pos

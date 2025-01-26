@@ -661,6 +661,16 @@ class solver
       return get_reason(t.lin, max_size);
      #endif
     }
+    
+    //bumps utility recursively + 
+    inline void bump_reason(const lin_w_it lin) {
+      for(const auto& i : lin->get_reason_idxs()) {
+        ++utility[i];
+      }
+      for(const auto& l : lin->get_reason_lins()) {
+        bump_reason(l);
+      }
+    }
 
     typedef lineral (solver::*dec_heu_t)();
     typedef std::pair<var_t,cls_watch> (solver::*ca_t)();
@@ -1006,8 +1016,8 @@ class solver
 
     vec<var_t> tier;
     var_t tier_count[3];
-    var_t tier0_limit = 2;
-    var_t tier1_limit = 6;
+    var_t tier0_limit = 3;
+    var_t tier1_limit = 7;
     var_t cls_idx_to_tier(const var_t i) {
       if(xnf_clss[i].LBD(alpha_dl)<=tier0_limit || xnf_clss[i].size()<=2) return 0;
       if(xnf_clss[i].LBD(alpha_dl)<=tier1_limit) return 1;
@@ -1238,8 +1248,8 @@ class solver
         fetch_LGJ_implications(s);
         const auto end  = std::chrono::high_resolution_clock::now();
         s.total_lgj_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
-        return true;
       }
+      if(linerals_to_be_added_to_LGJ.empty()) return true;
       assert(!linerals_to_be_added_to_LGJ.empty());
 
       VERB(80, "c " << RED("find_implications_by_LGJ: adding " << linerals_to_be_added_to_LGJ.size() << " new linerals to LGJ") );
