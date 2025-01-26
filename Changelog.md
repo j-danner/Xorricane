@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.2.4
+
+bump utility of clauses contributing to conflict
+enlarge tier0 (LBD<=3) and tier1 range (LBD<=7)
+
 ## v0.4.2.3
 
 separated restarts from clause deletion
