@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.2.5
+
+complement incomplete LGJ with basic lineral-watching on dl 0
+prepare dynamic adjustments of bump_decay and LBD-based restarting bounds
+LBD-values recomputed when used in conflict analysis -> promotion/demotion of clauses
+use SCC+FLS inprocessing only for the first 100 IG-simplifications
+
 ## v0.4.2.4
 
 bump utility of clauses contributing to conflict
