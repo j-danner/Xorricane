@@ -145,8 +145,8 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
             lineral_watches[0].emplace_back(*l_it, alpha, alpha_dl, dl_count, 0);
             if(opt.pp!=xornado_preproc::no) IG_linerals_to_be_propagated.emplace_back( *l_it );
             //since lgj implementation is sadly NOT complete, so it seems beneficial to do it nonetheless!
-            //VERB(90, "c adding new lineral: " << BOLD(l_it->to_str()) << "  --> gives with current assignments: "<<l_it->reduced(alpha).to_str());
-            //add_new_lineral( *l_it, 0, queue_t::NEW_UNIT, origin_t::INIT );
+            VERB(90, "c adding new lineral: " << BOLD(l_it->to_str()) << "  --> gives with current assignments: "<<l_it->reduced(alpha).to_str());
+            add_new_lineral( *l_it, 0, queue_t::NEW_UNIT, origin_t::INIT );
         }
     }
 
@@ -313,8 +313,7 @@ void solver::bump_score(const lineral &lit) {
 
 void solver::decay_score() {
     //instead of actually decaying all scores; we increase the bump
-    //@todo slowly decay 'decay' to 0.81 or similar?
-    bump *= (1.0 / decay);
+    bump *= bump_mult;
 };
 
 #ifndef NDEBUG
@@ -472,9 +471,9 @@ double luby(double y, int x) {
 
 bool solver::need_restart(stats& s) const {
     if(opt.rst==restart_opt::lbd) {
-        if(confl_this_restart > confl_until_restart && forcing_fast > 1.15 * forcing_slow) {
+        if(confl_this_restart > confl_until_restart && forcing_fast > fast_slow_mult * forcing_slow) {
             //restart -- unless blocked!
-            if(assigned_var_count <= 1.4 * blocking) {
+            if(assigned_var_count <= blocking_mult * blocking) {
                 return true;
             } else {
                 ++s.no_blocked_restarts;
@@ -560,6 +559,7 @@ void solver::clause_cleaning(stats& s) {
             if(!xnf_clss[i].is_irredundant()) avg_util_redundant += utility[i];
         }
         avg_util_redundant /= active_cls;
+        const double decay=0.95;
         util_cutoff = decay*avg_util_redundant;
         //rm 'useless' cls:
         VERB(50, "c clean clause database")
@@ -1044,7 +1044,9 @@ void solver::dpll_solve(stats &s) {
                 add_new_guess( std::move(dec_stack.top()) ); //add as 'guess', i.e., trail and reason stacks are ill-managed here, but that is irrelevant since we do not use those in the dpll-type solver!
                 VERB(201, to_str());
                 // decay + bump scores of conflict clause!
-                //bump_score( dec_stack.top() );
+                decay_score();
+                update_bump_mult(s);
+
                 dec_stack.pop();
                 //decay_score();
             } else {
@@ -1204,6 +1206,7 @@ void solver::solve(stats &s) {
                 add_learnt_cls( std::move(learnt_cls) );
                 // decay score
                 decay_score();
+                update_bump_mult(s);
 
                 VERB(201, to_str());
                 //restart?
@@ -1256,6 +1259,7 @@ void solver::solve(stats &s) {
                     assert( idx>xnf_clss.size() || xnf_clss[idx].is_irredundant() );
                     // decay score
                     decay_score();
+                    update_bump_mult(s);
 
                     goto cdcl_gcp;
                 }

@@ -220,9 +220,6 @@ class solver
      * @note entries must be strictly positive! (otherwise max_path/max_tree might fail!)
      */
     vec<double> activity_score;
-    double max_act_sc;
-    double bump = 1;
-    const float decay = 0.95;
     Heap<VarOrderLt> order_heap_vsids{ VarOrderLt(activity_score) };
 
     /**
@@ -666,18 +663,54 @@ class solver
     inline void bump_reason(const lin_w_it lin) {
       for(const auto& i : lin->get_reason_idxs()) {
         ++utility[i];
+        //recompute LBD - if redundant clause!
+        if(!xnf_clss[i].is_irredundant()) {
+          xnf_clss[i].recompute_LBD(alpha_dl);
+          const auto new_tier = cls_idx_to_tier(i);
+          promote_demote_cls(i, new_tier);
+        }
       }
       for(const auto& l : lin->get_reason_lins()) {
         bump_reason(l);
       }
     }
 
+    inline void promote_demote_cls(const var_t& i, const var_t& new_tier) {
+      assert(0<=new_tier && new_tier<3);
+      const auto& old_tier = tier[i];
+      if(new_tier==old_tier) return;
+      assert(!xnf_clss[i].is_irredundant());
+
+      --tier_count[old_tier];
+      ++tier_count[new_tier];
+      tier[i] = new_tier;
+    }
+
     typedef lineral (solver::*dec_heu_t)();
     typedef std::pair<var_t,cls_watch> (solver::*ca_t)();
+
+    double max_act_sc;
+    double bump = 1;
+    //according to 'Evaluating CDCL Variable Scoring Schemes' this should be between 1.01 and 1.2
+    //smaller values for hard sat problems (like crypto) and larger useful with frequent restarts.
+    //Lingeling used 1.2
+    const double bump_start = 1.01;
+    const double bump_end = 1.05;
+    double bump_mult = bump_start; // 1/0.95 good for random instances
+
+    //currently not used!
+    void update_bump_mult(const stats& s) {
+      return;
+      if(s.no_confl<1000000) {
+        const double linear_smoothing = ((double) s.no_confl)/1000000;
+        bump_mult = linear_smoothing * bump_end + (1-linear_smoothing) * bump_start; 
+      }
+    }
 
     void bump_score(const var_t& ind);
     void bump_score(const lineral& lit);
     void decay_score();
+    
 
     void prefetch(var_t upd_lt) {
       //__builtin_prefetch( &L_watch_list[upd_lt] );
@@ -1056,8 +1089,13 @@ class solver
     const unsigned int shift_slow = 12;
     const double alpha_slow = (double) 1/(2<<shift_slow);
     double blocking = 0; //moving average of number of assigned vars
-    const unsigned int shift_blocking = 13; //13 opt
-    const double alpha_blocking = (double) 1/(2<<shift_blocking);
+    const unsigned int shift_blocking = 11; //11 opt?
+    double alpha_blocking = (double) 1/(2<<shift_blocking);
+
+    double fast_slow_mult = 1.15; //opt 1.15?
+    double blocking_mult_low = 1.4;
+    double blocking_mult_high = 1.55;
+    double blocking_mult = blocking_mult_low; //opt 1.6 better for block cipehrs? --> run more experiments!
 
     /**
      * @brief update exponential moving average scores for evaluating restarts
@@ -1084,6 +1122,11 @@ class solver
         blocking = alpha_blocking_tmp * assigned_var_count + (1-alpha_blocking_tmp) * blocking;
       } else {
         blocking = alpha_blocking * assigned_var_count + (1-alpha_blocking) * blocking;
+      }
+
+      if(50000 < s.no_confl && s.no_confl<=100000) {
+        const double linear_smoothing = ((double) s.no_confl-50000)/50000;
+        blocking_mult = linear_smoothing * blocking_mult_high + (1-linear_smoothing) * blocking_mult_low;
       }
 
       assert(forcing_fast>0 && forcing_slow>0);
@@ -1395,6 +1438,11 @@ class solver
      */
     bool find_implications_by_IG(stats& s) {
       assert(dl==0);
+      if(s.no_ig>100 && opt.pp==xornado_preproc::scc_fls) {
+        //deactivate fls after FIRST call -- currently mainly negative impact! ...but we really should deactivate FLS if it takes too long and contributes to little!
+        IG.get_opts()->pp = xornado::preproc::scc;
+        opt.pp = xornado_preproc::scc;
+      }
       ++s.no_ig;
       const auto begin  = std::chrono::high_resolution_clock::now();
       VERB(50, "c implication graph in-processing -- propagating " << IG_linerals_to_be_propagated.size() << " new linerals.");
