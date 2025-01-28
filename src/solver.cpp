@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& os, const origin_t& t) {
     return os;
 }
 
-solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const options& opt_) noexcept : opt(opt_), IG(clss, xornado::options(num_vars, xornado::fls_alg::full, xornado::constr::extended, opt.pp, opt.verb)) {
+solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const options& opt_) noexcept : opt(opt_), IG(clss, xornado::options(num_vars, xornado::fls_alg::trivial, xornado::constr::extended, opt.pp, opt.verb)) {
     vec< cls > clss_; clss_.reserve(clss.size());
     for(const auto& cls : clss) {
         clss_.emplace_back( cls );
@@ -83,7 +83,6 @@ solver::solver(const vec< vec<lineral> >& clss, const var_t num_vars, const opti
     }
 
     //init params
-    init_cleaning_params();
     update_restart_schedule(0);
 
     //prepare IG
@@ -320,14 +319,14 @@ void solver::decay_score() {
 lineral unit;
 #endif
 
-std::pair<var_t, cls_watch> solver::analyze_exp() {
-    return analyze();
+std::pair<var_t, cls_watch> solver::analyze_exp(const stats& s) {
+    return analyze(s);
 };
 
-std::pair<var_t, cls_watch> solver::analyze() {
+std::pair<var_t, cls_watch> solver::analyze(const stats& s) {
     if(dl<=1) {
         //reason clause is obvious -- negation of first decision!
-        return analyze_dpll();
+        return analyze_dpll(s);
     }
 
     VERB(70, "**** analyzing conflict");
@@ -347,7 +346,7 @@ std::pair<var_t, cls_watch> solver::analyze() {
     }
 #endif
 
-    bump_reason(TRAIL.back().lin);
+    bump_reason(s, TRAIL.back().lin);
     cls_watch rs = get_reason(TRAIL.back());
     assert(rs.is_unit(dl_count));
     //fix the ws[0] watch - so far it need not watch the variable with highest alpha_trail_pos
@@ -385,6 +384,7 @@ std::pair<var_t, cls_watch> solver::analyze() {
         }
         assert(it->type == trail_t::ALPHA);
         
+        bump_reason(s, it->lin);
         //get reason_cls
         reason_cls = get_reason(*it);
         VERB(70, "   * reason clause is   " << BOLD( reason_cls.to_str() ) << " for UNIT " << reason_cls.get_unit().to_str() );
@@ -433,7 +433,7 @@ std::pair<var_t, cls_watch> solver::analyze() {
     return std::pair<var_t, cls_watch>(b_lvl, out);
 };
 
-std::pair<var_t, cls_watch> solver::analyze_dpll() {
+std::pair<var_t, cls_watch> solver::analyze_dpll(const stats& s) {
     VERB(70, "**** analyzing dpll-style");
 #ifndef NDEBUG
     print_trail("    *");
@@ -624,7 +624,7 @@ void solver::clause_cleaning(stats& s) {
     
     VERB(50, "c removed " << std::to_string( (double) (no_cls-xnf_clss.size()) / no_cls) << "\% clauses.")
 
-    update_cleaning_params();
+    last_cleaning = s.no_confl;
 
   #ifdef DEBUG_SLOW
     assert(tier.size() == xnf_clss.size());
@@ -674,9 +674,8 @@ void solver::restart(stats& s) {
 
     backtrack(backtrack_lvl);
     
-    if(need_cleaning(s)) {
-        clause_cleaning(s);
-    }
+    clause_cleaning(s);
+    if(need_update_tier_limits(s)) update_tier_limits();
 
     update_restart_schedule(s.no_restarts);
     VERB(90, "c restart finished")
@@ -1177,7 +1176,7 @@ void solver::solve(stats &s) {
                 ///// BACKTRACKING /////
                 ///// CLAUSE LEARNING /////
                 const auto begin  = std::chrono::high_resolution_clock::now();
-                auto [lvl, learnt_cls] = (this->*analyze)();
+                auto [lvl, learnt_cls] = (this->*analyze)(s);
                 const auto end  = std::chrono::high_resolution_clock::now();
                 s.total_ca_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
                 
@@ -1186,7 +1185,7 @@ void solver::solve(stats &s) {
                 //if( lvl==dl-1 && std::get<0>(learnt_cls.get_unit().get_watch_tuple(alpha_dl, alpha_trail_pos)) != trails.back().front().ind ) {
                 //    VERB(50, "c ")
                 //    //add dpll-clause as well - if learnt clause is 'too' long?
-                //    auto [_, cls] = analyze_dpll();
+                //    auto [_, cls] = analyze_dpll(s);
                 //    add_learnt_cls( std::move(cls) );
                 //}
                 // backtrack
@@ -1250,7 +1249,7 @@ void solver::solve(stats &s) {
 
                 if(s.sols.size() < get_const_opts()->sol_count && dl>0) {
                     //add clause that prevents this solution in the future, i.e., avoid taking the same decisions again
-                    auto [lvl, learnt_cls] = analyze_dpll();
+                    auto [lvl, learnt_cls] = analyze_dpll(s);
                     // backtrack
                     backtrack(lvl);
                     VERB(201, to_str());

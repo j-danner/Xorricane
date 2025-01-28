@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.2.6
+
+change FLS to only find trivial ones
+linear increment of bump_mult
+dynamic tier2_limit update (similar to kissat)
+
+
 ## v0.4.2.5
 
 complement incomplete LGJ with basic lineral-watching on dl 0

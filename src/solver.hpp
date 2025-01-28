@@ -297,9 +297,9 @@ class solver
     
     var_t get_num_vars() const { return alpha.size()-1; };
     
-    std::pair<var_t,cls_watch> analyze();
-    std::pair<var_t,cls_watch> analyze_exp();
-    std::pair<var_t,cls_watch> analyze_dpll();
+    std::pair<var_t,cls_watch> analyze(const stats& s);
+    std::pair<var_t,cls_watch> analyze_exp(const stats& s);
+    std::pair<var_t,cls_watch> analyze_dpll(const stats& s);
     
     /**
      * @brief add new (learnt) clause to database
@@ -659,19 +659,20 @@ class solver
      #endif
     }
     
-    //bumps utility recursively + 
-    inline void bump_reason(const lin_w_it lin) {
+    //bumps utility recursively + recomputes LBD + sets clause as used in conflict
+    inline void bump_reason(const stats& s, const lin_w_it lin) {
       for(const auto& i : lin->get_reason_idxs()) {
         ++utility[i];
         //recompute LBD - if redundant clause!
         if(!xnf_clss[i].is_irredundant()) {
+          xnf_clss[i].set_used_in_conflict(s.no_confl);
           xnf_clss[i].recompute_LBD(alpha_dl);
           const auto new_tier = cls_idx_to_tier(i);
           promote_demote_cls(i, new_tier);
         }
       }
       for(const auto& l : lin->get_reason_lins()) {
-        bump_reason(l);
+        bump_reason(s, l);
       }
     }
 
@@ -687,7 +688,7 @@ class solver
     }
 
     typedef lineral (solver::*dec_heu_t)();
-    typedef std::pair<var_t,cls_watch> (solver::*ca_t)();
+    typedef std::pair<var_t,cls_watch> (solver::*ca_t)(const stats&);
 
     double max_act_sc;
     double bump = 1;
@@ -695,14 +696,12 @@ class solver
     //smaller values for hard sat problems (like crypto) and larger useful with frequent restarts.
     //Lingeling used 1.2
     const double bump_start = 1.01;
-    const double bump_end = 1.05;
+    const double bump_end = 1.10;
     double bump_mult = bump_start; // 1/0.95 good for random instances
 
-    //currently not used!
     void update_bump_mult(const stats& s) {
-      return;
-      if(s.no_confl<1000000) {
-        const double linear_smoothing = ((double) s.no_confl)/1000000;
+      if( 100000 < s.no_confl && s.no_confl<1000000) {
+        const double linear_smoothing = ((double) s.no_confl-100000)/1000000;
         bump_mult = linear_smoothing * bump_end + (1-linear_smoothing) * bump_start; 
       }
     }
@@ -1049,30 +1048,73 @@ class solver
 
     vec<var_t> tier;
     var_t tier_count[3];
-    var_t tier0_limit = 3;
+    var_t tier0_limit = 2;
     var_t tier1_limit = 7;
+
     var_t cls_idx_to_tier(const var_t i) {
-      if(xnf_clss[i].LBD(alpha_dl)<=tier0_limit || xnf_clss[i].size()<=2) return 0;
-      if(xnf_clss[i].LBD(alpha_dl)<=tier1_limit) return 1;
+      if(xnf_clss[i].is_irredundant()) return 0;
+      const var_t lbd = xnf_clss[i].LBD(alpha_dl);
+      if(lbd<=tier0_limit || xnf_clss[i].size()<=2) return 0;
+      if(lbd<=tier1_limit) return 1;
       else return 2;
     };
 
-    double multiplier = 1.05;
-    var_t tier2_size_limit;
-    var_t tier3_size_limit;
-    void init_cleaning_params() {
-      tier2_size_limit = xnf_clss.size()*0.5;
-      tier3_size_limit = xnf_clss.size()*0.25;
-    }
-    void update_cleaning_params() {
-      tier2_size_limit *= multiplier;
-      tier3_size_limit *= multiplier;
-    }
-    bool need_cleaning(stats&s) {
-      return true; //always clean on restart!
-      //return dl==0 && (tier_count[2]>tier2_size_limit || tier_count[3]>tier3_size_limit);
+    var_t tier_update_interval = 128;
+    var_t last_tier_update = 0;
+    bool need_update_tier_limits(stats& s) {
+      //return false;
+      if(s.no_confl < last_tier_update + tier_update_interval) return false;
+      //update tier_update_interval
+      last_tier_update = s.no_confl;
+      if(tier_update_interval < 2<<16) tier_update_interval *= 2;
+      return true;
     }
 
+    vec<var_t> lbd_count;
+    var_t max_lbd;
+    double tier1_percentage = 0.2;
+    double tier2_percentage = 0.5;
+
+    void update_tier_limits() {
+      //return;
+      lbd_count.clear(); lbd_count.resize(get_num_vars()+1, 0);
+      var_t ct = 0;
+      for(var_t idx=0; idx<xnf_clss.size(); ++idx) {
+        if(xnf_clss[idx].is_irredundant()) continue;
+        if(xnf_clss[idx].last_used_in_conflict < last_tier_update) continue;
+        const var_t lbd = xnf_clss[idx].LBD(alpha_dl);
+        ++lbd_count[lbd];
+        max_lbd = std::max(max_lbd, lbd);
+        ++ct;
+      }
+      //add up 
+      var_t sum = 0;
+      var_t l = 0;
+      while(sum < tier1_percentage * ct) {
+        sum += lbd_count[l];
+        ++l;
+      }
+      //tier0_limit = l-1;
+      while(sum < tier2_percentage * ct) {
+        sum += lbd_count[l];
+        ++l;
+      }
+      tier1_limit = l-1;
+      VERB(80, "c " << CYAN("update-tier-limits: tier0 " << std::to_string(tier_count[0]) << " tier1 " << std::to_string(tier_count[1]) << " tier2 " << std::to_string(tier_count[2]) ) );
+
+      VERB(80, "c " << CYAN("new tier-limits: tier0: LBD <= " << std::to_string(tier0_limit) << " tier1: LBD <= " << std::to_string(tier1_limit)) );
+      
+      //re-tier all clauses!
+      for(var_t idx=0; idx<xnf_clss.size(); ++idx) {
+        const var_t new_tier = cls_idx_to_tier(idx);
+        if(new_tier != tier[idx]) {
+          promote_demote_cls(idx, new_tier);
+        }
+      }
+      VERB(80, "c " << CYAN("update-tier-limits: tier0 " << std::to_string(tier_count[0]) << " tier1 " << std::to_string(tier_count[1]) << " tier2 " << std::to_string(tier_count[2]) ) );
+    };
+
+    var_t last_cleaning=0;
     /**
      * @brief clause database cleaning
      * @note may only be used in dl 0!
@@ -1439,7 +1481,6 @@ class solver
     bool find_implications_by_IG(stats& s) {
       assert(dl==0);
       if(s.no_ig>100 && opt.pp==xornado_preproc::scc_fls) {
-        //deactivate fls after FIRST call -- currently mainly negative impact! ...but we really should deactivate FLS if it takes too long and contributes to little!
         IG.get_opts()->pp = xornado::preproc::scc;
         opt.pp = xornado_preproc::scc;
       }

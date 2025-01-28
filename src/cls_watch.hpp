@@ -10,6 +10,8 @@
 #include "lineral_watch.hpp"
 
 using lit_watch = var_t;
+  
+static std::set<var_t> l_tmp;
 
 /**
  * @brief return type for update of cls_watch
@@ -398,6 +400,9 @@ public:
   };
 
   void set_redundancy(const bool red) { irredundant = !red; };
+
+  var_t last_used_in_conflict = (var_t) -1;
+  void set_used_in_conflict(const var_t& t) { last_used_in_conflict = t; }
 
   /**
    * @brief mark clause for removal, i.e., remove clause on cleanup
@@ -878,19 +883,19 @@ public:
    */
   var_t LBD(const vec<var_t>& alpha_dl) {
     if(lbd != (var_t) -1) return lbd;
-    std::set<var_t> l;
+    l_tmp.clear();
     //for(const auto& [lvl,lvl_c] : lineral_dl_count0) {
     //  l.insert(lvl);
     //}
     for(const auto& lin : linerals) {
       for(const auto& i : lin.get_idxs_()) {
-        l.insert(alpha_dl[i]);
+        l_tmp.insert(alpha_dl[i]);
       }
       for(const auto& i : shared_part) {
-        l.insert(alpha_dl[i]);
+        l_tmp.insert(alpha_dl[i]);
       }
     }
-    lbd = l.size();
+    lbd = l_tmp.size();
     return lbd;
   };
   var_t recompute_LBD(const vec<var_t>& alpha_dl) {
