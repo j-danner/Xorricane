@@ -304,10 +304,13 @@ void solver::bump_score(const var_t &ind) {
     }
 };
 
+void solver::bump_score(const cls_watch& cls) {
+    for(const auto v : cls.get_vars()) bump_score(v);
+};
+
 void solver::bump_score(const lineral &lit) {
     assert(lit.LT() < activity_score.size());
-    //for(const auto l : lit) bump_score(l);
-    bump_score(lit.LT()); //@todo bump scores of ALL occuring vars?
+    for(const auto l : lit) bump_score(l);
 };
 
 void solver::decay_score() {
@@ -389,6 +392,9 @@ std::pair<var_t, cls_watch> solver::analyze(const stats& s) {
         reason_cls = get_reason(*it);
         VERB(70, "   * reason clause is   " << BOLD( reason_cls.to_str() ) << " for UNIT " << reason_cls.get_unit().to_str() );
 
+        //bump score of all lits in reason_cls
+        //bump_score(reason_cls); //negative perfomance impact...
+
         //ensure that reason cls is reason under alpha
         assert(reason_cls.is_unit(dl_count) && (reason_cls.get_unit().reduced(alpha)+it->lin->to_lineral().reduced(alpha)).reduced(alpha).is_zero());
 
@@ -414,6 +420,8 @@ std::pair<var_t, cls_watch> solver::analyze(const stats& s) {
     VERB(70, "   * finalize " << learnt_cls.to_str() );
     const auto out = learnt_cls.finalize(alpha_dl, alpha_trail_pos, dl_count);
     VERB(70, "   '--------> " << out.to_str() );
+
+    bump_score(out);
     
     VERB(90, "   * XNF " << out.to_xnf_str() );
     VERB(70, "   '----> gives with current assignments: " << out.to_cls().reduced(alpha).to_str());

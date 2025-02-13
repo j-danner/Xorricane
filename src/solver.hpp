@@ -708,6 +708,7 @@ class solver
 
     void bump_score(const var_t& ind);
     void bump_score(const lineral& lit);
+    void bump_score(const cls_watch& cls);
     void decay_score();
     
 
