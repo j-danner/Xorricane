@@ -669,7 +669,6 @@ void solver::restart(stats& s) {
                 if(ind!=decision_on_lvl) {
                     //heuristic would choose a different decision on this lvl! i.e. we can only backtrack to lvl-1 (!)
                     backtrack_lvl = lvl-1;
-                    order_heap_vsids.insert( ind );
                     break;
                 }
                 ++lvl;

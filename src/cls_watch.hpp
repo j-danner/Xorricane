@@ -903,6 +903,20 @@ public:
     return LBD(alpha_dl);
   }
 
+  std::set<var_t> get_vars() const {
+    l_tmp.clear();
+    //return vars;
+    for(const auto& lin : linerals) {
+      for(const auto& i : lin.get_idxs_()) {
+        l_tmp.insert(i);
+      }
+      for(const auto& i : shared_part) {
+        l_tmp.insert(i);
+      }
+    }
+    return l_tmp;
+  }
+
 #ifndef NDEBUG
   var_t compute_unit_assigning_lvl(const vec<var_t>& alpha_dl) const {
     return size()==0 ? 0 : ( size() == 1 ? WLIN0.get_assigning_lvl(alpha_dl) : std::max( shared_part.get_assigning_lvl(alpha_dl), WLIN1.get_assigning_lvl(alpha_dl) ) );
