@@ -677,7 +677,7 @@ class solver
     }
 
     inline void promote_demote_cls(const var_t& i, const var_t& new_tier) {
-      assert(0<=new_tier && new_tier<3);
+      assert(new_tier<3);
       const auto& old_tier = tier[i];
       if(new_tier==old_tier) return;
       assert(!xnf_clss[i].is_irredundant());
