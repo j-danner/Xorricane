@@ -1,4 +1,9 @@
 # Changelog
+## v0.4.2.7
+
+bug fix in warm restarts
+minor improvement for bump_score(lineral)
+bump_score of all vars in learnt cls
 
 ## v0.4.2.6
 
