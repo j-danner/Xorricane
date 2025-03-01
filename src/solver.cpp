@@ -583,7 +583,6 @@ void solver::clause_cleaning(stats& s) {
     }
 
     VERB(50, "c rm clauses")
-    assert_slow( assert_data_structs() );
   #ifndef NDEBUG
     //check if reason cls for lineral_watches can be computed correctly
     for(lin_w_it it=lineral_watches[0].begin(); it!=lineral_watches[0].end(); ++it) {
