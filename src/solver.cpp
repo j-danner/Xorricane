@@ -1749,9 +1749,9 @@ bool solver::find_implications_by_GE(stats& s) {
       break;
     } else if(idxs.size()==1 && alpha[idxs[0]]!=to_bool3(mzd_read_bit(M,r,n_vars)) ) {
       linerals_.emplace_back( idxs[0], (bool) mzd_read_bit(M, r, n_vars) );
-    } else if(idxs.size()==2 && equiv_lits[idxs[0]].ind==0 && opt.eq) {
-      assert(idxs[0] < idxs[1]);
-      linerals_.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::yes );
+    //} else if(idxs.size()==2 && equiv_lits[idxs[0]].ind==0 && opt.eq) {
+    //  assert(idxs[0] < idxs[1]);
+    //  linerals_.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::yes );
     }
   }
   mzd_free(M);
@@ -1785,12 +1785,16 @@ bool solver::find_implications_by_GE(stats& s) {
    s.no_ge_prop += linerals_.size();
 
   //construct corresponding reason clauses
+  list< std::tuple<var_t, var_t, list<lin_w_it>, lineral> > tmp_queue;
+  lineral implied_lin;
   idx = 0;
   for(auto&& lit : linerals_) {
     VERB(95, "c constructing reason cls indices for "<<lit.to_str());
+    implied_lin.clear();
     
     list<lin_w_it> rs_lins;
     var_t resolving_lvl = 0;
+    var_t assigning_lvl = 0;
   
   #ifndef NDEBUG
     lineral tmp;
@@ -1815,29 +1819,31 @@ bool solver::find_implications_by_GE(stats& s) {
     r = 0;
     for(var_t lvl=0; lvl<=dl; ++lvl) {
       auto& l_dl = lineral_watches[lvl];
-      if(l_dl.empty()) continue;
       for(lin_w_it l_it = l_dl.begin(); l_it != l_dl.end() && r < B->nrows; ++l_it, ++r) {
         if(!mzd_read_bit(B,r,idx)) continue;
-      #ifndef NDEBUG
-        tmp += *l_it;
-      #endif
-      #ifdef DEBUG_SLOW
-        assert( L_.reduce(tmp+lit).is_zero() );
-      #endif
-        resolving_lvl = lvl;
-        bump_score(*l_it);
-        //add all linerals EXCEPT when they come from NEW_GUESS, i.e., are the first lin in l_dl (the 'is_assigning' condition is a workaround to avoid asserts to fail in 'minimize'-calls!)
-        if(lvl==0 || l_it!=l_dl.begin() || !l_it->is_assigning()) {
-          rs_lins.emplace_back( l_it );
+        //bump_score(*l_it);
+        assigning_lvl = lvl;
+        //add all linerals EXCEPT when they are assigning, i.e., reflected in alpha!
+        if(!l_it->is_assigning()) {
+            resolving_lvl = lvl;
+            implied_lin += *l_it;
+            rs_lins.emplace_back( l_it );
         }
+        assert_slower(L_.reduce(implied_lin+lit).is_zero());
       }
     }
     //post-process r_cls_idxs -- so far r_cls_idxs will lead to a reason clause that ONLY contains GUESS variables; which is potentially cumbersome -- thus: remove all assigning linerals from 'inbetween' decisions-levels
     if(resolving_lvl==0) rs_lins.clear();
     rs_lins.remove_if([&resolving_lvl](const auto& lin){ return lin->get_lvl()!=0 && lin->get_lvl()!=resolving_lvl && lin->is_assigning(); });
-
-    assert((tmp+lit).reduced(alpha).is_zero());
+    assert((implied_lin+lit).reduced(alpha).is_zero());
     ++idx;
+    //NOTE    do not immediately add to lineral_watches as this tampers with the above looping!
+    //INSTEAD add it to queue to add it there after all reasons have been constructed!
+    tmp_queue.emplace_back( resolving_lvl, assigning_lvl, std::move(rs_lins), std::move(implied_lin) );
+  }
+  var_t assigning_lvl_min = dl;
+  //queue new linerals
+  for(const auto& [resolving_lvl, assigning_lvl, rs_lins, lit] : tmp_queue) {
     //add lineral to lineral_watches
     lineral_watches[resolving_lvl].emplace_back( std::move(lit), alpha, alpha_dl, dl_count, std::move(rs_lins), resolving_lvl );
 
@@ -1849,17 +1855,16 @@ bool solver::find_implications_by_GE(stats& s) {
     //ensure that reason cls is reason for provided alpha
     assert(rcls.is_unit(dl_count) && (rcls.get_unit()+lin->to_lineral()).reduced(alpha).is_zero());
   #endif
+    
+    if(assigning_lvl < assigning_lvl_min) assigning_lvl_min = assigning_lvl;
 
-    //backtrack if necessary!
-    if(resolving_lvl < dl) {
-      backtrack(resolving_lvl);
-      assert(resolving_lvl==dl);
-      queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LINERAL, queue_t::NEW_UNIT);
-      //return immediately
-      break;
-    }
-    assert(resolving_lvl==dl);
-    queue_implied_lineral(std::prev(lineral_watches[dl].end()), dl, origin_t::LINERAL, queue_t::NEW_UNIT);
+    queue_implied_lineral(std::prev(lineral_watches[resolving_lvl].end()), resolving_lvl, origin_t::LINERAL, queue_t::NEW_UNIT);
+  }
+
+
+  //backtrack if necessary!
+  if(assigning_lvl_min < dl) {
+    backtrack(assigning_lvl_min);
   }
 
   mzd_free(B);
