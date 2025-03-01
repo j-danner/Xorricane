@@ -1389,7 +1389,7 @@ class solver
      * @param stats s current stats
      */
     inline bool need_GE_inprocessing(stats& s) {
-      if(at_conflict() || opt.gauss_elim_schedule==0) return false;
+      if(at_conflict() || !lineral_queue.empty() || opt.gauss_elim_schedule==0) return false;
       else if(dl==0) return true; //always use gauss-jordan-elim on dl 0?
       else if(opt.gauss_elim_schedule==-1) {
         //adaptive scheduling: decrease gauss_elim_schedule, if average usability decreased
