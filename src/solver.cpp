@@ -146,7 +146,7 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
             //as LGJ is enabled, in theory we do not NEED to watch the linerals in dl 0
             //but as LGJ implementation is currently incomplete, it seems rather beneficial to do it nonetheless!
             VERB(90, "c adding new lineral: " << BOLD(l_it->to_str()) << "  --> gives with current assignments: "<<l_it->reduced(alpha).to_str());
-            add_new_lineral( *l_it, 0, queue_t::NEW_UNIT, origin_t::INIT );
+            if(l_it->size()<8) add_new_lineral( *l_it, 0, queue_t::NEW_UNIT, origin_t::INIT );
         }
     }
 
@@ -155,9 +155,9 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
         lazy_gauss_jordan = new lin_sys_lazy_GE( std::move(_Lsys), get_num_vars() );
         VERB(120, "c lazy_gauss_jordan: " << lazy_gauss_jordan->to_str() );
         list<lineral>& q = lazy_gauss_jordan->get_implied_literal_queue();
-        //for (auto&& lin : q) {
-        //    add_new_lineral( std::move(lin), 0, queue_t::NEW_UNIT, origin_t::INIT );
-        //}
+        for (auto&& lin : q) {
+            add_new_lineral( std::move(lin), 0, queue_t::NEW_UNIT, origin_t::INIT );
+        }
         lazy_gauss_jordan->clear_implied_literal_queue();
     }
 
