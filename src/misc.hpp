@@ -266,7 +266,7 @@ struct options {
 
     guessing_path P;
 
-    const bool warm_restart = true;
+    const bool warm_restart = false; //impact on solver performance unclear - seems not to speed up at least...
 
     //default settings
     options() {};
