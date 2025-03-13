@@ -20,6 +20,8 @@
 // #define DEBUG_SLOW
 // #define DEBUG_SLOWER
 
+static CMSat::vector<unsigned> xor_clause;
+
 class lin_sys_lazy_GE
 {
   private:
@@ -113,7 +115,6 @@ class lin_sys_lazy_GE
 
         //push non-assigning linerals to solver all others just enqueue!
         list<const lineral*> linerals_assigning;
-        vec<unsigned> xor_clause;
         //vec<CMSat::Lit> assignments;
         for(const auto& l : linerals.get_linerals()) {
             if(l.is_zero()) continue;
@@ -518,7 +519,6 @@ class lin_sys_lazy_GE
 
         ////push non-assigning linerals to solver all others just enqueue!
         //list<const lineral*> linerals_assigning;
-        //vec<unsigned> xor_clause;
         //for(;it != linerals.end(); ++it) {
         //    const auto& l = *it;
         //    if(l.is_zero()) continue;
