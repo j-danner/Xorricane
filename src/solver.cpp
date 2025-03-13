@@ -317,6 +317,21 @@ void solver::bump_score(const lineral &lit) {
 void solver::decay_score() {
     //instead of actually decaying all scores; we increase the bump
     bump *= bump_mult;
+    util_bump *= util_bump_mult;
+};
+
+
+void solver::bump_utility(const var_t &i) {
+    ++utility[i];
+    //return;
+    //utility[i] += util_bump;
+    //max_util = std::max(max_util,  utility[i]);
+
+    //if(utility[i] > 1e100) {
+    //    for (auto& u: utility) u *= 1e-100;
+    //    max_util *= 1e-100;
+    //    util_bump *= 1e-100;
+    //}
 };
 
 #ifndef NDEBUG
@@ -800,7 +815,7 @@ bool solver::remove_fixed_equiv() {
                 assert(xnf_clss[i].is_inactive(dl_count));
                 assert(xnf_clss[i].get_unit_at_lvl() == 0);
                 //update utility
-                ++utility[i];
+                bump_utility(i);
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral
@@ -945,7 +960,7 @@ void solver::GCP(stats &s) noexcept {
                 assert(xnf_clss[i].is_inactive(dl_count));
                 assert(xnf_clss[i].get_unit_at_lvl() == dl);
                 //increase utility
-                ++utility[i];
+                bump_utility(i);
                 // IGNORE THIS CLAUSE FROM NOW ON
                 decr_active_cls(i);
                 // new lineral

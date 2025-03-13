@@ -183,7 +183,6 @@ class solver
      * @brief utility[i] gives number of unit propagations of clss[i] (with moving average) @todo fix this line!!
      */
     vec<double> utility;
-    double util_cutoff; //min utility to keep a clause on cleanup
 
     /**
      * @brief watch_list[i] contains all idxs j s.t. clss[j] watches indet i
@@ -310,7 +309,7 @@ class solver
      */
     inline var_t add_learnt_cls(cls_watch&& cls, const bool& redundant = true) {
       const var_t i = add_cls_watch( std::move(cls), redundant, true );
-      ++utility[i];
+      bump_utility(i);
       return i;
     }
 
@@ -662,7 +661,7 @@ class solver
     //bumps utility recursively + recomputes LBD + sets clause as used in conflict
     inline void bump_reason(const stats& s, const lin_w_it lin) {
       for(const auto& i : lin->get_reason_idxs()) {
-        ++utility[i];
+        bump_utility(i);
         //recompute LBD - if redundant clause!
         if(!xnf_clss[i].is_irredundant()) {
           xnf_clss[i].set_used_in_conflict(s.no_confl);
@@ -698,7 +697,7 @@ class solver
     const double bump_start = 1.01;
     const double bump_end = 1.10;
     double bump_mult = bump_start; // 1/0.95 good for random instances
-
+    
     void update_bump_mult(const stats& s) {
       if( 100000 < s.no_confl && s.no_confl<1000000) {
         const double linear_smoothing = ((double) s.no_confl-100000)/1000000;
@@ -710,6 +709,12 @@ class solver
     void bump_score(const lineral& lit);
     void bump_score(const cls_watch& cls);
     void decay_score();
+
+    //utility 
+    double max_util;
+    const double util_bump_mult = 1;
+    double util_bump = 1;
+    void bump_utility(const var_t& i);
     
 
     void prefetch(var_t upd_lt) {
@@ -1019,7 +1024,7 @@ class solver
           assert(xnf_clss[i].is_unit(dl_count));
           assert(xnf_clss[i].is_inactive(dl_count));
           //update utility
-          ++utility[i];
+          bump_utility(i);
           // IGNORE THIS CLAUSE FROM NOW ON
           decr_active_cls(i);
           // NEW LIN-EQS
