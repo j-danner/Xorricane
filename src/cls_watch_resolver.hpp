@@ -232,7 +232,7 @@ public:
       
       if(size()>256) {
         //@heuristic choose good value!
-        const var_t max_size = std::min(4, (int) (num_nz_lins / t_pos_to_idxs.size()) + 2 );
+        const var_t max_size = 4; //std::min(4, (int) (num_nz_lins / t_pos_to_idxs.size()) + 2 );
         reduction(max_size, alpha_dl, alpha_trail_pos, dl_count);
       }
 
@@ -302,7 +302,7 @@ public:
   
       if(size()>256) {
         //@heuristic choose good value!
-        const var_t max_size = std::min(4, (int) (num_nz_lins / t_pos_to_idxs.size()) + 2 );
+        const var_t max_size = 4; //std::min(4, (int) (num_nz_lins / t_pos_to_idxs.size()) + 2 );
         reduction(max_size, alpha_dl, alpha_trail_pos, dl_count);
       }
 
