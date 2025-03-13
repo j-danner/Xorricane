@@ -136,14 +136,15 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
     //add linerals from _Lsys to lineral_queue
     for(auto& [lt,l_it] : _Lsys.get_pivot_poly_idx()) {
         //_clss.emplace_back( std::move(*l_it) );
+        if(opt.pp!=xornado_preproc::no) IG_linerals_to_be_propagated.emplace_back( *l_it );
+
         if(!opt.lgj) {
             VERB(90, "c adding new lineral: " << BOLD(l_it->to_str()) << "  --> gives with current assignments: "<<l_it->reduced(alpha).to_str());
             add_new_lineral( *l_it, 0, queue_t::NEW_UNIT, origin_t::INIT );
         } else {
-            //IF lgj is enabled, no need to watch the linerals in dl 0
             lineral_watches[0].emplace_back(*l_it, alpha, alpha_dl, dl_count, 0);
-            if(opt.pp!=xornado_preproc::no) IG_linerals_to_be_propagated.emplace_back( *l_it );
-            //since lgj implementation is sadly NOT complete, so it seems beneficial to do it nonetheless!
+            //as LGJ is enabled, in theory we do not NEED to watch the linerals in dl 0
+            //but as LGJ implementation is currently incomplete, it seems rather beneficial to do it nonetheless!
             VERB(90, "c adding new lineral: " << BOLD(l_it->to_str()) << "  --> gives with current assignments: "<<l_it->reduced(alpha).to_str());
             add_new_lineral( *l_it, 0, queue_t::NEW_UNIT, origin_t::INIT );
         }
@@ -154,9 +155,9 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
         lazy_gauss_jordan = new lin_sys_lazy_GE( std::move(_Lsys), get_num_vars() );
         VERB(120, "c lazy_gauss_jordan: " << lazy_gauss_jordan->to_str() );
         list<lineral>& q = lazy_gauss_jordan->get_implied_literal_queue();
-        for (auto&& lin : q) {
-            add_new_lineral( std::move(lin), 0, queue_t::NEW_UNIT, origin_t::INIT );
-        }
+        //for (auto&& lin : q) {
+        //    add_new_lineral( std::move(lin), 0, queue_t::NEW_UNIT, origin_t::INIT );
+        //}
         lazy_gauss_jordan->clear_implied_literal_queue();
     }
 
