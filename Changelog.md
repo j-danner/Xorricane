@@ -1,4 +1,14 @@
 # Changelog
+
+## v0.4.2.8
+fix GE: add ALL implied linerals on their respective dls + backtrack to lowest lvl in which a new lineral becomes assigning + deactivate search for new equivs (issues with backtracking lvl!)
+prepare EVSDIS-like utility tracking
+deactivate warm restarts by default -- no noticable performance improvement
+add two more options for clause deletion (lbd, util, avg_util(this was the original!))
+simplify reduction heuristic in cls_watch_resolver
+remove basic lineral-watching on dl 0 for long linerals (size>=8)
+limit tier0 to LBD<=2 and tier1 to LBD<=6; deactivate dynamic bound adjustments
+
 ## v0.4.2.7
 
 bug fix in warm restarts
