@@ -21,7 +21,7 @@ int main(int argc, char const *argv[])
     program.add_argument("-v", "--version")
       .action([=]([[maybe_unused]] const std::string& s) {
         std::stringstream out;
-        out << "c " << __PROJECT_NAME << " created by J. Danner (2023-24)" << std::endl;
+        out << "c " << __PROJECT_NAME << " created by J. Danner (2023-25)" << std::endl;
         out << "c version:           " << __PROJECT_VERSION << std::endl;
         out << "c compilation date:  " << __DATE__ << " at " << __TIME__ << std::endl;
         out << "c compiler:          " << __CMAKE_CXX_COMPILER_ID << " " << __CMAKE_CXX_COMPILER_VERSION << " using C++" << __CMAKE_CXX_STANDARD << std::endl;
@@ -109,7 +109,7 @@ int main(int argc, char const *argv[])
     //deletion opts
     program.add_argument("-delh","--deletion-heuristic")
         .help("deletion heuristic for move/delete in each tier; 'avg_util' (average util), 'util' (median utility), 'lbd' (median LBD)")
-        .default_value(std::string("avg_util"))
+        .default_value(std::string("util"))
         .choices("avg_util", "util", "lbd")
         .nargs(1);
 
@@ -207,7 +207,7 @@ int main(int argc, char const *argv[])
     else if(rh_str=="lbd") rh = restart_opt::lbd;
     
     auto delh_str = program.get<std::string>("-delh");
-    deletion_opt delh = deletion_opt::avg_util;
+    deletion_opt delh = deletion_opt::util;
     if(delh_str=="avg_util") delh = deletion_opt::avg_util;
     else if(delh_str=="util") delh = deletion_opt::util;
     else if(delh_str=="lbd") delh = deletion_opt::lbd;
