@@ -1054,8 +1054,8 @@ class solver
 
     vec<var_t> tier;
     var_t tier_count[3];
-    var_t tier0_limit = 2;
-    var_t tier1_limit = 7;
+    var_t tier0_limit = 3;
+    var_t tier1_limit = 6;
 
     var_t cls_idx_to_tier(const var_t i) {
       if(xnf_clss[i].is_irredundant()) return 0;
@@ -1068,16 +1068,17 @@ class solver
     var_t tier_update_interval = 128;
     var_t last_tier_update = 0;
     bool need_update_tier_limits(stats& s) {
-      //return false;
-      if(s.no_confl < last_tier_update + tier_update_interval) return false;
-      //update tier_update_interval
-      last_tier_update = s.no_confl;
-      if(tier_update_interval < 2<<16) tier_update_interval *= 2;
-      return true;
+      return false;
+      //if(s.no_confl < last_tier_update + tier_update_interval) return false;
+      ////update tier_update_interval
+      //last_tier_update = s.no_confl;
+      //if(tier_update_interval < 2<<16) tier_update_interval *= 2;
+      //return true;
     }
 
     vec<var_t> lbd_count;
     var_t max_lbd;
+    //kissat uses .5 and .9 (!)
     double tier1_percentage = 0.2;
     double tier2_percentage = 0.5;
 
