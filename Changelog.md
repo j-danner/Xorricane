@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.4.2.8
+
 fix GE: add ALL implied linerals on their respective dls + backtrack to lowest lvl in which a new lineral becomes assigning + deactivate search for new equivs (issues with backtracking lvl!)
 prepare EVSDIS-like utility tracking
 deactivate warm restarts by default -- no noticable performance improvement
