@@ -105,6 +105,13 @@ int main(int argc, char const *argv[])
         .default_value(std::string("lbd"))
         .choices("no", "fixed", "luby", "lbd")
         .nargs(1);
+    
+    //deletion opts
+    program.add_argument("-delh","--deletion-heuristic")
+        .help("deletion heuristic for move/delete in each tier; 'avg_util' (average util), 'util' (median utility), 'lbd' (median LBD)")
+        .default_value(std::string("avg_util"))
+        .choices("avg_util", "util", "lbd")
+        .nargs(1);
 
     //linalg-in-processing options
     auto& arg_ge = program.add_argument("-ge","--gauss-elim")
@@ -199,6 +206,12 @@ int main(int argc, char const *argv[])
     else if(rh_str=="luby") rh = restart_opt::luby;
     else if(rh_str=="lbd") rh = restart_opt::lbd;
     
+    auto delh_str = program.get<std::string>("-delh");
+    deletion_opt delh = deletion_opt::avg_util;
+    if(delh_str=="avg_util") delh = deletion_opt::avg_util;
+    else if(delh_str=="util") delh = deletion_opt::util;
+    else if(delh_str=="lbd") delh = deletion_opt::lbd;
+    
     auto ip_str = program.get<std::string>("-ip");
     initial_prop_opt ip = initial_prop_opt::no;
     if(ip_str=="no") ip = initial_prop_opt::no;
@@ -239,6 +252,8 @@ int main(int argc, char const *argv[])
 
         //set upt options
         options opts( dh, po, ca, cm, rh, ip, pp, eq, lgj, gauss_elim_schedule, verb, time_out, sol_count, P );
+        //TODO: clean up construction of options: load defaults at start of parsing and gradually fix the choices!
+        opts.del = delh;
 
         if(only_gcp) {
             stats s;

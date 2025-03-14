@@ -325,7 +325,7 @@ void solver::bump_utility(const var_t &i) {
     ++utility[i];
     //return;
     //utility[i] += util_bump;
-    //max_util = std::max(max_util,  utility[i]);
+    max_util = std::max(max_util,  utility[i]);
 
     //if(utility[i] > 1e100) {
     //    for (auto& u: utility) u *= 1e-100;
@@ -533,32 +533,30 @@ void solver::clause_cleaning(stats& s) {
     //go to dl 0
     const unsigned int no_cls = xnf_clss.size();
 
+    //general scheme
     //tier 0 clauses: keep all of them!
-    //tier 1 clauses: move less used quarter to tier 3
-    //tier 2 clauses: remove less used half
+    //tier 1 clauses: move less useful tier 2
+    //tier 2 clauses: remove less useful
     VERB(80, "c " << CYAN("clause-cleaning: tier0 " << std::to_string(tier_count[0]) << " tier1 " << std::to_string(tier_count[1]) << " tier2 " << std::to_string(tier_count[2]) ) );
 
-    //compute average utilities in each tier:
-    double avg_util_tier[3];
-    for(var_t i=0; i<xnf_clss.size(); ++i) {
-        avg_util_tier[tier[i]] += utility[i];
-    }
-    avg_util_tier[0] /= tier_count[0];
-    avg_util_tier[1] /= tier_count[1];
-    avg_util_tier[2] /= tier_count[2];
-    VERB(80, "c " << CYAN("avg util: tier0 " << std::to_string(avg_util_tier[0]) << " tier1 " << std::to_string(avg_util_tier[1]) << " tier2 " << std::to_string(avg_util_tier[2]) ) );
+    if(opt.del == deletion_opt::avg_util) {
+        VERB(80, "c deletion heuristc: avg_util");
+        //compute average utilities in each tier:
+        double avg_util_tier[3];
+        for(var_t i=0; i<xnf_clss.size(); ++i) {
+            avg_util_tier[tier[i]] += utility[i];
+        }
+        avg_util_tier[0] /= tier_count[0];
+        avg_util_tier[1] /= tier_count[1];
+        avg_util_tier[2] /= tier_count[2];
+        VERB(80, "c " << CYAN("avg util: tier0 " << std::to_string(avg_util_tier[0]) << " tier1 " << std::to_string(avg_util_tier[1]) << " tier2 " << std::to_string(avg_util_tier[2]) ) );
 
-    //create copy for later removal!
-    vec<cls_watch> cpy; cpy.reserve(xnf_clss.size());
-    vec<var_t> tier_cpy; tier_cpy.reserve(xnf_clss.size());
-
-    if(true) {
+        //@heuristic find better values!
         double util_cutoff_move   = 0.125 * avg_util_tier[1];
         double util_cutoff_delete = 0.750 * avg_util_tier[2];
 
         //mark tier 2 clauses for deletion && move tier 1 clauses to tier 2
         for(var_t i=0; i<xnf_clss.size(); ++i) {
-            //if(xnf_clss[i].is_sat(dl_count) || (!xnf_clss[i].is_irredundant() && utility[i] < util_cutoff && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) ) {
             if(xnf_clss[i].is_zero() || xnf_clss[i].is_sat0() ) {
                 xnf_clss[i].mark_for_removal(); //remove all clauses which are zero or satisfied in dl0!
                 --tier_count[tier[i]];
@@ -576,24 +574,103 @@ void solver::clause_cleaning(stats& s) {
                 }
             }
         }
-    } else {
-        //update util_cutoff -- TODO should we use quantiles?
-        double avg_util_redundant = 0;
-        for(var_t i=0; i<xnf_clss.size(); ++i) {
-            if(!xnf_clss[i].is_irredundant()) avg_util_redundant += utility[i];
+    } else if(opt.del == deletion_opt::util) {
+        VERB(80, "c deletion heuristc: util");
+        //tier 0 clauses: keep all of them!
+        //tier 1 clauses: move less used quarter to tier 3
+        //tier 2 clauses: remove less used half
+
+        var_t util_cutoff[2];
+        //@heuristic find better values!
+        double percentage[2] = {17.0/18, 3.0/8};
+        for(var_t t=0; t<=1; ++t) {
+            //compute bins of utility distribution; i.e. segment utilities into 100 bins of equal size; each has size max_util/100
+            lbd_count.clear(); lbd_count.resize(100, 0);
+            for(var_t idx=0; idx<xnf_clss.size(); ++idx) {
+                const auto bin_idx = (int) (utility[idx]/max_util * 100);
+                if(tier[idx] == t+1) ++lbd_count[ xnf_clss[idx].LBD(alpha_dl) ];
+            }
+            //add up 
+            var_t sum = 0;
+            var_t l = 0;
+            while(sum < (double) tier_count[t+1] * percentage[t]) {
+                sum += lbd_count[l];
+                ++l;
+            }
+            util_cutoff[t] = l;
         }
-        avg_util_redundant /= active_cls;
-        const double decay=0.95;
-        util_cutoff = decay*avg_util_redundant;
-        //rm 'useless' cls:
-        VERB(50, "c clean clause database")
-        //mark clauses to be deleted
+        
+        const double util_cutoff_move   = util_cutoff[0];
+        const double util_cutoff_delete = util_cutoff[1];
+
+        VERB(80, "c " << CYAN("util cutoff: tier1->tier2 move " << std::to_string(util_cutoff_move) << " tier2 delete " << std::to_string(util_cutoff_delete) ) );
+
+        //mark tier 2 clauses for deletion && move tier 1 clauses to tier 2
         for(var_t i=0; i<xnf_clss.size(); ++i) {
-            if(xnf_clss[i].is_sat(dl_count) || (!xnf_clss[i].is_irredundant() && utility[i] < util_cutoff && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) ) {
-                xnf_clss[i].mark_for_removal();
-                assert( xnf_clss[i].is_sat(dl_count) || xnf_clss[i].to_cls().deg()!=1 );
-                //adapt tier_count
+            if(xnf_clss[i].is_zero() || xnf_clss[i].is_sat0() ) {
+                xnf_clss[i].mark_for_removal(); //remove all clauses which are zero or satisfied in dl0!
                 --tier_count[tier[i]];
+            } else if(tier[i]==1) {
+                if(utility[i] < util_cutoff_move && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) {
+                    tier[i] = 2;
+                    --tier_count[1];
+                    ++tier_count[2];
+                }
+            } else if(tier[i]==2) {
+                if(utility[i] < util_cutoff_delete && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) {
+                    xnf_clss[i].mark_for_removal();
+                    --tier_count[2];
+                    assert( xnf_clss[i].is_sat(dl_count) || xnf_clss[i].to_cls().deg()!=1 );
+                }
+            }
+        }
+    } else if(opt.del == deletion_opt::lbd) {
+        VERB(80, "c deletion heuristc: lbd");
+        var_t lbd_cutoff[2];
+        //@heuristic find better values!
+        double percentage[2] = {17.0/18, 4.0/8};
+        for(var_t t=0; t<=1; ++t) {
+            lbd_count.clear();
+            lbd_count.resize(get_num_vars()+1, 0);
+            for(var_t idx=0; idx<xnf_clss.size(); ++idx) {
+                if(tier[idx] == t+1) ++lbd_count[ xnf_clss[idx].LBD(alpha_dl) ];
+            }
+            //add up 
+            var_t sum = 0;
+            var_t l = 0;
+            while(sum < (double) tier_count[t+1] * percentage[t]) {
+                sum += lbd_count[l];
+                ++l;
+            }
+            lbd_cutoff[t] = l;
+        }
+        
+        double lbd_cutoff_move   = lbd_cutoff[0];
+        double lbd_cutoff_delete = lbd_cutoff[1];
+
+        VERB(80, "c " << CYAN("lbd cutoff: tier1->tier2 move " << std::to_string(lbd_cutoff_move) << " tier2 delete " << std::to_string(lbd_cutoff_delete) ) );
+
+        //tier 0 clauses: keep all of them!
+        //tier 1 clauses: move less used quarter to tier 3
+        //tier 2 clauses: remove less used half
+
+        //mark tier 2 clauses for deletion && move tier 1 clauses to tier 2
+        for(var_t i=0; i<xnf_clss.size(); ++i) {
+            if(xnf_clss[i].is_zero() || xnf_clss[i].is_sat0() ) {
+                xnf_clss[i].mark_for_removal(); //remove all clauses which are zero or satisfied in dl0!
+                --tier_count[tier[i]];
+            } else if(tier[i]==1) {
+                if(xnf_clss[i].LBD(alpha_dl) >= lbd_cutoff_move && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) {
+                    tier[i] = 2;
+                    --tier_count[1];
+                    ++tier_count[2];
+                }
+            } else if(tier[i]==2) {
+                if(xnf_clss[i].LBD(alpha_dl) >= lbd_cutoff_delete && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) {
+                    xnf_clss[i].mark_for_removal();
+                    --tier_count[2];
+                    assert( xnf_clss[i].is_sat(dl_count) || xnf_clss[i].to_cls().deg()!=1 );
+                }
             }
         }
     }
@@ -607,6 +684,10 @@ void solver::clause_cleaning(stats& s) {
         //BEWARE this assertion may fail for some 'restart' calls of solver_cpy(!)
     }
   #endif
+    
+    //create copy for later removal!
+    vec<cls_watch> cpy; cpy.reserve(xnf_clss.size());
+    vec<var_t> tier_cpy; tier_cpy.reserve(xnf_clss.size());
 
     //remove all xnf_clss marked for removal + prepare lookup-table for new idxs of reason_clss
     vec<var_t> new_idx; new_idx.reserve(xnf_clss.size());

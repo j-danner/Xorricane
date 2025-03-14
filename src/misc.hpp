@@ -219,6 +219,14 @@ enum class ca_alg { no, dpll, fuip, fuip_opt };
 enum class restart_opt { no, fixed, luby, lbd};
 
 /**
+ * @brief options for deletion heuristic
+ * avg_util: move/delete based on average utility of each tier
+ * util: move/delete based on utility distribution in each tier
+ * lbd: move/delete based on LBD-distribution in each tier
+ */
+enum class deletion_opt { avg_util, util, lbd};
+
+/**
  * @brief options for initial propagation of non-forcing linerals
  * no: no propagation
  * nbu: 'no blow up'; only propagate if lineral's size does not 'blow up'
@@ -248,6 +256,7 @@ struct options {
     bool cm = false;
 
     restart_opt rst = restart_opt::lbd;
+    deletion_opt del = deletion_opt::avg_util;
 
     initial_prop_opt ip = initial_prop_opt::no;
     xornado_preproc pp = xornado_preproc::scc_fls;
@@ -311,6 +320,14 @@ struct options {
         case restart_opt::fixed: str += "fixed"; break;
         case restart_opt::luby: str += "luby"; break;
         case restart_opt::lbd: str += "lbd"; break;
+      }
+      str += "\n";
+      
+      str += "c deletion_opt: ";
+      switch(deletion_opt(rst)) {
+        case deletion_opt::avg_util: str += "avg_util"; break;
+        case deletion_opt::util: str += "util"; break;
+        case deletion_opt::lbd: str += "lbd"; break;
       }
       str += "\n";
       
