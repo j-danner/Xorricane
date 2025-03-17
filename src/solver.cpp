@@ -628,7 +628,7 @@ void solver::clause_cleaning(stats& s) {
         VERB(80, "c deletion heuristc: lbd");
         var_t lbd_cutoff[2];
         //@heuristic find better values!
-        double percentage[2] = {17.0/18, 4.0/8};
+        double percentage[2] = {14.0/18, 7.0/16}; //14/18, 7/16
         for(var_t t=0; t<=1; ++t) {
             lbd_count.clear();
             lbd_count.resize(get_num_vars()+1, 0);
