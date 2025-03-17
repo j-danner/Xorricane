@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.2.9
+
+set avg_util as standard deletion heuristic
+'fine-tuning' deletion_opt::lbd on small bench-set
+simplify and improve dynamic GE scheduling
+
+
 ## v0.4.2.8
 
 fix GE: add ALL implied linerals on their respective dls + backtrack to lowest lvl in which a new lineral becomes assigning + deactivate search for new equivs (issues with backtracking lvl!)
