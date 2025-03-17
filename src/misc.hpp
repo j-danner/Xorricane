@@ -256,7 +256,7 @@ struct options {
     bool cm = false;
 
     restart_opt rst = restart_opt::lbd;
-    deletion_opt del = deletion_opt::util;
+    deletion_opt del = deletion_opt::avg_util;
 
     initial_prop_opt ip = initial_prop_opt::no;
     xornado_preproc pp = xornado_preproc::scc_fls;

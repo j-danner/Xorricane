@@ -207,7 +207,7 @@ int main(int argc, char const *argv[])
     else if(rh_str=="lbd") rh = restart_opt::lbd;
     
     auto delh_str = program.get<std::string>("-delh");
-    deletion_opt delh = deletion_opt::util;
+    deletion_opt delh = deletion_opt::avg_util;
     if(delh_str=="avg_util") delh = deletion_opt::avg_util;
     else if(delh_str=="util") delh = deletion_opt::util;
     else if(delh_str=="lbd") delh = deletion_opt::lbd;
