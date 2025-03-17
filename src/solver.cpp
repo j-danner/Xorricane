@@ -1757,7 +1757,7 @@ void solver::print_trail(std::string lead) const noexcept {
 }
 
 
-bool solver::find_implications_by_GE(stats& s) {
+bool solver::find_implications_by_GE_core(stats& s) {
   const auto begin  = std::chrono::high_resolution_clock::now();
   ++s.no_ge;
 #ifdef DEBUG_SLOW

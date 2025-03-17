@@ -1386,9 +1386,9 @@ class solver
 
     
     int ctr = 0;
-    double avg_la_per_sec = 0;
-    var_t checks_until_next_la = 1 << 7;
-    long gauss_elim_schedule_wait = 1 << 7;
+    double avg_la_per_call = 0;
+    var_t checks_until_next_la = 1 << 10;
+    long gauss_elim_schedule_wait = 1 << 10;
     /**
      * @brief decides whether a Gaußian Elimination in-processing step should be performed
      * 
@@ -1396,23 +1396,11 @@ class solver
      */
     inline bool need_GE_inprocessing(stats& s) {
       if(at_conflict() || !lineral_queue.empty() || opt.gauss_elim_schedule==0) return false;
-      else if(dl==0) return true; //always use gauss-jordan-elim on dl 0?
+      else if(dl==0 && !opt.lgj) return true; //always use gauss-jordan-elim on dl 0 if LGJ not activated!
       else if(opt.gauss_elim_schedule==-1) {
         //adaptive scheduling: decrease gauss_elim_schedule, if average usability decreased
         --checks_until_next_la;
         if(checks_until_next_la!=0) return false;
-        double new_avg = (double) ( (s.no_ge_prop) / (s.total_linalg_time.count()) + avg_la_per_sec ) / 2;
-        if(gauss_elim_schedule_wait==1 || avg_la_per_sec >= new_avg) {
-          gauss_elim_schedule_wait += 1;
-          VERB(10, "c new_avg: " << std::to_string(new_avg) );
-          VERB(10, "c increasing gauss_elim_schedule_wait to " << std::to_string(gauss_elim_schedule_wait))
-        } else {
-          gauss_elim_schedule_wait = gauss_elim_schedule_wait>1 ? gauss_elim_schedule_wait-1 : 1;
-          VERB(10, "c new_avg: " << std::to_string(new_avg) );
-          VERB(10, "c decreasing gauss_elim_schedule_wait to " << std::to_string(gauss_elim_schedule_wait))
-        }
-        avg_la_per_sec = new_avg;
-        checks_until_next_la = gauss_elim_schedule_wait;
         return true;
       }
       ++ctr;
@@ -1420,13 +1408,36 @@ class solver
       return ctr == 0 && !at_conflict();
     }
 
+
+    bool find_implications_by_GE_core(stats& s);
     /**
      * @brief get all implied alpha's from lineral assignments
      * @note might backtrack if a propagation on a lower dl is noticed!
      * 
      * @return true iff a new forcing equivalence was found
      */
-    bool find_implications_by_GE(stats& s);
+    bool find_implications_by_GE(stats& s) {
+      auto ret = find_implications_by_GE_core(s);
+
+      //update gauss_elim_schedule -- if automatic 
+      if(opt.gauss_elim_schedule==-1) {
+        //perform check
+        double new_avg = ((double) s.no_ge_prop) / (s.no_ge);
+        if(gauss_elim_schedule_wait==1 || avg_la_per_call >= new_avg) {
+          gauss_elim_schedule_wait += 8;
+          VERB(10, "c new_avg: " << std::to_string(new_avg) );
+          VERB(10, "c increasing gauss_elim_schedule_wait to " << std::to_string(gauss_elim_schedule_wait))
+        } else {
+          gauss_elim_schedule_wait = gauss_elim_schedule_wait>1 ? gauss_elim_schedule_wait>>1 : 1;
+          VERB(10, "c new_avg: " << std::to_string(new_avg) );
+          VERB(10, "c decreasing gauss_elim_schedule_wait to " << std::to_string(gauss_elim_schedule_wait))
+        }
+        avg_la_per_call = new_avg;
+        checks_until_next_la = gauss_elim_schedule_wait;
+      }
+
+      return ret;
+    };
 
     /**
      * @brief performs GCP; with basic in-processing on dl 0 (LGJ, IG, removal of fixed assignments and equivs) + GE on higher dl
