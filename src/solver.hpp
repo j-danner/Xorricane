@@ -1502,6 +1502,19 @@ class solver
         IG.get_opts()->pp = xornado::preproc::scc;
         opt.pp = xornado_preproc::scc;
       }
+
+      //@heuristic: dynamic approach as below should be tested!
+      //const double ig_time = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(s.total_ig_time).count())/1000.0f;
+      //if(opt.pp==xornado_preproc::scc_fls && s.no_ig > 100 && ig_time/s.no_ig_prop > 0.02) {
+      //  //deactivate FLS search
+      //  opt.pp = xornado_preproc::scc;
+      //  IG.get_opts()->pp = xornado::preproc::scc;
+      //} else if(opt.pp==xornado_preproc::scc && s.no_ig > 250 && ig_time/s.no_ig_prop > 0.01) {
+      //  //deactivate IG processing completely
+      //  opt.pp = xornado_preproc::no;
+      //  IG.get_opts()->pp = xornado::preproc::no;
+      //}
+
       ++s.no_ig;
       const auto begin  = std::chrono::high_resolution_clock::now();
       VERB(50, "c implication graph in-processing -- propagating " << IG_linerals_to_be_propagated.size() << " new linerals.");
