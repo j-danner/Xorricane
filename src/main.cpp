@@ -109,7 +109,7 @@ int main(int argc, char const *argv[])
     //deletion opts
     program.add_argument("-delh","--deletion-heuristic")
         .help("deletion heuristic for move/delete in each tier; 'avg_util' (average util), 'util' (median utility), 'lbd' (median LBD)")
-        .default_value(std::string("util"))
+        .default_value(std::string("avg_util"))
         .choices("avg_util", "util", "lbd")
         .nargs(1);
 
