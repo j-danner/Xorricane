@@ -145,8 +145,8 @@ int main(int argc, char const *argv[])
     
     
     //equiv opts
-    program.add_argument("-no-eq","--no-equiv-lit")
-        .help("deactivate usage of equivalent literals")
+    program.add_argument("-no-eq","--no-equiv-sub")
+        .help("deactivate substitution of equivalence linerals")
         .flag();
     
     
