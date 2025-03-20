@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.2.10
+
+actually set tier0 limit to LBD<=2 (should have been changed in 0.4.2.8)
+tweak flag names and descriptions
+
 ## v0.4.2.9
 
 set avg_util as standard deletion heuristic
