@@ -1054,7 +1054,7 @@ class solver
 
     vec<var_t> tier;
     var_t tier_count[3];
-    var_t tier0_limit = 3;
+    var_t tier0_limit = 2;
     var_t tier1_limit = 6;
 
     var_t cls_idx_to_tier(const var_t i) {
