@@ -1387,8 +1387,8 @@ class solver
     
     int ctr = 0;
     double avg_la_per_call = 0;
-    var_t checks_until_next_la = 1 << 10;
-    long gauss_elim_schedule_wait = 1 << 10;
+    long gauss_elim_schedule_wait = 2 << 9;
+    var_t checks_until_next_la = gauss_elim_schedule_wait;
     /**
      * @brief decides whether a Gaußian Elimination in-processing step should be performed
      * 
