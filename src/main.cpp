@@ -114,12 +114,13 @@ int main(int argc, char const *argv[])
         .nargs(1);
 
     //linalg-in-processing options
-    auto& arg_ge = program.add_argument("-ge","--gauss-elim")
-        .help("gauss-elim in-processing after every i-th decision")
+    auto& arg_ge = program.add_argument("-il","--impl-lits")
+        .help("computation implied literals after every s-th decision")
         .default_value(0)
         .scan<'i', int>()
         .nargs(1);
     program.add_hidden_alias_for(arg_ge, "-la"); //old flag
+    program.add_hidden_alias_for(arg_ge, "-ge"); //old flag
     
     //lazy gauss-elim
     auto& arg_lgj= program.add_argument("-no-lgj","--no-lazy-gauss-jordan-elim")
@@ -137,9 +138,9 @@ int main(int argc, char const *argv[])
     
     //preproc (SCC+FLS)
     program.add_argument("-pp","--preprocess")
-        .help("preprocessing via implication graphs (see 2-Xornado); 'no' (no), 'scc' (strongly connected components), or 'scc_fls' (strongly connected components and failed linerals)")
-        .default_value(std::string("scc_fls"))
-        .choices("no", "scc", "scc_fls")
+        .help("preprocessing via implication graphs (see 2-Xornado); 'no' (no), 'scc' (strongly connected components), or 'fls_scc' (strongly connected components and failed linerals)")
+        .default_value(std::string("fls_scc"))
+        .choices("no", "scc", "fls_scc")
         .nargs(1);
     
     
@@ -222,7 +223,7 @@ int main(int argc, char const *argv[])
     xornado_preproc pp = xornado_preproc::scc_fls;
     if(pp_str=="no") pp = xornado_preproc::no;
     else if(pp_str=="scc") pp = xornado_preproc::scc;
-    else if(pp_str=="scc_fls") pp = xornado_preproc::scc_fls;
+    else if(pp_str=="fls_scc") pp = xornado_preproc::scc_fls;
     
     bool eq = !program.is_used("-no-eq");
 
