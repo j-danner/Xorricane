@@ -1892,7 +1892,7 @@ bool solver::find_implications_by_GE_core(stats& s) {
     var_t resolving_lvl = 0;
     var_t assigning_lvl = 0;
   
-  #ifndef NDEBUG
+  #ifdef DEBUG_SLOW
     lineral tmp;
   #endif
   #ifdef DEBUG_SLOWER
