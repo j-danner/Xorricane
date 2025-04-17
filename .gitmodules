@@ -1,0 +1,3 @@
+[submodule "src/cryptominisat_no_cadiback"]
+	path = src/cryptominisat
+	url = https://github.com/j-danner/cryptominisat_no_cadiback.git
