@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.2.11
+
+reset tier0 limit to LBD<=3
+
 ## v0.4.2.10
 
 actually set tier0 limit to LBD<=2 (should have been changed in 0.4.2.8)
@@ -10,7 +14,6 @@ tweak flag names and descriptions
 set avg_util as standard deletion heuristic
 'fine-tuning' deletion_opt::lbd on small bench-set
 simplify and improve dynamic GE scheduling
-
 
 ## v0.4.2.8
 
@@ -33,7 +36,6 @@ bump_score of all vars in learnt cls
 change FLS to only find trivial ones
 linear increment of bump_mult
 dynamic tier2_limit update (similar to kissat)
-
 
 ## v0.4.2.5
 
