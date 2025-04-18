@@ -88,7 +88,7 @@
 #define BLACK(str) rang::fg::black<< str << rang::style::reset
 
 #define PRINT_SECTION_HEADER(str) std::cout << "c " << BLUE("------<") << " " << BLUE(str) << " " << BLUE(">------") << std::endl << "c " << std::endl;
-#define EXIT(code) {std::cout << "c " << std::endl << "c " << "exit " << std::to_string(code) << std::endl; return code; }
+#define EXIT(verbose,code) {if(verbose){std::cout << "c " << std::endl << "c " << "Exiting with code " << std::to_string(code) << std::endl;} return code;}
 
 
 //use 'non-optimized' computation of reason clauses -- tree-like without reordering and without skipping unneccessary repeated resolvents with the same clause
@@ -468,7 +468,7 @@ class stats {
      */
     void print_sol(bool verbose) const {
       auto str = sols.size()>1 ? ("Solution " + std::to_string(sols.size())) : "Solution";
-      if(verbose) PRINT_SECTION_HEADER(str);
+      if(verbose) {std::cout << "c " << std::endl; PRINT_SECTION_HEADER(str);}
       if(finished) {
           const auto& sol = sols.back();
           if(sols.size()>0) {

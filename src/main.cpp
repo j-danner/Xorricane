@@ -24,6 +24,16 @@
 
 #include "argparse/argparse.hpp"
 
+void print_header() {
+    //print header
+    std::cout << "c " << BLUE("------<") << " " << BOLD(UNDERLINE(__PROJECT_NAME)) << " " << BLUE(">------") << std::endl;
+    std::cout << "c " << BOLD("Conflict-Driven SAT Solving Using XOR-OR-AND Normal Forms") << std::endl;
+    std::cout << "c " << std::endl;
+    std::cout << "c " << YELLOW("Copyright (c) 2022-2025 J. Danner") << std::endl;
+    std::cout << "c " << YELLOW("Version " << ITALIC(BOLD(__PROJECT_VERSION))) << std::endl;
+    std::cout << "c " << YELLOW("Compiled with " << __CMAKE_CXX_COMPILER_ID << " " << __CMAKE_CXX_COMPILER_VERSION << " on " << __DATE__ << ", " << __TIME__) << std::endl;
+    std::cout << "c " << std::endl;
+}
 
 //main -- parses args
 int main(int argc, char const *argv[])
@@ -39,15 +49,10 @@ int main(int argc, char const *argv[])
 
     program.add_argument("-v", "--version")
       .action([=]([[maybe_unused]] const std::string& s) {
-        std::cout << "c " << BLUE("------<") << " " << BOLD(UNDERLINE(__PROJECT_NAME)) << " " << BLUE(">------") << std::endl;
-        std::cout << "c " << BOLD("Conflict-Driven SAT Solving Using XOR-OR-AND Normal Forms") << std::endl;
-        std::cout << "c " << std::endl;
-        std::cout << "c " << YELLOW("Copyright (c) 2022-2025 J. Danner") << std::endl;
-        std::cout << "c " << YELLOW("Version " << BOLD(__PROJECT_VERSION)) << std::endl;
-        std::cout << "c " << YELLOW("compiled with " << __CMAKE_CXX_COMPILER_ID << " " << __CMAKE_CXX_COMPILER_VERSION << " on " << __DATE__ << ", " << __TIME__) << std::endl;
-        std::cout << "c " << YELLOW("compiled with " << __CMAKE_CXX_FLAGS) << std::endl;
+        print_header();
+        std::cout << "c " << YELLOW("Using flags " << __CMAKE_CXX_FLAGS) << std::endl;
       #ifdef USING_JEMALLOC
-        std::cout << "c " << YELLOW("using jemalloc for memory allocation") << std::endl;
+        std::cout << "c " << YELLOW("Using jemalloc for memory allocation") << std::endl;
       #endif
         std::cout << "c " << std::endl;
         std::exit(0);
@@ -61,7 +66,7 @@ int main(int argc, char const *argv[])
     //verbosity
     #ifdef VERBOSITY
         program.add_argument("-vb", "--verb")
-            .help("verbosity level (choose in 0-100)")
+            .help("verbosity level (choose in 0-200)")
             .default_value(1)
             .scan<'i', int>()
             .nargs(1);
@@ -93,7 +98,7 @@ int main(int argc, char const *argv[])
     
     //guessing path input
     program.add_argument("-gp","--guessing-path")
-        .help("path to file with guessing path, where each line contains exactly one literal corresponding to the variable assignment to be guessed next; lines are skipped if variables already assigned")
+        .help("path to guessing path file; each line contains one literal dictating the initial decisions")
         .nargs(1);
         //undocumented: if var name is negative we first guess the ind to be false instead of true
     
@@ -121,7 +126,7 @@ int main(int argc, char const *argv[])
     
     //restart opts
     program.add_argument("-rh","--restart-heuristic")
-        .help("restart schedule; 'no' (never), 'fixed' (after fixed number of conflicts), 'luby' (theoretical optimal), 'lbd' (dynamic lbd-based restarts)")
+        .help("restart schedule; 'no' (never), 'fixed' (fixed num confl), 'luby' (theoretical optimal), 'lbd' (dynamic lbd)")
         .default_value(std::string("lbd"))
         .choices("no", "fixed", "luby", "lbd")
         .nargs(1);
@@ -151,14 +156,14 @@ int main(int argc, char const *argv[])
 
     //initial reduction opts
     program.add_argument("-ip","--initial-propagation")
-        .help("initial propagation of non-forcing linerals; 'no' (no), 'nbu' (reduce if each linerals size does not blow up), or 'full' (full reduction)")
+        .help("initial propagation of linerals; 'no' (no), 'nbu' (reduce if each linerals size does not blow up), or 'full' (full reduction)")
         .default_value(std::string("no"))
         .choices("no", "nbu", "full")
         .nargs(1);
     
     //preproc (SCC+FLS)
     program.add_argument("-pp","--preprocess")
-        .help("preprocessing via implication graphs (see 2-Xornado); 'no' (no), 'scc' (strongly connected components), or 'fls_scc' (strongly connected components and failed linerals)")
+        .help("preprocessing via implication graphs (see 2-Xornado); 'no' (no), 'scc' (SCC), or 'fls_scc' (FLS+SCC)")
         .default_value(std::string("fls_scc"))
         .choices("no", "scc", "fls_scc")
         .nargs(1);
@@ -188,9 +193,11 @@ int main(int argc, char const *argv[])
     try {
         program.parse_args(argc, argv);
     } catch (const std::runtime_error& err) {
-        std::cerr << err.what() << std::endl;
-        std::cerr << program;
-        std::exit(1);
+        print_header();
+        std::cout << "c " << RED(err.what()) << std::endl;
+        std::cout << "c " << std::endl;
+        std::cout << "c " << "Use -h for help." << std::endl;
+        EXIT(true, 1);
     }
 
     //parse string-input to 
@@ -266,29 +273,23 @@ int main(int argc, char const *argv[])
     auto gauss_elim_schedule = program.get<int>("-ge");
 
     //banner copyright + version number + compilation info
-    if(verb>0) {
-        //print header
-        std::cout << "c " << BLUE("------<") << " " << BOLD(UNDERLINE(__PROJECT_NAME)) << " " << BLUE(">------") << std::endl;
-        std::cout << "c " << BOLD("Conflict-Driven SAT Solving Using XOR-OR-AND Normal Forms") << std::endl;
-        std::cout << "c " << std::endl;
-        std::cout << "c " << YELLOW("Copyright (c) 2022-2025 J. Danner") << std::endl;
-        std::cout << "c " << YELLOW("Version " << __PROJECT_VERSION) << std::endl;
-        std::cout << "c " << YELLOW("compiled with " << __CMAKE_CXX_COMPILER_ID << " " << __CMAKE_CXX_COMPILER_VERSION << " on " << __DATE__ << ", " << __TIME__) << std::endl;
-        std::cout << "c " << std::endl;
-    }
+    if(verb>0) print_header();
 
     //parse file
     try {
         if(verb>0) PRINT_SECTION_HEADER("Parsing")
-        auto begin  = std::chrono::high_resolution_clock::now();
+        const auto begin  = std::chrono::high_resolution_clock::now();
         guessing_path P = parse_gp( gp_fname, verb>0 );
         auto p_xnf = parse_file( fname, verb>0 );
         const auto end  = std::chrono::high_resolution_clock::now();
         s.total_parsing_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
-        double parsing_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(s.total_parsing_time).count())/1000.0f;
-        if(verb>0) std::cout << "c " << std::endl;
-        if(verb>0) std::cout << "c Parsing time   : " << std::setw(5) << parsing_time << " [s]" << std::endl;
-        if(verb>0) std::cout << "c " << std::endl;
+        const double parsing_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(s.total_parsing_time).count())/1000.0f;
+        if(verb>0) {
+            std::cout << std::fixed << std::setprecision(3);
+            std::cout << "c " << std::endl;
+            std::cout << "c Parsing time   : " << std::setw(5) << parsing_time << " [s]" << std::endl;
+            std::cout << "c " << std::endl;
+        }
         assert( P.assert_data_struct() );
 
         //set upt options
@@ -301,18 +302,19 @@ int main(int argc, char const *argv[])
             if(out.size()>0) {
                 write_str(gcp_out, out);
                 std::cout << "c GCP-out written to " << gcp_out << std::endl;
-                EXIT(0)
+                EXIT(verb>0, 0)
             }
-            EXIT(1); //gcp failed.
+            EXIT(true, 1); //gcp failed.
         } else {
             if(verb>0) PRINT_SECTION_HEADER("Solving")
             const auto exit_code = solve(p_xnf.cls, p_xnf.num_vars, opts, s);
-            EXIT(exit_code)
+            EXIT(verb>0, exit_code)
         }
     } catch (std::exception &ex) {
-        std::cout << "c " << std::endl;
+        if(verb>0) std::cout << "c " << std::endl;
         std::cout << "c " << RED(BOLD( "[EXCEPTION] " << ex.what() )) << std::endl;
+        std::cout << "c " << std::endl;
         std::cout << "s INDEFINITE" << std::endl;
-        EXIT(1)
+        EXIT(verb>0, 1)
     }
 }
