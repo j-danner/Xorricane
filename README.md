@@ -57,3 +57,7 @@ Then run `cmake .` and `make xorricane`.
 
 __SOON__
 Alternatively, use the docker image `jdanner/xorricane` (download via `docker pull jdanner/xorricane:latest`) or build it yourself using the provided [`Dockerfile`](Dockerfile) by `docker build -t jdanner/xorricane:latest .`. Then access Xorricane through [`docker_xorricane`](docker_xorricane).
+
+### License
+
+All code written by J. Danner is licensed under __MIT__, as are most of the included libraries. Only [`parallel-hashmap`](src/xornado/parallel-hashmap/) is licensed under __Apache 2.0__ and `m4ri` (downloaded and built during configuration) under __GPLv2__. therefore, the whole solver is licensed under __GPLv3__, which is compatible with all three licenses.
