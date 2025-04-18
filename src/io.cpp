@@ -48,7 +48,7 @@ std::vector< std::string > split(const std::string& str, const std::string& deli
 }
 
 
-parsed_xnf parse_file(std::istream& file) {
+parsed_xnf parse_file(std::istream& file, bool verbose) {
     var_t num_vars = 0;
     var_t actual_num_vars = 0;
     var_t num_cls = 0;
@@ -66,11 +66,12 @@ parsed_xnf parse_file(std::istream& file) {
 
         auto words = split(line, " ");
         if (words[0] == "p") {
+            if(verbose) std::cout << "c found header: " << line << std::endl;
             if (words[1] != "xnf") {
-                std::cout << "c parser: file-format specified as \'" << words[1] << "\' continuing as if it were " << "\'xnf\'" << "." << std::endl;
+                if(verbose) std::cout << "c parser: file-format specified as \'" << words[1] << "\' continuing as if it were " << "\'xnf\'" << "." << std::endl;
             }
             if (words.size()<4) {
-                std::cout << "c parser: file-format incorrectly specified. Should be \'p xnf n m\' where n is the number of variables and m the number of clauses." << std::endl;
+                if(verbose) std::cout << "c parser: file-format incorrectly specified. Should be \'p xnf n m\' where n is the number of variables and m the number of clauses." << std::endl;
             }
             num_vars = stoi(words[2]);
             num_cls = stoi(words[3]);
@@ -131,32 +132,36 @@ parsed_xnf parse_file(std::istream& file) {
     }
 
     if( cls.size() != num_cls) {
-        std::cerr << "c Number of clauses in header differs from number of found clauses!" << std::endl;
-        std::cerr << "c header said " << num_cls << " whereas we found " << cls.size() << " clauses." << std::endl;
+        if(verbose) std::cerr << "c Number of clauses in header differs from number of found clauses!" << std::endl;
+        if(verbose) std::cerr << "c header said " << num_cls << " whereas we found " << cls.size() << " clauses." << std::endl;
         num_cls = cls.size();
     }
     if(actual_num_vars > num_vars) {
-        std::cerr << "c Number of variables in header differs from number of found variables!" << std::endl;
-        std::cerr << "c header said " << num_vars << " whereas we found " << actual_num_vars << " variables." << std::endl;
+        if(verbose) std::cerr << "c Number of variables in header differs from number of found variables!" << std::endl;
+        if(verbose) std::cerr << "c header said " << num_vars << " whereas we found " << actual_num_vars << " variables." << std::endl;
         num_vars = actual_num_vars;
     }
+
+    if(verbose) std::cout << "c parsed " << num_cls << " clauses and " << num_vars << " variables." << std::endl;
     
     return parsed_xnf(num_vars, num_cls, cls);
 }
 
 
-parsed_xnf parse_file(const std::string& fname) {
+parsed_xnf parse_file(const std::string& fname, bool verbose) {
     std::istream file(NULL);
     if(fname!=" ") {
         std::ifstream file(fname);
         if ( file.fail() || !file.is_open() ) {
             throw std::runtime_error("file \'" + fname + "\' not found!");
         }
-        const auto p_xnf = parse_file( file );
+        if(verbose) std::cout << "c reading XNF from " << fname << std::endl;
+        const auto p_xnf = parse_file( file, verbose );
         file.close();
         return p_xnf;
     } else {
-        return parse_file( std::cin );
+        if(verbose) std::cout << "c reading XNF from standard input" << std::endl;
+        return parse_file( std::cin, verbose );
     }
 }
 
@@ -179,7 +184,7 @@ void write_str(const std::string& fname, const std::string& out) {
 }
 
 
-guessing_path parse_gp(const std::string& fname) {
+guessing_path parse_gp(const std::string& fname, bool verbose) {
     guessing_path P;
 
     if(fname.size()==0) return P;
@@ -188,6 +193,7 @@ guessing_path parse_gp(const std::string& fname) {
     if ( file.fail() ) {
         throw std::runtime_error("file \'" + fname + "\' not found!");
     }
+    if(verbose) std::cout << "c reading gp from " << fname << std::endl;
     std::set<var_t> already_inserted;
     if(file.is_open()) {
         std::string line;
@@ -203,6 +209,7 @@ guessing_path parse_gp(const std::string& fname) {
             already_inserted.insert((var_t) val);
         }
     }
+    file.close();
 
     return P;
 }

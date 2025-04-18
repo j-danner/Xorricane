@@ -35,20 +35,21 @@ int main(int argc, char const *argv[])
 
     program.set_usage_max_line_width(120);
     
-    program.add_description("Conflict driven SAT solver for XOR-OR-AND normal forms.");
+    program.add_description("Conflict-driven SAT solver for XOR-OR-AND normal forms.");
 
     program.add_argument("-v", "--version")
       .action([=]([[maybe_unused]] const std::string& s) {
-        std::stringstream out;
-        out << "c " << __PROJECT_NAME << " created by J. Danner (2023-25)" << std::endl;
-        out << "c version:           " << __PROJECT_VERSION << std::endl;
-        out << "c compilation date:  " << __DATE__ << " at " << __TIME__ << std::endl;
-        out << "c compiler:          " << __CMAKE_CXX_COMPILER_ID << " " << __CMAKE_CXX_COMPILER_VERSION << " using C++" << __CMAKE_CXX_STANDARD << std::endl;
-        out << "c compilation flags:" << __CMAKE_CXX_FLAGS << std::endl;
+        std::cout << "c " << BLUE("------<") << " " << BOLD(UNDERLINE(__PROJECT_NAME)) << " " << BLUE(">------") << std::endl;
+        std::cout << "c " << BOLD("Conflict-Driven SAT Solving Using XOR-OR-AND Normal Forms") << std::endl;
+        std::cout << "c " << std::endl;
+        std::cout << "c " << YELLOW("Copyright (c) 2022-2025 J. Danner") << std::endl;
+        std::cout << "c " << YELLOW("Version " << BOLD(__PROJECT_VERSION)) << std::endl;
+        std::cout << "c " << YELLOW("compiled with " << __CMAKE_CXX_COMPILER_ID << " " << __CMAKE_CXX_COMPILER_VERSION << " on " << __DATE__ << ", " << __TIME__) << std::endl;
+        std::cout << "c " << YELLOW("compiled with " << __CMAKE_CXX_FLAGS) << std::endl;
       #ifdef USING_JEMALLOC
-        out << "c using jemalloc for memory allocation" << std::endl;
+        std::cout << "c " << YELLOW("using jemalloc for memory allocation") << std::endl;
       #endif
-        std::cout << out.str();
+        std::cout << "c " << std::endl;
         std::exit(0);
       })
       .default_value(false)
@@ -180,7 +181,7 @@ int main(int argc, char const *argv[])
 
     //gcp-out
     program.add_argument("-g","--gcp-out")
-        .help("applies GCP once and outputs result")
+        .help("propagates once and outputs result")
         .default_value(std::string("out.xnf"))
         .nargs(1);
 
@@ -264,10 +265,30 @@ int main(int argc, char const *argv[])
     
     auto gauss_elim_schedule = program.get<int>("-ge");
 
+    //banner copyright + version number + compilation info
+    if(verb>0) {
+        //print header
+        std::cout << "c " << BLUE("------<") << " " << BOLD(UNDERLINE(__PROJECT_NAME)) << " " << BLUE(">------") << std::endl;
+        std::cout << "c " << BOLD("Conflict-Driven SAT Solving Using XOR-OR-AND Normal Forms") << std::endl;
+        std::cout << "c " << std::endl;
+        std::cout << "c " << YELLOW("Copyright (c) 2022-2025 J. Danner") << std::endl;
+        std::cout << "c " << YELLOW("Version " << __PROJECT_VERSION) << std::endl;
+        std::cout << "c " << YELLOW("compiled with " << __CMAKE_CXX_COMPILER_ID << " " << __CMAKE_CXX_COMPILER_VERSION << " on " << __DATE__ << ", " << __TIME__) << std::endl;
+        std::cout << "c " << std::endl;
+    }
+
     //parse file
     try {
-        guessing_path P = parse_gp( gp_fname );
-        auto p_xnf = parse_file( fname );
+        if(verb>0) PRINT_SECTION_HEADER("Parsing")
+        auto begin  = std::chrono::high_resolution_clock::now();
+        guessing_path P = parse_gp( gp_fname, verb>0 );
+        auto p_xnf = parse_file( fname, verb>0 );
+        const auto end  = std::chrono::high_resolution_clock::now();
+        s.total_parsing_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
+        double parsing_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(s.total_parsing_time).count())/1000.0f;
+        if(verb>0) std::cout << "c " << std::endl;
+        if(verb>0) std::cout << "c Parsing time   : " << std::setw(5) << parsing_time << " [s]" << std::endl;
+        if(verb>0) std::cout << "c " << std::endl;
         assert( P.assert_data_struct() );
 
         //set upt options
@@ -276,19 +297,22 @@ int main(int argc, char const *argv[])
         opts.del = delh;
 
         if(only_gcp) {
-            stats s;
             std::string out = gcp_only(p_xnf.cls, p_xnf.num_vars, opts, s);
             if(out.size()>0) {
                 write_str(gcp_out, out);
-                return 0;
+                std::cout << "c GCP-out written to " << gcp_out << std::endl;
+                EXIT(0)
             }
-            return 1; //gcp failed.
+            EXIT(1); //gcp failed.
+        } else {
+            if(verb>0) PRINT_SECTION_HEADER("Solving")
+            const auto exit_code = solve(p_xnf.cls, p_xnf.num_vars, opts, s);
+            EXIT(exit_code)
         }
-
-        return solve(p_xnf.cls, p_xnf.num_vars, opts, s);
     } catch (std::exception &ex) {
-        std::cout << "c [EXCEPTION] " << ex.what() << std::endl;
+        std::cout << "c " << std::endl;
+        std::cout << "c " << RED(BOLD( "[EXCEPTION] " << ex.what() )) << std::endl;
         std::cout << "s INDEFINITE" << std::endl;
-        return 1;
+        EXIT(1)
     }
 }

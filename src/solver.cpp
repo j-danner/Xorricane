@@ -1401,8 +1401,9 @@ void solver::solve_L(const lin_sys& L, stats& s) const {
 
     if(s.sols.size()<opt.sol_count || opt.sol_count>1) {
         //print sol
-        s.print_sol();
-        VERB(0, "c solutions found so far: "<<std::to_string(s.sols.size()));
+        s.print_sol(opt.verb>0);
+        VERB(0, "c " << GRAY("solutions found so far: "<<std::to_string(s.sols.size())));
+        std::cout << "c " << std::endl;
     } else {
         return;
     }
@@ -1423,8 +1424,9 @@ void solver::solve_L(const lin_sys& L, stats& s) const {
         L.solve( s.sols.back() );
         
         //print sol
-        s.print_sol();
-        VERB(0, "c solutions found so far: "<<std::to_string(s.sols.size()));
+        s.print_sol(opt.verb>0);
+        VERB(0, "c " << GRAY("solutions found so far: "<<std::to_string(s.sols.size())));
+        std::cout << "c " << std::endl;
         ++sol_ct;
     }
 }

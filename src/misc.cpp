@@ -45,8 +45,9 @@ int solve(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& o
     //register interupt handler
     std::signal(SIGINT, signal_handler);
     interrupt_handler = [&s]([[maybe_unused]] int signal) {
-        std::cout << "!!! INTERRUPTED !!!" << std::endl;
-        s.cancelled.store( true ); //make sure cdcl_solve ends in next iteration!
+        std::cout << BOLD(RED("!!! INTERRUPTED !!!")) << std::endl;
+        std::cout << "c " << std::endl;
+        s.cancelled.store( true ); //make sure the main solve call ends in next iteration!
     };
 
     //if timeout was set:
@@ -66,27 +67,35 @@ int solve(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& o
     } else {
         sol.solve(s);
     };
+
+    //print sols
+    if(opts.sol_count>1) {
+        std::cout << "c " << GRAY("solutions found: "+std::to_string( std::count_if(s.sols.begin(),s.sols.end(), [](const vec<bool>& sol){ return sol.size()>0; } ) )) << std::endl;
+    } else {
+        s.print_sol(opts.verb>0);
+    }
+
+    if(opts.verb >= 120) { std::cout << opts.to_str() << std::endl; }
     
+    auto ret_value = 0;
+    if(opts.verb > 0 && s.is_sat()) { //check sol!
+        if(check_sols(xnf, s.sols)) {
+            std::cout << "c " << GREEN("solution(s) verified") << std::endl;
+            ret_value = 10;
+        } else {
+            std::cout << "c " << BOLD(RED("solution(s) INCORRECT!")) << std::endl;
+            ret_value = 1;
+        }
+        std::cout << "c " << std::endl;
+    } else {
+        ret_value = s.cancelled.load() ? 0 : (s.is_sat() ? 10 :  20);
+    }
+
     //print stats
     s.end = std::chrono::high_resolution_clock::now();
     if(opts.verb>0) s.print_final();
 
-    if(opts.sol_count>1) std::cout << "c solutions found: "+std::to_string( std::count_if(s.sols.begin(),s.sols.end(), [](const vec<bool>& sol){ return sol.size()>0; } ) ) << std::endl;
-    else s.print_sol();
-
-    if(opts.verb >= 120) { std::cout << opts.to_str() << std::endl; }
-    
-    if(opts.verb > 0 && s.is_sat()) { //check sol!
-        if(check_sols(xnf, s.sols)) {
-            std::cout << "c solution(s) verified" << std::endl;
-            return 10;
-        } else {
-            std::cout << "c solution(s) INCORRECT!" << std::endl;
-            return 1;
-        }
-    } else {
-        return s.cancelled.load() ? 0 : (s.is_sat() ? 10 :  20);
-    }
+    return ret_value;
 }
 
 stats solve(const vec< vec<lineral> >& xnf, const var_t num_vars, const options& opts) {

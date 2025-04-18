@@ -87,6 +87,8 @@
 #define CYAN(str) rang::fg::cyan<< str << rang::style::reset
 #define BLACK(str) rang::fg::black<< str << rang::style::reset
 
+#define PRINT_SECTION_HEADER(str) std::cout << "c " << BLUE("------<") << " " << BLUE(str) << " " << BLUE(">------") << std::endl << "c " << std::endl;
+#define EXIT(code) {std::cout << "c " << std::endl << "c " << "exit " << std::to_string(code) << std::endl; return code; }
 
 
 //use 'non-optimized' computation of reason clauses -- tree-like without reordering and without skipping unneccessary repeated resolvents with the same clause
@@ -417,6 +419,7 @@ class stats {
     std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::time_point::min();
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::time_point::min();
     
+    std::chrono::duration<double> total_parsing_time = std::chrono::duration<double>::zero();
     std::chrono::duration<double> total_linalg_time = std::chrono::duration<double>::zero();
     std::chrono::duration<double> total_lgj_time = std::chrono::duration<double>::zero();
     std::chrono::duration<double> total_ig_time = std::chrono::duration<double>::zero();
@@ -427,6 +430,7 @@ class stats {
     void print_final() const {
       double time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
       double linalg_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_linalg_time).count())/1000.0f;
+      double parsing_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_parsing_time).count())/1000.0f;
       double lgj_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_lgj_time).count())/1000.0f;
       double ig_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_ig_time).count())/1000.0f;
       double ca_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(this->total_ca_time).count())/1000.0f;
@@ -434,6 +438,7 @@ class stats {
       const auto width_time = std::to_string((int) time).length()+4;
       const auto width_int = std::min(10, (int) std::to_string(new_px_upd).length());
 
+      PRINT_SECTION_HEADER("Statistics")
       std::cout << "c decisions      : " << std::setw(width_int) << no_dec << " (" << (float) no_dec/time  << " dec/sec)" << std::endl;
       std::cout << "c conflicts      : " << std::setw(width_int) << no_confl << " (" << (float) no_dec/no_confl  << " dec/confl)" << std::endl;
       std::cout << "c restarts       : " << std::setw(width_int) << no_restarts << " (" << (float) no_confl/no_restarts  << " confl/rst)" << std::endl;
@@ -448,39 +453,56 @@ class stats {
       std::cout << "c IG props       : " << std::setw(width_int) << no_ig_prop  << " (" << (float) no_ig_prop/no_ig << " props/call)" << std::endl;
       std::cout << "c " << std::endl;
 
+      PRINT_SECTION_HEADER("Profiling")
+      std::cout << "c Parsing time   : " << std::setw(width_time) << (float) parsing_time << " [s] (" << (float) 100*parsing_time/time << " [%])" << std::endl;
       std::cout << "c LGJ time       : " << std::setw(width_time) << (float) lgj_time << " [s] (" << (float) 100*lgj_time/time << " [%])" << std::endl;
       std::cout << "c GE time        : " << std::setw(width_time) << (float) linalg_time << " [s] (" << (float) 100*linalg_time/time << " [%])" << std::endl;
       std::cout << "c IG time        : " << std::setw(width_time) << (float) ig_time << " [s] (" << (float) 100*ig_time/time << " [%])" << std::endl;
       std::cout << "c CA time        : " << std::setw(width_time) << (float) ca_time     << " [s] (" << (float) 100*ca_time/time << " [%])" << std::endl;
+      std::cout << "c " << std::endl;
       std::cout << "c Total time     : " << std::setw(width_time) << time << " [s]" << std::endl;
     }
     
     /**
      * @brief print final solution
      */
-    void print_sol() const {
+    void print_sol(bool verbose) const {
+      auto str = sols.size()>1 ? ("Solution " + std::to_string(sols.size())) : "Solution";
+      if(verbose) PRINT_SECTION_HEADER(str);
       if(finished) {
           const auto& sol = sols.back();
           if(sols.size()>0) {
-              std::cout << "s SATISFIABLE" << std::endl;
-              std::cout << "v ";
-              for (var_t i = 1; i <= sol.size(); i++) {
-                  std::cout << (sol[i-1] ? "" : "-") << std::to_string( i ) << " ";
-              }
-              std::cout << "0" << std::endl;
+            std::cout << "s SATISFIABLE" << std::endl;
+            std::cout << "v";
+            unsigned int current_line_length = 1;
+
+            for (var_t i = 1; i <= sol.size(); i++) {
+                std::string next_val = (sol[i-1] ? "" : "-") + std::to_string( i );
+                // +1 for the space before the number
+                if (current_line_length + 1 + next_val.length() > 100) {
+                    std::cout << std::endl << "v";
+                    current_line_length = 1; // "v" again
+                }
+                std::cout << " " << next_val;
+                current_line_length += 1 + next_val.length();
+            }
+            std::cout << " 0" << std::endl;
           } else {
               std::cout << "s UNSATISFIABLE" << std::endl;
           }
+          if(verbose) std::cout << "c " << std::endl;
       } else {
-              std::cout << "c timeout reached or interupted!" << std::endl;
-              std::cout << "s INDEFINITE" << std::endl;
+          std::cout << "c timeout reached or interupted!" << std::endl;
+          std::cout << "s INDEFINITE" << std::endl;
+          if(verbose) std::cout << "c " << std::endl;
       }
     };
     
     void print_gcp_info() {
+      PRINT_SECTION_HEADER("Statistics");
       float total_time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0f;
       std::cout << std::fixed << std::setprecision(3);
-      std::cout << "c px by upd      : " << new_px_upd << std::endl;
+      std::cout << "c CGP props      : " << new_px_upd << std::endl;
       std::cout << "c GE prop        : " << no_ge << std::endl;
       std::cout << "c GE efficiacy   : " << (double) no_ge_prop/no_ge << std::endl;
       std::cout << "c Total time     : " << total_time << " [s]" << std::endl;
