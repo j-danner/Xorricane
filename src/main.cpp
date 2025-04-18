@@ -95,13 +95,6 @@ int main(int argc, char const *argv[])
         .choices("vsids", "lwl", "swl", "lex")
         .nargs(1);
     
-    //guessing path input
-    program.add_argument("-gp","--guessing-path")
-        .help("path to guessing path file; each line contains one literal dictating the initial decisions")
-        .nargs(1);
-        //undocumented: if var name is negative we first guess the ind to be false instead of true
-    
-    
     //phase_opt
     program.add_argument("-po","--phase-options")
         .help("phase saving options; 'save', 'save_inv', 'rand'")
@@ -117,12 +110,6 @@ int main(int argc, char const *argv[])
         .choices("no", "dpll", "1uip", "1uip+")
         .nargs(1);
 
-    //clause minimization
-    program.add_argument("-cm","--clause-minimization")
-        .help("activate (experimental!) clause minimization")
-        .flag();
-    
-    
     //restart opts
     program.add_argument("-rh","--restart-heuristic")
         .help("restart schedule; 'no' (never), 'fixed' (fixed num confl), 'luby' (theoretical optimal), 'lbd' (dynamic lbd)")
@@ -188,6 +175,18 @@ int main(int argc, char const *argv[])
         .help("propagates once and outputs result")
         .default_value(std::string("out.xnf"))
         .nargs(1);
+
+    //guessing path input
+    program.add_argument("-gp","--guessing-path")
+        .help("path to guessing path file; each line contains one literal dictating the initial decisions")
+        .nargs(1);
+        //undocumented: if var name is negative we first guess the ind to be false instead of true
+    
+    //clause minimization
+    program.add_argument("-cm","--clause-minimization")
+        .help("activate (experimental!) clause minimization")
+        .flag();
+    
 
     try {
         program.parse_args(argc, argv);
