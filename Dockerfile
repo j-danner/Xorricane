@@ -1,7 +1,7 @@
 #dockerfile for solver
 FROM debian:bullseye-slim
 COPY . /xorricane
-RUN apt update && apt install --assume-yes --no-install-recommends build-essential cmake pkg-config libboost-all-dev libjemalloc-dev git ca-certificates libtool && cd xorricane && cmake . && make xorricane
+RUN apt update && apt install --assume-yes --no-install-recommends build-essential cmake pkg-config libboost-all-dev libjemalloc-dev git ca-certificates libtool libgmp-dev && cd xorricane && cmake . && make xorricane
 ENTRYPOINT [ "xorricane/xorricane" ]
 
 #
