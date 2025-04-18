@@ -15,8 +15,7 @@ Positional arguments:
 Optional arguments:
   -h, --help                            shows help message and exits 
   -v, --version                         shows version and compilation information 
-  -vb, --verb         rb                osity level (choose in 0-200) [default: 1]
- 1]
+  -vb, --verb                           verbosity level (choose in 0-200) [default: 1]
   -t, --time-out                        timeout in seconds [default: - : 1]
   -t, --time-out                        timeout in seconds [default: -1]
   -dh, --decision-heuristic             decision heuristic; 'vsids', 'lwl' (longest watch list), 'swl' (shortest watch list), or 'lex' (lexicographical) [default: "vsids"]
