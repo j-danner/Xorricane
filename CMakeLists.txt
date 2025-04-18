@@ -31,12 +31,25 @@ if(JEMALLOC_FOUND)
     pkg_search_module(JEMALLOC REQUIRED jemalloc)
     message("jemalloc found!")
     include_directories(${JEMALLOC_INCLUDE_DIRS})
-    execute_process(COMMAND jemalloc-config --libdir OUTPUT_VARIABLE JEMALLOC_LIBDIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-    execute_process(COMMAND jemalloc-config --libs OUTPUT_VARIABLE JEMALLOC_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
-    #link to static jemalloc -- libjemalloc_pic.a is the only one availabe on my arch system..
-    set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBDIR}/libjemalloc_pic.a ${JEMALLOC_LIBS})
-    #link to dynamic jemalloc
-    #set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBRARIES})
+
+    execute_process(COMMAND jemalloc-config --libdir
+        OUTPUT_VARIABLE JEMALLOC_LIBDIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    execute_process(COMMAND jemalloc-config --libs
+        OUTPUT_VARIABLE JEMALLOC_LIBS
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    set(STATIC_JEMALLOC "${JEMALLOC_LIBDIR}/libjemalloc_pic.a")
+
+    if(EXISTS "${STATIC_JEMALLOC}")
+        message(STATUS "Using static jemalloc: ${STATIC_JEMALLOC}")
+        set(EXTRA_LIBS ${EXTRA_LIBS} ${STATIC_JEMALLOC})
+    else()
+        message(STATUS "Static jemalloc not found, falling back to dynamic linking.")
+        set(EXTRA_LIBS ${EXTRA_LIBS} ${JEMALLOC_LIBRARIES})
+    endif()
+
     add_definitions(-DUSING_JEMALLOC)
 else()
     message("jemalloc not found! (optional)")
