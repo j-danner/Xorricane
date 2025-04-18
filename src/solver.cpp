@@ -1399,7 +1399,7 @@ void solver::solve_L(const lin_sys& L, stats& s) const {
    
     s.finished = true;
 
-    if(s.sols.size()<opt.sol_count) {
+    if(s.sols.size()<opt.sol_count || opt.sol_count>1) {
         //print sol
         s.print_sol();
         VERB(0, "c solutions found so far: "<<std::to_string(s.sols.size()));
