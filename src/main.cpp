@@ -83,11 +83,10 @@ int main(int argc, char const *argv[])
     
     //add args:
     //fname
-    if(isatty(STDIN_FILENO)) {
-        program.add_argument("fname")
-            .help("path to XNF instance")
-            .nargs(1);
-    }
+    program.add_argument("fname")
+        .help("path to XNF instance")
+        .default_value(" ")
+        .nargs(1);
 
     //dec_heu
     program.add_argument("-dh","--decision-heuristic")
@@ -201,7 +200,7 @@ int main(int argc, char const *argv[])
     }
 
     //parse string-input to 
-    auto fname = isatty(STDIN_FILENO) ? program.get<std::string>("fname") : " ";
+    auto fname = program.get<std::string>("fname");
 
     auto dh_str = program.get<std::string>("-dh");
     dec_heu dh = dec_heu::vsids;
