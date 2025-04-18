@@ -1,0 +1,5853 @@
+c Format: XNF
+c Type: Key recovery from plaintext/ciphertext pair on Prince
+c 3 rounds.
+c key bits given: 100
+c P = 0000101101010011010111000111100010001011000110010011111001110011
+c K = [ 1010110011001100111100111110101100000010100001001010010111110110, 1011100110100111010100001010001100110001110100100010101111010100 ]
+c C = 1011111100100000111010111111111101100000101100101010111110011010
+c Assignments of the variables:
+c K[0] 1
+c K[1] 2
+c K[2] 3
+c K[3] 4
+c K[4] 5
+c K[5] 6
+c K[6] 7
+c K[7] 8
+c K[8] 9
+c K[9] 10
+c K[10] 11
+c K[11] 12
+c K[12] 13
+c K[13] 14
+c K[14] 15
+c K[15] 16
+c K[16] 17
+c K[17] 18
+c K[18] 19
+c K[19] 20
+c K[20] 21
+c K[21] 22
+c K[22] 23
+c K[23] 24
+c K[24] 25
+c K[25] 26
+c K[26] 27
+c K[27] 28
+c K[28] 29
+c K[29] 30
+c K[30] 31
+c K[31] 32
+c K[32] 33
+c K[33] 34
+c K[34] 35
+c K[35] 36
+c K[36] 37
+c K[37] 38
+c K[38] 39
+c K[39] 40
+c K[40] 41
+c K[41] 42
+c K[42] 43
+c K[43] 44
+c K[44] 45
+c K[45] 46
+c K[46] 47
+c K[47] 48
+c K[48] 49
+c K[49] 50
+c K[50] 51
+c K[51] 52
+c K[52] 53
+c K[53] 54
+c K[54] 55
+c K[55] 56
+c K[56] 57
+c K[57] 58
+c K[58] 59
+c K[59] 60
+c K[60] 61
+c K[61] 62
+c K[62] 63
+c K[63] 64
+c K[64] 65
+c K[65] 66
+c K[66] 67
+c K[67] 68
+c K[68] 69
+c K[69] 70
+c K[70] 71
+c K[71] 72
+c K[72] 73
+c K[73] 74
+c K[74] 75
+c K[75] 76
+c K[76] 77
+c K[77] 78
+c K[78] 79
+c K[79] 80
+c K[80] 81
+c K[81] 82
+c K[82] 83
+c K[83] 84
+c K[84] 85
+c K[85] 86
+c K[86] 87
+c K[87] 88
+c K[88] 89
+c K[89] 90
+c K[90] 91
+c K[91] 92
+c K[92] 93
+c K[93] 94
+c K[94] 95
+c K[95] 96
+c K[96] 97
+c K[97] 98
+c K[98] 99
+c K[99] 100
+c K[100] 101
+c K[101] 102
+c K[102] 103
+c K[103] 104
+c K[104] 105
+c K[105] 106
+c K[106] 107
+c K[107] 108
+c K[108] 109
+c K[109] 110
+c K[110] 111
+c K[111] 112
+c K[112] 113
+c K[113] 114
+c K[114] 115
+c K[115] 116
+c K[116] 117
+c K[117] 118
+c K[118] 119
+c K[119] 120
+c K[120] 121
+c K[121] 122
+c K[122] 123
+c K[123] 124
+c K[124] 125
+c K[125] 126
+c K[126] 127
+c K[127] 128
+c K_ext[0] 129
+c K_ext[1] 130
+c K_ext[2] 131
+c K_ext[3] 132
+c K_ext[4] 133
+c K_ext[5] 134
+c K_ext[6] 135
+c K_ext[7] 136
+c K_ext[8] 137
+c K_ext[9] 138
+c K_ext[10] 139
+c K_ext[11] 140
+c K_ext[12] 141
+c K_ext[13] 142
+c K_ext[14] 143
+c K_ext[15] 144
+c K_ext[16] 145
+c K_ext[17] 146
+c K_ext[18] 147
+c K_ext[19] 148
+c K_ext[20] 149
+c K_ext[21] 150
+c K_ext[22] 151
+c K_ext[23] 152
+c K_ext[24] 153
+c K_ext[25] 154
+c K_ext[26] 155
+c K_ext[27] 156
+c K_ext[28] 157
+c K_ext[29] 158
+c K_ext[30] 159
+c K_ext[31] 160
+c K_ext[32] 161
+c K_ext[33] 162
+c K_ext[34] 163
+c K_ext[35] 164
+c K_ext[36] 165
+c K_ext[37] 166
+c K_ext[38] 167
+c K_ext[39] 168
+c K_ext[40] 169
+c K_ext[41] 170
+c K_ext[42] 171
+c K_ext[43] 172
+c K_ext[44] 173
+c K_ext[45] 174
+c K_ext[46] 175
+c K_ext[47] 176
+c K_ext[48] 177
+c K_ext[49] 178
+c K_ext[50] 179
+c K_ext[51] 180
+c K_ext[52] 181
+c K_ext[53] 182
+c K_ext[54] 183
+c K_ext[55] 184
+c K_ext[56] 185
+c K_ext[57] 186
+c K_ext[58] 187
+c K_ext[59] 188
+c K_ext[60] 189
+c K_ext[61] 190
+c K_ext[62] 191
+c K_ext[63] 192
+c P[0] 193
+c P[1] 194
+c P[2] 195
+c P[3] 196
+c P[4] 197
+c P[5] 198
+c P[6] 199
+c P[7] 200
+c P[8] 201
+c P[9] 202
+c P[10] 203
+c P[11] 204
+c P[12] 205
+c P[13] 206
+c P[14] 207
+c P[15] 208
+c P[16] 209
+c P[17] 210
+c P[18] 211
+c P[19] 212
+c P[20] 213
+c P[21] 214
+c P[22] 215
+c P[23] 216
+c P[24] 217
+c P[25] 218
+c P[26] 219
+c P[27] 220
+c P[28] 221
+c P[29] 222
+c P[30] 223
+c P[31] 224
+c P[32] 225
+c P[33] 226
+c P[34] 227
+c P[35] 228
+c P[36] 229
+c P[37] 230
+c P[38] 231
+c P[39] 232
+c P[40] 233
+c P[41] 234
+c P[42] 235
+c P[43] 236
+c P[44] 237
+c P[45] 238
+c P[46] 239
+c P[47] 240
+c P[48] 241
+c P[49] 242
+c P[50] 243
+c P[51] 244
+c P[52] 245
+c P[53] 246
+c P[54] 247
+c P[55] 248
+c P[56] 249
+c P[57] 250
+c P[58] 251
+c P[59] 252
+c P[60] 253
+c P[61] 254
+c P[62] 255
+c P[63] 256
+c C[0] 257
+c C[1] 258
+c C[2] 259
+c C[3] 260
+c C[4] 261
+c C[5] 262
+c C[6] 263
+c C[7] 264
+c C[8] 265
+c C[9] 266
+c C[10] 267
+c C[11] 268
+c C[12] 269
+c C[13] 270
+c C[14] 271
+c C[15] 272
+c C[16] 273
+c C[17] 274
+c C[18] 275
+c C[19] 276
+c C[20] 277
+c C[21] 278
+c C[22] 279
+c C[23] 280
+c C[24] 281
+c C[25] 282
+c C[26] 283
+c C[27] 284
+c C[28] 285
+c C[29] 286
+c C[30] 287
+c C[31] 288
+c C[32] 289
+c C[33] 290
+c C[34] 291
+c C[35] 292
+c C[36] 293
+c C[37] 294
+c C[38] 295
+c C[39] 296
+c C[40] 297
+c C[41] 298
+c C[42] 299
+c C[43] 300
+c C[44] 301
+c C[45] 302
+c C[46] 303
+c C[47] 304
+c C[48] 305
+c C[49] 306
+c C[50] 307
+c C[51] 308
+c C[52] 309
+c C[53] 310
+c C[54] 311
+c C[55] 312
+c C[56] 313
+c C[57] 314
+c C[58] 315
+c C[59] 316
+c C[60] 317
+c C[61] 318
+c C[62] 319
+c C[63] 320
+c sbox_in[1,0] 321
+c sbox_in[1,1] 322
+c sbox_in[1,2] 323
+c sbox_in[1,3] 324
+c sbox_in[1,4] 325
+c sbox_in[1,5] 326
+c sbox_in[1,6] 327
+c sbox_in[1,7] 328
+c sbox_in[1,8] 329
+c sbox_in[1,9] 330
+c sbox_in[1,10] 331
+c sbox_in[1,11] 332
+c sbox_in[1,12] 333
+c sbox_in[1,13] 334
+c sbox_in[1,14] 335
+c sbox_in[1,15] 336
+c sbox_in[1,16] 337
+c sbox_in[1,17] 338
+c sbox_in[1,18] 339
+c sbox_in[1,19] 340
+c sbox_in[1,20] 341
+c sbox_in[1,21] 342
+c sbox_in[1,22] 343
+c sbox_in[1,23] 344
+c sbox_in[1,24] 345
+c sbox_in[1,25] 346
+c sbox_in[1,26] 347
+c sbox_in[1,27] 348
+c sbox_in[1,28] 349
+c sbox_in[1,29] 350
+c sbox_in[1,30] 351
+c sbox_in[1,31] 352
+c sbox_in[1,32] 353
+c sbox_in[1,33] 354
+c sbox_in[1,34] 355
+c sbox_in[1,35] 356
+c sbox_in[1,36] 357
+c sbox_in[1,37] 358
+c sbox_in[1,38] 359
+c sbox_in[1,39] 360
+c sbox_in[1,40] 361
+c sbox_in[1,41] 362
+c sbox_in[1,42] 363
+c sbox_in[1,43] 364
+c sbox_in[1,44] 365
+c sbox_in[1,45] 366
+c sbox_in[1,46] 367
+c sbox_in[1,47] 368
+c sbox_in[1,48] 369
+c sbox_in[1,49] 370
+c sbox_in[1,50] 371
+c sbox_in[1,51] 372
+c sbox_in[1,52] 373
+c sbox_in[1,53] 374
+c sbox_in[1,54] 375
+c sbox_in[1,55] 376
+c sbox_in[1,56] 377
+c sbox_in[1,57] 378
+c sbox_in[1,58] 379
+c sbox_in[1,59] 380
+c sbox_in[1,60] 381
+c sbox_in[1,61] 382
+c sbox_in[1,62] 383
+c sbox_in[1,63] 384
+c sbox_in[2,0] 385
+c sbox_in[2,1] 386
+c sbox_in[2,2] 387
+c sbox_in[2,3] 388
+c sbox_in[2,4] 389
+c sbox_in[2,5] 390
+c sbox_in[2,6] 391
+c sbox_in[2,7] 392
+c sbox_in[2,8] 393
+c sbox_in[2,9] 394
+c sbox_in[2,10] 395
+c sbox_in[2,11] 396
+c sbox_in[2,12] 397
+c sbox_in[2,13] 398
+c sbox_in[2,14] 399
+c sbox_in[2,15] 400
+c sbox_in[2,16] 401
+c sbox_in[2,17] 402
+c sbox_in[2,18] 403
+c sbox_in[2,19] 404
+c sbox_in[2,20] 405
+c sbox_in[2,21] 406
+c sbox_in[2,22] 407
+c sbox_in[2,23] 408
+c sbox_in[2,24] 409
+c sbox_in[2,25] 410
+c sbox_in[2,26] 411
+c sbox_in[2,27] 412
+c sbox_in[2,28] 413
+c sbox_in[2,29] 414
+c sbox_in[2,30] 415
+c sbox_in[2,31] 416
+c sbox_in[2,32] 417
+c sbox_in[2,33] 418
+c sbox_in[2,34] 419
+c sbox_in[2,35] 420
+c sbox_in[2,36] 421
+c sbox_in[2,37] 422
+c sbox_in[2,38] 423
+c sbox_in[2,39] 424
+c sbox_in[2,40] 425
+c sbox_in[2,41] 426
+c sbox_in[2,42] 427
+c sbox_in[2,43] 428
+c sbox_in[2,44] 429
+c sbox_in[2,45] 430
+c sbox_in[2,46] 431
+c sbox_in[2,47] 432
+c sbox_in[2,48] 433
+c sbox_in[2,49] 434
+c sbox_in[2,50] 435
+c sbox_in[2,51] 436
+c sbox_in[2,52] 437
+c sbox_in[2,53] 438
+c sbox_in[2,54] 439
+c sbox_in[2,55] 440
+c sbox_in[2,56] 441
+c sbox_in[2,57] 442
+c sbox_in[2,58] 443
+c sbox_in[2,59] 444
+c sbox_in[2,60] 445
+c sbox_in[2,61] 446
+c sbox_in[2,62] 447
+c sbox_in[2,63] 448
+c sbox_in[3,0] 449
+c sbox_in[3,1] 450
+c sbox_in[3,2] 451
+c sbox_in[3,3] 452
+c sbox_in[3,4] 453
+c sbox_in[3,5] 454
+c sbox_in[3,6] 455
+c sbox_in[3,7] 456
+c sbox_in[3,8] 457
+c sbox_in[3,9] 458
+c sbox_in[3,10] 459
+c sbox_in[3,11] 460
+c sbox_in[3,12] 461
+c sbox_in[3,13] 462
+c sbox_in[3,14] 463
+c sbox_in[3,15] 464
+c sbox_in[3,16] 465
+c sbox_in[3,17] 466
+c sbox_in[3,18] 467
+c sbox_in[3,19] 468
+c sbox_in[3,20] 469
+c sbox_in[3,21] 470
+c sbox_in[3,22] 471
+c sbox_in[3,23] 472
+c sbox_in[3,24] 473
+c sbox_in[3,25] 474
+c sbox_in[3,26] 475
+c sbox_in[3,27] 476
+c sbox_in[3,28] 477
+c sbox_in[3,29] 478
+c sbox_in[3,30] 479
+c sbox_in[3,31] 480
+c sbox_in[3,32] 481
+c sbox_in[3,33] 482
+c sbox_in[3,34] 483
+c sbox_in[3,35] 484
+c sbox_in[3,36] 485
+c sbox_in[3,37] 486
+c sbox_in[3,38] 487
+c sbox_in[3,39] 488
+c sbox_in[3,40] 489
+c sbox_in[3,41] 490
+c sbox_in[3,42] 491
+c sbox_in[3,43] 492
+c sbox_in[3,44] 493
+c sbox_in[3,45] 494
+c sbox_in[3,46] 495
+c sbox_in[3,47] 496
+c sbox_in[3,48] 497
+c sbox_in[3,49] 498
+c sbox_in[3,50] 499
+c sbox_in[3,51] 500
+c sbox_in[3,52] 501
+c sbox_in[3,53] 502
+c sbox_in[3,54] 503
+c sbox_in[3,55] 504
+c sbox_in[3,56] 505
+c sbox_in[3,57] 506
+c sbox_in[3,58] 507
+c sbox_in[3,59] 508
+c sbox_in[3,60] 509
+c sbox_in[3,61] 510
+c sbox_in[3,62] 511
+c sbox_in[3,63] 512
+c sbox_in[4,0] 513
+c sbox_in[4,1] 514
+c sbox_in[4,2] 515
+c sbox_in[4,3] 516
+c sbox_in[4,4] 517
+c sbox_in[4,5] 518
+c sbox_in[4,6] 519
+c sbox_in[4,7] 520
+c sbox_in[4,8] 521
+c sbox_in[4,9] 522
+c sbox_in[4,10] 523
+c sbox_in[4,11] 524
+c sbox_in[4,12] 525
+c sbox_in[4,13] 526
+c sbox_in[4,14] 527
+c sbox_in[4,15] 528
+c sbox_in[4,16] 529
+c sbox_in[4,17] 530
+c sbox_in[4,18] 531
+c sbox_in[4,19] 532
+c sbox_in[4,20] 533
+c sbox_in[4,21] 534
+c sbox_in[4,22] 535
+c sbox_in[4,23] 536
+c sbox_in[4,24] 537
+c sbox_in[4,25] 538
+c sbox_in[4,26] 539
+c sbox_in[4,27] 540
+c sbox_in[4,28] 541
+c sbox_in[4,29] 542
+c sbox_in[4,30] 543
+c sbox_in[4,31] 544
+c sbox_in[4,32] 545
+c sbox_in[4,33] 546
+c sbox_in[4,34] 547
+c sbox_in[4,35] 548
+c sbox_in[4,36] 549
+c sbox_in[4,37] 550
+c sbox_in[4,38] 551
+c sbox_in[4,39] 552
+c sbox_in[4,40] 553
+c sbox_in[4,41] 554
+c sbox_in[4,42] 555
+c sbox_in[4,43] 556
+c sbox_in[4,44] 557
+c sbox_in[4,45] 558
+c sbox_in[4,46] 559
+c sbox_in[4,47] 560
+c sbox_in[4,48] 561
+c sbox_in[4,49] 562
+c sbox_in[4,50] 563
+c sbox_in[4,51] 564
+c sbox_in[4,52] 565
+c sbox_in[4,53] 566
+c sbox_in[4,54] 567
+c sbox_in[4,55] 568
+c sbox_in[4,56] 569
+c sbox_in[4,57] 570
+c sbox_in[4,58] 571
+c sbox_in[4,59] 572
+c sbox_in[4,60] 573
+c sbox_in[4,61] 574
+c sbox_in[4,62] 575
+c sbox_in[4,63] 576
+c sbox_in[5,0] 577
+c sbox_in[5,1] 578
+c sbox_in[5,2] 579
+c sbox_in[5,3] 580
+c sbox_in[5,4] 581
+c sbox_in[5,5] 582
+c sbox_in[5,6] 583
+c sbox_in[5,7] 584
+c sbox_in[5,8] 585
+c sbox_in[5,9] 586
+c sbox_in[5,10] 587
+c sbox_in[5,11] 588
+c sbox_in[5,12] 589
+c sbox_in[5,13] 590
+c sbox_in[5,14] 591
+c sbox_in[5,15] 592
+c sbox_in[5,16] 593
+c sbox_in[5,17] 594
+c sbox_in[5,18] 595
+c sbox_in[5,19] 596
+c sbox_in[5,20] 597
+c sbox_in[5,21] 598
+c sbox_in[5,22] 599
+c sbox_in[5,23] 600
+c sbox_in[5,24] 601
+c sbox_in[5,25] 602
+c sbox_in[5,26] 603
+c sbox_in[5,27] 604
+c sbox_in[5,28] 605
+c sbox_in[5,29] 606
+c sbox_in[5,30] 607
+c sbox_in[5,31] 608
+c sbox_in[5,32] 609
+c sbox_in[5,33] 610
+c sbox_in[5,34] 611
+c sbox_in[5,35] 612
+c sbox_in[5,36] 613
+c sbox_in[5,37] 614
+c sbox_in[5,38] 615
+c sbox_in[5,39] 616
+c sbox_in[5,40] 617
+c sbox_in[5,41] 618
+c sbox_in[5,42] 619
+c sbox_in[5,43] 620
+c sbox_in[5,44] 621
+c sbox_in[5,45] 622
+c sbox_in[5,46] 623
+c sbox_in[5,47] 624
+c sbox_in[5,48] 625
+c sbox_in[5,49] 626
+c sbox_in[5,50] 627
+c sbox_in[5,51] 628
+c sbox_in[5,52] 629
+c sbox_in[5,53] 630
+c sbox_in[5,54] 631
+c sbox_in[5,55] 632
+c sbox_in[5,56] 633
+c sbox_in[5,57] 634
+c sbox_in[5,58] 635
+c sbox_in[5,59] 636
+c sbox_in[5,60] 637
+c sbox_in[5,61] 638
+c sbox_in[5,62] 639
+c sbox_in[5,63] 640
+c sbox_out[1,0] 641
+c sbox_out[1,1] 642
+c sbox_out[1,2] 643
+c sbox_out[1,3] 644
+c sbox_out[1,4] 645
+c sbox_out[1,5] 646
+c sbox_out[1,6] 647
+c sbox_out[1,7] 648
+c sbox_out[1,8] 649
+c sbox_out[1,9] 650
+c sbox_out[1,10] 651
+c sbox_out[1,11] 652
+c sbox_out[1,12] 653
+c sbox_out[1,13] 654
+c sbox_out[1,14] 655
+c sbox_out[1,15] 656
+c sbox_out[1,16] 657
+c sbox_out[1,17] 658
+c sbox_out[1,18] 659
+c sbox_out[1,19] 660
+c sbox_out[1,20] 661
+c sbox_out[1,21] 662
+c sbox_out[1,22] 663
+c sbox_out[1,23] 664
+c sbox_out[1,24] 665
+c sbox_out[1,25] 666
+c sbox_out[1,26] 667
+c sbox_out[1,27] 668
+c sbox_out[1,28] 669
+c sbox_out[1,29] 670
+c sbox_out[1,30] 671
+c sbox_out[1,31] 672
+c sbox_out[1,32] 673
+c sbox_out[1,33] 674
+c sbox_out[1,34] 675
+c sbox_out[1,35] 676
+c sbox_out[1,36] 677
+c sbox_out[1,37] 678
+c sbox_out[1,38] 679
+c sbox_out[1,39] 680
+c sbox_out[1,40] 681
+c sbox_out[1,41] 682
+c sbox_out[1,42] 683
+c sbox_out[1,43] 684
+c sbox_out[1,44] 685
+c sbox_out[1,45] 686
+c sbox_out[1,46] 687
+c sbox_out[1,47] 688
+c sbox_out[1,48] 689
+c sbox_out[1,49] 690
+c sbox_out[1,50] 691
+c sbox_out[1,51] 692
+c sbox_out[1,52] 693
+c sbox_out[1,53] 694
+c sbox_out[1,54] 695
+c sbox_out[1,55] 696
+c sbox_out[1,56] 697
+c sbox_out[1,57] 698
+c sbox_out[1,58] 699
+c sbox_out[1,59] 700
+c sbox_out[1,60] 701
+c sbox_out[1,61] 702
+c sbox_out[1,62] 703
+c sbox_out[1,63] 704
+c sbox_out[2,0] 705
+c sbox_out[2,1] 706
+c sbox_out[2,2] 707
+c sbox_out[2,3] 708
+c sbox_out[2,4] 709
+c sbox_out[2,5] 710
+c sbox_out[2,6] 711
+c sbox_out[2,7] 712
+c sbox_out[2,8] 713
+c sbox_out[2,9] 714
+c sbox_out[2,10] 715
+c sbox_out[2,11] 716
+c sbox_out[2,12] 717
+c sbox_out[2,13] 718
+c sbox_out[2,14] 719
+c sbox_out[2,15] 720
+c sbox_out[2,16] 721
+c sbox_out[2,17] 722
+c sbox_out[2,18] 723
+c sbox_out[2,19] 724
+c sbox_out[2,20] 725
+c sbox_out[2,21] 726
+c sbox_out[2,22] 727
+c sbox_out[2,23] 728
+c sbox_out[2,24] 729
+c sbox_out[2,25] 730
+c sbox_out[2,26] 731
+c sbox_out[2,27] 732
+c sbox_out[2,28] 733
+c sbox_out[2,29] 734
+c sbox_out[2,30] 735
+c sbox_out[2,31] 736
+c sbox_out[2,32] 737
+c sbox_out[2,33] 738
+c sbox_out[2,34] 739
+c sbox_out[2,35] 740
+c sbox_out[2,36] 741
+c sbox_out[2,37] 742
+c sbox_out[2,38] 743
+c sbox_out[2,39] 744
+c sbox_out[2,40] 745
+c sbox_out[2,41] 746
+c sbox_out[2,42] 747
+c sbox_out[2,43] 748
+c sbox_out[2,44] 749
+c sbox_out[2,45] 750
+c sbox_out[2,46] 751
+c sbox_out[2,47] 752
+c sbox_out[2,48] 753
+c sbox_out[2,49] 754
+c sbox_out[2,50] 755
+c sbox_out[2,51] 756
+c sbox_out[2,52] 757
+c sbox_out[2,53] 758
+c sbox_out[2,54] 759
+c sbox_out[2,55] 760
+c sbox_out[2,56] 761
+c sbox_out[2,57] 762
+c sbox_out[2,58] 763
+c sbox_out[2,59] 764
+c sbox_out[2,60] 765
+c sbox_out[2,61] 766
+c sbox_out[2,62] 767
+c sbox_out[2,63] 768
+c sbox_out[3,0] 769
+c sbox_out[3,1] 770
+c sbox_out[3,2] 771
+c sbox_out[3,3] 772
+c sbox_out[3,4] 773
+c sbox_out[3,5] 774
+c sbox_out[3,6] 775
+c sbox_out[3,7] 776
+c sbox_out[3,8] 777
+c sbox_out[3,9] 778
+c sbox_out[3,10] 779
+c sbox_out[3,11] 780
+c sbox_out[3,12] 781
+c sbox_out[3,13] 782
+c sbox_out[3,14] 783
+c sbox_out[3,15] 784
+c sbox_out[3,16] 785
+c sbox_out[3,17] 786
+c sbox_out[3,18] 787
+c sbox_out[3,19] 788
+c sbox_out[3,20] 789
+c sbox_out[3,21] 790
+c sbox_out[3,22] 791
+c sbox_out[3,23] 792
+c sbox_out[3,24] 793
+c sbox_out[3,25] 794
+c sbox_out[3,26] 795
+c sbox_out[3,27] 796
+c sbox_out[3,28] 797
+c sbox_out[3,29] 798
+c sbox_out[3,30] 799
+c sbox_out[3,31] 800
+c sbox_out[3,32] 801
+c sbox_out[3,33] 802
+c sbox_out[3,34] 803
+c sbox_out[3,35] 804
+c sbox_out[3,36] 805
+c sbox_out[3,37] 806
+c sbox_out[3,38] 807
+c sbox_out[3,39] 808
+c sbox_out[3,40] 809
+c sbox_out[3,41] 810
+c sbox_out[3,42] 811
+c sbox_out[3,43] 812
+c sbox_out[3,44] 813
+c sbox_out[3,45] 814
+c sbox_out[3,46] 815
+c sbox_out[3,47] 816
+c sbox_out[3,48] 817
+c sbox_out[3,49] 818
+c sbox_out[3,50] 819
+c sbox_out[3,51] 820
+c sbox_out[3,52] 821
+c sbox_out[3,53] 822
+c sbox_out[3,54] 823
+c sbox_out[3,55] 824
+c sbox_out[3,56] 825
+c sbox_out[3,57] 826
+c sbox_out[3,58] 827
+c sbox_out[3,59] 828
+c sbox_out[3,60] 829
+c sbox_out[3,61] 830
+c sbox_out[3,62] 831
+c sbox_out[3,63] 832
+c sbox_out[4,0] 833
+c sbox_out[4,1] 834
+c sbox_out[4,2] 835
+c sbox_out[4,3] 836
+c sbox_out[4,4] 837
+c sbox_out[4,5] 838
+c sbox_out[4,6] 839
+c sbox_out[4,7] 840
+c sbox_out[4,8] 841
+c sbox_out[4,9] 842
+c sbox_out[4,10] 843
+c sbox_out[4,11] 844
+c sbox_out[4,12] 845
+c sbox_out[4,13] 846
+c sbox_out[4,14] 847
+c sbox_out[4,15] 848
+c sbox_out[4,16] 849
+c sbox_out[4,17] 850
+c sbox_out[4,18] 851
+c sbox_out[4,19] 852
+c sbox_out[4,20] 853
+c sbox_out[4,21] 854
+c sbox_out[4,22] 855
+c sbox_out[4,23] 856
+c sbox_out[4,24] 857
+c sbox_out[4,25] 858
+c sbox_out[4,26] 859
+c sbox_out[4,27] 860
+c sbox_out[4,28] 861
+c sbox_out[4,29] 862
+c sbox_out[4,30] 863
+c sbox_out[4,31] 864
+c sbox_out[4,32] 865
+c sbox_out[4,33] 866
+c sbox_out[4,34] 867
+c sbox_out[4,35] 868
+c sbox_out[4,36] 869
+c sbox_out[4,37] 870
+c sbox_out[4,38] 871
+c sbox_out[4,39] 872
+c sbox_out[4,40] 873
+c sbox_out[4,41] 874
+c sbox_out[4,42] 875
+c sbox_out[4,43] 876
+c sbox_out[4,44] 877
+c sbox_out[4,45] 878
+c sbox_out[4,46] 879
+c sbox_out[4,47] 880
+c sbox_out[4,48] 881
+c sbox_out[4,49] 882
+c sbox_out[4,50] 883
+c sbox_out[4,51] 884
+c sbox_out[4,52] 885
+c sbox_out[4,53] 886
+c sbox_out[4,54] 887
+c sbox_out[4,55] 888
+c sbox_out[4,56] 889
+c sbox_out[4,57] 890
+c sbox_out[4,58] 891
+c sbox_out[4,59] 892
+c sbox_out[4,60] 893
+c sbox_out[4,61] 894
+c sbox_out[4,62] 895
+c sbox_out[4,63] 896
+c sbox_out[5,0] 897
+c sbox_out[5,1] 898
+c sbox_out[5,2] 899
+c sbox_out[5,3] 900
+c sbox_out[5,4] 901
+c sbox_out[5,5] 902
+c sbox_out[5,6] 903
+c sbox_out[5,7] 904
+c sbox_out[5,8] 905
+c sbox_out[5,9] 906
+c sbox_out[5,10] 907
+c sbox_out[5,11] 908
+c sbox_out[5,12] 909
+c sbox_out[5,13] 910
+c sbox_out[5,14] 911
+c sbox_out[5,15] 912
+c sbox_out[5,16] 913
+c sbox_out[5,17] 914
+c sbox_out[5,18] 915
+c sbox_out[5,19] 916
+c sbox_out[5,20] 917
+c sbox_out[5,21] 918
+c sbox_out[5,22] 919
+c sbox_out[5,23] 920
+c sbox_out[5,24] 921
+c sbox_out[5,25] 922
+c sbox_out[5,26] 923
+c sbox_out[5,27] 924
+c sbox_out[5,28] 925
+c sbox_out[5,29] 926
+c sbox_out[5,30] 927
+c sbox_out[5,31] 928
+c sbox_out[5,32] 929
+c sbox_out[5,33] 930
+c sbox_out[5,34] 931
+c sbox_out[5,35] 932
+c sbox_out[5,36] 933
+c sbox_out[5,37] 934
+c sbox_out[5,38] 935
+c sbox_out[5,39] 936
+c sbox_out[5,40] 937
+c sbox_out[5,41] 938
+c sbox_out[5,42] 939
+c sbox_out[5,43] 940
+c sbox_out[5,44] 941
+c sbox_out[5,45] 942
+c sbox_out[5,46] 943
+c sbox_out[5,47] 944
+c sbox_out[5,48] 945
+c sbox_out[5,49] 946
+c sbox_out[5,50] 947
+c sbox_out[5,51] 948
+c sbox_out[5,52] 949
+c sbox_out[5,53] 950
+c sbox_out[5,54] 951
+c sbox_out[5,55] 952
+c sbox_out[5,56] 953
+c sbox_out[5,57] 954
+c sbox_out[5,58] 955
+c sbox_out[5,59] 956
+c sbox_out[5,60] 957
+c sbox_out[5,61] 958
+c sbox_out[5,62] 959
+c sbox_out[5,63] 960
+c [var for sbox_out[1,0]*sbox_out[1,2] + sbox_out[1,0]*sbox_out[1,3] + sbox_out[1,2]*sbox_out[1,3] + sbox_out[1,0] + sbox_out[1,2] + sbox_out[1,3]] 961
+c [var for ([var for sbox_out[1,0]*sbox_out[1,2] + sbox_out[1,0]*sbox_out[1,3] + sbox_out[1,2]*sbox_out[1,3] + sbox_out[1,0] + sbox_out[1,2] + sbox_out[1,3]])*(sbox_out[1,1])] 962
+c [var for (sbox_out[1,2])*(sbox_out[1,3])] 963
+c [var for sbox_out[1,0]*sbox_out[1,2] + sbox_out[1,1]*sbox_out[1,2] + sbox_out[1,1] + sbox_out[1,2] + 1] 964
+c [var for (sbox_out[1,2])*(sbox_out[1,0])] 965
+c [var for ([var for sbox_out[1,0]*sbox_out[1,2] + sbox_out[1,1]*sbox_out[1,2] + sbox_out[1,1] + sbox_out[1,2] + 1])*(sbox_out[1,3])] 966
+c [var for (sbox_out[1,1])*(sbox_out[1,2])] 967
+c [var for sbox_out[1,2]*sbox_out[1,3] + sbox_out[1,0] + sbox_out[1,2] + sbox_out[1,3]] 968
+c [var for ([var for sbox_out[1,2]*sbox_out[1,3] + sbox_out[1,0] + sbox_out[1,2] + sbox_out[1,3]])*(sbox_out[1,1])] 969
+c [var for sbox_out[1,1]*sbox_out[1,3] + sbox_out[1,2]*sbox_out[1,3] + sbox_out[1,1] + 1] 970
+c [var for ([var for sbox_out[1,1]*sbox_out[1,3] + sbox_out[1,2]*sbox_out[1,3] + sbox_out[1,1] + 1])*(sbox_out[1,0])] 971
+c [var for sbox_out[1,4]*sbox_out[1,6] + sbox_out[1,4]*sbox_out[1,7] + sbox_out[1,6]*sbox_out[1,7] + sbox_out[1,4] + sbox_out[1,6] + sbox_out[1,7]] 972
+c [var for (sbox_out[1,7])*(sbox_out[1,6])] 973
+c [var for ([var for sbox_out[1,4]*sbox_out[1,6] + sbox_out[1,4]*sbox_out[1,7] + sbox_out[1,6]*sbox_out[1,7] + sbox_out[1,4] + sbox_out[1,6] + sbox_out[1,7]])*(sbox_out[1,5])] 974
+c [var for sbox_out[1,4]*sbox_out[1,7] + sbox_out[1,5]*sbox_out[1,7] + sbox_out[1,4] + sbox_out[1,5] + sbox_out[1,7]] 975
+c [var for (sbox_out[1,6])*([var for sbox_out[1,4]*sbox_out[1,7] + sbox_out[1,5]*sbox_out[1,7] + sbox_out[1,4] + sbox_out[1,5] + sbox_out[1,7]])] 976
+c [var for (sbox_out[1,7])*(sbox_out[1,5])] 977
+c [var for sbox_out[1,6]*sbox_out[1,7] + sbox_out[1,4] + sbox_out[1,6] + sbox_out[1,7]] 978
+c [var for ([var for sbox_out[1,6]*sbox_out[1,7] + sbox_out[1,4] + sbox_out[1,6] + sbox_out[1,7]])*(sbox_out[1,5])] 979
+c [var for (sbox_out[1,6])*(sbox_out[1,4])] 980
+c [var for sbox_out[1,5]*sbox_out[1,7] + sbox_out[1,6]*sbox_out[1,7] + sbox_out[1,5] + 1] 981
+c [var for ([var for sbox_out[1,5]*sbox_out[1,7] + sbox_out[1,6]*sbox_out[1,7] + sbox_out[1,5] + 1])*(sbox_out[1,4])] 982
+c [var for (sbox_out[1,6])*(sbox_out[1,5])] 983
+c [var for sbox_out[1,8]*sbox_out[1,10] + sbox_out[1,8]*sbox_out[1,11] + sbox_out[1,10]*sbox_out[1,11] + sbox_out[1,8] + sbox_out[1,10] + sbox_out[1,11]] 984
+c [var for (sbox_out[1,9])*([var for sbox_out[1,8]*sbox_out[1,10] + sbox_out[1,8]*sbox_out[1,11] + sbox_out[1,10]*sbox_out[1,11] + sbox_out[1,8] + sbox_out[1,10] + sbox_out[1,11]])] 985
+c [var for (sbox_out[1,10])*(sbox_out[1,11])] 986
+c [var for sbox_out[1,8]*sbox_out[1,11] + sbox_out[1,9]*sbox_out[1,11] + sbox_out[1,8] + sbox_out[1,9] + sbox_out[1,11]] 987
+c [var for (sbox_out[1,9])*(sbox_out[1,11])] 988
+c [var for ([var for sbox_out[1,8]*sbox_out[1,11] + sbox_out[1,9]*sbox_out[1,11] + sbox_out[1,8] + sbox_out[1,9] + sbox_out[1,11]])*(sbox_out[1,10])] 989
+c [var for sbox_out[1,9]*sbox_out[1,10] + sbox_out[1,9]] 990
+c [var for (sbox_out[1,8] + sbox_out[1,9])*(sbox_out[1,10])] 991
+c [var for (sbox_out[1,8])*(sbox_out[1,9])] 992
+c [var for (sbox_out[1,11])*([var for sbox_out[1,9]*sbox_out[1,10] + sbox_out[1,9]])] 993
+c [var for sbox_out[1,8]*sbox_out[1,9] + sbox_out[1,8]*sbox_out[1,10] + sbox_out[1,10]] 994
+c [var for (sbox_out[1,9])*(sbox_out[1,10])] 995
+c [var for (sbox_out[1,11])*([var for sbox_out[1,8]*sbox_out[1,9] + sbox_out[1,8]*sbox_out[1,10] + sbox_out[1,10]])] 996
+c [var for sbox_out[1,12]*sbox_out[1,14] + sbox_out[1,12]*sbox_out[1,15] + sbox_out[1,14]*sbox_out[1,15] + sbox_out[1,12] + sbox_out[1,14] + sbox_out[1,15]] 997
+c [var for (sbox_out[1,15])*(sbox_out[1,14])] 998
+c [var for ([var for sbox_out[1,12]*sbox_out[1,14] + sbox_out[1,12]*sbox_out[1,15] + sbox_out[1,14]*sbox_out[1,15] + sbox_out[1,12] + sbox_out[1,14] + sbox_out[1,15]])*(sbox_out[1,13])] 999
+c [var for sbox_out[1,12]*sbox_out[1,14] + sbox_out[1,13]*sbox_out[1,14] + sbox_out[1,13] + sbox_out[1,14] + 1] 1000
+c [var for (sbox_out[1,12] + sbox_out[1,13])*(sbox_out[1,14])] 1001
+c [var for (sbox_out[1,15])*([var for sbox_out[1,12]*sbox_out[1,14] + sbox_out[1,13]*sbox_out[1,14] + sbox_out[1,13] + sbox_out[1,14] + 1])] 1002
+c [var for sbox_out[1,13]*sbox_out[1,14] + sbox_out[1,13]] 1003
+c [var for (sbox_out[1,13])*(sbox_out[1,12] + sbox_out[1,14])] 1004
+c [var for ([var for sbox_out[1,13]*sbox_out[1,14] + sbox_out[1,13]])*(sbox_out[1,15])] 1005
+c [var for (sbox_out[1,12])*(sbox_out[1,14])] 1006
+c [var for sbox_out[1,12]*sbox_out[1,13] + sbox_out[1,12]*sbox_out[1,14] + sbox_out[1,14]] 1007
+c [var for (sbox_out[1,15])*([var for sbox_out[1,12]*sbox_out[1,13] + sbox_out[1,12]*sbox_out[1,14] + sbox_out[1,14]])] 1008
+c [var for sbox_out[1,16]*sbox_out[1,18] + sbox_out[1,16]*sbox_out[1,19] + sbox_out[1,18]*sbox_out[1,19] + sbox_out[1,16] + sbox_out[1,18] + sbox_out[1,19]] 1009
+c [var for (sbox_out[1,19])*(sbox_out[1,18])] 1010
+c [var for (sbox_out[1,17])*([var for sbox_out[1,16]*sbox_out[1,18] + sbox_out[1,16]*sbox_out[1,19] + sbox_out[1,18]*sbox_out[1,19] + sbox_out[1,16] + sbox_out[1,18] + sbox_out[1,19]])] 1011
+c [var for sbox_out[1,16]*sbox_out[1,19] + sbox_out[1,17]*sbox_out[1,19] + sbox_out[1,16] + sbox_out[1,17] + sbox_out[1,19]] 1012
+c [var for ([var for sbox_out[1,16]*sbox_out[1,19] + sbox_out[1,17]*sbox_out[1,19] + sbox_out[1,16] + sbox_out[1,17] + sbox_out[1,19]])*(sbox_out[1,18])] 1013
+c [var for (sbox_out[1,17])*(sbox_out[1,19])] 1014
+c [var for sbox_out[1,18]*sbox_out[1,19] + sbox_out[1,16] + sbox_out[1,18] + sbox_out[1,19]] 1015
+c [var for (sbox_out[1,17])*([var for sbox_out[1,18]*sbox_out[1,19] + sbox_out[1,16] + sbox_out[1,18] + sbox_out[1,19]])] 1016
+c [var for (sbox_out[1,16])*(sbox_out[1,18])] 1017
+c [var for sbox_out[1,17]*sbox_out[1,19] + sbox_out[1,18]*sbox_out[1,19] + sbox_out[1,17] + 1] 1018
+c [var for (sbox_out[1,17] + sbox_out[1,19])*(sbox_out[1,18])] 1019
+c [var for (sbox_out[1,16])*([var for sbox_out[1,17]*sbox_out[1,19] + sbox_out[1,18]*sbox_out[1,19] + sbox_out[1,17] + 1])] 1020
+c [var for sbox_out[1,20]*sbox_out[1,22] + sbox_out[1,20]*sbox_out[1,23] + sbox_out[1,22]*sbox_out[1,23] + sbox_out[1,20] + sbox_out[1,22] + sbox_out[1,23]] 1021
+c [var for (sbox_out[1,21])*([var for sbox_out[1,20]*sbox_out[1,22] + sbox_out[1,20]*sbox_out[1,23] + sbox_out[1,22]*sbox_out[1,23] + sbox_out[1,20] + sbox_out[1,22] + sbox_out[1,23]])] 1022
+c [var for (sbox_out[1,23])*(sbox_out[1,22])] 1023
+c [var for sbox_out[1,20]*sbox_out[1,23] + sbox_out[1,21]*sbox_out[1,23] + sbox_out[1,20] + sbox_out[1,21] + sbox_out[1,23]] 1024
+c [var for ([var for sbox_out[1,20]*sbox_out[1,23] + sbox_out[1,21]*sbox_out[1,23] + sbox_out[1,20] + sbox_out[1,21] + sbox_out[1,23]])*(sbox_out[1,22])] 1025
+c [var for (sbox_out[1,23])*(sbox_out[1,21])] 1026
+c [var for sbox_out[1,22]*sbox_out[1,23] + sbox_out[1,20] + sbox_out[1,22] + sbox_out[1,23]] 1027
+c [var for (sbox_out[1,22])*(sbox_out[1,20])] 1028
+c [var for ([var for sbox_out[1,22]*sbox_out[1,23] + sbox_out[1,20] + sbox_out[1,22] + sbox_out[1,23]])*(sbox_out[1,21])] 1029
+c [var for sbox_out[1,21]*sbox_out[1,23] + sbox_out[1,22]*sbox_out[1,23] + sbox_out[1,21] + 1] 1030
+c [var for (sbox_out[1,22])*(sbox_out[1,21] + sbox_out[1,23])] 1031
+c [var for ([var for sbox_out[1,21]*sbox_out[1,23] + sbox_out[1,22]*sbox_out[1,23] + sbox_out[1,21] + 1])*(sbox_out[1,20])] 1032
+c [var for sbox_out[1,24]*sbox_out[1,26] + sbox_out[1,24]*sbox_out[1,27] + sbox_out[1,26]*sbox_out[1,27] + sbox_out[1,24] + sbox_out[1,26] + sbox_out[1,27]] 1033
+c [var for (sbox_out[1,26])*(sbox_out[1,27])] 1034
+c [var for ([var for sbox_out[1,24]*sbox_out[1,26] + sbox_out[1,24]*sbox_out[1,27] + sbox_out[1,26]*sbox_out[1,27] + sbox_out[1,24] + sbox_out[1,26] + sbox_out[1,27]])*(sbox_out[1,25])] 1035
+c [var for sbox_out[1,24]*sbox_out[1,27] + sbox_out[1,25]*sbox_out[1,27] + sbox_out[1,24] + sbox_out[1,25] + sbox_out[1,27]] 1036
+c [var for ([var for sbox_out[1,24]*sbox_out[1,27] + sbox_out[1,25]*sbox_out[1,27] + sbox_out[1,24] + sbox_out[1,25] + sbox_out[1,27]])*(sbox_out[1,26])] 1037
+c [var for (sbox_out[1,27])*(sbox_out[1,25])] 1038
+c [var for sbox_out[1,26]*sbox_out[1,27] + sbox_out[1,24] + sbox_out[1,26] + sbox_out[1,27]] 1039
+c [var for ([var for sbox_out[1,26]*sbox_out[1,27] + sbox_out[1,24] + sbox_out[1,26] + sbox_out[1,27]])*(sbox_out[1,25])] 1040
+c [var for (sbox_out[1,24])*(sbox_out[1,26])] 1041
+c [var for sbox_out[1,24]*sbox_out[1,25] + sbox_out[1,24]*sbox_out[1,26] + sbox_out[1,26]] 1042
+c [var for (sbox_out[1,24])*(sbox_out[1,25])] 1043
+c [var for ([var for sbox_out[1,24]*sbox_out[1,25] + sbox_out[1,24]*sbox_out[1,26] + sbox_out[1,26]])*(sbox_out[1,27])] 1044
+c [var for (sbox_out[1,26])*(sbox_out[1,25])] 1045
+c [var for sbox_out[1,28]*sbox_out[1,30] + sbox_out[1,28]*sbox_out[1,31] + sbox_out[1,30]*sbox_out[1,31] + sbox_out[1,28] + sbox_out[1,30] + sbox_out[1,31]] 1046
+c [var for (sbox_out[1,31])*(sbox_out[1,30])] 1047
+c [var for (sbox_out[1,29])*([var for sbox_out[1,28]*sbox_out[1,30] + sbox_out[1,28]*sbox_out[1,31] + sbox_out[1,30]*sbox_out[1,31] + sbox_out[1,28] + sbox_out[1,30] + sbox_out[1,31]])] 1048
+c [var for sbox_out[1,28]*sbox_out[1,30] + sbox_out[1,29]*sbox_out[1,30] + sbox_out[1,29] + sbox_out[1,30] + 1] 1049
+c [var for (sbox_out[1,29])*(sbox_out[1,30])] 1050
+c [var for (sbox_out[1,28])*(sbox_out[1,30])] 1051
+c [var for ([var for sbox_out[1,28]*sbox_out[1,30] + sbox_out[1,29]*sbox_out[1,30] + sbox_out[1,29] + sbox_out[1,30] + 1])*(sbox_out[1,31])] 1052
+c [var for sbox_out[1,29]*sbox_out[1,30] + sbox_out[1,29]] 1053
+c [var for (sbox_out[1,28] + sbox_out[1,29])*(sbox_out[1,30])] 1054
+c [var for (sbox_out[1,31])*([var for sbox_out[1,29]*sbox_out[1,30] + sbox_out[1,29]])] 1055
+c [var for (sbox_out[1,29])*(sbox_out[1,28])] 1056
+c [var for sbox_out[1,28]*sbox_out[1,29] + sbox_out[1,28]*sbox_out[1,30] + sbox_out[1,30]] 1057
+c [var for (sbox_out[1,31])*([var for sbox_out[1,28]*sbox_out[1,29] + sbox_out[1,28]*sbox_out[1,30] + sbox_out[1,30]])] 1058
+c [var for sbox_out[1,32]*sbox_out[1,34] + sbox_out[1,32]*sbox_out[1,35] + sbox_out[1,34]*sbox_out[1,35] + sbox_out[1,32] + sbox_out[1,34] + sbox_out[1,35]] 1059
+c [var for ([var for sbox_out[1,32]*sbox_out[1,34] + sbox_out[1,32]*sbox_out[1,35] + sbox_out[1,34]*sbox_out[1,35] + sbox_out[1,32] + sbox_out[1,34] + sbox_out[1,35]])*(sbox_out[1,33])] 1060
+c [var for (sbox_out[1,35])*(sbox_out[1,34])] 1061
+c [var for sbox_out[1,32]*sbox_out[1,35] + sbox_out[1,33]*sbox_out[1,35] + sbox_out[1,32] + sbox_out[1,33] + sbox_out[1,35]] 1062
+c [var for (sbox_out[1,33])*(sbox_out[1,35])] 1063
+c [var for ([var for sbox_out[1,32]*sbox_out[1,35] + sbox_out[1,33]*sbox_out[1,35] + sbox_out[1,32] + sbox_out[1,33] + sbox_out[1,35]])*(sbox_out[1,34])] 1064
+c [var for sbox_out[1,34]*sbox_out[1,35] + sbox_out[1,32] + sbox_out[1,34] + sbox_out[1,35]] 1065
+c [var for (sbox_out[1,32])*(sbox_out[1,34])] 1066
+c [var for (sbox_out[1,33])*([var for sbox_out[1,34]*sbox_out[1,35] + sbox_out[1,32] + sbox_out[1,34] + sbox_out[1,35]])] 1067
+c [var for sbox_out[1,33]*sbox_out[1,35] + sbox_out[1,34]*sbox_out[1,35] + sbox_out[1,33] + 1] 1068
+c [var for (sbox_out[1,33])*(sbox_out[1,34])] 1069
+c [var for (sbox_out[1,32])*([var for sbox_out[1,33]*sbox_out[1,35] + sbox_out[1,34]*sbox_out[1,35] + sbox_out[1,33] + 1])] 1070
+c [var for sbox_out[1,36]*sbox_out[1,38] + sbox_out[1,36]*sbox_out[1,39] + sbox_out[1,38]*sbox_out[1,39] + sbox_out[1,36] + sbox_out[1,38] + sbox_out[1,39]] 1071
+c [var for (sbox_out[1,37])*([var for sbox_out[1,36]*sbox_out[1,38] + sbox_out[1,36]*sbox_out[1,39] + sbox_out[1,38]*sbox_out[1,39] + sbox_out[1,36] + sbox_out[1,38] + sbox_out[1,39]])] 1072
+c [var for (sbox_out[1,39])*(sbox_out[1,38])] 1073
+c [var for sbox_out[1,36]*sbox_out[1,39] + sbox_out[1,37]*sbox_out[1,39] + sbox_out[1,36] + sbox_out[1,37] + sbox_out[1,39]] 1074
+c [var for (sbox_out[1,39])*(sbox_out[1,37])] 1075
+c [var for ([var for sbox_out[1,36]*sbox_out[1,39] + sbox_out[1,37]*sbox_out[1,39] + sbox_out[1,36] + sbox_out[1,37] + sbox_out[1,39]])*(sbox_out[1,38])] 1076
+c [var for sbox_out[1,38]*sbox_out[1,39] + sbox_out[1,36] + sbox_out[1,38] + sbox_out[1,39]] 1077
+c [var for (sbox_out[1,37])*([var for sbox_out[1,38]*sbox_out[1,39] + sbox_out[1,36] + sbox_out[1,38] + sbox_out[1,39]])] 1078
+c [var for (sbox_out[1,36])*(sbox_out[1,38])] 1079
+c [var for sbox_out[1,37]*sbox_out[1,39] + sbox_out[1,38]*sbox_out[1,39] + sbox_out[1,37] + 1] 1080
+c [var for (sbox_out[1,37] + sbox_out[1,39])*(sbox_out[1,38])] 1081
+c [var for ([var for sbox_out[1,37]*sbox_out[1,39] + sbox_out[1,38]*sbox_out[1,39] + sbox_out[1,37] + 1])*(sbox_out[1,36])] 1082
+c [var for sbox_out[1,40]*sbox_out[1,42] + sbox_out[1,40]*sbox_out[1,43] + sbox_out[1,42]*sbox_out[1,43] + sbox_out[1,40] + sbox_out[1,42] + sbox_out[1,43]] 1083
+c [var for (sbox_out[1,41])*([var for sbox_out[1,40]*sbox_out[1,42] + sbox_out[1,40]*sbox_out[1,43] + sbox_out[1,42]*sbox_out[1,43] + sbox_out[1,40] + sbox_out[1,42] + sbox_out[1,43]])] 1084
+c [var for (sbox_out[1,42])*(sbox_out[1,43])] 1085
+c [var for sbox_out[1,40]*sbox_out[1,43] + sbox_out[1,41]*sbox_out[1,43] + sbox_out[1,40] + sbox_out[1,41] + sbox_out[1,43]] 1086
+c [var for (sbox_out[1,43])*(sbox_out[1,41])] 1087
+c [var for (sbox_out[1,42])*([var for sbox_out[1,40]*sbox_out[1,43] + sbox_out[1,41]*sbox_out[1,43] + sbox_out[1,40] + sbox_out[1,41] + sbox_out[1,43]])] 1088
+c [var for sbox_out[1,42]*sbox_out[1,43] + sbox_out[1,40] + sbox_out[1,42] + sbox_out[1,43]] 1089
+c [var for (sbox_out[1,40])*(sbox_out[1,42])] 1090
+c [var for ([var for sbox_out[1,42]*sbox_out[1,43] + sbox_out[1,40] + sbox_out[1,42] + sbox_out[1,43]])*(sbox_out[1,41])] 1091
+c [var for sbox_out[1,40]*sbox_out[1,41] + sbox_out[1,40]*sbox_out[1,42] + sbox_out[1,42]] 1092
+c [var for (sbox_out[1,43])*([var for sbox_out[1,40]*sbox_out[1,41] + sbox_out[1,40]*sbox_out[1,42] + sbox_out[1,42]])] 1093
+c [var for (sbox_out[1,40] + sbox_out[1,42])*(sbox_out[1,41])] 1094
+c [var for sbox_out[1,44]*sbox_out[1,46] + sbox_out[1,44]*sbox_out[1,47] + sbox_out[1,46]*sbox_out[1,47] + sbox_out[1,44] + sbox_out[1,46] + sbox_out[1,47]] 1095
+c [var for (sbox_out[1,46])*(sbox_out[1,47])] 1096
+c [var for ([var for sbox_out[1,44]*sbox_out[1,46] + sbox_out[1,44]*sbox_out[1,47] + sbox_out[1,46]*sbox_out[1,47] + sbox_out[1,44] + sbox_out[1,46] + sbox_out[1,47]])*(sbox_out[1,45])] 1097
+c [var for sbox_out[1,44]*sbox_out[1,46] + sbox_out[1,45]*sbox_out[1,46] + sbox_out[1,45] + sbox_out[1,46] + 1] 1098
+c [var for (sbox_out[1,46])*(sbox_out[1,44] + sbox_out[1,45])] 1099
+c [var for (sbox_out[1,47])*([var for sbox_out[1,44]*sbox_out[1,46] + sbox_out[1,45]*sbox_out[1,46] + sbox_out[1,45] + sbox_out[1,46] + 1])] 1100
+c [var for sbox_out[1,45]*sbox_out[1,46] + sbox_out[1,45]] 1101
+c [var for (sbox_out[1,45] + sbox_out[1,46])*(sbox_out[1,44])] 1102
+c [var for (sbox_out[1,47])*([var for sbox_out[1,45]*sbox_out[1,46] + sbox_out[1,45]])] 1103
+c [var for (sbox_out[1,46])*(sbox_out[1,45])] 1104
+c [var for sbox_out[1,44]*sbox_out[1,45] + sbox_out[1,44]*sbox_out[1,46] + sbox_out[1,46]] 1105
+c [var for ([var for sbox_out[1,44]*sbox_out[1,45] + sbox_out[1,44]*sbox_out[1,46] + sbox_out[1,46]])*(sbox_out[1,47])] 1106
+c [var for (sbox_out[1,45])*(sbox_out[1,44])] 1107
+c [var for sbox_out[1,48]*sbox_out[1,50] + sbox_out[1,48]*sbox_out[1,51] + sbox_out[1,50]*sbox_out[1,51] + sbox_out[1,48] + sbox_out[1,50] + sbox_out[1,51]] 1108
+c [var for ([var for sbox_out[1,48]*sbox_out[1,50] + sbox_out[1,48]*sbox_out[1,51] + sbox_out[1,50]*sbox_out[1,51] + sbox_out[1,48] + sbox_out[1,50] + sbox_out[1,51]])*(sbox_out[1,49])] 1109
+c [var for (sbox_out[1,51])*(sbox_out[1,50])] 1110
+c [var for sbox_out[1,48]*sbox_out[1,51] + sbox_out[1,49]*sbox_out[1,51] + sbox_out[1,48] + sbox_out[1,49] + sbox_out[1,51]] 1111
+c [var for (sbox_out[1,51])*(sbox_out[1,49])] 1112
+c [var for ([var for sbox_out[1,48]*sbox_out[1,51] + sbox_out[1,49]*sbox_out[1,51] + sbox_out[1,48] + sbox_out[1,49] + sbox_out[1,51]])*(sbox_out[1,50])] 1113
+c [var for sbox_out[1,50]*sbox_out[1,51] + sbox_out[1,48] + sbox_out[1,50] + sbox_out[1,51]] 1114
+c [var for ([var for sbox_out[1,50]*sbox_out[1,51] + sbox_out[1,48] + sbox_out[1,50] + sbox_out[1,51]])*(sbox_out[1,49])] 1115
+c [var for (sbox_out[1,48])*(sbox_out[1,50])] 1116
+c [var for sbox_out[1,49]*sbox_out[1,51] + sbox_out[1,50]*sbox_out[1,51] + sbox_out[1,49] + 1] 1117
+c [var for ([var for sbox_out[1,49]*sbox_out[1,51] + sbox_out[1,50]*sbox_out[1,51] + sbox_out[1,49] + 1])*(sbox_out[1,48])] 1118
+c [var for (sbox_out[1,50])*(sbox_out[1,49])] 1119
+c [var for sbox_out[1,52]*sbox_out[1,54] + sbox_out[1,52]*sbox_out[1,55] + sbox_out[1,54]*sbox_out[1,55] + sbox_out[1,52] + sbox_out[1,54] + sbox_out[1,55]] 1120
+c [var for ([var for sbox_out[1,52]*sbox_out[1,54] + sbox_out[1,52]*sbox_out[1,55] + sbox_out[1,54]*sbox_out[1,55] + sbox_out[1,52] + sbox_out[1,54] + sbox_out[1,55]])*(sbox_out[1,53])] 1121
+c [var for (sbox_out[1,55])*(sbox_out[1,54])] 1122
+c [var for sbox_out[1,52]*sbox_out[1,55] + sbox_out[1,53]*sbox_out[1,55] + sbox_out[1,52] + sbox_out[1,53] + sbox_out[1,55]] 1123
+c [var for ([var for sbox_out[1,52]*sbox_out[1,55] + sbox_out[1,53]*sbox_out[1,55] + sbox_out[1,52] + sbox_out[1,53] + sbox_out[1,55]])*(sbox_out[1,54])] 1124
+c [var for (sbox_out[1,53])*(sbox_out[1,55])] 1125
+c [var for sbox_out[1,54]*sbox_out[1,55] + sbox_out[1,52] + sbox_out[1,54] + sbox_out[1,55]] 1126
+c [var for (sbox_out[1,53])*([var for sbox_out[1,54]*sbox_out[1,55] + sbox_out[1,52] + sbox_out[1,54] + sbox_out[1,55]])] 1127
+c [var for (sbox_out[1,52])*(sbox_out[1,54])] 1128
+c [var for sbox_out[1,53]*sbox_out[1,55] + sbox_out[1,54]*sbox_out[1,55] + sbox_out[1,53] + 1] 1129
+c [var for (sbox_out[1,53])*(sbox_out[1,54])] 1130
+c [var for (sbox_out[1,54])*(sbox_out[1,55])] 1131
+c [var for ([var for sbox_out[1,53]*sbox_out[1,55] + sbox_out[1,54]*sbox_out[1,55] + sbox_out[1,53] + 1])*(sbox_out[1,52])] 1132
+c [var for sbox_out[1,56]*sbox_out[1,58] + sbox_out[1,56]*sbox_out[1,59] + sbox_out[1,58]*sbox_out[1,59] + sbox_out[1,56] + sbox_out[1,58] + sbox_out[1,59]] 1133
+c [var for (sbox_out[1,57])*([var for sbox_out[1,56]*sbox_out[1,58] + sbox_out[1,56]*sbox_out[1,59] + sbox_out[1,58]*sbox_out[1,59] + sbox_out[1,56] + sbox_out[1,58] + sbox_out[1,59]])] 1134
+c [var for (sbox_out[1,59])*(sbox_out[1,58])] 1135
+c [var for sbox_out[1,56]*sbox_out[1,59] + sbox_out[1,57]*sbox_out[1,59] + sbox_out[1,56] + sbox_out[1,57] + sbox_out[1,59]] 1136
+c [var for (sbox_out[1,59])*(sbox_out[1,57])] 1137
+c [var for ([var for sbox_out[1,56]*sbox_out[1,59] + sbox_out[1,57]*sbox_out[1,59] + sbox_out[1,56] + sbox_out[1,57] + sbox_out[1,59]])*(sbox_out[1,58])] 1138
+c [var for sbox_out[1,58]*sbox_out[1,59] + sbox_out[1,56] + sbox_out[1,58] + sbox_out[1,59]] 1139
+c [var for (sbox_out[1,57])*([var for sbox_out[1,58]*sbox_out[1,59] + sbox_out[1,56] + sbox_out[1,58] + sbox_out[1,59]])] 1140
+c [var for (sbox_out[1,58])*(sbox_out[1,56])] 1141
+c [var for sbox_out[1,57]*sbox_out[1,59] + sbox_out[1,58]*sbox_out[1,59] + sbox_out[1,57] + 1] 1142
+c [var for (sbox_out[1,58])*(sbox_out[1,57] + sbox_out[1,59])] 1143
+c [var for ([var for sbox_out[1,57]*sbox_out[1,59] + sbox_out[1,58]*sbox_out[1,59] + sbox_out[1,57] + 1])*(sbox_out[1,56])] 1144
+c [var for sbox_out[1,60]*sbox_out[1,62] + sbox_out[1,60]*sbox_out[1,63] + sbox_out[1,62]*sbox_out[1,63] + sbox_out[1,60] + sbox_out[1,62] + sbox_out[1,63]] 1145
+c [var for ([var for sbox_out[1,60]*sbox_out[1,62] + sbox_out[1,60]*sbox_out[1,63] + sbox_out[1,62]*sbox_out[1,63] + sbox_out[1,60] + sbox_out[1,62] + sbox_out[1,63]])*(sbox_out[1,61])] 1146
+c [var for (sbox_out[1,62])*(sbox_out[1,63])] 1147
+c [var for sbox_out[1,60]*sbox_out[1,62] + sbox_out[1,61]*sbox_out[1,62] + sbox_out[1,61] + sbox_out[1,62] + 1] 1148
+c [var for (sbox_out[1,60])*(sbox_out[1,62])] 1149
+c [var for (sbox_out[1,62])*(sbox_out[1,61])] 1150
+c [var for ([var for sbox_out[1,60]*sbox_out[1,62] + sbox_out[1,61]*sbox_out[1,62] + sbox_out[1,61] + sbox_out[1,62] + 1])*(sbox_out[1,63])] 1151
+c [var for sbox_out[1,61]*sbox_out[1,62] + sbox_out[1,61]] 1152
+c [var for ([var for sbox_out[1,61]*sbox_out[1,62] + sbox_out[1,61]])*(sbox_out[1,63])] 1153
+c [var for (sbox_out[1,60] + sbox_out[1,61])*(sbox_out[1,62])] 1154
+c [var for (sbox_out[1,60])*(sbox_out[1,61])] 1155
+c [var for sbox_out[1,60]*sbox_out[1,61] + sbox_out[1,60]*sbox_out[1,62] + sbox_out[1,62]] 1156
+c [var for (sbox_out[1,63])*([var for sbox_out[1,60]*sbox_out[1,61] + sbox_out[1,60]*sbox_out[1,62] + sbox_out[1,62]])] 1157
+c [var for sbox_out[2,0]*sbox_out[2,2] + sbox_out[2,0]*sbox_out[2,3] + sbox_out[2,2]*sbox_out[2,3] + sbox_out[2,0] + sbox_out[2,2] + sbox_out[2,3]] 1158
+c [var for (sbox_out[2,2])*(sbox_out[2,3])] 1159
+c [var for ([var for sbox_out[2,0]*sbox_out[2,2] + sbox_out[2,0]*sbox_out[2,3] + sbox_out[2,2]*sbox_out[2,3] + sbox_out[2,0] + sbox_out[2,2] + sbox_out[2,3]])*(sbox_out[2,1])] 1160
+c [var for sbox_out[2,0]*sbox_out[2,3] + sbox_out[2,1]*sbox_out[2,3] + sbox_out[2,0] + sbox_out[2,1] + sbox_out[2,3]] 1161
+c [var for (sbox_out[2,2])*([var for sbox_out[2,0]*sbox_out[2,3] + sbox_out[2,1]*sbox_out[2,3] + sbox_out[2,0] + sbox_out[2,1] + sbox_out[2,3]])] 1162
+c [var for (sbox_out[2,3])*(sbox_out[2,1])] 1163
+c [var for sbox_out[2,2]*sbox_out[2,3] + sbox_out[2,0] + sbox_out[2,2] + sbox_out[2,3]] 1164
+c [var for ([var for sbox_out[2,2]*sbox_out[2,3] + sbox_out[2,0] + sbox_out[2,2] + sbox_out[2,3]])*(sbox_out[2,1])] 1165
+c [var for (sbox_out[2,2])*(sbox_out[2,0])] 1166
+c [var for sbox_out[2,1]*sbox_out[2,3] + sbox_out[2,2]*sbox_out[2,3] + sbox_out[2,1] + 1] 1167
+c [var for (sbox_out[2,2])*(sbox_out[2,1])] 1168
+c [var for (sbox_out[2,0])*([var for sbox_out[2,1]*sbox_out[2,3] + sbox_out[2,2]*sbox_out[2,3] + sbox_out[2,1] + 1])] 1169
+c [var for sbox_out[2,4]*sbox_out[2,6] + sbox_out[2,4]*sbox_out[2,7] + sbox_out[2,6]*sbox_out[2,7] + sbox_out[2,4] + sbox_out[2,6] + sbox_out[2,7]] 1170
+c [var for (sbox_out[2,5])*([var for sbox_out[2,4]*sbox_out[2,6] + sbox_out[2,4]*sbox_out[2,7] + sbox_out[2,6]*sbox_out[2,7] + sbox_out[2,4] + sbox_out[2,6] + sbox_out[2,7]])] 1171
+c [var for (sbox_out[2,7])*(sbox_out[2,6])] 1172
+c [var for sbox_out[2,4]*sbox_out[2,7] + sbox_out[2,5]*sbox_out[2,7] + sbox_out[2,4] + sbox_out[2,5] + sbox_out[2,7]] 1173
+c [var for ([var for sbox_out[2,4]*sbox_out[2,7] + sbox_out[2,5]*sbox_out[2,7] + sbox_out[2,4] + sbox_out[2,5] + sbox_out[2,7]])*(sbox_out[2,6])] 1174
+c [var for (sbox_out[2,5])*(sbox_out[2,7])] 1175
+c [var for sbox_out[2,6]*sbox_out[2,7] + sbox_out[2,4] + sbox_out[2,6] + sbox_out[2,7]] 1176
+c [var for ([var for sbox_out[2,6]*sbox_out[2,7] + sbox_out[2,4] + sbox_out[2,6] + sbox_out[2,7]])*(sbox_out[2,5])] 1177
+c [var for (sbox_out[2,4])*(sbox_out[2,6])] 1178
+c [var for sbox_out[2,5]*sbox_out[2,7] + sbox_out[2,6]*sbox_out[2,7] + sbox_out[2,5] + 1] 1179
+c [var for (sbox_out[2,5])*(sbox_out[2,6])] 1180
+c [var for (sbox_out[2,6])*(sbox_out[2,7])] 1181
+c [var for ([var for sbox_out[2,5]*sbox_out[2,7] + sbox_out[2,6]*sbox_out[2,7] + sbox_out[2,5] + 1])*(sbox_out[2,4])] 1182
+c [var for sbox_out[2,8]*sbox_out[2,10] + sbox_out[2,8]*sbox_out[2,11] + sbox_out[2,10]*sbox_out[2,11] + sbox_out[2,8] + sbox_out[2,10] + sbox_out[2,11]] 1183
+c [var for (sbox_out[2,9])*([var for sbox_out[2,8]*sbox_out[2,10] + sbox_out[2,8]*sbox_out[2,11] + sbox_out[2,10]*sbox_out[2,11] + sbox_out[2,8] + sbox_out[2,10] + sbox_out[2,11]])] 1184
+c [var for (sbox_out[2,10])*(sbox_out[2,11])] 1185
+c [var for sbox_out[2,8]*sbox_out[2,11] + sbox_out[2,9]*sbox_out[2,11] + sbox_out[2,8] + sbox_out[2,9] + sbox_out[2,11]] 1186
+c [var for (sbox_out[2,9])*(sbox_out[2,11])] 1187
+c [var for ([var for sbox_out[2,8]*sbox_out[2,11] + sbox_out[2,9]*sbox_out[2,11] + sbox_out[2,8] + sbox_out[2,9] + sbox_out[2,11]])*(sbox_out[2,10])] 1188
+c [var for sbox_out[2,10]*sbox_out[2,11] + sbox_out[2,8] + sbox_out[2,10] + sbox_out[2,11]] 1189
+c [var for (sbox_out[2,8])*(sbox_out[2,10])] 1190
+c [var for (sbox_out[2,9])*([var for sbox_out[2,10]*sbox_out[2,11] + sbox_out[2,8] + sbox_out[2,10] + sbox_out[2,11]])] 1191
+c [var for sbox_out[2,8]*sbox_out[2,9] + sbox_out[2,8]*sbox_out[2,10] + sbox_out[2,10]] 1192
+c [var for ([var for sbox_out[2,8]*sbox_out[2,9] + sbox_out[2,8]*sbox_out[2,10] + sbox_out[2,10]])*(sbox_out[2,11])] 1193
+c [var for (sbox_out[2,9])*(sbox_out[2,10])] 1194
+c [var for (sbox_out[2,9])*(sbox_out[2,8])] 1195
+c [var for sbox_out[2,12]*sbox_out[2,14] + sbox_out[2,12]*sbox_out[2,15] + sbox_out[2,14]*sbox_out[2,15] + sbox_out[2,12] + sbox_out[2,14] + sbox_out[2,15]] 1196
+c [var for (sbox_out[2,14])*(sbox_out[2,15])] 1197
+c [var for (sbox_out[2,13])*([var for sbox_out[2,12]*sbox_out[2,14] + sbox_out[2,12]*sbox_out[2,15] + sbox_out[2,14]*sbox_out[2,15] + sbox_out[2,12] + sbox_out[2,14] + sbox_out[2,15]])] 1198
+c [var for sbox_out[2,12]*sbox_out[2,14] + sbox_out[2,13]*sbox_out[2,14] + sbox_out[2,13] + sbox_out[2,14] + 1] 1199
+c [var for ([var for sbox_out[2,12]*sbox_out[2,14] + sbox_out[2,13]*sbox_out[2,14] + sbox_out[2,13] + sbox_out[2,14] + 1])*(sbox_out[2,15])] 1200
+c [var for (sbox_out[2,12])*(sbox_out[2,14])] 1201
+c [var for (sbox_out[2,14])*(sbox_out[2,13])] 1202
+c [var for sbox_out[2,13]*sbox_out[2,14] + sbox_out[2,13]] 1203
+c [var for (sbox_out[2,12] + sbox_out[2,14])*(sbox_out[2,13])] 1204
+c [var for ([var for sbox_out[2,13]*sbox_out[2,14] + sbox_out[2,13]])*(sbox_out[2,15])] 1205
+c [var for sbox_out[2,12]*sbox_out[2,13] + sbox_out[2,12]*sbox_out[2,14] + sbox_out[2,14]] 1206
+c [var for ([var for sbox_out[2,12]*sbox_out[2,13] + sbox_out[2,12]*sbox_out[2,14] + sbox_out[2,14]])*(sbox_out[2,15])] 1207
+c [var for (sbox_out[2,12])*(sbox_out[2,13])] 1208
+c [var for sbox_out[2,16]*sbox_out[2,18] + sbox_out[2,16]*sbox_out[2,19] + sbox_out[2,18]*sbox_out[2,19] + sbox_out[2,16] + sbox_out[2,18] + sbox_out[2,19]] 1209
+c [var for ([var for sbox_out[2,16]*sbox_out[2,18] + sbox_out[2,16]*sbox_out[2,19] + sbox_out[2,18]*sbox_out[2,19] + sbox_out[2,16] + sbox_out[2,18] + sbox_out[2,19]])*(sbox_out[2,17])] 1210
+c [var for (sbox_out[2,19])*(sbox_out[2,18])] 1211
+c [var for sbox_out[2,16]*sbox_out[2,19] + sbox_out[2,17]*sbox_out[2,19] + sbox_out[2,16] + sbox_out[2,17] + sbox_out[2,19]] 1212
+c [var for (sbox_out[2,19])*(sbox_out[2,17])] 1213
+c [var for (sbox_out[2,18])*([var for sbox_out[2,16]*sbox_out[2,19] + sbox_out[2,17]*sbox_out[2,19] + sbox_out[2,16] + sbox_out[2,17] + sbox_out[2,19]])] 1214
+c [var for sbox_out[2,18]*sbox_out[2,19] + sbox_out[2,16] + sbox_out[2,18] + sbox_out[2,19]] 1215
+c [var for (sbox_out[2,16])*(sbox_out[2,18])] 1216
+c [var for ([var for sbox_out[2,18]*sbox_out[2,19] + sbox_out[2,16] + sbox_out[2,18] + sbox_out[2,19]])*(sbox_out[2,17])] 1217
+c [var for sbox_out[2,17]*sbox_out[2,19] + sbox_out[2,18]*sbox_out[2,19] + sbox_out[2,17] + 1] 1218
+c [var for ([var for sbox_out[2,17]*sbox_out[2,19] + sbox_out[2,18]*sbox_out[2,19] + sbox_out[2,17] + 1])*(sbox_out[2,16])] 1219
+c [var for (sbox_out[2,17] + sbox_out[2,19])*(sbox_out[2,18])] 1220
+c [var for sbox_out[2,20]*sbox_out[2,22] + sbox_out[2,20]*sbox_out[2,23] + sbox_out[2,22]*sbox_out[2,23] + sbox_out[2,20] + sbox_out[2,22] + sbox_out[2,23]] 1221
+c [var for ([var for sbox_out[2,20]*sbox_out[2,22] + sbox_out[2,20]*sbox_out[2,23] + sbox_out[2,22]*sbox_out[2,23] + sbox_out[2,20] + sbox_out[2,22] + sbox_out[2,23]])*(sbox_out[2,21])] 1222
+c [var for (sbox_out[2,22])*(sbox_out[2,23])] 1223
+c [var for sbox_out[2,20]*sbox_out[2,23] + sbox_out[2,21]*sbox_out[2,23] + sbox_out[2,20] + sbox_out[2,21] + sbox_out[2,23]] 1224
+c [var for (sbox_out[2,23])*(sbox_out[2,21])] 1225
+c [var for (sbox_out[2,22])*([var for sbox_out[2,20]*sbox_out[2,23] + sbox_out[2,21]*sbox_out[2,23] + sbox_out[2,20] + sbox_out[2,21] + sbox_out[2,23]])] 1226
+c [var for sbox_out[2,22]*sbox_out[2,23] + sbox_out[2,20] + sbox_out[2,22] + sbox_out[2,23]] 1227
+c [var for (sbox_out[2,20])*(sbox_out[2,22])] 1228
+c [var for (sbox_out[2,21])*([var for sbox_out[2,22]*sbox_out[2,23] + sbox_out[2,20] + sbox_out[2,22] + sbox_out[2,23]])] 1229
+c [var for sbox_out[2,21]*sbox_out[2,23] + sbox_out[2,22]*sbox_out[2,23] + sbox_out[2,21] + 1] 1230
+c [var for (sbox_out[2,21] + sbox_out[2,23])*(sbox_out[2,22])] 1231
+c [var for (sbox_out[2,20])*([var for sbox_out[2,21]*sbox_out[2,23] + sbox_out[2,22]*sbox_out[2,23] + sbox_out[2,21] + 1])] 1232
+c [var for sbox_out[2,24]*sbox_out[2,26] + sbox_out[2,24]*sbox_out[2,27] + sbox_out[2,26]*sbox_out[2,27] + sbox_out[2,24] + sbox_out[2,26] + sbox_out[2,27]] 1233
+c [var for ([var for sbox_out[2,24]*sbox_out[2,26] + sbox_out[2,24]*sbox_out[2,27] + sbox_out[2,26]*sbox_out[2,27] + sbox_out[2,24] + sbox_out[2,26] + sbox_out[2,27]])*(sbox_out[2,25])] 1234
+c [var for (sbox_out[2,26])*(sbox_out[2,27])] 1235
+c [var for sbox_out[2,24]*sbox_out[2,27] + sbox_out[2,25]*sbox_out[2,27] + sbox_out[2,24] + sbox_out[2,25] + sbox_out[2,27]] 1236
+c [var for (sbox_out[2,27])*(sbox_out[2,25])] 1237
+c [var for (sbox_out[2,26])*([var for sbox_out[2,24]*sbox_out[2,27] + sbox_out[2,25]*sbox_out[2,27] + sbox_out[2,24] + sbox_out[2,25] + sbox_out[2,27]])] 1238
+c [var for sbox_out[2,26]*sbox_out[2,27] + sbox_out[2,24] + sbox_out[2,26] + sbox_out[2,27]] 1239
+c [var for ([var for sbox_out[2,26]*sbox_out[2,27] + sbox_out[2,24] + sbox_out[2,26] + sbox_out[2,27]])*(sbox_out[2,25])] 1240
+c [var for (sbox_out[2,26])*(sbox_out[2,24])] 1241
+c [var for sbox_out[2,25]*sbox_out[2,27] + sbox_out[2,26]*sbox_out[2,27] + sbox_out[2,25] + 1] 1242
+c [var for ([var for sbox_out[2,25]*sbox_out[2,27] + sbox_out[2,26]*sbox_out[2,27] + sbox_out[2,25] + 1])*(sbox_out[2,24])] 1243
+c [var for (sbox_out[2,26])*(sbox_out[2,25] + sbox_out[2,27])] 1244
+c [var for sbox_out[2,28]*sbox_out[2,30] + sbox_out[2,28]*sbox_out[2,31] + sbox_out[2,30]*sbox_out[2,31] + sbox_out[2,28] + sbox_out[2,30] + sbox_out[2,31]] 1245
+c [var for (sbox_out[2,29])*([var for sbox_out[2,28]*sbox_out[2,30] + sbox_out[2,28]*sbox_out[2,31] + sbox_out[2,30]*sbox_out[2,31] + sbox_out[2,28] + sbox_out[2,30] + sbox_out[2,31]])] 1246
+c [var for (sbox_out[2,30])*(sbox_out[2,31])] 1247
+c [var for sbox_out[2,28]*sbox_out[2,30] + sbox_out[2,29]*sbox_out[2,30] + sbox_out[2,29] + sbox_out[2,30] + 1] 1248
+c [var for (sbox_out[2,28] + sbox_out[2,29])*(sbox_out[2,30])] 1249
+c [var for ([var for sbox_out[2,28]*sbox_out[2,30] + sbox_out[2,29]*sbox_out[2,30] + sbox_out[2,29] + sbox_out[2,30] + 1])*(sbox_out[2,31])] 1250
+c [var for sbox_out[2,29]*sbox_out[2,30] + sbox_out[2,29]] 1251
+c [var for (sbox_out[2,29])*(sbox_out[2,28] + sbox_out[2,30])] 1252
+c [var for (sbox_out[2,31])*([var for sbox_out[2,29]*sbox_out[2,30] + sbox_out[2,29]])] 1253
+c [var for (sbox_out[2,30])*(sbox_out[2,28])] 1254
+c [var for sbox_out[2,28]*sbox_out[2,29] + sbox_out[2,28]*sbox_out[2,30] + sbox_out[2,30]] 1255
+c [var for ([var for sbox_out[2,28]*sbox_out[2,29] + sbox_out[2,28]*sbox_out[2,30] + sbox_out[2,30]])*(sbox_out[2,31])] 1256
+c [var for sbox_out[2,32]*sbox_out[2,34] + sbox_out[2,32]*sbox_out[2,35] + sbox_out[2,34]*sbox_out[2,35] + sbox_out[2,32] + sbox_out[2,34] + sbox_out[2,35]] 1257
+c [var for (sbox_out[2,34])*(sbox_out[2,35])] 1258
+c [var for (sbox_out[2,33])*([var for sbox_out[2,32]*sbox_out[2,34] + sbox_out[2,32]*sbox_out[2,35] + sbox_out[2,34]*sbox_out[2,35] + sbox_out[2,32] + sbox_out[2,34] + sbox_out[2,35]])] 1259
+c [var for sbox_out[2,32]*sbox_out[2,35] + sbox_out[2,33]*sbox_out[2,35] + sbox_out[2,32] + sbox_out[2,33] + sbox_out[2,35]] 1260
+c [var for (sbox_out[2,34])*([var for sbox_out[2,32]*sbox_out[2,35] + sbox_out[2,33]*sbox_out[2,35] + sbox_out[2,32] + sbox_out[2,33] + sbox_out[2,35]])] 1261
+c [var for (sbox_out[2,33])*(sbox_out[2,35])] 1262
+c [var for sbox_out[2,34]*sbox_out[2,35] + sbox_out[2,32] + sbox_out[2,34] + sbox_out[2,35]] 1263
+c [var for (sbox_out[2,32])*(sbox_out[2,34])] 1264
+c [var for (sbox_out[2,33])*([var for sbox_out[2,34]*sbox_out[2,35] + sbox_out[2,32] + sbox_out[2,34] + sbox_out[2,35]])] 1265
+c [var for sbox_out[2,33]*sbox_out[2,35] + sbox_out[2,34]*sbox_out[2,35] + sbox_out[2,33] + 1] 1266
+c [var for (sbox_out[2,33] + sbox_out[2,35])*(sbox_out[2,34])] 1267
+c [var for (sbox_out[2,32])*([var for sbox_out[2,33]*sbox_out[2,35] + sbox_out[2,34]*sbox_out[2,35] + sbox_out[2,33] + 1])] 1268
+c [var for sbox_out[2,36]*sbox_out[2,38] + sbox_out[2,36]*sbox_out[2,39] + sbox_out[2,38]*sbox_out[2,39] + sbox_out[2,36] + sbox_out[2,38] + sbox_out[2,39]] 1269
+c [var for ([var for sbox_out[2,36]*sbox_out[2,38] + sbox_out[2,36]*sbox_out[2,39] + sbox_out[2,38]*sbox_out[2,39] + sbox_out[2,36] + sbox_out[2,38] + sbox_out[2,39]])*(sbox_out[2,37])] 1270
+c [var for (sbox_out[2,38])*(sbox_out[2,39])] 1271
+c [var for sbox_out[2,36]*sbox_out[2,39] + sbox_out[2,37]*sbox_out[2,39] + sbox_out[2,36] + sbox_out[2,37] + sbox_out[2,39]] 1272
+c [var for (sbox_out[2,39])*(sbox_out[2,37])] 1273
+c [var for (sbox_out[2,38])*([var for sbox_out[2,36]*sbox_out[2,39] + sbox_out[2,37]*sbox_out[2,39] + sbox_out[2,36] + sbox_out[2,37] + sbox_out[2,39]])] 1274
+c [var for sbox_out[2,38]*sbox_out[2,39] + sbox_out[2,36] + sbox_out[2,38] + sbox_out[2,39]] 1275
+c [var for ([var for sbox_out[2,38]*sbox_out[2,39] + sbox_out[2,36] + sbox_out[2,38] + sbox_out[2,39]])*(sbox_out[2,37])] 1276
+c [var for (sbox_out[2,38])*(sbox_out[2,36])] 1277
+c [var for sbox_out[2,36]*sbox_out[2,37] + sbox_out[2,36]*sbox_out[2,38] + sbox_out[2,38]] 1278
+c [var for (sbox_out[2,38])*(sbox_out[2,37])] 1279
+c [var for (sbox_out[2,36])*(sbox_out[2,37])] 1280
+c [var for (sbox_out[2,39])*([var for sbox_out[2,36]*sbox_out[2,37] + sbox_out[2,36]*sbox_out[2,38] + sbox_out[2,38]])] 1281
+c [var for sbox_out[2,40]*sbox_out[2,42] + sbox_out[2,40]*sbox_out[2,43] + sbox_out[2,42]*sbox_out[2,43] + sbox_out[2,40] + sbox_out[2,42] + sbox_out[2,43]] 1282
+c [var for (sbox_out[2,42])*(sbox_out[2,43])] 1283
+c [var for ([var for sbox_out[2,40]*sbox_out[2,42] + sbox_out[2,40]*sbox_out[2,43] + sbox_out[2,42]*sbox_out[2,43] + sbox_out[2,40] + sbox_out[2,42] + sbox_out[2,43]])*(sbox_out[2,41])] 1284
+c [var for sbox_out[2,40]*sbox_out[2,43] + sbox_out[2,41]*sbox_out[2,43] + sbox_out[2,40] + sbox_out[2,41] + sbox_out[2,43]] 1285
+c [var for ([var for sbox_out[2,40]*sbox_out[2,43] + sbox_out[2,41]*sbox_out[2,43] + sbox_out[2,40] + sbox_out[2,41] + sbox_out[2,43]])*(sbox_out[2,42])] 1286
+c [var for (sbox_out[2,41])*(sbox_out[2,43])] 1287
+c [var for sbox_out[2,42]*sbox_out[2,43] + sbox_out[2,40] + sbox_out[2,42] + sbox_out[2,43]] 1288
+c [var for (sbox_out[2,40])*(sbox_out[2,42])] 1289
+c [var for ([var for sbox_out[2,42]*sbox_out[2,43] + sbox_out[2,40] + sbox_out[2,42] + sbox_out[2,43]])*(sbox_out[2,41])] 1290
+c [var for sbox_out[2,41]*sbox_out[2,43] + sbox_out[2,42]*sbox_out[2,43] + sbox_out[2,41] + 1] 1291
+c [var for (sbox_out[2,40])*([var for sbox_out[2,41]*sbox_out[2,43] + sbox_out[2,42]*sbox_out[2,43] + sbox_out[2,41] + 1])] 1292
+c [var for (sbox_out[2,42])*(sbox_out[2,41])] 1293
+c [var for sbox_out[2,44]*sbox_out[2,46] + sbox_out[2,44]*sbox_out[2,47] + sbox_out[2,46]*sbox_out[2,47] + sbox_out[2,44] + sbox_out[2,46] + sbox_out[2,47]] 1294
+c [var for (sbox_out[2,46])*(sbox_out[2,47])] 1295
+c [var for ([var for sbox_out[2,44]*sbox_out[2,46] + sbox_out[2,44]*sbox_out[2,47] + sbox_out[2,46]*sbox_out[2,47] + sbox_out[2,44] + sbox_out[2,46] + sbox_out[2,47]])*(sbox_out[2,45])] 1296
+c [var for sbox_out[2,44]*sbox_out[2,46] + sbox_out[2,45]*sbox_out[2,46] + sbox_out[2,45] + sbox_out[2,46] + 1] 1297
+c [var for (sbox_out[2,46])*(sbox_out[2,45])] 1298
+c [var for ([var for sbox_out[2,44]*sbox_out[2,46] + sbox_out[2,45]*sbox_out[2,46] + sbox_out[2,45] + sbox_out[2,46] + 1])*(sbox_out[2,47])] 1299
+c [var for (sbox_out[2,46])*(sbox_out[2,44])] 1300
+c [var for sbox_out[2,45]*sbox_out[2,46] + sbox_out[2,45]] 1301
+c [var for (sbox_out[2,46])*(sbox_out[2,44] + sbox_out[2,45])] 1302
+c [var for ([var for sbox_out[2,45]*sbox_out[2,46] + sbox_out[2,45]])*(sbox_out[2,47])] 1303
+c [var for (sbox_out[2,44])*(sbox_out[2,45])] 1304
+c [var for sbox_out[2,44]*sbox_out[2,45] + sbox_out[2,44]*sbox_out[2,46] + sbox_out[2,46]] 1305
+c [var for ([var for sbox_out[2,44]*sbox_out[2,45] + sbox_out[2,44]*sbox_out[2,46] + sbox_out[2,46]])*(sbox_out[2,47])] 1306
+c [var for sbox_out[2,48]*sbox_out[2,50] + sbox_out[2,48]*sbox_out[2,51] + sbox_out[2,50]*sbox_out[2,51] + sbox_out[2,48] + sbox_out[2,50] + sbox_out[2,51]] 1307
+c [var for (sbox_out[2,50])*(sbox_out[2,51])] 1308
+c [var for ([var for sbox_out[2,48]*sbox_out[2,50] + sbox_out[2,48]*sbox_out[2,51] + sbox_out[2,50]*sbox_out[2,51] + sbox_out[2,48] + sbox_out[2,50] + sbox_out[2,51]])*(sbox_out[2,49])] 1309
+c [var for sbox_out[2,48]*sbox_out[2,51] + sbox_out[2,49]*sbox_out[2,51] + sbox_out[2,48] + sbox_out[2,49] + sbox_out[2,51]] 1310
+c [var for (sbox_out[2,50])*([var for sbox_out[2,48]*sbox_out[2,51] + sbox_out[2,49]*sbox_out[2,51] + sbox_out[2,48] + sbox_out[2,49] + sbox_out[2,51]])] 1311
+c [var for (sbox_out[2,51])*(sbox_out[2,49])] 1312
+c [var for sbox_out[2,50]*sbox_out[2,51] + sbox_out[2,48] + sbox_out[2,50] + sbox_out[2,51]] 1313
+c [var for ([var for sbox_out[2,50]*sbox_out[2,51] + sbox_out[2,48] + sbox_out[2,50] + sbox_out[2,51]])*(sbox_out[2,49])] 1314
+c [var for (sbox_out[2,50])*(sbox_out[2,48])] 1315
+c [var for sbox_out[2,49]*sbox_out[2,51] + sbox_out[2,50]*sbox_out[2,51] + sbox_out[2,49] + 1] 1316
+c [var for (sbox_out[2,50])*(sbox_out[2,49])] 1317
+c [var for ([var for sbox_out[2,49]*sbox_out[2,51] + sbox_out[2,50]*sbox_out[2,51] + sbox_out[2,49] + 1])*(sbox_out[2,48])] 1318
+c [var for sbox_out[2,52]*sbox_out[2,54] + sbox_out[2,52]*sbox_out[2,55] + sbox_out[2,54]*sbox_out[2,55] + sbox_out[2,52] + sbox_out[2,54] + sbox_out[2,55]] 1319
+c [var for (sbox_out[2,54])*(sbox_out[2,55])] 1320
+c [var for (sbox_out[2,53])*([var for sbox_out[2,52]*sbox_out[2,54] + sbox_out[2,52]*sbox_out[2,55] + sbox_out[2,54]*sbox_out[2,55] + sbox_out[2,52] + sbox_out[2,54] + sbox_out[2,55]])] 1321
+c [var for sbox_out[2,52]*sbox_out[2,55] + sbox_out[2,53]*sbox_out[2,55] + sbox_out[2,52] + sbox_out[2,53] + sbox_out[2,55]] 1322
+c [var for (sbox_out[2,54])*([var for sbox_out[2,52]*sbox_out[2,55] + sbox_out[2,53]*sbox_out[2,55] + sbox_out[2,52] + sbox_out[2,53] + sbox_out[2,55]])] 1323
+c [var for (sbox_out[2,53])*(sbox_out[2,55])] 1324
+c [var for sbox_out[2,54]*sbox_out[2,55] + sbox_out[2,52] + sbox_out[2,54] + sbox_out[2,55]] 1325
+c [var for (sbox_out[2,52])*(sbox_out[2,54])] 1326
+c [var for ([var for sbox_out[2,54]*sbox_out[2,55] + sbox_out[2,52] + sbox_out[2,54] + sbox_out[2,55]])*(sbox_out[2,53])] 1327
+c [var for sbox_out[2,52]*sbox_out[2,53] + sbox_out[2,52]*sbox_out[2,54] + sbox_out[2,54]] 1328
+c [var for (sbox_out[2,52])*(sbox_out[2,53])] 1329
+c [var for (sbox_out[2,55])*([var for sbox_out[2,52]*sbox_out[2,53] + sbox_out[2,52]*sbox_out[2,54] + sbox_out[2,54]])] 1330
+c [var for (sbox_out[2,53])*(sbox_out[2,54])] 1331
+c [var for sbox_out[2,56]*sbox_out[2,58] + sbox_out[2,56]*sbox_out[2,59] + sbox_out[2,58]*sbox_out[2,59] + sbox_out[2,56] + sbox_out[2,58] + sbox_out[2,59]] 1332
+c [var for (sbox_out[2,59])*(sbox_out[2,58])] 1333
+c [var for (sbox_out[2,57])*([var for sbox_out[2,56]*sbox_out[2,58] + sbox_out[2,56]*sbox_out[2,59] + sbox_out[2,58]*sbox_out[2,59] + sbox_out[2,56] + sbox_out[2,58] + sbox_out[2,59]])] 1334
+c [var for sbox_out[2,56]*sbox_out[2,59] + sbox_out[2,57]*sbox_out[2,59] + sbox_out[2,56] + sbox_out[2,57] + sbox_out[2,59]] 1335
+c [var for ([var for sbox_out[2,56]*sbox_out[2,59] + sbox_out[2,57]*sbox_out[2,59] + sbox_out[2,56] + sbox_out[2,57] + sbox_out[2,59]])*(sbox_out[2,58])] 1336
+c [var for (sbox_out[2,57])*(sbox_out[2,59])] 1337
+c [var for sbox_out[2,58]*sbox_out[2,59] + sbox_out[2,56] + sbox_out[2,58] + sbox_out[2,59]] 1338
+c [var for (sbox_out[2,57])*([var for sbox_out[2,58]*sbox_out[2,59] + sbox_out[2,56] + sbox_out[2,58] + sbox_out[2,59]])] 1339
+c [var for (sbox_out[2,56])*(sbox_out[2,58])] 1340
+c [var for sbox_out[2,57]*sbox_out[2,59] + sbox_out[2,58]*sbox_out[2,59] + sbox_out[2,57] + 1] 1341
+c [var for (sbox_out[2,57] + sbox_out[2,59])*(sbox_out[2,58])] 1342
+c [var for (sbox_out[2,56])*([var for sbox_out[2,57]*sbox_out[2,59] + sbox_out[2,58]*sbox_out[2,59] + sbox_out[2,57] + 1])] 1343
+c [var for sbox_out[2,60]*sbox_out[2,62] + sbox_out[2,60]*sbox_out[2,63] + sbox_out[2,62]*sbox_out[2,63] + sbox_out[2,60] + sbox_out[2,62] + sbox_out[2,63]] 1344
+c [var for (sbox_out[2,61])*([var for sbox_out[2,60]*sbox_out[2,62] + sbox_out[2,60]*sbox_out[2,63] + sbox_out[2,62]*sbox_out[2,63] + sbox_out[2,60] + sbox_out[2,62] + sbox_out[2,63]])] 1345
+c [var for (sbox_out[2,62])*(sbox_out[2,63])] 1346
+c [var for sbox_out[2,60]*sbox_out[2,62] + sbox_out[2,61]*sbox_out[2,62] + sbox_out[2,61] + sbox_out[2,62] + 1] 1347
+c [var for (sbox_out[2,62])*(sbox_out[2,60] + sbox_out[2,61])] 1348
+c [var for ([var for sbox_out[2,60]*sbox_out[2,62] + sbox_out[2,61]*sbox_out[2,62] + sbox_out[2,61] + sbox_out[2,62] + 1])*(sbox_out[2,63])] 1349
+c [var for sbox_out[2,61]*sbox_out[2,62] + sbox_out[2,61]] 1350
+c [var for (sbox_out[2,63])*([var for sbox_out[2,61]*sbox_out[2,62] + sbox_out[2,61]])] 1351
+c [var for (sbox_out[2,61])*(sbox_out[2,60])] 1352
+c [var for sbox_out[2,60]*sbox_out[2,61] + sbox_out[2,60]*sbox_out[2,62] + sbox_out[2,62]] 1353
+c [var for (sbox_out[2,63])*([var for sbox_out[2,60]*sbox_out[2,61] + sbox_out[2,60]*sbox_out[2,62] + sbox_out[2,62]])] 1354
+c [var for (sbox_out[2,61])*(sbox_out[2,60] + sbox_out[2,62])] 1355
+c [var for sbox_out[3,0]*sbox_out[3,2] + sbox_out[3,0]*sbox_out[3,3] + sbox_out[3,2]*sbox_out[3,3] + sbox_out[3,0] + sbox_out[3,2] + sbox_out[3,3]] 1356
+c [var for (sbox_out[3,1])*([var for sbox_out[3,0]*sbox_out[3,2] + sbox_out[3,0]*sbox_out[3,3] + sbox_out[3,2]*sbox_out[3,3] + sbox_out[3,0] + sbox_out[3,2] + sbox_out[3,3]])] 1357
+c [var for (sbox_out[3,2])*(sbox_out[3,3])] 1358
+c [var for sbox_out[3,0]*sbox_out[3,3] + sbox_out[3,1]*sbox_out[3,3] + sbox_out[3,0] + sbox_out[3,1] + sbox_out[3,3]] 1359
+c [var for (sbox_out[3,2])*([var for sbox_out[3,0]*sbox_out[3,3] + sbox_out[3,1]*sbox_out[3,3] + sbox_out[3,0] + sbox_out[3,1] + sbox_out[3,3]])] 1360
+c [var for (sbox_out[3,3])*(sbox_out[3,1])] 1361
+c [var for sbox_out[3,2]*sbox_out[3,3] + sbox_out[3,0] + sbox_out[3,2] + sbox_out[3,3]] 1362
+c [var for ([var for sbox_out[3,2]*sbox_out[3,3] + sbox_out[3,0] + sbox_out[3,2] + sbox_out[3,3]])*(sbox_out[3,1])] 1363
+c [var for (sbox_out[3,2])*(sbox_out[3,0])] 1364
+c [var for sbox_out[3,1]*sbox_out[3,3] + sbox_out[3,2]*sbox_out[3,3] + sbox_out[3,1] + 1] 1365
+c [var for (sbox_out[3,2])*(sbox_out[3,1] + sbox_out[3,3])] 1366
+c [var for ([var for sbox_out[3,1]*sbox_out[3,3] + sbox_out[3,2]*sbox_out[3,3] + sbox_out[3,1] + 1])*(sbox_out[3,0])] 1367
+c [var for sbox_out[3,4]*sbox_out[3,6] + sbox_out[3,4]*sbox_out[3,7] + sbox_out[3,6]*sbox_out[3,7] + sbox_out[3,4] + sbox_out[3,6] + sbox_out[3,7]] 1368
+c [var for (sbox_out[3,6])*(sbox_out[3,7])] 1369
+c [var for (sbox_out[3,5])*([var for sbox_out[3,4]*sbox_out[3,6] + sbox_out[3,4]*sbox_out[3,7] + sbox_out[3,6]*sbox_out[3,7] + sbox_out[3,4] + sbox_out[3,6] + sbox_out[3,7]])] 1370
+c [var for sbox_out[3,4]*sbox_out[3,7] + sbox_out[3,5]*sbox_out[3,7] + sbox_out[3,4] + sbox_out[3,5] + sbox_out[3,7]] 1371
+c [var for (sbox_out[3,5])*(sbox_out[3,7])] 1372
+c [var for (sbox_out[3,6])*([var for sbox_out[3,4]*sbox_out[3,7] + sbox_out[3,5]*sbox_out[3,7] + sbox_out[3,4] + sbox_out[3,5] + sbox_out[3,7]])] 1373
+c [var for sbox_out[3,6]*sbox_out[3,7] + sbox_out[3,4] + sbox_out[3,6] + sbox_out[3,7]] 1374
+c [var for ([var for sbox_out[3,6]*sbox_out[3,7] + sbox_out[3,4] + sbox_out[3,6] + sbox_out[3,7]])*(sbox_out[3,5])] 1375
+c [var for (sbox_out[3,4])*(sbox_out[3,6])] 1376
+c [var for sbox_out[3,4]*sbox_out[3,5] + sbox_out[3,4]*sbox_out[3,6] + sbox_out[3,6]] 1377
+c [var for (sbox_out[3,5])*(sbox_out[3,4] + sbox_out[3,6])] 1378
+c [var for ([var for sbox_out[3,4]*sbox_out[3,5] + sbox_out[3,4]*sbox_out[3,6] + sbox_out[3,6]])*(sbox_out[3,7])] 1379
+c [var for sbox_out[3,8]*sbox_out[3,10] + sbox_out[3,8]*sbox_out[3,11] + sbox_out[3,10]*sbox_out[3,11] + sbox_out[3,8] + sbox_out[3,10] + sbox_out[3,11]] 1380
+c [var for (sbox_out[3,9])*([var for sbox_out[3,8]*sbox_out[3,10] + sbox_out[3,8]*sbox_out[3,11] + sbox_out[3,10]*sbox_out[3,11] + sbox_out[3,8] + sbox_out[3,10] + sbox_out[3,11]])] 1381
+c [var for (sbox_out[3,10])*(sbox_out[3,11])] 1382
+c [var for sbox_out[3,8]*sbox_out[3,11] + sbox_out[3,9]*sbox_out[3,11] + sbox_out[3,8] + sbox_out[3,9] + sbox_out[3,11]] 1383
+c [var for (sbox_out[3,10])*([var for sbox_out[3,8]*sbox_out[3,11] + sbox_out[3,9]*sbox_out[3,11] + sbox_out[3,8] + sbox_out[3,9] + sbox_out[3,11]])] 1384
+c [var for (sbox_out[3,9])*(sbox_out[3,11])] 1385
+c [var for sbox_out[3,9]*sbox_out[3,11] + sbox_out[3,8] + sbox_out[3,9]] 1386
+c [var for ([var for sbox_out[3,9]*sbox_out[3,11] + sbox_out[3,8] + sbox_out[3,9]])*(sbox_out[3,10])] 1387
+c [var for (sbox_out[3,8])*(sbox_out[3,9])] 1388
+c [var for sbox_out[3,8]*sbox_out[3,9] + sbox_out[3,8]*sbox_out[3,10] + sbox_out[3,10]] 1389
+c [var for (sbox_out[3,9])*(sbox_out[3,8] + sbox_out[3,10])] 1390
+c [var for ([var for sbox_out[3,8]*sbox_out[3,9] + sbox_out[3,8]*sbox_out[3,10] + sbox_out[3,10]])*(sbox_out[3,11])] 1391
+c [var for sbox_out[3,12]*sbox_out[3,14] + sbox_out[3,12]*sbox_out[3,15] + sbox_out[3,14]*sbox_out[3,15] + sbox_out[3,12] + sbox_out[3,14] + sbox_out[3,15]] 1392
+c [var for (sbox_out[3,14])*(sbox_out[3,15])] 1393
+c [var for ([var for sbox_out[3,12]*sbox_out[3,14] + sbox_out[3,12]*sbox_out[3,15] + sbox_out[3,14]*sbox_out[3,15] + sbox_out[3,12] + sbox_out[3,14] + sbox_out[3,15]])*(sbox_out[3,13])] 1394
+c [var for sbox_out[3,12]*sbox_out[3,14] + sbox_out[3,13]*sbox_out[3,14] + sbox_out[3,13] + sbox_out[3,14] + 1] 1395
+c [var for ([var for sbox_out[3,12]*sbox_out[3,14] + sbox_out[3,13]*sbox_out[3,14] + sbox_out[3,13] + sbox_out[3,14] + 1])*(sbox_out[3,15])] 1396
+c [var for (sbox_out[3,14])*(sbox_out[3,12] + sbox_out[3,13])] 1397
+c [var for sbox_out[3,13]*sbox_out[3,14] + sbox_out[3,13]] 1398
+c [var for (sbox_out[3,12] + sbox_out[3,14])*(sbox_out[3,13])] 1399
+c [var for (sbox_out[3,14])*(sbox_out[3,12])] 1400
+c [var for ([var for sbox_out[3,13]*sbox_out[3,14] + sbox_out[3,13]])*(sbox_out[3,15])] 1401
+c [var for sbox_out[3,12]*sbox_out[3,13] + sbox_out[3,12]*sbox_out[3,14] + sbox_out[3,14]] 1402
+c [var for ([var for sbox_out[3,12]*sbox_out[3,13] + sbox_out[3,12]*sbox_out[3,14] + sbox_out[3,14]])*(sbox_out[3,15])] 1403
+c [var for sbox_out[3,16]*sbox_out[3,18] + sbox_out[3,16]*sbox_out[3,19] + sbox_out[3,18]*sbox_out[3,19] + sbox_out[3,16] + sbox_out[3,18] + sbox_out[3,19]] 1404
+c [var for ([var for sbox_out[3,16]*sbox_out[3,18] + sbox_out[3,16]*sbox_out[3,19] + sbox_out[3,18]*sbox_out[3,19] + sbox_out[3,16] + sbox_out[3,18] + sbox_out[3,19]])*(sbox_out[3,17])] 1405
+c [var for (sbox_out[3,18])*(sbox_out[3,19])] 1406
+c [var for sbox_out[3,16]*sbox_out[3,18] + sbox_out[3,17]*sbox_out[3,18] + sbox_out[3,17] + sbox_out[3,18] + 1] 1407
+c [var for (sbox_out[3,16])*(sbox_out[3,18])] 1408
+c [var for (sbox_out[3,18])*(sbox_out[3,17])] 1409
+c [var for ([var for sbox_out[3,16]*sbox_out[3,18] + sbox_out[3,17]*sbox_out[3,18] + sbox_out[3,17] + sbox_out[3,18] + 1])*(sbox_out[3,19])] 1410
+c [var for sbox_out[3,18]*sbox_out[3,19] + sbox_out[3,16] + sbox_out[3,18] + sbox_out[3,19]] 1411
+c [var for ([var for sbox_out[3,18]*sbox_out[3,19] + sbox_out[3,16] + sbox_out[3,18] + sbox_out[3,19]])*(sbox_out[3,17])] 1412
+c [var for sbox_out[3,17]*sbox_out[3,19] + sbox_out[3,18]*sbox_out[3,19] + sbox_out[3,17] + 1] 1413
+c [var for (sbox_out[3,16])*([var for sbox_out[3,17]*sbox_out[3,19] + sbox_out[3,18]*sbox_out[3,19] + sbox_out[3,17] + 1])] 1414
+c [var for sbox_out[3,20]*sbox_out[3,22] + sbox_out[3,20]*sbox_out[3,23] + sbox_out[3,22]*sbox_out[3,23] + sbox_out[3,20] + sbox_out[3,22] + sbox_out[3,23]] 1415
+c [var for (sbox_out[3,23])*(sbox_out[3,22])] 1416
+c [var for (sbox_out[3,21])*([var for sbox_out[3,20]*sbox_out[3,22] + sbox_out[3,20]*sbox_out[3,23] + sbox_out[3,22]*sbox_out[3,23] + sbox_out[3,20] + sbox_out[3,22] + sbox_out[3,23]])] 1417
+c [var for sbox_out[3,20]*sbox_out[3,23] + sbox_out[3,21]*sbox_out[3,23] + sbox_out[3,20] + sbox_out[3,21] + sbox_out[3,23]] 1418
+c [var for (sbox_out[3,23])*(sbox_out[3,21])] 1419
+c [var for (sbox_out[3,22])*([var for sbox_out[3,20]*sbox_out[3,23] + sbox_out[3,21]*sbox_out[3,23] + sbox_out[3,20] + sbox_out[3,21] + sbox_out[3,23]])] 1420
+c [var for sbox_out[3,22]*sbox_out[3,23] + sbox_out[3,20] + sbox_out[3,22] + sbox_out[3,23]] 1421
+c [var for (sbox_out[3,20])*(sbox_out[3,22])] 1422
+c [var for (sbox_out[3,21])*([var for sbox_out[3,22]*sbox_out[3,23] + sbox_out[3,20] + sbox_out[3,22] + sbox_out[3,23]])] 1423
+c [var for sbox_out[3,21]*sbox_out[3,23] + sbox_out[3,22]*sbox_out[3,23] + sbox_out[3,21] + 1] 1424
+c [var for (sbox_out[3,21])*(sbox_out[3,22])] 1425
+c [var for (sbox_out[3,20])*([var for sbox_out[3,21]*sbox_out[3,23] + sbox_out[3,22]*sbox_out[3,23] + sbox_out[3,21] + 1])] 1426
+c [var for sbox_out[3,24]*sbox_out[3,26] + sbox_out[3,24]*sbox_out[3,27] + sbox_out[3,26]*sbox_out[3,27] + sbox_out[3,24] + sbox_out[3,26] + sbox_out[3,27]] 1427
+c [var for (sbox_out[3,25])*([var for sbox_out[3,24]*sbox_out[3,26] + sbox_out[3,24]*sbox_out[3,27] + sbox_out[3,26]*sbox_out[3,27] + sbox_out[3,24] + sbox_out[3,26] + sbox_out[3,27]])] 1428
+c [var for (sbox_out[3,26])*(sbox_out[3,27])] 1429
+c [var for sbox_out[3,24]*sbox_out[3,27] + sbox_out[3,25]*sbox_out[3,27] + sbox_out[3,24] + sbox_out[3,25] + sbox_out[3,27]] 1430
+c [var for ([var for sbox_out[3,24]*sbox_out[3,27] + sbox_out[3,25]*sbox_out[3,27] + sbox_out[3,24] + sbox_out[3,25] + sbox_out[3,27]])*(sbox_out[3,26])] 1431
+c [var for (sbox_out[3,25])*(sbox_out[3,27])] 1432
+c [var for sbox_out[3,26]*sbox_out[3,27] + sbox_out[3,24] + sbox_out[3,26] + sbox_out[3,27]] 1433
+c [var for (sbox_out[3,24])*(sbox_out[3,26])] 1434
+c [var for (sbox_out[3,25])*([var for sbox_out[3,26]*sbox_out[3,27] + sbox_out[3,24] + sbox_out[3,26] + sbox_out[3,27]])] 1435
+c [var for sbox_out[3,25]*sbox_out[3,27] + sbox_out[3,26]*sbox_out[3,27] + sbox_out[3,25] + 1] 1436
+c [var for (sbox_out[3,25] + sbox_out[3,27])*(sbox_out[3,26])] 1437
+c [var for ([var for sbox_out[3,25]*sbox_out[3,27] + sbox_out[3,26]*sbox_out[3,27] + sbox_out[3,25] + 1])*(sbox_out[3,24])] 1438
+c [var for sbox_out[3,28]*sbox_out[3,30] + sbox_out[3,28]*sbox_out[3,31] + sbox_out[3,30]*sbox_out[3,31] + sbox_out[3,28] + sbox_out[3,30] + sbox_out[3,31]] 1439
+c [var for (sbox_out[3,29])*([var for sbox_out[3,28]*sbox_out[3,30] + sbox_out[3,28]*sbox_out[3,31] + sbox_out[3,30]*sbox_out[3,31] + sbox_out[3,28] + sbox_out[3,30] + sbox_out[3,31]])] 1440
+c [var for (sbox_out[3,30])*(sbox_out[3,31])] 1441
+c [var for sbox_out[3,28]*sbox_out[3,30] + sbox_out[3,29]*sbox_out[3,30] + sbox_out[3,29] + sbox_out[3,30] + 1] 1442
+c [var for (sbox_out[3,30])*(sbox_out[3,28] + sbox_out[3,29])] 1443
+c [var for (sbox_out[3,31])*([var for sbox_out[3,28]*sbox_out[3,30] + sbox_out[3,29]*sbox_out[3,30] + sbox_out[3,29] + sbox_out[3,30] + 1])] 1444
+c [var for sbox_out[3,29]*sbox_out[3,30] + sbox_out[3,29]] 1445
+c [var for (sbox_out[3,29])*(sbox_out[3,28] + sbox_out[3,30])] 1446
+c [var for ([var for sbox_out[3,29]*sbox_out[3,30] + sbox_out[3,29]])*(sbox_out[3,31])] 1447
+c [var for (sbox_out[3,30])*(sbox_out[3,28])] 1448
+c [var for sbox_out[3,28]*sbox_out[3,29] + sbox_out[3,28]*sbox_out[3,30] + sbox_out[3,30]] 1449
+c [var for ([var for sbox_out[3,28]*sbox_out[3,29] + sbox_out[3,28]*sbox_out[3,30] + sbox_out[3,30]])*(sbox_out[3,31])] 1450
+c [var for sbox_out[3,32]*sbox_out[3,34] + sbox_out[3,32]*sbox_out[3,35] + sbox_out[3,34]*sbox_out[3,35] + sbox_out[3,32] + sbox_out[3,34] + sbox_out[3,35]] 1451
+c [var for (sbox_out[3,34])*(sbox_out[3,35])] 1452
+c [var for ([var for sbox_out[3,32]*sbox_out[3,34] + sbox_out[3,32]*sbox_out[3,35] + sbox_out[3,34]*sbox_out[3,35] + sbox_out[3,32] + sbox_out[3,34] + sbox_out[3,35]])*(sbox_out[3,33])] 1453
+c [var for sbox_out[3,32]*sbox_out[3,35] + sbox_out[3,33]*sbox_out[3,35] + sbox_out[3,32] + sbox_out[3,33] + sbox_out[3,35]] 1454
+c [var for (sbox_out[3,33])*(sbox_out[3,35])] 1455
+c [var for (sbox_out[3,34])*([var for sbox_out[3,32]*sbox_out[3,35] + sbox_out[3,33]*sbox_out[3,35] + sbox_out[3,32] + sbox_out[3,33] + sbox_out[3,35]])] 1456
+c [var for sbox_out[3,34]*sbox_out[3,35] + sbox_out[3,32] + sbox_out[3,34] + sbox_out[3,35]] 1457
+c [var for ([var for sbox_out[3,34]*sbox_out[3,35] + sbox_out[3,32] + sbox_out[3,34] + sbox_out[3,35]])*(sbox_out[3,33])] 1458
+c [var for (sbox_out[3,32])*(sbox_out[3,34])] 1459
+c [var for sbox_out[3,33]*sbox_out[3,35] + sbox_out[3,34]*sbox_out[3,35] + sbox_out[3,33] + 1] 1460
+c [var for (sbox_out[3,34])*(sbox_out[3,33] + sbox_out[3,35])] 1461
+c [var for ([var for sbox_out[3,33]*sbox_out[3,35] + sbox_out[3,34]*sbox_out[3,35] + sbox_out[3,33] + 1])*(sbox_out[3,32])] 1462
+c [var for sbox_out[3,36]*sbox_out[3,38] + sbox_out[3,36]*sbox_out[3,39] + sbox_out[3,38]*sbox_out[3,39] + sbox_out[3,36] + sbox_out[3,38] + sbox_out[3,39]] 1463
+c [var for (sbox_out[3,39])*(sbox_out[3,38])] 1464
+c [var for (sbox_out[3,37])*([var for sbox_out[3,36]*sbox_out[3,38] + sbox_out[3,36]*sbox_out[3,39] + sbox_out[3,38]*sbox_out[3,39] + sbox_out[3,36] + sbox_out[3,38] + sbox_out[3,39]])] 1465
+c [var for sbox_out[3,36]*sbox_out[3,39] + sbox_out[3,37]*sbox_out[3,39] + sbox_out[3,36] + sbox_out[3,37] + sbox_out[3,39]] 1466
+c [var for (sbox_out[3,39])*(sbox_out[3,37])] 1467
+c [var for ([var for sbox_out[3,36]*sbox_out[3,39] + sbox_out[3,37]*sbox_out[3,39] + sbox_out[3,36] + sbox_out[3,37] + sbox_out[3,39]])*(sbox_out[3,38])] 1468
+c [var for sbox_out[3,38]*sbox_out[3,39] + sbox_out[3,36] + sbox_out[3,38] + sbox_out[3,39]] 1469
+c [var for (sbox_out[3,36])*(sbox_out[3,38])] 1470
+c [var for (sbox_out[3,37])*([var for sbox_out[3,38]*sbox_out[3,39] + sbox_out[3,36] + sbox_out[3,38] + sbox_out[3,39]])] 1471
+c [var for sbox_out[3,37]*sbox_out[3,39] + sbox_out[3,38]*sbox_out[3,39] + sbox_out[3,37] + 1] 1472
+c [var for ([var for sbox_out[3,37]*sbox_out[3,39] + sbox_out[3,38]*sbox_out[3,39] + sbox_out[3,37] + 1])*(sbox_out[3,36])] 1473
+c [var for (sbox_out[3,37] + sbox_out[3,39])*(sbox_out[3,38])] 1474
+c [var for sbox_out[3,40]*sbox_out[3,42] + sbox_out[3,40]*sbox_out[3,43] + sbox_out[3,42]*sbox_out[3,43] + sbox_out[3,40] + sbox_out[3,42] + sbox_out[3,43]] 1475
+c [var for ([var for sbox_out[3,40]*sbox_out[3,42] + sbox_out[3,40]*sbox_out[3,43] + sbox_out[3,42]*sbox_out[3,43] + sbox_out[3,40] + sbox_out[3,42] + sbox_out[3,43]])*(sbox_out[3,41])] 1476
+c [var for (sbox_out[3,43])*(sbox_out[3,42])] 1477
+c [var for sbox_out[3,40]*sbox_out[3,43] + sbox_out[3,41]*sbox_out[3,43] + sbox_out[3,40] + sbox_out[3,41] + sbox_out[3,43]] 1478
+c [var for (sbox_out[3,43])*(sbox_out[3,41])] 1479
+c [var for ([var for sbox_out[3,40]*sbox_out[3,43] + sbox_out[3,41]*sbox_out[3,43] + sbox_out[3,40] + sbox_out[3,41] + sbox_out[3,43]])*(sbox_out[3,42])] 1480
+c [var for sbox_out[3,42]*sbox_out[3,43] + sbox_out[3,40] + sbox_out[3,42] + sbox_out[3,43]] 1481
+c [var for (sbox_out[3,40])*(sbox_out[3,42])] 1482
+c [var for ([var for sbox_out[3,42]*sbox_out[3,43] + sbox_out[3,40] + sbox_out[3,42] + sbox_out[3,43]])*(sbox_out[3,41])] 1483
+c [var for sbox_out[3,40]*sbox_out[3,41] + sbox_out[3,40]*sbox_out[3,42] + sbox_out[3,42]] 1484
+c [var for (sbox_out[3,40])*(sbox_out[3,41])] 1485
+c [var for ([var for sbox_out[3,40]*sbox_out[3,41] + sbox_out[3,40]*sbox_out[3,42] + sbox_out[3,42]])*(sbox_out[3,43])] 1486
+c [var for (sbox_out[3,41])*(sbox_out[3,42])] 1487
+c [var for sbox_out[3,44]*sbox_out[3,46] + sbox_out[3,44]*sbox_out[3,47] + sbox_out[3,46]*sbox_out[3,47] + sbox_out[3,44] + sbox_out[3,46] + sbox_out[3,47]] 1488
+c [var for (sbox_out[3,45])*([var for sbox_out[3,44]*sbox_out[3,46] + sbox_out[3,44]*sbox_out[3,47] + sbox_out[3,46]*sbox_out[3,47] + sbox_out[3,44] + sbox_out[3,46] + sbox_out[3,47]])] 1489
+c [var for (sbox_out[3,47])*(sbox_out[3,46])] 1490
+c [var for sbox_out[3,44]*sbox_out[3,46] + sbox_out[3,45]*sbox_out[3,46] + sbox_out[3,45] + sbox_out[3,46] + 1] 1491
+c [var for (sbox_out[3,46])*(sbox_out[3,45])] 1492
+c [var for (sbox_out[3,47])*([var for sbox_out[3,44]*sbox_out[3,46] + sbox_out[3,45]*sbox_out[3,46] + sbox_out[3,45] + sbox_out[3,46] + 1])] 1493
+c [var for (sbox_out[3,46])*(sbox_out[3,44])] 1494
+c [var for sbox_out[3,45]*sbox_out[3,46] + sbox_out[3,45]] 1495
+c [var for (sbox_out[3,47])*([var for sbox_out[3,45]*sbox_out[3,46] + sbox_out[3,45]])] 1496
+c [var for (sbox_out[3,45] + sbox_out[3,46])*(sbox_out[3,44])] 1497
+c [var for sbox_out[3,44]*sbox_out[3,45] + sbox_out[3,44]*sbox_out[3,46] + sbox_out[3,46]] 1498
+c [var for (sbox_out[3,45])*(sbox_out[3,44])] 1499
+c [var for ([var for sbox_out[3,44]*sbox_out[3,45] + sbox_out[3,44]*sbox_out[3,46] + sbox_out[3,46]])*(sbox_out[3,47])] 1500
+c [var for sbox_out[3,48]*sbox_out[3,50] + sbox_out[3,48]*sbox_out[3,51] + sbox_out[3,50]*sbox_out[3,51] + sbox_out[3,48] + sbox_out[3,50] + sbox_out[3,51]] 1501
+c [var for (sbox_out[3,51])*(sbox_out[3,50])] 1502
+c [var for ([var for sbox_out[3,48]*sbox_out[3,50] + sbox_out[3,48]*sbox_out[3,51] + sbox_out[3,50]*sbox_out[3,51] + sbox_out[3,48] + sbox_out[3,50] + sbox_out[3,51]])*(sbox_out[3,49])] 1503
+c [var for sbox_out[3,48]*sbox_out[3,51] + sbox_out[3,49]*sbox_out[3,51] + sbox_out[3,48] + sbox_out[3,49] + sbox_out[3,51]] 1504
+c [var for (sbox_out[3,51])*(sbox_out[3,49])] 1505
+c [var for ([var for sbox_out[3,48]*sbox_out[3,51] + sbox_out[3,49]*sbox_out[3,51] + sbox_out[3,48] + sbox_out[3,49] + sbox_out[3,51]])*(sbox_out[3,50])] 1506
+c [var for sbox_out[3,50]*sbox_out[3,51] + sbox_out[3,48] + sbox_out[3,50] + sbox_out[3,51]] 1507
+c [var for ([var for sbox_out[3,50]*sbox_out[3,51] + sbox_out[3,48] + sbox_out[3,50] + sbox_out[3,51]])*(sbox_out[3,49])] 1508
+c [var for (sbox_out[3,48])*(sbox_out[3,50])] 1509
+c [var for sbox_out[3,49]*sbox_out[3,51] + sbox_out[3,50]*sbox_out[3,51] + sbox_out[3,49] + 1] 1510
+c [var for (sbox_out[3,48])*([var for sbox_out[3,49]*sbox_out[3,51] + sbox_out[3,50]*sbox_out[3,51] + sbox_out[3,49] + 1])] 1511
+c [var for (sbox_out[3,49] + sbox_out[3,51])*(sbox_out[3,50])] 1512
+c [var for sbox_out[3,52]*sbox_out[3,54] + sbox_out[3,52]*sbox_out[3,55] + sbox_out[3,54]*sbox_out[3,55] + sbox_out[3,52] + sbox_out[3,54] + sbox_out[3,55]] 1513
+c [var for (sbox_out[3,55])*(sbox_out[3,54])] 1514
+c [var for ([var for sbox_out[3,52]*sbox_out[3,54] + sbox_out[3,52]*sbox_out[3,55] + sbox_out[3,54]*sbox_out[3,55] + sbox_out[3,52] + sbox_out[3,54] + sbox_out[3,55]])*(sbox_out[3,53])] 1515
+c [var for sbox_out[3,52]*sbox_out[3,55] + sbox_out[3,53]*sbox_out[3,55] + sbox_out[3,52] + sbox_out[3,53] + sbox_out[3,55]] 1516
+c [var for ([var for sbox_out[3,52]*sbox_out[3,55] + sbox_out[3,53]*sbox_out[3,55] + sbox_out[3,52] + sbox_out[3,53] + sbox_out[3,55]])*(sbox_out[3,54])] 1517
+c [var for (sbox_out[3,55])*(sbox_out[3,53])] 1518
+c [var for sbox_out[3,54]*sbox_out[3,55] + sbox_out[3,52] + sbox_out[3,54] + sbox_out[3,55]] 1519
+c [var for (sbox_out[3,54])*(sbox_out[3,52])] 1520
+c [var for ([var for sbox_out[3,54]*sbox_out[3,55] + sbox_out[3,52] + sbox_out[3,54] + sbox_out[3,55]])*(sbox_out[3,53])] 1521
+c [var for sbox_out[3,53]*sbox_out[3,55] + sbox_out[3,54]*sbox_out[3,55] + sbox_out[3,53] + 1] 1522
+c [var for ([var for sbox_out[3,53]*sbox_out[3,55] + sbox_out[3,54]*sbox_out[3,55] + sbox_out[3,53] + 1])*(sbox_out[3,52])] 1523
+c [var for (sbox_out[3,53])*(sbox_out[3,54])] 1524
+c [var for sbox_out[3,56]*sbox_out[3,58] + sbox_out[3,56]*sbox_out[3,59] + sbox_out[3,58]*sbox_out[3,59] + sbox_out[3,56] + sbox_out[3,58] + sbox_out[3,59]] 1525
+c [var for (sbox_out[3,59])*(sbox_out[3,58])] 1526
+c [var for ([var for sbox_out[3,56]*sbox_out[3,58] + sbox_out[3,56]*sbox_out[3,59] + sbox_out[3,58]*sbox_out[3,59] + sbox_out[3,56] + sbox_out[3,58] + sbox_out[3,59]])*(sbox_out[3,57])] 1527
+c [var for sbox_out[3,56]*sbox_out[3,59] + sbox_out[3,57]*sbox_out[3,59] + sbox_out[3,56] + sbox_out[3,57] + sbox_out[3,59]] 1528
+c [var for ([var for sbox_out[3,56]*sbox_out[3,59] + sbox_out[3,57]*sbox_out[3,59] + sbox_out[3,56] + sbox_out[3,57] + sbox_out[3,59]])*(sbox_out[3,58])] 1529
+c [var for (sbox_out[3,59])*(sbox_out[3,57])] 1530
+c [var for sbox_out[3,58]*sbox_out[3,59] + sbox_out[3,56] + sbox_out[3,58] + sbox_out[3,59]] 1531
+c [var for (sbox_out[3,56])*(sbox_out[3,58])] 1532
+c [var for ([var for sbox_out[3,58]*sbox_out[3,59] + sbox_out[3,56] + sbox_out[3,58] + sbox_out[3,59]])*(sbox_out[3,57])] 1533
+c [var for sbox_out[3,57]*sbox_out[3,59] + sbox_out[3,58]*sbox_out[3,59] + sbox_out[3,57] + 1] 1534
+c [var for (sbox_out[3,56])*([var for sbox_out[3,57]*sbox_out[3,59] + sbox_out[3,58]*sbox_out[3,59] + sbox_out[3,57] + 1])] 1535
+c [var for (sbox_out[3,57] + sbox_out[3,59])*(sbox_out[3,58])] 1536
+c [var for sbox_out[3,60]*sbox_out[3,62] + sbox_out[3,60]*sbox_out[3,63] + sbox_out[3,62]*sbox_out[3,63] + sbox_out[3,60] + sbox_out[3,62] + sbox_out[3,63]] 1537
+c [var for (sbox_out[3,63])*(sbox_out[3,62])] 1538
+c [var for (sbox_out[3,61])*([var for sbox_out[3,60]*sbox_out[3,62] + sbox_out[3,60]*sbox_out[3,63] + sbox_out[3,62]*sbox_out[3,63] + sbox_out[3,60] + sbox_out[3,62] + sbox_out[3,63]])] 1539
+c [var for sbox_out[3,60]*sbox_out[3,62] + sbox_out[3,61]*sbox_out[3,62] + sbox_out[3,61] + sbox_out[3,62] + 1] 1540
+c [var for (sbox_out[3,63])*([var for sbox_out[3,60]*sbox_out[3,62] + sbox_out[3,61]*sbox_out[3,62] + sbox_out[3,61] + sbox_out[3,62] + 1])] 1541
+c [var for (sbox_out[3,60] + sbox_out[3,61])*(sbox_out[3,62])] 1542
+c [var for sbox_out[3,61]*sbox_out[3,62] + sbox_out[3,61]] 1543
+c [var for (sbox_out[3,63])*([var for sbox_out[3,61]*sbox_out[3,62] + sbox_out[3,61]])] 1544
+c [var for (sbox_out[3,60])*(sbox_out[3,61])] 1545
+c [var for sbox_out[3,60]*sbox_out[3,61] + sbox_out[3,60]*sbox_out[3,62] + sbox_out[3,62]] 1546
+c [var for (sbox_out[3,63])*([var for sbox_out[3,60]*sbox_out[3,61] + sbox_out[3,60]*sbox_out[3,62] + sbox_out[3,62]])] 1547
+c [var for (sbox_out[3,60] + sbox_out[3,62])*(sbox_out[3,61])] 1548
+c [var for sbox_in[4,0]*sbox_in[4,2] + sbox_in[4,0]*sbox_in[4,3] + sbox_in[4,2]*sbox_in[4,3] + sbox_in[4,0] + sbox_in[4,2] + sbox_in[4,3]] 1549
+c [var for (sbox_in[4,2])*(sbox_in[4,3])] 1550
+c [var for (sbox_in[4,1])*([var for sbox_in[4,0]*sbox_in[4,2] + sbox_in[4,0]*sbox_in[4,3] + sbox_in[4,2]*sbox_in[4,3] + sbox_in[4,0] + sbox_in[4,2] + sbox_in[4,3]])] 1551
+c [var for sbox_in[4,0]*sbox_in[4,3] + sbox_in[4,1]*sbox_in[4,3] + sbox_in[4,0] + sbox_in[4,1] + sbox_in[4,3]] 1552
+c [var for ([var for sbox_in[4,0]*sbox_in[4,3] + sbox_in[4,1]*sbox_in[4,3] + sbox_in[4,0] + sbox_in[4,1] + sbox_in[4,3]])*(sbox_in[4,2])] 1553
+c [var for (sbox_in[4,1])*(sbox_in[4,3])] 1554
+c [var for sbox_in[4,2]*sbox_in[4,3] + sbox_in[4,0] + sbox_in[4,2] + sbox_in[4,3]] 1555
+c [var for ([var for sbox_in[4,2]*sbox_in[4,3] + sbox_in[4,0] + sbox_in[4,2] + sbox_in[4,3]])*(sbox_in[4,1])] 1556
+c [var for (sbox_in[4,0])*(sbox_in[4,2])] 1557
+c [var for sbox_in[4,1]*sbox_in[4,3] + sbox_in[4,2]*sbox_in[4,3] + sbox_in[4,1] + 1] 1558
+c [var for (sbox_in[4,0])*([var for sbox_in[4,1]*sbox_in[4,3] + sbox_in[4,2]*sbox_in[4,3] + sbox_in[4,1] + 1])] 1559
+c [var for (sbox_in[4,2])*(sbox_in[4,1])] 1560
+c [var for sbox_in[4,4]*sbox_in[4,6] + sbox_in[4,4]*sbox_in[4,7] + sbox_in[4,6]*sbox_in[4,7] + sbox_in[4,4] + sbox_in[4,6] + sbox_in[4,7]] 1561
+c [var for (sbox_in[4,7])*(sbox_in[4,6])] 1562
+c [var for ([var for sbox_in[4,4]*sbox_in[4,6] + sbox_in[4,4]*sbox_in[4,7] + sbox_in[4,6]*sbox_in[4,7] + sbox_in[4,4] + sbox_in[4,6] + sbox_in[4,7]])*(sbox_in[4,5])] 1563
+c [var for sbox_in[4,4]*sbox_in[4,7] + sbox_in[4,5]*sbox_in[4,7] + sbox_in[4,4] + sbox_in[4,5] + sbox_in[4,7]] 1564
+c [var for ([var for sbox_in[4,4]*sbox_in[4,7] + sbox_in[4,5]*sbox_in[4,7] + sbox_in[4,4] + sbox_in[4,5] + sbox_in[4,7]])*(sbox_in[4,6])] 1565
+c [var for (sbox_in[4,5])*(sbox_in[4,7])] 1566
+c [var for sbox_in[4,5]*sbox_in[4,7] + sbox_in[4,4] + sbox_in[4,5]] 1567
+c [var for (sbox_in[4,5])*(sbox_in[4,4] + sbox_in[4,7])] 1568
+c [var for (sbox_in[4,6])*([var for sbox_in[4,5]*sbox_in[4,7] + sbox_in[4,4] + sbox_in[4,5]])] 1569
+c [var for sbox_in[4,5]*sbox_in[4,7] + sbox_in[4,6]*sbox_in[4,7] + sbox_in[4,5] + 1] 1570
+c [var for (sbox_in[4,5] + sbox_in[4,7])*(sbox_in[4,6])] 1571
+c [var for ([var for sbox_in[4,5]*sbox_in[4,7] + sbox_in[4,6]*sbox_in[4,7] + sbox_in[4,5] + 1])*(sbox_in[4,4])] 1572
+c [var for sbox_in[4,8]*sbox_in[4,10] + sbox_in[4,8]*sbox_in[4,11] + sbox_in[4,10]*sbox_in[4,11] + sbox_in[4,8] + sbox_in[4,10] + sbox_in[4,11]] 1573
+c [var for (sbox_in[4,11])*(sbox_in[4,10])] 1574
+c [var for (sbox_in[4,9])*([var for sbox_in[4,8]*sbox_in[4,10] + sbox_in[4,8]*sbox_in[4,11] + sbox_in[4,10]*sbox_in[4,11] + sbox_in[4,8] + sbox_in[4,10] + sbox_in[4,11]])] 1575
+c [var for sbox_in[4,8]*sbox_in[4,11] + sbox_in[4,9]*sbox_in[4,11] + sbox_in[4,8] + sbox_in[4,9] + sbox_in[4,11]] 1576
+c [var for (sbox_in[4,9])*(sbox_in[4,11])] 1577
+c [var for ([var for sbox_in[4,8]*sbox_in[4,11] + sbox_in[4,9]*sbox_in[4,11] + sbox_in[4,8] + sbox_in[4,9] + sbox_in[4,11]])*(sbox_in[4,10])] 1578
+c [var for sbox_in[4,10]*sbox_in[4,11] + sbox_in[4,8] + sbox_in[4,10] + sbox_in[4,11]] 1579
+c [var for (sbox_in[4,9])*([var for sbox_in[4,10]*sbox_in[4,11] + sbox_in[4,8] + sbox_in[4,10] + sbox_in[4,11]])] 1580
+c [var for (sbox_in[4,8])*(sbox_in[4,10])] 1581
+c [var for sbox_in[4,9]*sbox_in[4,11] + sbox_in[4,10]*sbox_in[4,11] + sbox_in[4,9] + 1] 1582
+c [var for (sbox_in[4,9])*(sbox_in[4,10])] 1583
+c [var for ([var for sbox_in[4,9]*sbox_in[4,11] + sbox_in[4,10]*sbox_in[4,11] + sbox_in[4,9] + 1])*(sbox_in[4,8])] 1584
+c [var for sbox_in[4,12]*sbox_in[4,14] + sbox_in[4,12]*sbox_in[4,15] + sbox_in[4,14]*sbox_in[4,15] + sbox_in[4,12] + sbox_in[4,14] + sbox_in[4,15]] 1585
+c [var for (sbox_in[4,15])*(sbox_in[4,14])] 1586
+c [var for ([var for sbox_in[4,12]*sbox_in[4,14] + sbox_in[4,12]*sbox_in[4,15] + sbox_in[4,14]*sbox_in[4,15] + sbox_in[4,12] + sbox_in[4,14] + sbox_in[4,15]])*(sbox_in[4,13])] 1587
+c [var for sbox_in[4,12]*sbox_in[4,14] + sbox_in[4,13]*sbox_in[4,14] + sbox_in[4,13] + sbox_in[4,14] + 1] 1588
+c [var for (sbox_in[4,12] + sbox_in[4,13])*(sbox_in[4,14])] 1589
+c [var for (sbox_in[4,15])*([var for sbox_in[4,12]*sbox_in[4,14] + sbox_in[4,13]*sbox_in[4,14] + sbox_in[4,13] + sbox_in[4,14] + 1])] 1590
+c [var for sbox_in[4,13]*sbox_in[4,14] + sbox_in[4,13]] 1591
+c [var for (sbox_in[4,13] + sbox_in[4,14])*(sbox_in[4,12])] 1592
+c [var for (sbox_in[4,15])*([var for sbox_in[4,13]*sbox_in[4,14] + sbox_in[4,13]])] 1593
+c [var for (sbox_in[4,13])*(sbox_in[4,14])] 1594
+c [var for sbox_in[4,12]*sbox_in[4,13] + sbox_in[4,12]*sbox_in[4,14] + sbox_in[4,14]] 1595
+c [var for (sbox_in[4,13])*(sbox_in[4,12])] 1596
+c [var for (sbox_in[4,15])*([var for sbox_in[4,12]*sbox_in[4,13] + sbox_in[4,12]*sbox_in[4,14] + sbox_in[4,14]])] 1597
+c [var for sbox_in[4,16]*sbox_in[4,18] + sbox_in[4,16]*sbox_in[4,19] + sbox_in[4,18]*sbox_in[4,19] + sbox_in[4,16] + sbox_in[4,18] + sbox_in[4,19]] 1598
+c [var for (sbox_in[4,18])*(sbox_in[4,19])] 1599
+c [var for ([var for sbox_in[4,16]*sbox_in[4,18] + sbox_in[4,16]*sbox_in[4,19] + sbox_in[4,18]*sbox_in[4,19] + sbox_in[4,16] + sbox_in[4,18] + sbox_in[4,19]])*(sbox_in[4,17])] 1600
+c [var for sbox_in[4,16]*sbox_in[4,18] + sbox_in[4,17]*sbox_in[4,18] + sbox_in[4,17] + sbox_in[4,18] + 1] 1601
+c [var for (sbox_in[4,18])*(sbox_in[4,16] + sbox_in[4,17])] 1602
+c [var for ([var for sbox_in[4,16]*sbox_in[4,18] + sbox_in[4,17]*sbox_in[4,18] + sbox_in[4,17] + sbox_in[4,18] + 1])*(sbox_in[4,19])] 1603
+c [var for sbox_in[4,18]*sbox_in[4,19] + sbox_in[4,16] + sbox_in[4,18] + sbox_in[4,19]] 1604
+c [var for (sbox_in[4,18])*(sbox_in[4,16])] 1605
+c [var for ([var for sbox_in[4,18]*sbox_in[4,19] + sbox_in[4,16] + sbox_in[4,18] + sbox_in[4,19]])*(sbox_in[4,17])] 1606
+c [var for sbox_in[4,17]*sbox_in[4,19] + sbox_in[4,18]*sbox_in[4,19] + sbox_in[4,17] + 1] 1607
+c [var for (sbox_in[4,18])*(sbox_in[4,17] + sbox_in[4,19])] 1608
+c [var for (sbox_in[4,16])*([var for sbox_in[4,17]*sbox_in[4,19] + sbox_in[4,18]*sbox_in[4,19] + sbox_in[4,17] + 1])] 1609
+c [var for sbox_in[4,20]*sbox_in[4,22] + sbox_in[4,20]*sbox_in[4,23] + sbox_in[4,22]*sbox_in[4,23] + sbox_in[4,20] + sbox_in[4,22] + sbox_in[4,23]] 1610
+c [var for ([var for sbox_in[4,20]*sbox_in[4,22] + sbox_in[4,20]*sbox_in[4,23] + sbox_in[4,22]*sbox_in[4,23] + sbox_in[4,20] + sbox_in[4,22] + sbox_in[4,23]])*(sbox_in[4,21])] 1611
+c [var for (sbox_in[4,22])*(sbox_in[4,23])] 1612
+c [var for sbox_in[4,20]*sbox_in[4,23] + sbox_in[4,21]*sbox_in[4,23] + sbox_in[4,20] + sbox_in[4,21] + sbox_in[4,23]] 1613
+c [var for (sbox_in[4,23])*(sbox_in[4,21])] 1614
+c [var for (sbox_in[4,22])*([var for sbox_in[4,20]*sbox_in[4,23] + sbox_in[4,21]*sbox_in[4,23] + sbox_in[4,20] + sbox_in[4,21] + sbox_in[4,23]])] 1615
+c [var for sbox_in[4,22]*sbox_in[4,23] + sbox_in[4,20] + sbox_in[4,22] + sbox_in[4,23]] 1616
+c [var for (sbox_in[4,21])*([var for sbox_in[4,22]*sbox_in[4,23] + sbox_in[4,20] + sbox_in[4,22] + sbox_in[4,23]])] 1617
+c [var for (sbox_in[4,22])*(sbox_in[4,20])] 1618
+c [var for sbox_in[4,21]*sbox_in[4,23] + sbox_in[4,22]*sbox_in[4,23] + sbox_in[4,21] + 1] 1619
+c [var for (sbox_in[4,22])*(sbox_in[4,21] + sbox_in[4,23])] 1620
+c [var for ([var for sbox_in[4,21]*sbox_in[4,23] + sbox_in[4,22]*sbox_in[4,23] + sbox_in[4,21] + 1])*(sbox_in[4,20])] 1621
+c [var for sbox_in[4,24]*sbox_in[4,26] + sbox_in[4,24]*sbox_in[4,27] + sbox_in[4,26]*sbox_in[4,27] + sbox_in[4,24] + sbox_in[4,26] + sbox_in[4,27]] 1622
+c [var for ([var for sbox_in[4,24]*sbox_in[4,26] + sbox_in[4,24]*sbox_in[4,27] + sbox_in[4,26]*sbox_in[4,27] + sbox_in[4,24] + sbox_in[4,26] + sbox_in[4,27]])*(sbox_in[4,25])] 1623
+c [var for (sbox_in[4,27])*(sbox_in[4,26])] 1624
+c [var for sbox_in[4,24]*sbox_in[4,27] + sbox_in[4,25]*sbox_in[4,27] + sbox_in[4,24] + sbox_in[4,25] + sbox_in[4,27]] 1625
+c [var for (sbox_in[4,25])*(sbox_in[4,27])] 1626
+c [var for ([var for sbox_in[4,24]*sbox_in[4,27] + sbox_in[4,25]*sbox_in[4,27] + sbox_in[4,24] + sbox_in[4,25] + sbox_in[4,27]])*(sbox_in[4,26])] 1627
+c [var for sbox_in[4,25]*sbox_in[4,27] + sbox_in[4,24] + sbox_in[4,25]] 1628
+c [var for (sbox_in[4,25])*(sbox_in[4,24])] 1629
+c [var for ([var for sbox_in[4,25]*sbox_in[4,27] + sbox_in[4,24] + sbox_in[4,25]])*(sbox_in[4,26])] 1630
+c [var for sbox_in[4,25]*sbox_in[4,27] + sbox_in[4,26]*sbox_in[4,27] + sbox_in[4,25] + 1] 1631
+c [var for ([var for sbox_in[4,25]*sbox_in[4,27] + sbox_in[4,26]*sbox_in[4,27] + sbox_in[4,25] + 1])*(sbox_in[4,24])] 1632
+c [var for (sbox_in[4,25])*(sbox_in[4,26])] 1633
+c [var for sbox_in[4,28]*sbox_in[4,30] + sbox_in[4,28]*sbox_in[4,31] + sbox_in[4,30]*sbox_in[4,31] + sbox_in[4,28] + sbox_in[4,30] + sbox_in[4,31]] 1634
+c [var for (sbox_in[4,31])*(sbox_in[4,30])] 1635
+c [var for (sbox_in[4,29])*([var for sbox_in[4,28]*sbox_in[4,30] + sbox_in[4,28]*sbox_in[4,31] + sbox_in[4,30]*sbox_in[4,31] + sbox_in[4,28] + sbox_in[4,30] + sbox_in[4,31]])] 1636
+c [var for sbox_in[4,28]*sbox_in[4,30] + sbox_in[4,29]*sbox_in[4,30] + sbox_in[4,29] + sbox_in[4,30] + 1] 1637
+c [var for (sbox_in[4,28])*(sbox_in[4,30])] 1638
+c [var for (sbox_in[4,31])*([var for sbox_in[4,28]*sbox_in[4,30] + sbox_in[4,29]*sbox_in[4,30] + sbox_in[4,29] + sbox_in[4,30] + 1])] 1639
+c [var for (sbox_in[4,29])*(sbox_in[4,30])] 1640
+c [var for sbox_in[4,29]*sbox_in[4,30] + sbox_in[4,29]] 1641
+c [var for (sbox_in[4,28])*(sbox_in[4,29] + sbox_in[4,30])] 1642
+c [var for (sbox_in[4,31])*([var for sbox_in[4,29]*sbox_in[4,30] + sbox_in[4,29]])] 1643
+c [var for sbox_in[4,28]*sbox_in[4,29] + sbox_in[4,28]*sbox_in[4,30] + sbox_in[4,30]] 1644
+c [var for (sbox_in[4,29])*(sbox_in[4,28] + sbox_in[4,30])] 1645
+c [var for (sbox_in[4,31])*([var for sbox_in[4,28]*sbox_in[4,29] + sbox_in[4,28]*sbox_in[4,30] + sbox_in[4,30]])] 1646
+c [var for sbox_in[4,32]*sbox_in[4,34] + sbox_in[4,32]*sbox_in[4,35] + sbox_in[4,34]*sbox_in[4,35] + sbox_in[4,32] + sbox_in[4,34] + sbox_in[4,35]] 1647
+c [var for ([var for sbox_in[4,32]*sbox_in[4,34] + sbox_in[4,32]*sbox_in[4,35] + sbox_in[4,34]*sbox_in[4,35] + sbox_in[4,32] + sbox_in[4,34] + sbox_in[4,35]])*(sbox_in[4,33])] 1648
+c [var for (sbox_in[4,34])*(sbox_in[4,35])] 1649
+c [var for sbox_in[4,32]*sbox_in[4,35] + sbox_in[4,33]*sbox_in[4,35] + sbox_in[4,32] + sbox_in[4,33] + sbox_in[4,35]] 1650
+c [var for ([var for sbox_in[4,32]*sbox_in[4,35] + sbox_in[4,33]*sbox_in[4,35] + sbox_in[4,32] + sbox_in[4,33] + sbox_in[4,35]])*(sbox_in[4,34])] 1651
+c [var for (sbox_in[4,33])*(sbox_in[4,35])] 1652
+c [var for sbox_in[4,34]*sbox_in[4,35] + sbox_in[4,32] + sbox_in[4,34] + sbox_in[4,35]] 1653
+c [var for (sbox_in[4,33])*([var for sbox_in[4,34]*sbox_in[4,35] + sbox_in[4,32] + sbox_in[4,34] + sbox_in[4,35]])] 1654
+c [var for (sbox_in[4,32])*(sbox_in[4,34])] 1655
+c [var for sbox_in[4,33]*sbox_in[4,35] + sbox_in[4,34]*sbox_in[4,35] + sbox_in[4,33] + 1] 1656
+c [var for (sbox_in[4,32])*([var for sbox_in[4,33]*sbox_in[4,35] + sbox_in[4,34]*sbox_in[4,35] + sbox_in[4,33] + 1])] 1657
+c [var for (sbox_in[4,33])*(sbox_in[4,34])] 1658
+c [var for (sbox_in[4,35])*(sbox_in[4,34])] 1659
+c [var for sbox_in[4,36]*sbox_in[4,38] + sbox_in[4,36]*sbox_in[4,39] + sbox_in[4,38]*sbox_in[4,39] + sbox_in[4,36] + sbox_in[4,38] + sbox_in[4,39]] 1660
+c [var for (sbox_in[4,39])*(sbox_in[4,38])] 1661
+c [var for (sbox_in[4,37])*([var for sbox_in[4,36]*sbox_in[4,38] + sbox_in[4,36]*sbox_in[4,39] + sbox_in[4,38]*sbox_in[4,39] + sbox_in[4,36] + sbox_in[4,38] + sbox_in[4,39]])] 1662
+c [var for sbox_in[4,36]*sbox_in[4,39] + sbox_in[4,37]*sbox_in[4,39] + sbox_in[4,36] + sbox_in[4,37] + sbox_in[4,39]] 1663
+c [var for (sbox_in[4,37])*(sbox_in[4,39])] 1664
+c [var for (sbox_in[4,38])*([var for sbox_in[4,36]*sbox_in[4,39] + sbox_in[4,37]*sbox_in[4,39] + sbox_in[4,36] + sbox_in[4,37] + sbox_in[4,39]])] 1665
+c [var for sbox_in[4,38]*sbox_in[4,39] + sbox_in[4,36] + sbox_in[4,38] + sbox_in[4,39]] 1666
+c [var for (sbox_in[4,38])*(sbox_in[4,36])] 1667
+c [var for ([var for sbox_in[4,38]*sbox_in[4,39] + sbox_in[4,36] + sbox_in[4,38] + sbox_in[4,39]])*(sbox_in[4,37])] 1668
+c [var for sbox_in[4,37]*sbox_in[4,39] + sbox_in[4,38]*sbox_in[4,39] + sbox_in[4,37] + 1] 1669
+c [var for ([var for sbox_in[4,37]*sbox_in[4,39] + sbox_in[4,38]*sbox_in[4,39] + sbox_in[4,37] + 1])*(sbox_in[4,36])] 1670
+c [var for (sbox_in[4,37])*(sbox_in[4,38])] 1671
+c [var for sbox_in[4,40]*sbox_in[4,42] + sbox_in[4,40]*sbox_in[4,43] + sbox_in[4,42]*sbox_in[4,43] + sbox_in[4,40] + sbox_in[4,42] + sbox_in[4,43]] 1672
+c [var for (sbox_in[4,42])*(sbox_in[4,43])] 1673
+c [var for ([var for sbox_in[4,40]*sbox_in[4,42] + sbox_in[4,40]*sbox_in[4,43] + sbox_in[4,42]*sbox_in[4,43] + sbox_in[4,40] + sbox_in[4,42] + sbox_in[4,43]])*(sbox_in[4,41])] 1674
+c [var for sbox_in[4,40]*sbox_in[4,43] + sbox_in[4,41]*sbox_in[4,43] + sbox_in[4,40] + sbox_in[4,41] + sbox_in[4,43]] 1675
+c [var for (sbox_in[4,42])*([var for sbox_in[4,40]*sbox_in[4,43] + sbox_in[4,41]*sbox_in[4,43] + sbox_in[4,40] + sbox_in[4,41] + sbox_in[4,43]])] 1676
+c [var for (sbox_in[4,43])*(sbox_in[4,41])] 1677
+c [var for sbox_in[4,42]*sbox_in[4,43] + sbox_in[4,40] + sbox_in[4,42] + sbox_in[4,43]] 1678
+c [var for (sbox_in[4,42])*(sbox_in[4,40])] 1679
+c [var for ([var for sbox_in[4,42]*sbox_in[4,43] + sbox_in[4,40] + sbox_in[4,42] + sbox_in[4,43]])*(sbox_in[4,41])] 1680
+c [var for sbox_in[4,41]*sbox_in[4,43] + sbox_in[4,42]*sbox_in[4,43] + sbox_in[4,41] + 1] 1681
+c [var for ([var for sbox_in[4,41]*sbox_in[4,43] + sbox_in[4,42]*sbox_in[4,43] + sbox_in[4,41] + 1])*(sbox_in[4,40])] 1682
+c [var for (sbox_in[4,42])*(sbox_in[4,41])] 1683
+c [var for sbox_in[4,44]*sbox_in[4,46] + sbox_in[4,44]*sbox_in[4,47] + sbox_in[4,46]*sbox_in[4,47] + sbox_in[4,44] + sbox_in[4,46] + sbox_in[4,47]] 1684
+c [var for ([var for sbox_in[4,44]*sbox_in[4,46] + sbox_in[4,44]*sbox_in[4,47] + sbox_in[4,46]*sbox_in[4,47] + sbox_in[4,44] + sbox_in[4,46] + sbox_in[4,47]])*(sbox_in[4,45])] 1685
+c [var for (sbox_in[4,47])*(sbox_in[4,46])] 1686
+c [var for sbox_in[4,44]*sbox_in[4,46] + sbox_in[4,45]*sbox_in[4,46] + sbox_in[4,45] + sbox_in[4,46] + 1] 1687
+c [var for (sbox_in[4,47])*([var for sbox_in[4,44]*sbox_in[4,46] + sbox_in[4,45]*sbox_in[4,46] + sbox_in[4,45] + sbox_in[4,46] + 1])] 1688
+c [var for (sbox_in[4,46])*(sbox_in[4,45])] 1689
+c [var for (sbox_in[4,44])*(sbox_in[4,46])] 1690
+c [var for sbox_in[4,45]*sbox_in[4,46] + sbox_in[4,45]] 1691
+c [var for (sbox_in[4,47])*([var for sbox_in[4,45]*sbox_in[4,46] + sbox_in[4,45]])] 1692
+c [var for (sbox_in[4,44])*(sbox_in[4,45] + sbox_in[4,46])] 1693
+c [var for sbox_in[4,44]*sbox_in[4,45] + sbox_in[4,44]*sbox_in[4,46] + sbox_in[4,46]] 1694
+c [var for (sbox_in[4,44])*(sbox_in[4,45])] 1695
+c [var for ([var for sbox_in[4,44]*sbox_in[4,45] + sbox_in[4,44]*sbox_in[4,46] + sbox_in[4,46]])*(sbox_in[4,47])] 1696
+c [var for sbox_in[4,48]*sbox_in[4,50] + sbox_in[4,48]*sbox_in[4,51] + sbox_in[4,50]*sbox_in[4,51] + sbox_in[4,48] + sbox_in[4,50] + sbox_in[4,51]] 1697
+c [var for (sbox_in[4,51])*(sbox_in[4,50])] 1698
+c [var for (sbox_in[4,49])*([var for sbox_in[4,48]*sbox_in[4,50] + sbox_in[4,48]*sbox_in[4,51] + sbox_in[4,50]*sbox_in[4,51] + sbox_in[4,48] + sbox_in[4,50] + sbox_in[4,51]])] 1699
+c [var for sbox_in[4,48]*sbox_in[4,50] + sbox_in[4,49]*sbox_in[4,50] + sbox_in[4,49] + sbox_in[4,50] + 1] 1700
+c [var for (sbox_in[4,48])*(sbox_in[4,50])] 1701
+c [var for (sbox_in[4,49])*(sbox_in[4,50])] 1702
+c [var for (sbox_in[4,51])*([var for sbox_in[4,48]*sbox_in[4,50] + sbox_in[4,49]*sbox_in[4,50] + sbox_in[4,49] + sbox_in[4,50] + 1])] 1703
+c [var for sbox_in[4,50]*sbox_in[4,51] + sbox_in[4,48] + sbox_in[4,50] + sbox_in[4,51]] 1704
+c [var for (sbox_in[4,49])*([var for sbox_in[4,50]*sbox_in[4,51] + sbox_in[4,48] + sbox_in[4,50] + sbox_in[4,51]])] 1705
+c [var for sbox_in[4,49]*sbox_in[4,51] + sbox_in[4,50]*sbox_in[4,51] + sbox_in[4,49] + 1] 1706
+c [var for (sbox_in[4,48])*([var for sbox_in[4,49]*sbox_in[4,51] + sbox_in[4,50]*sbox_in[4,51] + sbox_in[4,49] + 1])] 1707
+c [var for sbox_in[4,52]*sbox_in[4,54] + sbox_in[4,52]*sbox_in[4,55] + sbox_in[4,54]*sbox_in[4,55] + sbox_in[4,52] + sbox_in[4,54] + sbox_in[4,55]] 1708
+c [var for (sbox_in[4,53])*([var for sbox_in[4,52]*sbox_in[4,54] + sbox_in[4,52]*sbox_in[4,55] + sbox_in[4,54]*sbox_in[4,55] + sbox_in[4,52] + sbox_in[4,54] + sbox_in[4,55]])] 1709
+c [var for (sbox_in[4,54])*(sbox_in[4,55])] 1710
+c [var for sbox_in[4,52]*sbox_in[4,55] + sbox_in[4,53]*sbox_in[4,55] + sbox_in[4,52] + sbox_in[4,53] + sbox_in[4,55]] 1711
+c [var for ([var for sbox_in[4,52]*sbox_in[4,55] + sbox_in[4,53]*sbox_in[4,55] + sbox_in[4,52] + sbox_in[4,53] + sbox_in[4,55]])*(sbox_in[4,54])] 1712
+c [var for (sbox_in[4,53])*(sbox_in[4,55])] 1713
+c [var for sbox_in[4,54]*sbox_in[4,55] + sbox_in[4,52] + sbox_in[4,54] + sbox_in[4,55]] 1714
+c [var for (sbox_in[4,54])*(sbox_in[4,52])] 1715
+c [var for (sbox_in[4,53])*([var for sbox_in[4,54]*sbox_in[4,55] + sbox_in[4,52] + sbox_in[4,54] + sbox_in[4,55]])] 1716
+c [var for sbox_in[4,53]*sbox_in[4,55] + sbox_in[4,54]*sbox_in[4,55] + sbox_in[4,53] + 1] 1717
+c [var for (sbox_in[4,53])*(sbox_in[4,54])] 1718
+c [var for ([var for sbox_in[4,53]*sbox_in[4,55] + sbox_in[4,54]*sbox_in[4,55] + sbox_in[4,53] + 1])*(sbox_in[4,52])] 1719
+c [var for sbox_in[4,56]*sbox_in[4,58] + sbox_in[4,56]*sbox_in[4,59] + sbox_in[4,58]*sbox_in[4,59] + sbox_in[4,56] + sbox_in[4,58] + sbox_in[4,59]] 1720
+c [var for (sbox_in[4,57])*([var for sbox_in[4,56]*sbox_in[4,58] + sbox_in[4,56]*sbox_in[4,59] + sbox_in[4,58]*sbox_in[4,59] + sbox_in[4,56] + sbox_in[4,58] + sbox_in[4,59]])] 1721
+c [var for (sbox_in[4,59])*(sbox_in[4,58])] 1722
+c [var for sbox_in[4,56]*sbox_in[4,59] + sbox_in[4,57]*sbox_in[4,59] + sbox_in[4,56] + sbox_in[4,57] + sbox_in[4,59]] 1723
+c [var for (sbox_in[4,58])*([var for sbox_in[4,56]*sbox_in[4,59] + sbox_in[4,57]*sbox_in[4,59] + sbox_in[4,56] + sbox_in[4,57] + sbox_in[4,59]])] 1724
+c [var for (sbox_in[4,59])*(sbox_in[4,57])] 1725
+c [var for sbox_in[4,58]*sbox_in[4,59] + sbox_in[4,56] + sbox_in[4,58] + sbox_in[4,59]] 1726
+c [var for ([var for sbox_in[4,58]*sbox_in[4,59] + sbox_in[4,56] + sbox_in[4,58] + sbox_in[4,59]])*(sbox_in[4,57])] 1727
+c [var for (sbox_in[4,56])*(sbox_in[4,58])] 1728
+c [var for sbox_in[4,57]*sbox_in[4,59] + sbox_in[4,58]*sbox_in[4,59] + sbox_in[4,57] + 1] 1729
+c [var for (sbox_in[4,58])*(sbox_in[4,57])] 1730
+c [var for (sbox_in[4,56])*([var for sbox_in[4,57]*sbox_in[4,59] + sbox_in[4,58]*sbox_in[4,59] + sbox_in[4,57] + 1])] 1731
+c [var for sbox_in[4,60]*sbox_in[4,62] + sbox_in[4,60]*sbox_in[4,63] + sbox_in[4,62]*sbox_in[4,63] + sbox_in[4,60] + sbox_in[4,62] + sbox_in[4,63]] 1732
+c [var for (sbox_in[4,63])*(sbox_in[4,62])] 1733
+c [var for ([var for sbox_in[4,60]*sbox_in[4,62] + sbox_in[4,60]*sbox_in[4,63] + sbox_in[4,62]*sbox_in[4,63] + sbox_in[4,60] + sbox_in[4,62] + sbox_in[4,63]])*(sbox_in[4,61])] 1734
+c [var for sbox_in[4,60]*sbox_in[4,62] + sbox_in[4,61]*sbox_in[4,62] + sbox_in[4,61] + sbox_in[4,62] + 1] 1735
+c [var for (sbox_in[4,60] + sbox_in[4,61])*(sbox_in[4,62])] 1736
+c [var for (sbox_in[4,63])*([var for sbox_in[4,60]*sbox_in[4,62] + sbox_in[4,61]*sbox_in[4,62] + sbox_in[4,61] + sbox_in[4,62] + 1])] 1737
+c [var for sbox_in[4,61]*sbox_in[4,62] + sbox_in[4,61]] 1738
+c [var for (sbox_in[4,61] + sbox_in[4,62])*(sbox_in[4,60])] 1739
+c [var for ([var for sbox_in[4,61]*sbox_in[4,62] + sbox_in[4,61]])*(sbox_in[4,63])] 1740
+c [var for (sbox_in[4,62])*(sbox_in[4,61])] 1741
+c [var for sbox_in[4,60]*sbox_in[4,61] + sbox_in[4,60]*sbox_in[4,62] + sbox_in[4,62]] 1742
+c [var for (sbox_in[4,61])*(sbox_in[4,60])] 1743
+c [var for ([var for sbox_in[4,60]*sbox_in[4,61] + sbox_in[4,60]*sbox_in[4,62] + sbox_in[4,62]])*(sbox_in[4,63])] 1744
+c [var for sbox_in[5,0]*sbox_in[5,2] + sbox_in[5,0]*sbox_in[5,3] + sbox_in[5,2]*sbox_in[5,3] + sbox_in[5,0] + sbox_in[5,2] + sbox_in[5,3]] 1745
+c [var for (sbox_in[5,3])*(sbox_in[5,2])] 1746
+c [var for (sbox_in[5,1])*([var for sbox_in[5,0]*sbox_in[5,2] + sbox_in[5,0]*sbox_in[5,3] + sbox_in[5,2]*sbox_in[5,3] + sbox_in[5,0] + sbox_in[5,2] + sbox_in[5,3]])] 1747
+c [var for sbox_in[5,0]*sbox_in[5,2] + sbox_in[5,1]*sbox_in[5,2] + sbox_in[5,1] + sbox_in[5,2] + 1] 1748
+c [var for ([var for sbox_in[5,0]*sbox_in[5,2] + sbox_in[5,1]*sbox_in[5,2] + sbox_in[5,1] + sbox_in[5,2] + 1])*(sbox_in[5,3])] 1749
+c [var for (sbox_in[5,0] + sbox_in[5,1])*(sbox_in[5,2])] 1750
+c [var for sbox_in[5,2]*sbox_in[5,3] + sbox_in[5,0] + sbox_in[5,2] + sbox_in[5,3]] 1751
+c [var for (sbox_in[5,1])*([var for sbox_in[5,2]*sbox_in[5,3] + sbox_in[5,0] + sbox_in[5,2] + sbox_in[5,3]])] 1752
+c [var for (sbox_in[5,0])*(sbox_in[5,2])] 1753
+c [var for sbox_in[5,1]*sbox_in[5,3] + sbox_in[5,2]*sbox_in[5,3] + sbox_in[5,1] + 1] 1754
+c [var for (sbox_in[5,1] + sbox_in[5,3])*(sbox_in[5,2])] 1755
+c [var for ([var for sbox_in[5,1]*sbox_in[5,3] + sbox_in[5,2]*sbox_in[5,3] + sbox_in[5,1] + 1])*(sbox_in[5,0])] 1756
+c [var for sbox_in[5,4]*sbox_in[5,6] + sbox_in[5,4]*sbox_in[5,7] + sbox_in[5,6]*sbox_in[5,7] + sbox_in[5,4] + sbox_in[5,6] + sbox_in[5,7]] 1757
+c [var for (sbox_in[5,5])*([var for sbox_in[5,4]*sbox_in[5,6] + sbox_in[5,4]*sbox_in[5,7] + sbox_in[5,6]*sbox_in[5,7] + sbox_in[5,4] + sbox_in[5,6] + sbox_in[5,7]])] 1758
+c [var for (sbox_in[5,7])*(sbox_in[5,6])] 1759
+c [var for sbox_in[5,4]*sbox_in[5,6] + sbox_in[5,5]*sbox_in[5,6] + sbox_in[5,5] + sbox_in[5,6] + 1] 1760
+c [var for (sbox_in[5,7])*([var for sbox_in[5,4]*sbox_in[5,6] + sbox_in[5,5]*sbox_in[5,6] + sbox_in[5,5] + sbox_in[5,6] + 1])] 1761
+c [var for (sbox_in[5,5])*(sbox_in[5,6])] 1762
+c [var for (sbox_in[5,4])*(sbox_in[5,6])] 1763
+c [var for sbox_in[5,6]*sbox_in[5,7] + sbox_in[5,4] + sbox_in[5,6] + sbox_in[5,7]] 1764
+c [var for (sbox_in[5,5])*([var for sbox_in[5,6]*sbox_in[5,7] + sbox_in[5,4] + sbox_in[5,6] + sbox_in[5,7]])] 1765
+c [var for sbox_in[5,5]*sbox_in[5,7] + sbox_in[5,6]*sbox_in[5,7] + sbox_in[5,5] + 1] 1766
+c [var for (sbox_in[5,4])*([var for sbox_in[5,5]*sbox_in[5,7] + sbox_in[5,6]*sbox_in[5,7] + sbox_in[5,5] + 1])] 1767
+c [var for sbox_in[5,8]*sbox_in[5,10] + sbox_in[5,8]*sbox_in[5,11] + sbox_in[5,10]*sbox_in[5,11] + sbox_in[5,8] + sbox_in[5,10] + sbox_in[5,11]] 1768
+c [var for (sbox_in[5,9])*([var for sbox_in[5,8]*sbox_in[5,10] + sbox_in[5,8]*sbox_in[5,11] + sbox_in[5,10]*sbox_in[5,11] + sbox_in[5,8] + sbox_in[5,10] + sbox_in[5,11]])] 1769
+c [var for (sbox_in[5,11])*(sbox_in[5,10])] 1770
+c [var for sbox_in[5,8]*sbox_in[5,11] + sbox_in[5,9]*sbox_in[5,11] + sbox_in[5,8] + sbox_in[5,9] + sbox_in[5,11]] 1771
+c [var for (sbox_in[5,11])*(sbox_in[5,9])] 1772
+c [var for (sbox_in[5,10])*([var for sbox_in[5,8]*sbox_in[5,11] + sbox_in[5,9]*sbox_in[5,11] + sbox_in[5,8] + sbox_in[5,9] + sbox_in[5,11]])] 1773
+c [var for sbox_in[5,10]*sbox_in[5,11] + sbox_in[5,8] + sbox_in[5,10] + sbox_in[5,11]] 1774
+c [var for (sbox_in[5,8])*(sbox_in[5,10])] 1775
+c [var for ([var for sbox_in[5,10]*sbox_in[5,11] + sbox_in[5,8] + sbox_in[5,10] + sbox_in[5,11]])*(sbox_in[5,9])] 1776
+c [var for sbox_in[5,9]*sbox_in[5,11] + sbox_in[5,10]*sbox_in[5,11] + sbox_in[5,9] + 1] 1777
+c [var for (sbox_in[5,9] + sbox_in[5,11])*(sbox_in[5,10])] 1778
+c [var for (sbox_in[5,8])*([var for sbox_in[5,9]*sbox_in[5,11] + sbox_in[5,10]*sbox_in[5,11] + sbox_in[5,9] + 1])] 1779
+c [var for sbox_in[5,12]*sbox_in[5,14] + sbox_in[5,12]*sbox_in[5,15] + sbox_in[5,14]*sbox_in[5,15] + sbox_in[5,12] + sbox_in[5,14] + sbox_in[5,15]] 1780
+c [var for (sbox_in[5,15])*(sbox_in[5,14])] 1781
+c [var for ([var for sbox_in[5,12]*sbox_in[5,14] + sbox_in[5,12]*sbox_in[5,15] + sbox_in[5,14]*sbox_in[5,15] + sbox_in[5,12] + sbox_in[5,14] + sbox_in[5,15]])*(sbox_in[5,13])] 1782
+c [var for sbox_in[5,12]*sbox_in[5,14] + sbox_in[5,13]*sbox_in[5,14] + sbox_in[5,13] + sbox_in[5,14] + 1] 1783
+c [var for ([var for sbox_in[5,12]*sbox_in[5,14] + sbox_in[5,13]*sbox_in[5,14] + sbox_in[5,13] + sbox_in[5,14] + 1])*(sbox_in[5,15])] 1784
+c [var for (sbox_in[5,12] + sbox_in[5,13])*(sbox_in[5,14])] 1785
+c [var for sbox_in[5,13]*sbox_in[5,14] + sbox_in[5,13]] 1786
+c [var for ([var for sbox_in[5,13]*sbox_in[5,14] + sbox_in[5,13]])*(sbox_in[5,15])] 1787
+c [var for (sbox_in[5,12] + sbox_in[5,14])*(sbox_in[5,13])] 1788
+c [var for (sbox_in[5,12])*(sbox_in[5,14])] 1789
+c [var for sbox_in[5,12]*sbox_in[5,13] + sbox_in[5,12]*sbox_in[5,14] + sbox_in[5,14]] 1790
+c [var for (sbox_in[5,15])*([var for sbox_in[5,12]*sbox_in[5,13] + sbox_in[5,12]*sbox_in[5,14] + sbox_in[5,14]])] 1791
+c [var for (sbox_in[5,14])*(sbox_in[5,13])] 1792
+c [var for (sbox_in[5,12])*(sbox_in[5,13])] 1793
+c [var for sbox_in[5,16]*sbox_in[5,18] + sbox_in[5,16]*sbox_in[5,19] + sbox_in[5,18]*sbox_in[5,19] + sbox_in[5,16] + sbox_in[5,18] + sbox_in[5,19]] 1794
+c [var for (sbox_in[5,17])*([var for sbox_in[5,16]*sbox_in[5,18] + sbox_in[5,16]*sbox_in[5,19] + sbox_in[5,18]*sbox_in[5,19] + sbox_in[5,16] + sbox_in[5,18] + sbox_in[5,19]])] 1795
+c [var for (sbox_in[5,18])*(sbox_in[5,19])] 1796
+c [var for sbox_in[5,16]*sbox_in[5,19] + sbox_in[5,17]*sbox_in[5,19] + sbox_in[5,16] + sbox_in[5,17] + sbox_in[5,19]] 1797
+c [var for (sbox_in[5,18])*([var for sbox_in[5,16]*sbox_in[5,19] + sbox_in[5,17]*sbox_in[5,19] + sbox_in[5,16] + sbox_in[5,17] + sbox_in[5,19]])] 1798
+c [var for (sbox_in[5,19])*(sbox_in[5,17])] 1799
+c [var for sbox_in[5,18]*sbox_in[5,19] + sbox_in[5,16] + sbox_in[5,18] + sbox_in[5,19]] 1800
+c [var for (sbox_in[5,18])*(sbox_in[5,16])] 1801
+c [var for (sbox_in[5,17])*([var for sbox_in[5,18]*sbox_in[5,19] + sbox_in[5,16] + sbox_in[5,18] + sbox_in[5,19]])] 1802
+c [var for sbox_in[5,17]*sbox_in[5,19] + sbox_in[5,18]*sbox_in[5,19] + sbox_in[5,17] + 1] 1803
+c [var for (sbox_in[5,18])*(sbox_in[5,17] + sbox_in[5,19])] 1804
+c [var for ([var for sbox_in[5,17]*sbox_in[5,19] + sbox_in[5,18]*sbox_in[5,19] + sbox_in[5,17] + 1])*(sbox_in[5,16])] 1805
+c [var for sbox_in[5,20]*sbox_in[5,22] + sbox_in[5,20]*sbox_in[5,23] + sbox_in[5,22]*sbox_in[5,23] + sbox_in[5,20] + sbox_in[5,22] + sbox_in[5,23]] 1806
+c [var for (sbox_in[5,22])*(sbox_in[5,23])] 1807
+c [var for (sbox_in[5,21])*([var for sbox_in[5,20]*sbox_in[5,22] + sbox_in[5,20]*sbox_in[5,23] + sbox_in[5,22]*sbox_in[5,23] + sbox_in[5,20] + sbox_in[5,22] + sbox_in[5,23]])] 1808
+c [var for sbox_in[5,20]*sbox_in[5,23] + sbox_in[5,21]*sbox_in[5,23] + sbox_in[5,20] + sbox_in[5,21] + sbox_in[5,23]] 1809
+c [var for (sbox_in[5,23])*(sbox_in[5,21])] 1810
+c [var for ([var for sbox_in[5,20]*sbox_in[5,23] + sbox_in[5,21]*sbox_in[5,23] + sbox_in[5,20] + sbox_in[5,21] + sbox_in[5,23]])*(sbox_in[5,22])] 1811
+c [var for sbox_in[5,22]*sbox_in[5,23] + sbox_in[5,20] + sbox_in[5,22] + sbox_in[5,23]] 1812
+c [var for (sbox_in[5,21])*([var for sbox_in[5,22]*sbox_in[5,23] + sbox_in[5,20] + sbox_in[5,22] + sbox_in[5,23]])] 1813
+c [var for (sbox_in[5,20])*(sbox_in[5,22])] 1814
+c [var for sbox_in[5,21]*sbox_in[5,23] + sbox_in[5,22]*sbox_in[5,23] + sbox_in[5,21] + 1] 1815
+c [var for (sbox_in[5,21] + sbox_in[5,23])*(sbox_in[5,22])] 1816
+c [var for (sbox_in[5,20])*([var for sbox_in[5,21]*sbox_in[5,23] + sbox_in[5,22]*sbox_in[5,23] + sbox_in[5,21] + 1])] 1817
+c [var for sbox_in[5,24]*sbox_in[5,26] + sbox_in[5,24]*sbox_in[5,27] + sbox_in[5,26]*sbox_in[5,27] + sbox_in[5,24] + sbox_in[5,26] + sbox_in[5,27]] 1818
+c [var for ([var for sbox_in[5,24]*sbox_in[5,26] + sbox_in[5,24]*sbox_in[5,27] + sbox_in[5,26]*sbox_in[5,27] + sbox_in[5,24] + sbox_in[5,26] + sbox_in[5,27]])*(sbox_in[5,25])] 1819
+c [var for (sbox_in[5,26])*(sbox_in[5,27])] 1820
+c [var for sbox_in[5,24]*sbox_in[5,27] + sbox_in[5,25]*sbox_in[5,27] + sbox_in[5,24] + sbox_in[5,25] + sbox_in[5,27]] 1821
+c [var for (sbox_in[5,26])*([var for sbox_in[5,24]*sbox_in[5,27] + sbox_in[5,25]*sbox_in[5,27] + sbox_in[5,24] + sbox_in[5,25] + sbox_in[5,27]])] 1822
+c [var for (sbox_in[5,25])*(sbox_in[5,27])] 1823
+c [var for sbox_in[5,26]*sbox_in[5,27] + sbox_in[5,24] + sbox_in[5,26] + sbox_in[5,27]] 1824
+c [var for (sbox_in[5,24])*(sbox_in[5,26])] 1825
+c [var for ([var for sbox_in[5,26]*sbox_in[5,27] + sbox_in[5,24] + sbox_in[5,26] + sbox_in[5,27]])*(sbox_in[5,25])] 1826
+c [var for sbox_in[5,25]*sbox_in[5,27] + sbox_in[5,26]*sbox_in[5,27] + sbox_in[5,25] + 1] 1827
+c [var for (sbox_in[5,26])*(sbox_in[5,25] + sbox_in[5,27])] 1828
+c [var for (sbox_in[5,24])*([var for sbox_in[5,25]*sbox_in[5,27] + sbox_in[5,26]*sbox_in[5,27] + sbox_in[5,25] + 1])] 1829
+c [var for sbox_in[5,28]*sbox_in[5,30] + sbox_in[5,28]*sbox_in[5,31] + sbox_in[5,30]*sbox_in[5,31] + sbox_in[5,28] + sbox_in[5,30] + sbox_in[5,31]] 1830
+c [var for (sbox_in[5,29])*([var for sbox_in[5,28]*sbox_in[5,30] + sbox_in[5,28]*sbox_in[5,31] + sbox_in[5,30]*sbox_in[5,31] + sbox_in[5,28] + sbox_in[5,30] + sbox_in[5,31]])] 1831
+c [var for (sbox_in[5,30])*(sbox_in[5,31])] 1832
+c [var for sbox_in[5,28]*sbox_in[5,30] + sbox_in[5,29]*sbox_in[5,30] + sbox_in[5,29] + sbox_in[5,30] + 1] 1833
+c [var for ([var for sbox_in[5,28]*sbox_in[5,30] + sbox_in[5,29]*sbox_in[5,30] + sbox_in[5,29] + sbox_in[5,30] + 1])*(sbox_in[5,31])] 1834
+c [var for (sbox_in[5,30])*(sbox_in[5,28] + sbox_in[5,29])] 1835
+c [var for sbox_in[5,29]*sbox_in[5,30] + sbox_in[5,29]] 1836
+c [var for (sbox_in[5,28])*(sbox_in[5,29] + sbox_in[5,30])] 1837
+c [var for (sbox_in[5,31])*([var for sbox_in[5,29]*sbox_in[5,30] + sbox_in[5,29]])] 1838
+c [var for (sbox_in[5,30])*(sbox_in[5,29])] 1839
+c [var for sbox_in[5,28]*sbox_in[5,29] + sbox_in[5,28]*sbox_in[5,30] + sbox_in[5,30]] 1840
+c [var for (sbox_in[5,28] + sbox_in[5,30])*(sbox_in[5,29])] 1841
+c [var for (sbox_in[5,31])*([var for sbox_in[5,28]*sbox_in[5,29] + sbox_in[5,28]*sbox_in[5,30] + sbox_in[5,30]])] 1842
+c [var for sbox_in[5,32]*sbox_in[5,34] + sbox_in[5,32]*sbox_in[5,35] + sbox_in[5,34]*sbox_in[5,35] + sbox_in[5,32] + sbox_in[5,34] + sbox_in[5,35]] 1843
+c [var for (sbox_in[5,33])*([var for sbox_in[5,32]*sbox_in[5,34] + sbox_in[5,32]*sbox_in[5,35] + sbox_in[5,34]*sbox_in[5,35] + sbox_in[5,32] + sbox_in[5,34] + sbox_in[5,35]])] 1844
+c [var for (sbox_in[5,34])*(sbox_in[5,35])] 1845
+c [var for sbox_in[5,32]*sbox_in[5,34] + sbox_in[5,33]*sbox_in[5,34] + sbox_in[5,33] + sbox_in[5,34] + 1] 1846
+c [var for (sbox_in[5,34])*(sbox_in[5,32])] 1847
+c [var for (sbox_in[5,34])*(sbox_in[5,33])] 1848
+c [var for (sbox_in[5,35])*([var for sbox_in[5,32]*sbox_in[5,34] + sbox_in[5,33]*sbox_in[5,34] + sbox_in[5,33] + sbox_in[5,34] + 1])] 1849
+c [var for sbox_in[5,34]*sbox_in[5,35] + sbox_in[5,32] + sbox_in[5,34] + sbox_in[5,35]] 1850
+c [var for (sbox_in[5,33])*([var for sbox_in[5,34]*sbox_in[5,35] + sbox_in[5,32] + sbox_in[5,34] + sbox_in[5,35]])] 1851
+c [var for sbox_in[5,33]*sbox_in[5,35] + sbox_in[5,34]*sbox_in[5,35] + sbox_in[5,33] + 1] 1852
+c [var for (sbox_in[5,32])*([var for sbox_in[5,33]*sbox_in[5,35] + sbox_in[5,34]*sbox_in[5,35] + sbox_in[5,33] + 1])] 1853
+c [var for sbox_in[5,36]*sbox_in[5,38] + sbox_in[5,36]*sbox_in[5,39] + sbox_in[5,38]*sbox_in[5,39] + sbox_in[5,36] + sbox_in[5,38] + sbox_in[5,39]] 1854
+c [var for ([var for sbox_in[5,36]*sbox_in[5,38] + sbox_in[5,36]*sbox_in[5,39] + sbox_in[5,38]*sbox_in[5,39] + sbox_in[5,36] + sbox_in[5,38] + sbox_in[5,39]])*(sbox_in[5,37])] 1855
+c [var for (sbox_in[5,39])*(sbox_in[5,38])] 1856
+c [var for sbox_in[5,36]*sbox_in[5,39] + sbox_in[5,37]*sbox_in[5,39] + sbox_in[5,36] + sbox_in[5,37] + sbox_in[5,39]] 1857
+c [var for (sbox_in[5,39])*(sbox_in[5,37])] 1858
+c [var for ([var for sbox_in[5,36]*sbox_in[5,39] + sbox_in[5,37]*sbox_in[5,39] + sbox_in[5,36] + sbox_in[5,37] + sbox_in[5,39]])*(sbox_in[5,38])] 1859
+c [var for sbox_in[5,38]*sbox_in[5,39] + sbox_in[5,36] + sbox_in[5,38] + sbox_in[5,39]] 1860
+c [var for (sbox_in[5,37])*([var for sbox_in[5,38]*sbox_in[5,39] + sbox_in[5,36] + sbox_in[5,38] + sbox_in[5,39]])] 1861
+c [var for (sbox_in[5,36])*(sbox_in[5,38])] 1862
+c [var for sbox_in[5,37]*sbox_in[5,39] + sbox_in[5,38]*sbox_in[5,39] + sbox_in[5,37] + 1] 1863
+c [var for (sbox_in[5,37] + sbox_in[5,39])*(sbox_in[5,38])] 1864
+c [var for (sbox_in[5,36])*([var for sbox_in[5,37]*sbox_in[5,39] + sbox_in[5,38]*sbox_in[5,39] + sbox_in[5,37] + 1])] 1865
+c [var for sbox_in[5,40]*sbox_in[5,42] + sbox_in[5,40]*sbox_in[5,43] + sbox_in[5,42]*sbox_in[5,43] + sbox_in[5,40] + sbox_in[5,42] + sbox_in[5,43]] 1866
+c [var for (sbox_in[5,41])*([var for sbox_in[5,40]*sbox_in[5,42] + sbox_in[5,40]*sbox_in[5,43] + sbox_in[5,42]*sbox_in[5,43] + sbox_in[5,40] + sbox_in[5,42] + sbox_in[5,43]])] 1867
+c [var for (sbox_in[5,43])*(sbox_in[5,42])] 1868
+c [var for sbox_in[5,40]*sbox_in[5,43] + sbox_in[5,41]*sbox_in[5,43] + sbox_in[5,40] + sbox_in[5,41] + sbox_in[5,43]] 1869
+c [var for ([var for sbox_in[5,40]*sbox_in[5,43] + sbox_in[5,41]*sbox_in[5,43] + sbox_in[5,40] + sbox_in[5,41] + sbox_in[5,43]])*(sbox_in[5,42])] 1870
+c [var for (sbox_in[5,43])*(sbox_in[5,41])] 1871
+c [var for sbox_in[5,42]*sbox_in[5,43] + sbox_in[5,40] + sbox_in[5,42] + sbox_in[5,43]] 1872
+c [var for (sbox_in[5,41])*([var for sbox_in[5,42]*sbox_in[5,43] + sbox_in[5,40] + sbox_in[5,42] + sbox_in[5,43]])] 1873
+c [var for (sbox_in[5,42])*(sbox_in[5,40])] 1874
+c [var for sbox_in[5,41]*sbox_in[5,43] + sbox_in[5,42]*sbox_in[5,43] + sbox_in[5,41] + 1] 1875
+c [var for ([var for sbox_in[5,41]*sbox_in[5,43] + sbox_in[5,42]*sbox_in[5,43] + sbox_in[5,41] + 1])*(sbox_in[5,40])] 1876
+c [var for (sbox_in[5,41])*(sbox_in[5,42])] 1877
+c [var for sbox_in[5,44]*sbox_in[5,46] + sbox_in[5,44]*sbox_in[5,47] + sbox_in[5,46]*sbox_in[5,47] + sbox_in[5,44] + sbox_in[5,46] + sbox_in[5,47]] 1878
+c [var for (sbox_in[5,45])*([var for sbox_in[5,44]*sbox_in[5,46] + sbox_in[5,44]*sbox_in[5,47] + sbox_in[5,46]*sbox_in[5,47] + sbox_in[5,44] + sbox_in[5,46] + sbox_in[5,47]])] 1879
+c [var for (sbox_in[5,47])*(sbox_in[5,46])] 1880
+c [var for sbox_in[5,44]*sbox_in[5,46] + sbox_in[5,45]*sbox_in[5,46] + sbox_in[5,45] + sbox_in[5,46] + 1] 1881
+c [var for ([var for sbox_in[5,44]*sbox_in[5,46] + sbox_in[5,45]*sbox_in[5,46] + sbox_in[5,45] + sbox_in[5,46] + 1])*(sbox_in[5,47])] 1882
+c [var for (sbox_in[5,45])*(sbox_in[5,46])] 1883
+c [var for (sbox_in[5,44])*(sbox_in[5,46])] 1884
+c [var for sbox_in[5,45]*sbox_in[5,46] + sbox_in[5,45]] 1885
+c [var for (sbox_in[5,47])*([var for sbox_in[5,45]*sbox_in[5,46] + sbox_in[5,45]])] 1886
+c [var for (sbox_in[5,44] + sbox_in[5,45])*(sbox_in[5,46])] 1887
+c [var for (sbox_in[5,45])*(sbox_in[5,44])] 1888
+c [var for sbox_in[5,44]*sbox_in[5,45] + sbox_in[5,44]*sbox_in[5,46] + sbox_in[5,46]] 1889
+c [var for (sbox_in[5,45])*(sbox_in[5,44] + sbox_in[5,46])] 1890
+c [var for (sbox_in[5,47])*([var for sbox_in[5,44]*sbox_in[5,45] + sbox_in[5,44]*sbox_in[5,46] + sbox_in[5,46]])] 1891
+c [var for sbox_in[5,48]*sbox_in[5,50] + sbox_in[5,48]*sbox_in[5,51] + sbox_in[5,50]*sbox_in[5,51] + sbox_in[5,48] + sbox_in[5,50] + sbox_in[5,51]] 1892
+c [var for (sbox_in[5,51])*(sbox_in[5,50])] 1893
+c [var for (sbox_in[5,49])*([var for sbox_in[5,48]*sbox_in[5,50] + sbox_in[5,48]*sbox_in[5,51] + sbox_in[5,50]*sbox_in[5,51] + sbox_in[5,48] + sbox_in[5,50] + sbox_in[5,51]])] 1894
+c [var for sbox_in[5,48]*sbox_in[5,51] + sbox_in[5,49]*sbox_in[5,51] + sbox_in[5,48] + sbox_in[5,49] + sbox_in[5,51]] 1895
+c [var for (sbox_in[5,49])*(sbox_in[5,51])] 1896
+c [var for ([var for sbox_in[5,48]*sbox_in[5,51] + sbox_in[5,49]*sbox_in[5,51] + sbox_in[5,48] + sbox_in[5,49] + sbox_in[5,51]])*(sbox_in[5,50])] 1897
+c [var for sbox_in[5,50]*sbox_in[5,51] + sbox_in[5,48] + sbox_in[5,50] + sbox_in[5,51]] 1898
+c [var for ([var for sbox_in[5,50]*sbox_in[5,51] + sbox_in[5,48] + sbox_in[5,50] + sbox_in[5,51]])*(sbox_in[5,49])] 1899
+c [var for (sbox_in[5,48])*(sbox_in[5,50])] 1900
+c [var for sbox_in[5,49]*sbox_in[5,51] + sbox_in[5,50]*sbox_in[5,51] + sbox_in[5,49] + 1] 1901
+c [var for (sbox_in[5,49])*(sbox_in[5,50])] 1902
+c [var for (sbox_in[5,48])*([var for sbox_in[5,49]*sbox_in[5,51] + sbox_in[5,50]*sbox_in[5,51] + sbox_in[5,49] + 1])] 1903
+c [var for sbox_in[5,52]*sbox_in[5,54] + sbox_in[5,52]*sbox_in[5,55] + sbox_in[5,54]*sbox_in[5,55] + sbox_in[5,52] + sbox_in[5,54] + sbox_in[5,55]] 1904
+c [var for ([var for sbox_in[5,52]*sbox_in[5,54] + sbox_in[5,52]*sbox_in[5,55] + sbox_in[5,54]*sbox_in[5,55] + sbox_in[5,52] + sbox_in[5,54] + sbox_in[5,55]])*(sbox_in[5,53])] 1905
+c [var for (sbox_in[5,55])*(sbox_in[5,54])] 1906
+c [var for sbox_in[5,52]*sbox_in[5,55] + sbox_in[5,53]*sbox_in[5,55] + sbox_in[5,52] + sbox_in[5,53] + sbox_in[5,55]] 1907
+c [var for (sbox_in[5,55])*(sbox_in[5,53])] 1908
+c [var for ([var for sbox_in[5,52]*sbox_in[5,55] + sbox_in[5,53]*sbox_in[5,55] + sbox_in[5,52] + sbox_in[5,53] + sbox_in[5,55]])*(sbox_in[5,54])] 1909
+c [var for sbox_in[5,53]*sbox_in[5,55] + sbox_in[5,52] + sbox_in[5,53]] 1910
+c [var for (sbox_in[5,53])*(sbox_in[5,52])] 1911
+c [var for (sbox_in[5,54])*([var for sbox_in[5,53]*sbox_in[5,55] + sbox_in[5,52] + sbox_in[5,53]])] 1912
+c [var for sbox_in[5,53]*sbox_in[5,55] + sbox_in[5,54]*sbox_in[5,55] + sbox_in[5,53] + 1] 1913
+c [var for ([var for sbox_in[5,53]*sbox_in[5,55] + sbox_in[5,54]*sbox_in[5,55] + sbox_in[5,53] + 1])*(sbox_in[5,52])] 1914
+c [var for (sbox_in[5,54])*(sbox_in[5,53] + sbox_in[5,55])] 1915
+c [var for sbox_in[5,56]*sbox_in[5,58] + sbox_in[5,56]*sbox_in[5,59] + sbox_in[5,58]*sbox_in[5,59] + sbox_in[5,56] + sbox_in[5,58] + sbox_in[5,59]] 1916
+c [var for ([var for sbox_in[5,56]*sbox_in[5,58] + sbox_in[5,56]*sbox_in[5,59] + sbox_in[5,58]*sbox_in[5,59] + sbox_in[5,56] + sbox_in[5,58] + sbox_in[5,59]])*(sbox_in[5,57])] 1917
+c [var for (sbox_in[5,58])*(sbox_in[5,59])] 1918
+c [var for sbox_in[5,56]*sbox_in[5,59] + sbox_in[5,57]*sbox_in[5,59] + sbox_in[5,56] + sbox_in[5,57] + sbox_in[5,59]] 1919
+c [var for (sbox_in[5,59])*(sbox_in[5,57])] 1920
+c [var for ([var for sbox_in[5,56]*sbox_in[5,59] + sbox_in[5,57]*sbox_in[5,59] + sbox_in[5,56] + sbox_in[5,57] + sbox_in[5,59]])*(sbox_in[5,58])] 1921
+c [var for sbox_in[5,58]*sbox_in[5,59] + sbox_in[5,56] + sbox_in[5,58] + sbox_in[5,59]] 1922
+c [var for (sbox_in[5,56])*(sbox_in[5,58])] 1923
+c [var for ([var for sbox_in[5,58]*sbox_in[5,59] + sbox_in[5,56] + sbox_in[5,58] + sbox_in[5,59]])*(sbox_in[5,57])] 1924
+c [var for sbox_in[5,57]*sbox_in[5,59] + sbox_in[5,58]*sbox_in[5,59] + sbox_in[5,57] + 1] 1925
+c [var for (sbox_in[5,57])*(sbox_in[5,58])] 1926
+c [var for (sbox_in[5,56])*([var for sbox_in[5,57]*sbox_in[5,59] + sbox_in[5,58]*sbox_in[5,59] + sbox_in[5,57] + 1])] 1927
+c [var for sbox_in[5,60]*sbox_in[5,62] + sbox_in[5,60]*sbox_in[5,63] + sbox_in[5,62]*sbox_in[5,63] + sbox_in[5,60] + sbox_in[5,62] + sbox_in[5,63]] 1928
+c [var for (sbox_in[5,61])*([var for sbox_in[5,60]*sbox_in[5,62] + sbox_in[5,60]*sbox_in[5,63] + sbox_in[5,62]*sbox_in[5,63] + sbox_in[5,60] + sbox_in[5,62] + sbox_in[5,63]])] 1929
+c [var for (sbox_in[5,62])*(sbox_in[5,63])] 1930
+c [var for sbox_in[5,60]*sbox_in[5,62] + sbox_in[5,61]*sbox_in[5,62] + sbox_in[5,61] + sbox_in[5,62] + 1] 1931
+c [var for (sbox_in[5,62])*(sbox_in[5,60])] 1932
+c [var for ([var for sbox_in[5,60]*sbox_in[5,62] + sbox_in[5,61]*sbox_in[5,62] + sbox_in[5,61] + sbox_in[5,62] + 1])*(sbox_in[5,63])] 1933
+c [var for (sbox_in[5,62])*(sbox_in[5,61])] 1934
+c [var for sbox_in[5,61]*sbox_in[5,62] + sbox_in[5,61]] 1935
+c [var for (sbox_in[5,61])*(sbox_in[5,60] + sbox_in[5,62])] 1936
+c [var for ([var for sbox_in[5,61]*sbox_in[5,62] + sbox_in[5,61]])*(sbox_in[5,63])] 1937
+c [var for sbox_in[5,60]*sbox_in[5,61] + sbox_in[5,60]*sbox_in[5,62] + sbox_in[5,62]] 1938
+c [var for (sbox_in[5,63])*([var for sbox_in[5,60]*sbox_in[5,61] + sbox_in[5,60]*sbox_in[5,62] + sbox_in[5,62]])] 1939
+c [var for (sbox_out[1,0] + sbox_out[1,3])*(sbox_out[1,2])] 1940
+c [var for (sbox_out[1,3])*(sbox_out[1,0])] 1941
+c [var for (sbox_out[1,1] + sbox_out[1,2])*(sbox_out[1,3])] 1942
+c [var for (sbox_out[1,4])*(sbox_out[1,6] + sbox_out[1,7])] 1943
+c [var for (sbox_out[1,7])*(sbox_out[1,4])] 1944
+c [var for (sbox_out[1,7])*(sbox_out[1,5] + sbox_out[1,6])] 1945
+c [var for (sbox_out[1,8] + sbox_out[1,10])*(sbox_out[1,11])] 1946
+c [var for (sbox_out[1,8])*(sbox_out[1,10])] 1947
+c [var for (sbox_out[1,8])*(sbox_out[1,11])] 1948
+c [var for (sbox_out[1,10])*(sbox_out[1,9])] 1949
+c [var for (sbox_out[1,8])*(sbox_out[1,9] + sbox_out[1,10])] 1950
+c [var for (sbox_out[1,12] + sbox_out[1,15])*(sbox_out[1,14])] 1951
+c [var for (sbox_out[1,12])*(sbox_out[1,15])] 1952
+c [var for (sbox_out[1,13])*(sbox_out[1,14])] 1953
+c [var for (sbox_out[1,12])*(sbox_out[1,13] + sbox_out[1,14])] 1954
+c [var for (sbox_out[1,16])*(sbox_out[1,18] + sbox_out[1,19])] 1955
+c [var for (sbox_out[1,18])*(sbox_out[1,19])] 1956
+c [var for (sbox_out[1,16] + sbox_out[1,17])*(sbox_out[1,19])] 1957
+c [var for (sbox_out[1,23])*(sbox_out[1,20] + sbox_out[1,22])] 1958
+c [var for (sbox_out[1,23])*(sbox_out[1,20])] 1959
+c [var for (sbox_out[1,24])*(sbox_out[1,26] + sbox_out[1,27])] 1960
+c [var for (sbox_out[1,24])*(sbox_out[1,27])] 1961
+c [var for (sbox_out[1,24])*(sbox_out[1,25] + sbox_out[1,26])] 1962
+c [var for (sbox_out[1,28] + sbox_out[1,31])*(sbox_out[1,30])] 1963
+c [var for (sbox_out[1,31])*(sbox_out[1,28])] 1964
+c [var for (sbox_out[1,32] + sbox_out[1,35])*(sbox_out[1,34])] 1965
+c [var for (sbox_out[1,32])*(sbox_out[1,35])] 1966
+c [var for (sbox_out[1,32] + sbox_out[1,33])*(sbox_out[1,35])] 1967
+c [var for (sbox_out[1,33] + sbox_out[1,34])*(sbox_out[1,35])] 1968
+c [var for (sbox_out[1,39])*(sbox_out[1,36] + sbox_out[1,38])] 1969
+c [var for (sbox_out[1,39])*(sbox_out[1,36])] 1970
+c [var for (sbox_out[1,39])*(sbox_out[1,37] + sbox_out[1,38])] 1971
+c [var for (sbox_out[1,42])*(sbox_out[1,40] + sbox_out[1,43])] 1972
+c [var for (sbox_out[1,40])*(sbox_out[1,43])] 1973
+c [var for (sbox_out[1,40])*(sbox_out[1,41] + sbox_out[1,42])] 1974
+c [var for (sbox_out[1,44])*(sbox_out[1,46] + sbox_out[1,47])] 1975
+c [var for (sbox_out[1,46])*(sbox_out[1,44])] 1976
+c [var for (sbox_out[1,50] + sbox_out[1,51])*(sbox_out[1,48])] 1977
+c [var for (sbox_out[1,48] + sbox_out[1,49])*(sbox_out[1,51])] 1978
+c [var for (sbox_out[1,51])*(sbox_out[1,49] + sbox_out[1,50])] 1979
+c [var for (sbox_out[1,52] + sbox_out[1,54])*(sbox_out[1,55])] 1980
+c [var for (sbox_out[1,52] + sbox_out[1,53])*(sbox_out[1,55])] 1981
+c [var for (sbox_out[1,59])*(sbox_out[1,56] + sbox_out[1,58])] 1982
+c [var for (sbox_out[1,57])*(sbox_out[1,59])] 1983
+c [var for (sbox_out[1,59])*(sbox_out[1,56])] 1984
+c [var for (sbox_out[1,59])*(sbox_out[1,57] + sbox_out[1,58])] 1985
+c [var for (sbox_out[1,60] + sbox_out[1,62])*(sbox_out[1,63])] 1986
+c [var for (sbox_out[2,3])*(sbox_out[2,0] + sbox_out[2,2])] 1987
+c [var for (sbox_out[2,0] + sbox_out[2,1])*(sbox_out[2,3])] 1988
+c [var for (sbox_out[2,1] + sbox_out[2,2])*(sbox_out[2,3])] 1989
+c [var for (sbox_out[2,4] + sbox_out[2,6])*(sbox_out[2,7])] 1990
+c [var for (sbox_out[2,4] + sbox_out[2,5])*(sbox_out[2,7])] 1991
+c [var for (sbox_out[2,5] + sbox_out[2,6])*(sbox_out[2,7])] 1992
+c [var for (sbox_out[2,8] + sbox_out[2,10])*(sbox_out[2,11])] 1993
+c [var for (sbox_out[2,8] + sbox_out[2,9])*(sbox_out[2,11])] 1994
+c [var for (sbox_out[2,9] + sbox_out[2,10])*(sbox_out[2,8])] 1995
+c [var for (sbox_out[2,14] + sbox_out[2,15])*(sbox_out[2,12])] 1996
+c [var for (sbox_out[2,12] + sbox_out[2,13])*(sbox_out[2,14])] 1997
+c [var for (sbox_out[2,12])*(sbox_out[2,13] + sbox_out[2,14])] 1998
+c [var for (sbox_out[2,16] + sbox_out[2,18])*(sbox_out[2,19])] 1999
+c [var for (sbox_out[2,19])*(sbox_out[2,16])] 2000
+c [var for (sbox_out[2,20])*(sbox_out[2,22] + sbox_out[2,23])] 2001
+c [var for (sbox_out[2,20])*(sbox_out[2,23])] 2002
+c [var for (sbox_out[2,21])*(sbox_out[2,23])] 2003
+c [var for (sbox_out[2,21] + sbox_out[2,22])*(sbox_out[2,23])] 2004
+c [var for (sbox_out[2,26] + sbox_out[2,27])*(sbox_out[2,24])] 2005
+c [var for (sbox_out[2,27])*(sbox_out[2,24] + sbox_out[2,25])] 2006
+c [var for (sbox_out[2,25] + sbox_out[2,26])*(sbox_out[2,27])] 2007
+c [var for (sbox_out[2,30])*(sbox_out[2,28] + sbox_out[2,31])] 2008
+c [var for (sbox_out[2,28])*(sbox_out[2,31])] 2009
+c [var for (sbox_out[2,29])*(sbox_out[2,30])] 2010
+c [var for (sbox_out[2,29])*(sbox_out[2,28])] 2011
+c [var for (sbox_out[2,32])*(sbox_out[2,34] + sbox_out[2,35])] 2012
+c [var for (sbox_out[2,32] + sbox_out[2,33])*(sbox_out[2,35])] 2013
+c [var for (sbox_out[2,33] + sbox_out[2,34])*(sbox_out[2,35])] 2014
+c [var for (sbox_out[2,38])*(sbox_out[2,36] + sbox_out[2,39])] 2015
+c [var for (sbox_out[2,36])*(sbox_out[2,39])] 2016
+c [var for (sbox_out[2,36] + sbox_out[2,37])*(sbox_out[2,39])] 2017
+c [var for (sbox_out[2,40] + sbox_out[2,42])*(sbox_out[2,43])] 2018
+c [var for (sbox_out[2,40] + sbox_out[2,41])*(sbox_out[2,43])] 2019
+c [var for (sbox_out[2,41] + sbox_out[2,42])*(sbox_out[2,43])] 2020
+c [var for (sbox_out[2,46] + sbox_out[2,47])*(sbox_out[2,44])] 2021
+c [var for (sbox_out[2,45] + sbox_out[2,46])*(sbox_out[2,44])] 2022
+c [var for (sbox_out[2,50])*(sbox_out[2,48] + sbox_out[2,51])] 2023
+c [var for (sbox_out[2,51])*(sbox_out[2,48])] 2024
+c [var for (sbox_out[2,51])*(sbox_out[2,48] + sbox_out[2,49])] 2025
+c [var for (sbox_out[2,49] + sbox_out[2,50])*(sbox_out[2,51])] 2026
+c [var for (sbox_out[2,52] + sbox_out[2,54])*(sbox_out[2,55])] 2027
+c [var for (sbox_out[2,52] + sbox_out[2,53])*(sbox_out[2,55])] 2028
+c [var for (sbox_out[2,52])*(sbox_out[2,53] + sbox_out[2,54])] 2029
+c [var for (sbox_out[2,56] + sbox_out[2,58])*(sbox_out[2,59])] 2030
+c [var for (sbox_out[2,56])*(sbox_out[2,59])] 2031
+c [var for (sbox_out[2,57] + sbox_out[2,58])*(sbox_out[2,59])] 2032
+c [var for (sbox_out[2,62] + sbox_out[2,63])*(sbox_out[2,60])] 2033
+c [var for (sbox_out[2,61])*(sbox_out[2,62])] 2034
+c [var for (sbox_out[2,62])*(sbox_out[2,60])] 2035
+c [var for (sbox_out[3,2] + sbox_out[3,3])*(sbox_out[3,0])] 2036
+c [var for (sbox_out[3,3])*(sbox_out[3,0] + sbox_out[3,1])] 2037
+c [var for (sbox_out[3,4])*(sbox_out[3,6] + sbox_out[3,7])] 2038
+c [var for (sbox_out[3,4])*(sbox_out[3,7])] 2039
+c [var for (sbox_out[3,4])*(sbox_out[3,5] + sbox_out[3,6])] 2040
+c [var for (sbox_out[3,10])*(sbox_out[3,8] + sbox_out[3,11])] 2041
+c [var for (sbox_out[3,8])*(sbox_out[3,11])] 2042
+c [var for (sbox_out[3,8] + sbox_out[3,9])*(sbox_out[3,11])] 2043
+c [var for (sbox_out[3,8])*(sbox_out[3,9] + sbox_out[3,10])] 2044
+c [var for (sbox_out[3,14])*(sbox_out[3,12] + sbox_out[3,15])] 2045
+c [var for (sbox_out[3,12])*(sbox_out[3,15])] 2046
+c [var for (sbox_out[3,14])*(sbox_out[3,13])] 2047
+c [var for (sbox_out[3,13])*(sbox_out[3,12])] 2048
+c [var for (sbox_out[3,16])*(sbox_out[3,18] + sbox_out[3,19])] 2049
+c [var for (sbox_out[3,16] + sbox_out[3,17])*(sbox_out[3,18])] 2050
+c [var for (sbox_out[3,19])*(sbox_out[3,17])] 2051
+c [var for (sbox_out[3,23])*(sbox_out[3,20] + sbox_out[3,22])] 2052
+c [var for (sbox_out[3,23])*(sbox_out[3,20] + sbox_out[3,21])] 2053
+c [var for (sbox_out[3,24])*(sbox_out[3,26] + sbox_out[3,27])] 2054
+c [var for (sbox_out[3,24])*(sbox_out[3,27])] 2055
+c [var for (sbox_out[3,31])*(sbox_out[3,28] + sbox_out[3,30])] 2056
+c [var for (sbox_out[3,29])*(sbox_out[3,30])] 2057
+c [var for (sbox_out[3,30])*(sbox_out[3,29])] 2058
+c [var for (sbox_out[3,29] + sbox_out[3,30])*(sbox_out[3,28])] 2059
+c [var for (sbox_out[3,32] + sbox_out[3,34])*(sbox_out[3,35])] 2060
+c [var for (sbox_out[3,32])*(sbox_out[3,35])] 2061
+c [var for (sbox_out[3,33] + sbox_out[3,34])*(sbox_out[3,35])] 2062
+c [var for (sbox_out[3,38])*(sbox_out[3,36] + sbox_out[3,39])] 2063
+c [var for (sbox_out[3,39])*(sbox_out[3,36])] 2064
+c [var for (sbox_out[3,40] + sbox_out[3,43])*(sbox_out[3,42])] 2065
+c [var for (sbox_out[3,43])*(sbox_out[3,40])] 2066
+c [var for (sbox_out[3,40])*(sbox_out[3,41] + sbox_out[3,42])] 2067
+c [var for (sbox_out[3,46] + sbox_out[3,47])*(sbox_out[3,44])] 2068
+c [var for (sbox_out[3,46])*(sbox_out[3,44] + sbox_out[3,45])] 2069
+c [var for (sbox_out[3,48] + sbox_out[3,51])*(sbox_out[3,50])] 2070
+c [var for (sbox_out[3,51])*(sbox_out[3,48])] 2071
+c [var for (sbox_out[3,51])*(sbox_out[3,48] + sbox_out[3,49])] 2072
+c [var for (sbox_out[3,55])*(sbox_out[3,52] + sbox_out[3,54])] 2073
+c [var for (sbox_out[3,55])*(sbox_out[3,52] + sbox_out[3,53])] 2074
+c [var for (sbox_out[3,58])*(sbox_out[3,56] + sbox_out[3,59])] 2075
+c [var for (sbox_out[3,59])*(sbox_out[3,56])] 2076
+c [var for (sbox_out[3,59])*(sbox_out[3,56] + sbox_out[3,57])] 2077
+c [var for (sbox_out[3,59])*(sbox_out[3,57] + sbox_out[3,58])] 2078
+c [var for (sbox_out[3,60] + sbox_out[3,63])*(sbox_out[3,62])] 2079
+c [var for (sbox_out[3,63])*(sbox_out[3,60])] 2080
+c [var for (sbox_out[3,60])*(sbox_out[3,62])] 2081
+c [var for (sbox_out[3,61])*(sbox_out[3,62])] 2082
+c [var for (sbox_out[3,60])*(sbox_out[3,61] + sbox_out[3,62])] 2083
+c [var for (sbox_in[4,0] + sbox_in[4,3])*(sbox_in[4,2])] 2084
+c [var for (sbox_in[4,0])*(sbox_in[4,3])] 2085
+c [var for (sbox_in[4,0] + sbox_in[4,1])*(sbox_in[4,3])] 2086
+c [var for (sbox_in[4,7])*(sbox_in[4,4] + sbox_in[4,6])] 2087
+c [var for (sbox_in[4,4])*(sbox_in[4,6])] 2088
+c [var for (sbox_in[4,4] + sbox_in[4,5])*(sbox_in[4,7])] 2089
+c [var for (sbox_in[4,7])*(sbox_in[4,5] + sbox_in[4,6])] 2090
+c [var for (sbox_in[4,8] + sbox_in[4,11])*(sbox_in[4,10])] 2091
+c [var for (sbox_in[4,8])*(sbox_in[4,11])] 2092
+c [var for (sbox_in[4,10])*(sbox_in[4,11])] 2093
+c [var for (sbox_in[4,14])*(sbox_in[4,12] + sbox_in[4,15])] 2094
+c [var for (sbox_in[4,15])*(sbox_in[4,12])] 2095
+c [var for (sbox_in[4,18] + sbox_in[4,19])*(sbox_in[4,16])] 2096
+c [var for (sbox_in[4,18])*(sbox_in[4,17])] 2097
+c [var for (sbox_in[4,17] + sbox_in[4,18])*(sbox_in[4,19])] 2098
+c [var for (sbox_in[4,22])*(sbox_in[4,20] + sbox_in[4,23])] 2099
+c [var for (sbox_in[4,23])*(sbox_in[4,20])] 2100
+c [var for (sbox_in[4,21] + sbox_in[4,22])*(sbox_in[4,23])] 2101
+c [var for (sbox_in[4,24] + sbox_in[4,27])*(sbox_in[4,26])] 2102
+c [var for (sbox_in[4,27])*(sbox_in[4,24])] 2103
+c [var for (sbox_in[4,24])*(sbox_in[4,27])] 2104
+c [var for (sbox_in[4,25] + sbox_in[4,26])*(sbox_in[4,27])] 2105
+c [var for (sbox_in[4,28])*(sbox_in[4,30] + sbox_in[4,31])] 2106
+c [var for (sbox_in[4,29])*(sbox_in[4,28])] 2107
+c [var for (sbox_in[4,32] + sbox_in[4,34])*(sbox_in[4,35])] 2108
+c [var for (sbox_in[4,32] + sbox_in[4,33])*(sbox_in[4,35])] 2109
+c [var for (sbox_in[4,33] + sbox_in[4,34])*(sbox_in[4,35])] 2110
+c [var for (sbox_in[4,36] + sbox_in[4,39])*(sbox_in[4,38])] 2111
+c [var for (sbox_in[4,39])*(sbox_in[4,36])] 2112
+c [var for (sbox_in[4,42] + sbox_in[4,43])*(sbox_in[4,40])] 2113
+c [var for (sbox_in[4,43])*(sbox_in[4,40])] 2114
+c [var for (sbox_in[4,43])*(sbox_in[4,41] + sbox_in[4,42])] 2115
+c [var for (sbox_in[4,46])*(sbox_in[4,44] + sbox_in[4,47])] 2116
+c [var for (sbox_in[4,44])*(sbox_in[4,47])] 2117
+c [var for (sbox_in[4,44] + sbox_in[4,45])*(sbox_in[4,46])] 2118
+c [var for (sbox_in[4,48] + sbox_in[4,51])*(sbox_in[4,50])] 2119
+c [var for (sbox_in[4,51])*(sbox_in[4,48])] 2120
+c [var for (sbox_in[4,48] + sbox_in[4,49])*(sbox_in[4,50])] 2121
+c [var for (sbox_in[4,51])*(sbox_in[4,49])] 2122
+c [var for (sbox_in[4,52] + sbox_in[4,55])*(sbox_in[4,54])] 2123
+c [var for (sbox_in[4,52])*(sbox_in[4,55])] 2124
+c [var for (sbox_in[4,58])*(sbox_in[4,56] + sbox_in[4,59])] 2125
+c [var for (sbox_in[4,59])*(sbox_in[4,56])] 2126
+c [var for (sbox_in[4,59])*(sbox_in[4,57] + sbox_in[4,58])] 2127
+c [var for (sbox_in[4,63])*(sbox_in[4,60] + sbox_in[4,62])] 2128
+c [var for (sbox_in[4,62])*(sbox_in[4,60])] 2129
+c [var for (sbox_in[5,0])*(sbox_in[5,2] + sbox_in[5,3])] 2130
+c [var for (sbox_in[5,1])*(sbox_in[5,2])] 2131
+c [var for (sbox_in[5,1])*(sbox_in[5,3])] 2132
+c [var for (sbox_in[5,4] + sbox_in[5,7])*(sbox_in[5,6])] 2133
+c [var for (sbox_in[5,4])*(sbox_in[5,7])] 2134
+c [var for (sbox_in[5,4] + sbox_in[5,5])*(sbox_in[5,6])] 2135
+c [var for (sbox_in[5,7])*(sbox_in[5,5] + sbox_in[5,6])] 2136
+c [var for (sbox_in[5,8])*(sbox_in[5,10] + sbox_in[5,11])] 2137
+c [var for (sbox_in[5,11])*(sbox_in[5,8])] 2138
+c [var for (sbox_in[5,11])*(sbox_in[5,9] + sbox_in[5,10])] 2139
+c [var for (sbox_in[5,12] + sbox_in[5,14])*(sbox_in[5,15])] 2140
+c [var for (sbox_in[5,18])*(sbox_in[5,16] + sbox_in[5,19])] 2141
+c [var for (sbox_in[5,19])*(sbox_in[5,16])] 2142
+c [var for (sbox_in[5,23])*(sbox_in[5,20] + sbox_in[5,22])] 2143
+c [var for (sbox_in[5,20])*(sbox_in[5,23])] 2144
+c [var for (sbox_in[5,24])*(sbox_in[5,26] + sbox_in[5,27])] 2145
+c [var for (sbox_in[5,24] + sbox_in[5,25])*(sbox_in[5,27])] 2146
+c [var for (sbox_in[5,25] + sbox_in[5,26])*(sbox_in[5,27])] 2147
+c [var for (sbox_in[5,28] + sbox_in[5,30])*(sbox_in[5,31])] 2148
+c [var for (sbox_in[5,30])*(sbox_in[5,28])] 2149
+c [var for (sbox_in[5,29])*(sbox_in[5,28])] 2150
+c [var for (sbox_in[5,34])*(sbox_in[5,32] + sbox_in[5,35])] 2151
+c [var for (sbox_in[5,35])*(sbox_in[5,32])] 2152
+c [var for (sbox_in[5,35])*(sbox_in[5,33])] 2153
+c [var for (sbox_in[5,39])*(sbox_in[5,36] + sbox_in[5,38])] 2154
+c [var for (sbox_in[5,39])*(sbox_in[5,36] + sbox_in[5,37])] 2155
+c [var for (sbox_in[5,39])*(sbox_in[5,37] + sbox_in[5,38])] 2156
+c [var for (sbox_in[5,43])*(sbox_in[5,40] + sbox_in[5,42])] 2157
+c [var for (sbox_in[5,43])*(sbox_in[5,40])] 2158
+c [var for (sbox_in[5,43])*(sbox_in[5,41] + sbox_in[5,42])] 2159
+c [var for (sbox_in[5,44] + sbox_in[5,47])*(sbox_in[5,46])] 2160
+c [var for (sbox_in[5,47])*(sbox_in[5,44])] 2161
+c [var for (sbox_in[5,48] + sbox_in[5,51])*(sbox_in[5,50])] 2162
+c [var for (sbox_in[5,48])*(sbox_in[5,51])] 2163
+c [var for (sbox_in[5,54])*(sbox_in[5,52] + sbox_in[5,55])] 2164
+c [var for (sbox_in[5,55])*(sbox_in[5,52])] 2165
+c [var for (sbox_in[5,55])*(sbox_in[5,52] + sbox_in[5,53])] 2166
+c [var for (sbox_in[5,56] + sbox_in[5,58])*(sbox_in[5,59])] 2167
+c [var for (sbox_in[5,56] + sbox_in[5,57])*(sbox_in[5,59])] 2168
+c [var for (sbox_in[5,59])*(sbox_in[5,58])] 2169
+c [var for (sbox_in[5,57])*(sbox_in[5,59])] 2170
+c [var for (sbox_in[5,60])*(sbox_in[5,62] + sbox_in[5,63])] 2171
+c [var for (sbox_in[5,61] + sbox_in[5,62])*(sbox_in[5,60])] 2172
+p xnf 2172 3672
+-64+129 0
+-1+130 0
+-2+131 0
+-3+132 0
+-4+133 0
+-5+134 0
+-6+135 0
+-7+136 0
+-8+137 0
+-9+138 0
+-10+139 0
+-11+140 0
+-12+141 0
+-13+142 0
+-14+143 0
+-15+144 0
+-16+145 0
+-17+146 0
+-18+147 0
+-19+148 0
+-20+149 0
+-21+150 0
+-22+151 0
+-23+152 0
+-24+153 0
+-25+154 0
+-26+155 0
+-27+156 0
+-28+157 0
+-29+158 0
+-30+159 0
+-31+160 0
+-32+161 0
+-33+162 0
+-34+163 0
+-35+164 0
+-36+165 0
+-37+166 0
+-38+167 0
+-39+168 0
+-40+169 0
+-41+170 0
+-42+171 0
+-43+172 0
+-44+173 0
+-45+174 0
+-46+175 0
+-47+176 0
+-48+177 0
+-49+178 0
+-50+179 0
+-51+180 0
+-52+181 0
+-53+182 0
+-54+183 0
+-55+184 0
+-56+185 0
+-57+186 0
+-58+187 0
+-59+188 0
+-60+189 0
+-61+190 0
+-62+191 0
+-1+63+192 0
+-1+65+193+321 0
+-2+66+194+322 0
+-3+67+195+323 0
+-4+68+196+324 0
+-5+69+197+325 0
+-6+70+198+326 0
+-7+71+199+327 0
+-8+72+200+328 0
+-9+73+201+329 0
+-10+74+202+330 0
+-11+75+203+331 0
+-12+76+204+332 0
+-13+77+205+333 0
+-14+78+206+334 0
+-15+79+207+335 0
+-16+80+208+336 0
+-17+81+209+337 0
+-18+82+210+338 0
+-19+83+211+339 0
+-20+84+212+340 0
+-21+85+213+341 0
+-22+86+214+342 0
+-23+87+215+343 0
+-24+88+216+344 0
+-25+89+217+345 0
+-26+90+218+346 0
+-27+91+219+347 0
+-28+92+220+348 0
+-29+93+221+349 0
+-30+94+222+350 0
+-31+95+223+351 0
+-32+96+224+352 0
+-33+97+225+353 0
+-34+98+226+354 0
+-35+99+227+355 0
+-36+100+228+356 0
+-37+101+229+357 0
+-38+102+230+358 0
+-39+103+231+359 0
+-40+104+232+360 0
+-41+105+233+361 0
+-42+106+234+362 0
+-43+107+235+363 0
+-44+108+236+364 0
+-45+109+237+365 0
+-46+110+238+366 0
+-47+111+239+367 0
+-48+112+240+368 0
+-49+113+241+369 0
+-50+114+242+370 0
+-51+115+243+371 0
+-52+116+244+372 0
+-53+117+245+373 0
+-54+118+246+374 0
+-55+119+247+375 0
+-56+120+248+376 0
+-57+121+249+377 0
+-58+122+250+378 0
+-59+123+251+379 0
+-60+124+252+380 0
+-61+125+253+381 0
+-62+126+254+382 0
+-63+127+255+383 0
+-64+128+256+384 0
+321+643+644+962+963 0
+-322+642+965+966+967 0
+323+965+969 0
+324+963+967+971 0
+325+647+648+973+974 0
+-326+646+648+976+977 0
+327+979+980 0
+328+973+982+983 0
+329+651+652+985+986 0
+-330+650+652+988+989 0
+331+991+992+993 0
+332+649+992+995+996 0
+333+655+656+998+999 0
+-334+654+1001+1002 0
+335+1004+1005+1006 0
+336+653+1004+1008 0
+337+659+660+1010+1011 0
+-338+658+660+1013+1014 0
+339+1016+1017 0
+340+1019+1020 0
+341+663+664+1022+1023 0
+-342+662+664+1025+1026 0
+343+1028+1029 0
+344+1031+1032 0
+345+667+668+1034+1035 0
+-346+666+668+1037+1038 0
+347+1040+1041 0
+348+665+1043+1044+1045 0
+349+671+672+1047+1048 0
+-350+670+1050+1051+1052 0
+351+1054+1055+1056 0
+352+669+1050+1056+1058 0
+353+675+676+1060+1061 0
+-354+674+676+1063+1064 0
+355+1066+1067 0
+356+1061+1069+1070 0
+357+679+680+1072+1073 0
+-358+678+680+1075+1076 0
+359+1078+1079 0
+360+1081+1082 0
+361+683+684+1084+1085 0
+-362+682+684+1087+1088 0
+363+1090+1091 0
+364+681+1093+1094 0
+365+687+688+1096+1097 0
+-366+686+1099+1100 0
+367+1102+1103+1104 0
+368+685+1104+1106+1107 0
+369+691+692+1109+1110 0
+-370+690+692+1112+1113 0
+371+1115+1116 0
+372+1110+1118+1119 0
+373+695+696+1121+1122 0
+-374+694+696+1124+1125 0
+375+1127+1128 0
+376+1130+1131+1132 0
+377+699+700+1134+1135 0
+-378+698+700+1137+1138 0
+379+1140+1141 0
+380+1143+1144 0
+381+703+704+1146+1147 0
+-382+702+1149+1150+1151 0
+383+1153+1154+1155 0
+384+701+1150+1155+1157 0
+-65+385+645+649+653 0
+-66+386+642+650+654 0
+-67+387+643+647+655 0
+68+388+644+648+652 0
+-69+389+657+661+669 0
+-70+390+658+662+666 0
+71+391+663+667+671 0
+72+392+660+668+672 0
+-73+393+673+681+685 0
+-74+394+674+678+686 0
+-75+395+675+679+683 0
+76+396+680+684+688 0
+77+397+689+697+701 0
+-78+398+690+694+702 0
+-79+399+691+695+699 0
+80+400+696+700+704 0
+81+401+657+661+665 0
+-82+402+662+666+670 0
+-83+403+659+667+671 0
+-84+404+660+664+672 0
+85+405+673+677+685 0
+-86+406+674+678+682 0
+87+407+679+683+687 0
+-88+408+676+684+688 0
+-89+409+689+693+701 0
+-90+410+690+694+698 0
+91+411+695+699+703 0
+-92+412+692+700+704 0
+93+413+641+649+653 0
+94+414+642+646+654 0
+95+415+643+647+651 0
+-96+416+648+652+656 0
+-97+417+673+677+681 0
+-98+418+678+682+686 0
+-99+419+675+683+687 0
+-100+420+676+680+688 0
+-101+421+689+693+697 0
+-102+422+694+698+702 0
+103+423+691+699+703 0
+104+424+692+696+704 0
+-105+425+641+645+653 0
+106+426+642+646+650 0
+107+427+647+651+655 0
+108+428+644+652+656 0
+-109+429+661+665+669 0
+-110+430+658+666+670 0
+-111+431+659+663+671 0
+-112+432+660+664+668 0
+-113+433+693+697+701 0
+114+434+690+698+702 0
+115+435+691+695+703 0
+116+436+692+696+700 0
+-117+437+641+645+649 0
+-118+438+646+650+654 0
+119+439+643+651+655 0
+120+440+644+648+656 0
+-121+441+657+665+669 0
+122+442+658+662+670 0
+-123+443+659+663+667 0
+-124+444+664+668+672 0
+-125+445+677+681+685 0
+126+446+674+682+686 0
+-127+447+675+679+687 0
+-128+448+676+680+684 0
+385+707+708+1159+1160 0
+-386+706+708+1162+1163 0
+387+1165+1166 0
+388+1159+1168+1169 0
+389+711+712+1171+1172 0
+-390+710+712+1174+1175 0
+391+1177+1178 0
+392+1180+1181+1182 0
+393+715+716+1184+1185 0
+-394+714+716+1187+1188 0
+395+1190+1191 0
+396+713+1193+1194+1195 0
+397+719+720+1197+1198 0
+-398+718+1200+1201+1202 0
+399+1201+1204+1205 0
+400+717+1202+1207+1208 0
+401+723+724+1210+1211 0
+-402+722+724+1213+1214 0
+403+1216+1217 0
+404+1219+1220 0
+405+727+728+1222+1223 0
+-406+726+728+1225+1226 0
+407+1228+1229 0
+408+1231+1232 0
+409+731+732+1234+1235 0
+-410+730+732+1237+1238 0
+411+1240+1241 0
+412+1243+1244 0
+413+735+736+1246+1247 0
+-414+734+1249+1250 0
+415+1252+1253+1254 0
+416+733+1252+1256 0
+417+739+740+1258+1259 0
+-418+738+740+1261+1262 0
+419+1264+1265 0
+420+1267+1268 0
+421+743+744+1270+1271 0
+-422+742+744+1273+1274 0
+423+1276+1277 0
+424+741+1279+1280+1281 0
+425+747+748+1283+1284 0
+-426+746+748+1286+1287 0
+427+1289+1290 0
+428+1283+1292+1293 0
+429+751+752+1295+1296 0
+-430+750+1298+1299+1300 0
+431+1302+1303+1304 0
+432+749+1298+1304+1306 0
+433+755+756+1308+1309 0
+-434+754+756+1311+1312 0
+435+1314+1315 0
+436+1308+1317+1318 0
+437+759+760+1320+1321 0
+-438+758+760+1323+1324 0
+439+1326+1327 0
+440+757+1329+1330+1331 0
+441+763+764+1333+1334 0
+-442+762+764+1336+1337 0
+443+1339+1340 0
+444+1342+1343 0
+445+767+768+1345+1346 0
+-446+766+1348+1349 0
+447+1348+1351+1352 0
+448+765+1354+1355 0
+65+449+709+713+717 0
+-66+450+706+714+718 0
+67+451+707+711+719 0
+-68+452+708+712+716 0
+-69+453+721+725+733 0
+70+454+722+726+730 0
+-71+455+727+731+735 0
+-72+456+724+732+736 0
+-73+457+737+745+749 0
+-74+458+738+742+750 0
+-75+459+739+743+747 0
+-76+460+744+748+752 0
+77+461+753+761+765 0
+-78+462+754+758+766 0
+-79+463+755+759+763 0
+80+464+760+764+768 0
+-81+465+721+725+729 0
+-82+466+726+730+734 0
+83+467+723+731+735 0
+84+468+724+728+736 0
+85+469+737+741+749 0
+-86+470+738+742+746 0
+-87+471+743+747+751 0
+-88+472+740+748+752 0
+-89+473+753+757+765 0
+-90+474+754+758+762 0
+91+475+759+763+767 0
+-92+476+756+764+768 0
+-93+477+705+713+717 0
+-94+478+706+710+718 0
+95+479+707+711+715 0
+-96+480+712+716+720 0
+-97+481+737+741+745 0
+-98+482+742+746+750 0
+99+483+739+747+751 0
+-100+484+740+744+752 0
+101+485+753+757+761 0
+-102+486+758+762+766 0
+-103+487+755+763+767 0
+104+488+756+760+768 0
+105+489+705+709+717 0
+-106+490+706+710+714 0
+-107+491+711+715+719 0
+108+492+708+716+720 0
+109+493+725+729+733 0
+110+494+722+730+734 0
+111+495+723+727+735 0
+112+496+724+728+732 0
+-113+497+757+761+765 0
+-114+498+754+762+766 0
+115+499+755+759+767 0
+116+500+756+760+764 0
+-117+501+705+709+713 0
+-118+502+710+714+718 0
+-119+503+707+715+719 0
+120+504+708+712+720 0
+121+505+721+729+733 0
+122+506+722+726+734 0
+-123+507+723+727+731 0
+124+508+728+732+736 0
+-125+509+741+745+749 0
+-126+510+738+746+750 0
+-127+511+739+743+751 0
+-128+512+740+744+748 0
+449+771+772+1357+1358 0
+-450+770+772+1360+1361 0
+451+1363+1364 0
+452+1366+1367 0
+453+775+776+1369+1370 0
+-454+774+776+1372+1373 0
+455+1375+1376 0
+456+773+1378+1379 0
+457+779+780+1381+1382 0
+-458+778+780+1384+1385 0
+459+1385+1387+1388 0
+460+777+1390+1391 0
+461+783+784+1393+1394 0
+-462+782+1396+1397 0
+463+1399+1400+1401 0
+464+781+1399+1403 0
+465+787+788+1405+1406 0
+-466+786+1408+1409+1410 0
+467+1408+1412 0
+468+1406+1409+1414 0
+469+791+792+1416+1417 0
+-470+790+792+1419+1420 0
+471+1422+1423 0
+472+1416+1425+1426 0
+473+795+796+1428+1429 0
+-474+794+796+1431+1432 0
+475+1434+1435 0
+476+1437+1438 0
+477+799+800+1440+1441 0
+-478+798+1443+1444 0
+479+1446+1447+1448 0
+480+797+1446+1450 0
+481+803+804+1452+1453 0
+-482+802+804+1455+1456 0
+483+1458+1459 0
+484+1461+1462 0
+485+807+808+1464+1465 0
+-486+806+808+1467+1468 0
+487+1470+1471 0
+488+1473+1474 0
+489+811+812+1476+1477 0
+-490+810+812+1479+1480 0
+491+1482+1483 0
+492+809+1485+1486+1487 0
+493+815+816+1489+1490 0
+-494+814+1492+1493+1494 0
+495+1492+1496+1497 0
+496+813+1492+1499+1500 0
+497+819+820+1502+1503 0
+-498+818+820+1505+1506 0
+499+1508+1509 0
+500+1511+1512 0
+501+823+824+1514+1515 0
+-502+822+824+1517+1518 0
+503+1520+1521 0
+504+1514+1523+1524 0
+505+827+828+1526+1527 0
+-506+826+828+1529+1530 0
+507+1532+1533 0
+508+1535+1536 0
+509+831+832+1538+1539 0
+-510+830+1541+1542 0
+511+1542+1544+1545 0
+512+829+1547+1548 0
+-513+773+777+781 0
+-514+770+778+782 0
+-515+771+775+783 0
+-516+772+776+780 0
+-517+769+773+777 0
+-518+774+778+782 0
+-519+771+779+783 0
+-520+772+776+784 0
+-521+769+773+781 0
+-522+770+774+778 0
+-523+775+779+783 0
+-524+772+780+784 0
+-525+769+777+781 0
+-526+770+774+782 0
+-527+771+775+779 0
+-528+776+780+784 0
+-529+785+789+793 0
+-530+790+794+798 0
+-531+787+795+799 0
+-532+788+792+800 0
+-533+785+789+797 0
+-534+786+790+794 0
+-535+791+795+799 0
+-536+788+796+800 0
+-537+785+793+797 0
+-538+786+790+798 0
+-539+787+791+795 0
+-540+792+796+800 0
+-541+789+793+797 0
+-542+786+794+798 0
+-543+787+791+799 0
+-544+788+792+796 0
+-545+801+805+809 0
+-546+806+810+814 0
+-547+803+811+815 0
+-548+804+808+816 0
+-549+801+805+813 0
+-550+802+806+810 0
+-551+807+811+815 0
+-552+804+812+816 0
+-553+801+809+813 0
+-554+802+806+814 0
+-555+803+807+811 0
+-556+808+812+816 0
+-557+805+809+813 0
+-558+802+810+814 0
+-559+803+807+815 0
+-560+804+808+812 0
+-561+821+825+829 0
+-562+818+826+830 0
+-563+819+823+831 0
+-564+820+824+828 0
+-565+817+821+825 0
+-566+822+826+830 0
+-567+819+827+831 0
+-568+820+824+832 0
+-569+817+821+829 0
+-570+818+822+826 0
+-571+823+827+831 0
+-572+820+828+832 0
+-573+817+825+829 0
+-574+818+822+830 0
+-575+819+823+827 0
+-576+824+828+832 0
+515+516+833+1550+1551 0
+-514+516+834+1553+1554 0
+835+1556+1557 0
+836+1550+1559+1560 0
+519+520+837+1562+1563 0
+-518+520+838+1565+1566 0
+839+1568+1569 0
+840+1571+1572 0
+523+524+841+1574+1575 0
+-522+524+842+1577+1578 0
+843+1580+1581 0
+844+1574+1583+1584 0
+527+528+845+1586+1587 0
+-526+846+1589+1590 0
+847+1592+1593+1594 0
+525+848+1594+1596+1597 0
+531+532+849+1599+1600 0
+-530+850+1602+1603 0
+851+1605+1606 0
+852+1608+1609 0
+535+536+853+1611+1612 0
+-534+536+854+1614+1615 0
+855+1617+1618 0
+856+1620+1621 0
+539+540+857+1623+1624 0
+-538+540+858+1626+1627 0
+859+1626+1629+1630 0
+860+1624+1632+1633 0
+543+544+861+1635+1636 0
+-542+862+1638+1639+1640 0
+863+1640+1642+1643 0
+541+864+1645+1646 0
+547+548+865+1648+1649 0
+-546+548+866+1651+1652 0
+867+1654+1655 0
+868+1657+1658+1659 0
+551+552+869+1661+1662 0
+-550+552+870+1664+1665 0
+871+1667+1668 0
+872+1661+1670+1671 0
+555+556+873+1673+1674 0
+-554+556+874+1676+1677 0
+875+1679+1680 0
+876+1673+1682+1683 0
+559+560+877+1685+1686 0
+-558+878+1688+1689+1690 0
+879+1689+1692+1693 0
+557+880+1689+1695+1696 0
+563+564+881+1698+1699 0
+-562+882+1701+1702+1703 0
+883+1701+1705 0
+884+1698+1702+1707 0
+567+568+885+1709+1710 0
+-566+568+886+1712+1713 0
+887+1715+1716 0
+888+1710+1718+1719 0
+571+572+889+1721+1722 0
+-570+572+890+1724+1725 0
+891+1727+1728 0
+892+1722+1730+1731 0
+575+576+893+1733+1734 0
+-574+894+1736+1737 0
+895+1739+1740+1741 0
+573+896+1741+1743+1744 0
+-93+105+117+577+861+873+885 0
+66+94+106+578+834+862+874 0
+-67+95+119+579+835+863+887 0
+-68+108+120+580+836+876+888 0
+65+105+117+581+833+873+885 0
+-94+106+118+582+862+874+886 0
+-67+95+107+583+835+863+875 0
+-68+96+120+584+836+864+888 0
+-65+93+117+585+833+861+885 0
+-66+106+118+586+834+874+886 0
+-95+107+119+587+863+875+887 0
+-68+96+108+588+836+864+876 0
+65+93+105+589+833+861+873 0
+66+94+118+590+834+862+886 0
+-67+107+119+591+835+875+887 0
+-96+108+120+592+864+876+888 0
+69+81+121+593+837+849+889 0
+70+110+122+594+838+878+890 0
+-83+111+123+595+851+879+891 0
+72+84+112+596+840+852+880 0
+69+81+109+597+837+849+877 0
+70+82+122+598+838+850+890 0
+71+111+123+599+839+879+891 0
+84+112+124+600+852+880+892 0
+81+109+121+601+849+877+889 0
+-70+82+110+602+838+850+878 0
+71+83+123+603+839+851+891 0
+-72+112+124+604+840+880+892 0
+69+109+121+605+837+877+889 0
+-82+110+122+606+850+878+890 0
+-71+83+111+607+839+851+879 0
+72+84+124+608+840+852+892 0
+-73+85+97+609+841+853+865 0
+-74+86+126+610+842+854+894 0
+-75+99+127+611+843+867+895 0
+88+100+128+612+856+868+896 0
+85+97+125+613+853+865+893 0
+74+86+98+614+842+854+866 0
+-75+87+127+615+843+855+895 0
+76+100+128+616+844+868+896 0
+-73+97+125+617+841+865+893 0
+86+98+126+618+854+866+894 0
+75+87+99+619+843+855+867 0
+76+88+128+620+844+856+896 0
+-73+85+125+621+841+853+893 0
+74+98+126+622+842+866+894 0
+-87+99+127+623+855+867+895 0
+-76+88+100+624+844+856+868 0
+77+89+101+625+845+857+869 0
+-78+90+114+626+846+858+882 0
+-79+103+115+627+847+871+883 0
+92+104+116+628+860+872+884 0
+-89+101+113+629+857+869+881 0
+-78+90+102+630+846+858+870 0
+-79+91+115+631+847+859+883 0
+-80+104+116+632+848+872+884 0
+-77+101+113+633+845+869+881 0
+-90+102+114+634+858+870+882 0
+79+91+103+635+847+859+871 0
+80+92+116+636+848+860+884 0
+-77+89+113+637+845+857+881 0
+78+102+114+638+846+870+882 0
+91+103+115+639+859+871+883 0
+80+92+104+640+848+860+872 0
+579+580+897+1746+1747 0
+-578+898+1749+1750 0
+899+1752+1753 0
+900+1755+1756 0
+583+584+901+1758+1759 0
+-582+902+1761+1762+1763 0
+903+1763+1765 0
+904+1759+1762+1767 0
+587+588+905+1769+1770 0
+-586+588+906+1772+1773 0
+907+1775+1776 0
+908+1778+1779 0
+591+592+909+1781+1782 0
+-590+910+1784+1785 0
+911+1787+1788+1789 0
+589+912+1791+1792+1793 0
+595+596+913+1795+1796 0
+-594+596+914+1798+1799 0
+915+1801+1802 0
+916+1804+1805 0
+599+600+917+1807+1808 0
+-598+600+918+1810+1811 0
+919+1813+1814 0
+920+1816+1817 0
+603+604+921+1819+1820 0
+-602+604+922+1822+1823 0
+923+1825+1826 0
+924+1828+1829 0
+607+608+925+1831+1832 0
+-606+926+1834+1835 0
+927+1837+1838+1839 0
+605+928+1841+1842 0
+611+612+929+1844+1845 0
+-610+930+1847+1848+1849 0
+931+1847+1851 0
+932+1845+1848+1853 0
+615+616+933+1855+1856 0
+-614+616+934+1858+1859 0
+935+1861+1862 0
+936+1864+1865 0
+619+620+937+1867+1868 0
+-618+620+938+1870+1871 0
+939+1873+1874 0
+940+1868+1876+1877 0
+623+624+941+1879+1880 0
+-622+942+1882+1883+1884 0
+943+1886+1887+1888 0
+621+944+1890+1891 0
+627+628+945+1893+1894 0
+-626+628+946+1896+1897 0
+947+1899+1900 0
+948+1893+1902+1903 0
+631+632+949+1905+1906 0
+-630+632+950+1908+1909 0
+951+1908+1911+1912 0
+952+1914+1915 0
+635+636+953+1917+1918 0
+-634+636+954+1920+1921 0
+955+1923+1924 0
+956+1918+1926+1927 0
+639+640+957+1929+1930 0
+-638+958+1932+1933+1934 0
+959+1932+1936+1937 0
+637+960+1936+1939 0
+-65+129+257+897 0
+66+130+258+898 0
+-67+131+259+899 0
+-68+132+260+900 0
+-69+133+261+901 0
+70+134+262+902 0
+-71+135+263+903 0
+72+136+264+904 0
+-73+137+265+905 0
+-74+138+266+906 0
+75+139+267+907 0
+-76+140+268+908 0
+77+141+269+909 0
+-78+142+270+910 0
+-79+143+271+911 0
+-80+144+272+912 0
+-81+145+273+913 0
+-82+146+274+914 0
+83+147+275+915 0
+-84+148+276+916 0
+-85+149+277+917 0
+-86+150+278+918 0
+-87+151+279+919 0
+88+152+280+920 0
+89+153+281+921 0
+90+154+282+922 0
+91+155+283+923 0
+-92+156+284+924 0
+-93+157+285+925 0
+94+158+286+926 0
+95+159+287+927 0
+-96+160+288+928 0
+-97+161+289+929 0
+-98+162+290+930 0
+99+163+291+931 0
+100+164+292+932 0
+101+165+293+933 0
+-102+166+294+934 0
+-103+167+295+935 0
+-104+168+296+936 0
+105+169+297+937 0
+106+170+298+938 0
+-107+171+299+939 0
+108+172+300+940 0
+-109+173+301+941 0
+-110+174+302+942 0
+-111+175+303+943 0
+-112+176+304+944 0
+-113+177+305+945 0
+-114+178+306+946 0
+-115+179+307+947 0
+116+180+308+948 0
+-117+181+309+949 0
+-118+182+310+950 0
+119+183+311+951 0
+120+184+312+952 0
+-121+185+313+953 0
+122+186+314+954 0
+123+187+315+955 0
+124+188+316+956 0
+-125+189+317+957 0
+126+190+318+958 0
+127+191+319+959 0
+128+192+320+960 0
+-193 0
+-194 0
+-195 0
+-196 0
+197 0
+-198 0
+199 0
+200 0
+-201 0
+202 0
+-203 0
+204 0
+-205 0
+-206 0
+207 0
+208 0
+-209 0
+210 0
+-211 0
+212 0
+213 0
+214 0
+-215 0
+-216 0
+-217 0
+218 0
+219 0
+220 0
+221 0
+-222 0
+-223 0
+-224 0
+225 0
+-226 0
+-227 0
+-228 0
+229 0
+-230 0
+231 0
+232 0
+-233 0
+-234 0
+-235 0
+236 0
+237 0
+-238 0
+-239 0
+240 0
+-241 0
+-242 0
+243 0
+244 0
+245 0
+246 0
+247 0
+-248 0
+-249 0
+250 0
+251 0
+252 0
+-253 0
+-254 0
+255 0
+256 0
+257 0
+-258 0
+259 0
+260 0
+261 0
+262 0
+263 0
+264 0
+-265 0
+-266 0
+267 0
+-268 0
+-269 0
+-270 0
+-271 0
+-272 0
+273 0
+274 0
+275 0
+-276 0
+277 0
+-278 0
+279 0
+280 0
+281 0
+282 0
+283 0
+284 0
+285 0
+286 0
+287 0
+288 0
+-289 0
+290 0
+291 0
+-292 0
+-293 0
+-294 0
+-295 0
+-296 0
+297 0
+-298 0
+299 0
+300 0
+-301 0
+-302 0
+303 0
+-304 0
+305 0
+-306 0
+307 0
+-308 0
+309 0
+310 0
+311 0
+312 0
+313 0
+-314 0
+-315 0
+316 0
+317 0
+-318 0
+319 0
+-320 0
+1 0
+-2 0
+3 0
+-4 0
+5 0
+6 0
+-7 0
+-8 0
+9 0
+10 0
+-11 0
+-12 0
+13 0
+14 0
+-15 0
+-16 0
+17 0
+18 0
+19 0
+20 0
+-21 0
+-22 0
+23 0
+24 0
+25 0
+26 0
+27 0
+-28 0
+29 0
+-30 0
+31 0
+32 0
+-33 0
+-34 0
+-35 0
+-36 0
+-37 0
+-38 0
+39 0
+-40 0
+41 0
+-42 0
+-43 0
+-44 0
+-45 0
+46 0
+-47 0
+-48 0
+49 0
+-50 0
+51 0
+-52 0
+-53 0
+54 0
+-55 0
+56 0
+57 0
+58 0
+59 0
+60 0
+-61 0
+62 0
+63 0
+-64 0
+65 0
+-66 0
+67 0
+68 0
+69 0
+-70 0
+-71 0
+72 0
+73 0
+-74 0
+75 0
+-76 0
+-77 0
+78 0
+79 0
+80 0
+-81 0
+82 0
+-83 0
+84 0
+-85 0
+-86 0
+-87 0
+-88 0
+89 0
+-90 0
+91 0
+-92 0
+-93 0
+-94 0
+95 0
+96 0
+-97 0
+-98 0
+99 0
+100 0
+-641+643+644+961+1940+1941 0
+642+643+964+965+967 0
+-641+643+644+963+968 0
+642+970+1942 0
+-645+647+648+972+973+1943 0
+-645+646+648+975+977+1944 0
+-645+647+648+973+978 0
+646+981+1945 0
+-649+651+652+984+1946+1947 0
+-649+650+652+987+988+1948 0
+-650+990+1949 0
+-651+994+1950 0
+-653+655+656+997+1951+1952 0
+654+655+1000+1001 0
+-654+1003+1953 0
+-655+1007+1954 0
+-657+659+660+1009+1955+1956 0
+-657+658+660+1012+1957 0
+-657+659+660+1015+1956 0
+658+1010+1014+1018 0
+-661+663+664+1021+1028+1958 0
+-661+662+664+1024+1026+1959 0
+-661+663+664+1023+1027 0
+662+1023+1026+1030 0
+-665+667+668+1033+1034+1960 0
+-665+666+668+1036+1038+1961 0
+-665+667+668+1034+1039 0
+-667+1042+1962 0
+-669+671+672+1046+1963+1964 0
+670+671+1049+1050+1051 0
+-670+1050+1053 0
+-671+1051+1056+1057 0
+-673+675+676+1059+1965+1966 0
+-673+674+676+1062+1967 0
+-673+675+676+1061+1065 0
+674+1068+1968 0
+-677+679+680+1071+1079+1969 0
+-677+678+680+1074+1075+1970 0
+-677+679+680+1073+1077 0
+678+1080+1971 0
+-681+683+684+1083+1972+1973 0
+-681+682+684+1086+1087+1973 0
+-681+683+684+1085+1089 0
+-683+1092+1974 0
+-685+687+688+1095+1096+1975 0
+686+687+1098+1104+1976 0
+-686+1101+1104 0
+-687+1105+1107+1976 0
+-689+691+692+1108+1110+1977 0
+-689+690+692+1111+1978 0
+-689+691+692+1110+1114 0
+690+1117+1979 0
+-693+695+696+1120+1128+1980 0
+-693+694+696+1123+1981 0
+-693+695+696+1122+1126 0
+694+1125+1129+1131 0
+-697+699+700+1133+1141+1982 0
+-697+698+700+1136+1983+1984 0
+-697+699+700+1135+1139 0
+698+1142+1985 0
+-701+703+704+1145+1149+1986 0
+702+703+1148+1149+1150 0
+-702+1150+1152 0
+-703+1149+1155+1156 0
+-705+707+708+1158+1166+1987 0
+-705+706+708+1161+1988 0
+-705+707+708+1159+1164 0
+706+1167+1989 0
+-709+711+712+1170+1178+1990 0
+-709+710+712+1173+1991 0
+-709+711+712+1172+1176 0
+710+1179+1992 0
+-713+715+716+1183+1190+1993 0
+-713+714+716+1186+1994 0
+-713+715+716+1185+1189 0
+-715+1192+1995 0
+-717+719+720+1196+1197+1996 0
+718+719+1199+1997 0
+-718+1202+1203 0
+-719+1206+1998 0
+-721+723+724+1209+1216+1999 0
+-721+722+724+1212+1213+2000 0
+-721+723+724+1211+1215 0
+722+1211+1213+1218 0
+-725+727+728+1221+1223+2001 0
+-725+726+728+1224+2002+2003 0
+-725+727+728+1223+1227 0
+726+1230+2004 0
+-729+731+732+1233+1235+2005 0
+-729+730+732+1236+2006 0
+-729+731+732+1235+1239 0
+730+1242+2007 0
+-733+735+736+1245+2008+2009 0
+734+735+1248+1254+2010 0
+-734+1251+2010 0
+-735+1254+1255+2011 0
+-737+739+740+1257+1258+2012 0
+-737+738+740+1260+2013 0
+-737+739+740+1258+1263 0
+738+1266+2014 0
+-741+743+744+1269+2015+2016 0
+-741+742+744+1272+2017 0
+-741+743+744+1271+1275 0
+-743+1277+1278+1280 0
+-745+747+748+1282+1289+2018 0
+-745+746+748+1285+2019 0
+-745+747+748+1283+1288 0
+746+1291+2020 0
+-749+751+752+1294+1295+2021 0
+750+751+1297+1298+1300 0
+-750+1298+1301 0
+-751+1305+2022 0
+-753+755+756+1307+2023+2024 0
+-753+754+756+1310+2025 0
+-753+755+756+1308+1313 0
+754+1316+2026 0
+-757+759+760+1319+1326+2027 0
+-757+758+760+1322+2028 0
+-757+759+760+1320+1325 0
+-759+1328+2029 0
+-761+763+764+1332+1340+2030 0
+-761+762+764+1335+1337+2031 0
+-761+763+764+1333+1338 0
+762+1341+2032 0
+-765+767+768+1344+1346+2033 0
+766+767+1347+2034+2035 0
+-766+1350+2034 0
+-767+1352+1353+2035 0
+-769+771+772+1356+1358+2036 0
+-769+770+772+1359+2037 0
+-769+771+772+1358+1362 0
+770+1358+1361+1365 0
+-773+775+776+1368+1369+2038 0
+-773+774+776+1371+1372+2039 0
+-773+775+776+1369+1374 0
+-775+1377+2040 0
+-777+779+780+1380+2041+2042 0
+-777+778+780+1383+2043 0
+-777+778+1385+1386 0
+-779+1389+2044 0
+-781+783+784+1392+2045+2046 0
+782+783+1395+1400+2047 0
+-782+1398+2047 0
+-783+1400+1402+2048 0
+-785+787+788+1404+1406+2049 0
+786+787+1407+2050 0
+-785+787+788+1406+1411 0
+786+1406+1413+2051 0
+-789+791+792+1415+1422+2052 0
+-789+790+792+1418+2053 0
+-789+791+792+1416+1421 0
+790+1416+1419+1424 0
+-793+795+796+1427+1429+2054 0
+-793+794+796+1430+1432+2055 0
+-793+795+796+1429+1433 0
+794+1429+1432+1436 0
+-797+799+800+1439+1448+2056 0
+798+799+1442+1448+2057 0
+-798+1445+2058 0
+-799+1449+2059 0
+-801+803+804+1451+1459+2060 0
+-801+802+804+1454+1455+2061 0
+-801+803+804+1452+1457 0
+802+1460+2062 0
+-805+807+808+1463+2063+2064 0
+-805+806+808+1466+1467+2064 0
+-805+807+808+1464+1469 0
+806+1464+1467+1472 0
+-809+811+812+1475+2065+2066 0
+-809+810+812+1478+1479+2066 0
+-809+811+812+1477+1481 0
+-811+1484+2067 0
+-813+815+816+1488+1490+2068 0
+814+815+1491+2069 0
+-814+1492+1495 0
+-815+1497+1498 0
+-817+819+820+1501+2070+2071 0
+-817+818+820+1504+2072 0
+-817+819+820+1502+1507 0
+818+1502+1505+1510 0
+-821+823+824+1513+1520+2073 0
+-821+822+824+1516+2074 0
+-821+823+824+1514+1519 0
+822+1514+1518+1522 0
+-825+827+828+1525+2075+2076 0
+-825+826+828+1528+2077 0
+-825+827+828+1526+1531 0
+826+1534+2078 0
+-829+831+832+1537+2079+2080 0
+830+831+1540+2081+2082 0
+-830+1543+2082 0
+-831+1546+2083 0
+-513+515+516+1549+2084+2085 0
+-513+514+516+1552+2086 0
+-513+515+516+1550+1555 0
+514+1550+1554+1558 0
+-517+519+520+1561+2087+2088 0
+-517+518+520+1564+2089 0
+-517+518+1566+1567 0
+518+1570+2090 0
+-521+523+524+1573+2091+2092 0
+-521+522+524+1576+1577+2092 0
+-521+523+524+1579+2093 0
+522+1577+1582+2093 0
+-525+527+528+1585+2094+2095 0
+526+527+1588+1589 0
+-526+1591+1594 0
+-527+1592+1595 0
+-529+531+532+1598+1599+2096 0
+530+531+1601+1605+2097 0
+-529+531+532+1599+1604 0
+530+1607+2098 0
+-533+535+536+1610+2099+2100 0
+-533+534+536+1613+1614+2100 0
+-533+535+536+1612+1616 0
+534+1619+2101 0
+-537+539+540+1622+2102+2103 0
+-537+538+540+1625+1626+2104 0
+-537+538+1626+1628 0
+538+1631+2105 0
+-541+543+544+1634+1635+2106 0
+542+543+1637+1638+1640 0
+-542+1640+1641 0
+-543+1638+1644+2107 0
+-545+547+548+1647+1655+2108 0
+-545+546+548+1650+2109 0
+-545+547+548+1653+1659 0
+546+1656+2110 0
+-549+551+552+1660+2111+2112 0
+-549+550+552+1663+1664+2112 0
+-549+551+552+1661+1666 0
+550+1661+1664+1669 0
+-553+555+556+1672+1673+2113 0
+-553+554+556+1675+1677+2114 0
+-553+555+556+1673+1678 0
+554+1681+2115 0
+-557+559+560+1684+2116+2117 0
+558+559+1687+2118 0
+-558+1689+1691 0
+-559+1693+1694 0
+-561+563+564+1697+2119+2120 0
+562+563+1700+2121 0
+-561+563+564+1698+1704 0
+562+1698+1706+2122 0
+-565+567+568+1708+2123+2124 0
+-565+566+568+1711+1713+2124 0
+-565+567+568+1710+1714 0
+566+1710+1713+1717 0
+-569+571+572+1720+2125+2126 0
+-569+570+572+1723+1725+2126 0
+-569+571+572+1722+1726 0
+570+1729+2127 0
+-573+575+576+1732+2128+2129 0
+574+575+1735+1736 0
+-574+1738+1741 0
+-575+1742+1743+2129 0
+-577+579+580+1745+1746+2130 0
+578+579+1748+1753+2131 0
+-577+579+580+1746+1751 0
+578+1746+1754+2132 0
+-581+583+584+1757+2133+2134 0
+582+583+1760+2135 0
+-581+583+584+1759+1764 0
+582+1766+2136 0
+-585+587+588+1768+1770+2137 0
+-585+586+588+1771+1772+2138 0
+-585+587+588+1770+1774 0
+586+1777+2139 0
+-589+591+592+1780+1789+2140 0
+590+591+1783+1789+1792 0
+-590+1786+1792 0
+-591+1789+1790+1793 0
+-593+595+596+1794+2141+2142 0
+-593+594+596+1797+1799+2142 0
+-593+595+596+1796+1800 0
+594+1796+1799+1803 0
+-597+599+600+1806+1814+2143 0
+-597+598+600+1809+1810+2144 0
+-597+599+600+1807+1812 0
+598+1807+1810+1815 0
+-601+603+604+1818+1820+2145 0
+-601+602+604+1821+2146 0
+-601+603+604+1820+1824 0
+602+1827+2147 0
+-605+607+608+1830+2148+2149 0
+606+607+1833+1835 0
+-606+1836+1839 0
+-607+1840+2149+2150 0
+-609+611+612+1843+2151+2152 0
+610+611+1846+1847+1848 0
+-609+611+612+1845+1850 0
+610+1845+1852+2153 0
+-613+615+616+1854+1862+2154 0
+-613+614+616+1857+2155 0
+-613+615+616+1856+1860 0
+614+1863+2156 0
+-617+619+620+1866+1874+2157 0
+-617+618+620+1869+1871+2158 0
+-617+619+620+1868+1872 0
+618+1875+2159 0
+-621+623+624+1878+2160+2161 0
+622+623+1881+1887 0
+-622+1883+1885 0
+-623+1884+1888+1889 0
+-625+627+628+1892+2162+2163 0
+-625+626+628+1895+1896+2163 0
+-625+627+628+1893+1898 0
+626+1893+1896+1901 0
+-629+631+632+1904+2164+2165 0
+-629+630+632+1907+2166 0
+-629+630+1908+1910 0
+630+1906+1908+1913 0
+-633+635+636+1916+1923+2167 0
+-633+634+636+1919+2168 0
+-633+635+636+1922+2169 0
+634+1925+2169+2170 0
+-637+639+640+1928+1930+2171 0
+638+639+1931+1932+1934 0
+-638+1934+1935 0
+-639+1938+2172 0
+-644+1941 -641 0
+644 -1941 0
+641 -1941 0
+-620+1868 -619 0
+620 -1868 0
+619 -1868 0
+-798+2057 -799 0
+798 -2057 0
+799 -2057 0
+-556+1677 -554 0
+556 -1677 0
+554 -1677 0
+-613+614 -616+2155 0
+616 -2155 0
+613+614 -2155 0
+-692+1112 -690 0
+692 -1112 0
+690 -1112 0
+-1576+1578 -523 0
+1576 -1578 0
+523 -1578 0
+-577+1753 -579 0
+577 -1753 0
+579 -1753 0
+-821+822 -824+2074 0
+824 -2074 0
+821+822 -2074 0
+-597+599 -600+2143 0
+600 -2143 0
+597+599 -2143 0
+-1854+1855 -614 0
+1854 -1855 0
+614 -1855 0
+-669+1051 -671 0
+669 -1051 0
+671 -1051 0
+-1301+1303 -752 0
+1301 -1303 0
+752 -1303 0
+-603+1820 -604 0
+603 -1820 0
+604 -1820 0
+-614+615 -616+2156 0
+616 -2156 0
+614+615 -2156 0
+-595+1801 -593 0
+595 -1801 0
+593 -1801 0
+-718+1198 -1196 0
+718 -1198 0
+1196 -1198 0
+-611+1845 -612 0
+611 -1845 0
+612 -1845 0
+-614+616+1864 -615 0
+614+616 -1864 0
+615 -1864 0
+-795+1429 -796 0
+795 -1429 0
+796 -1429 0
+-631+1912 -1910 0
+631 -1912 0
+1910 -1912 0
+-570+571 -572+2127 0
+572 -2127 0
+570+571 -2127 0
+-658+1014 -660 0
+658 -1014 0
+660 -1014 0
+-800+1444 -1442 0
+800 -1444 0
+1442 -1444 0
+-689+690+1978 -692 0
+689+690 -1978 0
+692 -1978 0
+-530+532 -531+1608 0
+531 -1608 0
+530+532 -1608 0
+-1325+1327 -758 0
+1325 -1327 0
+758 -1327 0
+-1742+1744 -576 0
+1742 -1744 0
+576 -1744 0
+-589+1793 -590 0
+589 -1793 0
+590 -1793 0
+-605+1837 -606+607 0
+605 -1837 0
+606+607 -1837 0
+-521+524+2091 -523 0
+521+524 -2091 0
+523 -2091 0
+-1024+1025 -663 0
+1024 -1025 0
+663 -1025 0
+-749+750 -751+1302 0
+751 -1302 0
+749+750 -1302 0
+-789+1426 -1424 0
+789 -1426 0
+1424 -1426 0
+-586+588+1778 -587 0
+586+588 -1778 0
+587 -1778 0
+-777+780 -779+2041 0
+779 -2041 0
+777+780 -2041 0
+-1398+1401 -784 0
+1398 -1401 0
+784 -1401 0
+-531+532+2096 -529 0
+531+532 -2096 0
+529 -2096 0
+-1407+1410 -788 0
+1407 -1410 0
+788 -1410 0
+-687+1096 -688 0
+687 -1096 0
+688 -1096 0
+-612+2153 -610 0
+612 -2153 0
+610 -2153 0
+-674+1067 -1065 0
+674 -1067 0
+1065 -1067 0
+-562+1702 -563 0
+562 -1702 0
+563 -1702 0
+-1145+1146 -702 0
+1145 -1146 0
+702 -1146 0
+-755+1317 -754 0
+755 -1317 0
+754 -1317 0
+-1531+1533 -826 0
+1531 -1533 0
+826 -1533 0
+-647+976 -975 0
+647 -976 0
+975 -976 0
+-793+1434 -795 0
+793 -1434 0
+795 -1434 0
+-653+1952 -656 0
+653 -1952 0
+656 -1952 0
+-606+1831 -1830 0
+606 -1831 0
+1830 -1831 0
+-1919+1921 -635 0
+1919 -1921 0
+635 -1921 0
+-809+2067 -810+811 0
+809 -2067 0
+810+811 -2067 0
+-573+574+1736 -575 0
+573+574 -1736 0
+575 -1736 0
+-1513+1515 -822 0
+1513 -1515 0
+822 -1515 0
+-625+2163 -628 0
+625 -2163 0
+628 -2163 0
+-730+732 -731+1244 0
+731 -1244 0
+730+732 -1244 0
+-581+584+2133 -583 0
+581+584 -2133 0
+583 -2133 0
+-686+687+1102 -685 0
+686+687 -1102 0
+685 -1102 0
+-714+1184 -1183 0
+714 -1184 0
+1183 -1184 0
+-790+1417 -1415 0
+790 -1417 0
+1415 -1417 0
+-576+1737 -1735 0
+576 -1737 0
+1735 -1737 0
+-1913+1914 -629 0
+1913 -1914 0
+629 -1914 0
+-753+756 -755+2023 0
+755 -2023 0
+753+756 -2023 0
+-678+1072 -1071 0
+678 -1072 0
+1071 -1072 0
+-566+1718 -567 0
+566 -1718 0
+567 -1718 0
+-737+1264 -739 0
+737 -1264 0
+739 -1264 0
+-757+759+2027 -760 0
+757+759 -2027 0
+760 -2027 0
+-664+1959 -661 0
+664 -1959 0
+661 -1959 0
+-665+1962 -666+667 0
+665 -1962 0
+666+667 -1962 0
+-1242+1243 -729 0
+1242 -1243 0
+729 -1243 0
+-743+1271 -744 0
+743 -1271 0
+744 -1271 0
+-629+630 -632+2166 0
+632 -2166 0
+629+630 -2166 0
+-648+1944 -645 0
+648 -1944 0
+645 -1944 0
+-1875+1876 -617 0
+1875 -1876 0
+617 -1876 0
+-1374+1375 -774 0
+1374 -1375 0
+774 -1375 0
+-673+1066 -675 0
+673 -1066 0
+675 -1066 0
+-535+1612 -536 0
+535 -1612 0
+536 -1612 0
+-520+1562 -519 0
+520 -1562 0
+519 -1562 0
+-588+2138 -585 0
+588 -2138 0
+585 -2138 0
+-711+1181 -712 0
+711 -1181 0
+712 -1181 0
+-1120+1121 -694 0
+1120 -1121 0
+694 -1121 0
+-549+552+2111 -551 0
+549+552 -2111 0
+551 -2111 0
+-550+1662 -1660 0
+550 -1662 0
+1660 -1662 0
+-622+1879 -1878 0
+622 -1879 0
+1878 -1879 0
+-824+1518 -822 0
+824 -1518 0
+822 -1518 0
+-798+799+2059 -797 0
+798+799 -2059 0
+797 -2059 0
+-525+528 -527+2094 0
+527 -2094 0
+525+528 -2094 0
+-621+623 -622+1890 0
+622 -1890 0
+621+623 -1890 0
+-714+1195 -713 0
+714 -1195 0
+713 -1195 0
+-773+2040 -774+775 0
+773 -2040 0
+774+775 -2040 0
+-1313+1314 -754 0
+1313 -1314 0
+754 -1314 0
+-814+1499 -813 0
+814 -1499 0
+813 -1499 0
+-825+1535 -1534 0
+825 -1535 0
+1534 -1535 0
+-632+2165 -629 0
+632 -2165 0
+629 -2165 0
+-694+1125 -696 0
+694 -1125 0
+696 -1125 0
+-1507+1508 -818 0
+1507 -1508 0
+818 -1508 0
+-753+754 -756+2025 0
+756 -2025 0
+753+754 -2025 0
+-1904+1905 -630 0
+1904 -1905 0
+630 -1905 0
+-605+607+2148 -608 0
+605+607 -2148 0
+608 -2148 0
+-648+973 -647 0
+648 -973 0
+647 -973 0
+-555+1676 -1675 0
+555 -1676 0
+1675 -1676 0
+-794+1432 -796 0
+794 -1432 0
+796 -1432 0
+-757+2029 -758+759 0
+757 -2029 0
+758+759 -2029 0
+-771+1358 -772 0
+771 -1358 0
+772 -1358 0
+-746+747+2020 -748 0
+746+747 -2020 0
+748 -2020 0
+-779+1382 -780 0
+779 -1382 0
+780 -1382 0
+-652+993 -990 0
+652 -993 0
+990 -993 0
+-680+1970 -677 0
+680 -1970 0
+677 -1970 0
+-601+602+2146 -604 0
+601+602 -2146 0
+604 -2146 0
+-528+1590 -1588 0
+528 -1590 0
+1588 -1590 0
+-602+603+2147 -604 0
+602+603 -2147 0
+604 -2147 0
+-816+1493 -1491 0
+816 -1493 0
+1491 -1493 0
+-1062+1064 -675 0
+1062 -1064 0
+675 -1064 0
+-768+1351 -1350 0
+768 -1351 0
+1350 -1351 0
+-601+1829 -1827 0
+601 -1829 0
+1827 -1829 0
+-1036+1037 -667 0
+1036 -1037 0
+667 -1037 0
+-630+632 -631+1915 0
+631 -1915 0
+630+632 -1915 0
+-829+2081 -831 0
+829 -2081 0
+831 -2081 0
+-680+1075 -678 0
+680 -1075 0
+678 -1075 0
+-637+639 -638+1936 0
+638 -1936 0
+637+639 -1936 0
+-785+786+2050 -787 0
+785+786 -2050 0
+787 -2050 0
+-1335+1336 -763 0
+1335 -1336 0
+763 -1336 0
+-1392+1394 -782 0
+1392 -1394 0
+782 -1394 0
+-544+1643 -1641 0
+544 -1643 0
+1641 -1643 0
+-683+1088 -1086 0
+683 -1088 0
+1086 -1088 0
+-613+1862 -615 0
+613 -1862 0
+615 -1862 0
+-781+782 -783+1397 0
+783 -1397 0
+781+782 -1397 0
+-673+674+1967 -676 0
+673+674 -1967 0
+676 -1967 0
+-684+1087 -682 0
+684 -1087 0
+682 -1087 0
+-781+783+1399 -782 0
+781+783 -1399 0
+782 -1399 0
+-619+1874 -617 0
+619 -1874 0
+617 -1874 0
+-1095+1097 -686 0
+1095 -1097 0
+686 -1097 0
+-1647+1648 -546 0
+1647 -1648 0
+546 -1648 0
+-545+546+2109 -548 0
+545+546 -2109 0
+548 -2109 0
+-540+2103 -537 0
+540 -2103 0
+537 -2103 0
+-620+2158 -617 0
+620 -2158 0
+617 -2158 0
+-1042+1044 -668 0
+1042 -1044 0
+668 -1044 0
+-681+683+1094 -682 0
+681+683 -1094 0
+682 -1094 0
+-550+1664 -552 0
+550 -1664 0
+552 -1664 0
+-639+1930 -640 0
+639 -1930 0
+640 -1930 0
+-645+1943 -647+648 0
+645 -1943 0
+647+648 -1943 0
+-538+539+2105 -540 0
+538+539 -2105 0
+540 -2105 0
+-556+2114 -553 0
+556 -2114 0
+553 -2114 0
+-564+1698 -563 0
+564 -1698 0
+563 -1698 0
+-544+1635 -543 0
+544 -1635 0
+543 -1635 0
+-762+1337 -764 0
+762 -1337 0
+764 -1337 0
+-707+1166 -705 0
+707 -1166 0
+705 -1166 0
+-531+1599 -532 0
+531 -1599 0
+532 -1599 0
+-726+2003 -728 0
+726 -2003 0
+728 -2003 0
+-828+2076 -825 0
+828 -2076 0
+825 -2076 0
+-1255+1256 -736 0
+1255 -1256 0
+736 -1256 0
+-806+1471 -1469 0
+806 -1471 0
+1469 -1471 0
+-773+775 -774+1378 0
+774 -1378 0
+773+775 -1378 0
+-618+619 -620+2159 0
+620 -2159 0
+618+619 -2159 0
+-633+635+2167 -636 0
+633+635 -2167 0
+636 -2167 0
+-636+2169 -635 0
+636 -2169 0
+635 -2169 0
+-560+1686 -559 0
+560 -1686 0
+559 -1686 0
+-678+1078 -1077 0
+678 -1078 0
+1077 -1078 0
+-700+1135 -699 0
+700 -1135 0
+699 -1135 0
+-743+1277 -741 0
+743 -1277 0
+741 -1277 0
+-1803+1805 -593 0
+1803 -1805 0
+593 -1805 0
+-1108+1109 -690 0
+1108 -1109 0
+690 -1109 0
+-624+1886 -1885 0
+624 -1886 0
+1885 -1886 0
+-759+1320 -760 0
+759 -1320 0
+760 -1320 0
+-584+1761 -1760 0
+584 -1761 0
+1760 -1761 0
+-552+2112 -549 0
+552 -2112 0
+549 -2112 0
+-749+1304 -750 0
+749 -1304 0
+750 -1304 0
+-719+1197 -720 0
+719 -1197 0
+720 -1197 0
+-601+2145 -603+604 0
+601 -2145 0
+603+604 -2145 0
+-521+1581 -523 0
+521 -1581 0
+523 -1581 0
+-829+830+1542 -831 0
+829+830 -1542 0
+831 -1542 0
+-1783+1784 -592 0
+1783 -1784 0
+592 -1784 0
+-1478+1480 -811 0
+1478 -1480 0
+811 -1480 0
+-721+723+1999 -724 0
+721+723 -1999 0
+724 -1999 0
+-709+710+1991 -712 0
+709+710 -1991 0
+712 -1991 0
+-534+535+2101 -536 0
+534+535 -2101 0
+536 -2101 0
+-1681+1682 -553 0
+1681 -1682 0
+553 -1682 0
+-1275+1276 -742 0
+1275 -1276 0
+742 -1276 0
+-561+564+2119 -563 0
+561+564 -2119 0
+563 -2119 0
+-577+2130 -579+580 0
+577 -2130 0
+579+580 -2130 0
+-707+1162 -1161 0
+707 -1162 0
+1161 -1162 0
+-1774+1776 -586 0
+1774 -1776 0
+586 -1776 0
+-589+590+1785 -591 0
+589+590 -1785 0
+591 -1785 0
+-799+1441 -800 0
+799 -1441 0
+800 -1441 0
+-518+1566 -520 0
+518 -1566 0
+520 -1566 0
+-525+526+1589 -527 0
+525+526 -1589 0
+527 -1589 0
+-544+1639 -1637 0
+544 -1639 0
+1637 -1639 0
+-1931+1933 -640 0
+1931 -1933 0
+640 -1933 0
+-677+1079 -679 0
+677 -1079 0
+679 -1079 0
+-1628+1630 -539 0
+1628 -1630 0
+539 -1630 0
+-653+655 -654+1004 0
+654 -1004 0
+653+655 -1004 0
+-724+1211 -723 0
+724 -1211 0
+723 -1211 0
+-771+1360 -1359 0
+771 -1360 0
+1359 -1360 0
+-981+982 -645 0
+981 -982 0
+645 -982 0
+-717+718+1997 -719 0
+717+718 -1997 0
+719 -1997 0
+-1049+1052 -672 0
+1049 -1052 0
+672 -1052 0
+-769+770 -772+2037 0
+772 -2037 0
+769+770 -2037 0
+-810+1487 -811 0
+810 -1487 0
+811 -1487 0
+-790+1423 -1421 0
+790 -1423 0
+1421 -1423 0
+-1269+1270 -742 0
+1269 -1270 0
+742 -1270 0
+-561+1707 -1706 0
+561 -1707 0
+1706 -1707 0
+-625+1903 -1901 0
+625 -1903 0
+1901 -1903 0
+-1818+1819 -602 0
+1818 -1819 0
+602 -1819 0
+-745+1289 -747 0
+745 -1289 0
+747 -1289 0
+-725+1228 -727 0
+725 -1228 0
+727 -1228 0
+-751+1295 -752 0
+751 -1295 0
+752 -1295 0
+-737+738+2013 -740 0
+737+738 -2013 0
+740 -2013 0
+-825+826 -828+2077 0
+828 -2077 0
+825+826 -2077 0
+-557+558+2118 -559 0
+557+558 -2118 0
+559 -2118 0
+-557+2117 -560 0
+557 -2117 0
+560 -2117 0
+-649+1947 -651 0
+649 -1947 0
+651 -1947 0
+-603+1822 -1821 0
+603 -1822 0
+1821 -1822 0
+-1528+1529 -827 0
+1528 -1529 0
+827 -1529 0
+-633+634+2168 -636 0
+633+634 -2168 0
+636 -2168 0
+-1030+1032 -661 0
+1030 -1032 0
+661 -1032 0
+-580+1746 -579 0
+580 -1746 0
+579 -1746 0
+-607+1839 -606 0
+607 -1839 0
+606 -1839 0
+-1460+1462 -801 0
+1460 -1462 0
+801 -1462 0
+-808+1464 -807 0
+808 -1464 0
+807 -1464 0
+-794+796+1437 -795 0
+794+796 -1437 0
+795 -1437 0
+-664+1023 -663 0
+664 -1023 0
+663 -1023 0
+-515+1550 -516 0
+515 -1550 0
+516 -1550 0
+-1711+1712 -567 0
+1711 -1712 0
+567 -1712 0
+-567+1710 -568 0
+567 -1710 0
+568 -1710 0
+-574+1743 -573 0
+574 -1743 0
+573 -1743 0
+-611+1848 -610 0
+611 -1848 0
+610 -1848 0
+-1288+1290 -746 0
+1288 -1290 0
+746 -1290 0
+-1922+1924 -634 0
+1922 -1924 0
+634 -1924 0
+-1780+1782 -590 0
+1780 -1782 0
+590 -1782 0
+-513+514+2086 -516 0
+513+514 -2086 0
+516 -2086 0
+-569+1728 -571 0
+569 -1728 0
+571 -1728 0
+-793+2054 -795+796 0
+793 -2054 0
+795+796 -2054 0
+-624+1891 -1889 0
+624 -1891 0
+1889 -1891 0
+-815+816+2068 -813 0
+815+816 -2068 0
+813 -2068 0
+-656+1002 -1000 0
+656 -1002 0
+1000 -1002 0
+-1111+1113 -691 0
+1111 -1113 0
+691 -1113 0
+-781+2046 -784 0
+781 -2046 0
+784 -2046 0
+-698+699 -700+1985 0
+700 -1985 0
+698+699 -1985 0
+-705+1169 -1167 0
+705 -1169 0
+1167 -1169 0
+-662+1022 -1021 0
+662 -1022 0
+1021 -1022 0
+-1080+1082 -677 0
+1080 -1082 0
+677 -1082 0
+-738+1259 -1257 0
+738 -1259 0
+1257 -1259 0
+-765+766 -767+1348 0
+767 -1348 0
+765+766 -1348 0
+-1307+1309 -754 0
+1307 -1309 0
+754 -1309 0
+-733+734+1249 -735 0
+733+734 -1249 0
+735 -1249 0
+-725+2001 -727+728 0
+725 -2001 0
+727+728 -2001 0
+-761+2031 -764 0
+761 -2031 0
+764 -2031 0
+-550+1671 -551 0
+550 -1671 0
+551 -1671 0
+-625+1900 -627 0
+625 -1900 0
+627 -1900 0
+-680+1073 -679 0
+680 -1073 0
+679 -1073 0
+-688+1100 -1098 0
+688 -1100 0
+1098 -1100 0
+-741+742+2017 -744 0
+741+742 -2017 0
+744 -2017 0
+-1089+1091 -682 0
+1089 -1091 0
+682 -1091 0
+-1436+1438 -793 0
+1436 -1438 0
+793 -1438 0
+-727+1226 -1224 0
+727 -1226 0
+1224 -1226 0
+-542+1636 -1634 0
+542 -1636 0
+1634 -1636 0
+-762+763+2032 -764 0
+762+763 -2032 0
+764 -2032 0
+-597+1817 -1815 0
+597 -1817 0
+1815 -1817 0
+-651+986 -652 0
+651 -986 0
+652 -986 0
+-670+1056 -669 0
+670 -1056 0
+669 -1056 0
+-541+2106 -543+544 0
+541 -2106 0
+543+544 -2106 0
+-592+1781 -591 0
+592 -1781 0
+591 -1781 0
+-630+1911 -629 0
+630 -1911 0
+629 -1911 0
+-745+746+2019 -748 0
+745+746 -2019 0
+748 -2019 0
+-519+1569 -1567 0
+519 -1569 0
+1567 -1569 0
+-602+604 -603+1828 0
+603 -1828 0
+602+604 -1828 0
+-694+1127 -1126 0
+694 -1127 0
+1126 -1127 0
+-756+1312 -754 0
+756 -1312 0
+754 -1312 0
+-717+1201 -719 0
+717 -1201 0
+719 -1201 0
+-719+720+1996 -717 0
+719+720 -1996 0
+717 -1996 0
+-610+1851 -1850 0
+610 -1851 0
+1850 -1851 0
+-578+2131 -579 0
+578 -2131 0
+579 -2131 0
+-1285+1286 -747 0
+1285 -1286 0
+747 -1286 0
+-682+1084 -1083 0
+682 -1084 0
+1083 -1084 0
+-582+1765 -1764 0
+582 -1765 0
+1764 -1765 0
+-774+1370 -1368 0
+774 -1370 0
+1368 -1370 0
+-517+518+2089 -520 0
+517+518 -2089 0
+520 -2089 0
+-1522+1523 -821 0
+1522 -1523 0
+821 -1523 0
+-746+1287 -748 0
+746 -1287 0
+748 -1287 0
+-626+1896 -628 0
+626 -1896 0
+628 -1896 0
+-618+1873 -1872 0
+618 -1873 0
+1872 -1873 0
+-729+730 -732+2006 0
+732 -2006 0
+729+730 -2006 0
+-545+1657 -1656 0
+545 -1657 0
+1656 -1657 0
+-663+1028 -661 0
+663 -1028 0
+661 -1028 0
+-557+560 -559+2116 0
+559 -2116 0
+557+560 -2116 0
+-551+1665 -1663 0
+551 -1665 0
+1663 -1665 0
+-610+1844 -1843 0
+610 -1844 0
+1843 -1844 0
+-637+2171 -639+640 0
+637 -2171 0
+639+640 -2171 0
+-528+1586 -527 0
+528 -1586 0
+527 -1586 0
+-1215+1217 -722 0
+1215 -1217 0
+722 -1217 0
+-1430+1431 -795 0
+1430 -1431 0
+795 -1431 0
+-731+1235 -732 0
+731 -1235 0
+732 -1235 0
+-824+1514 -823 0
+824 -1514 0
+823 -1514 0
+-626+1894 -1892 0
+626 -1894 0
+1892 -1894 0
+-1199+1200 -720 0
+1199 -1200 0
+720 -1200 0
+-1484+1486 -812 0
+1484 -1486 0
+812 -1486 0
+-513+516+2084 -515 0
+513+516 -2084 0
+515 -2084 0
+-1347+1349 -768 0
+1347 -1349 0
+768 -1349 0
+-531+1605 -529 0
+531 -1605 0
+529 -1605 0
+-628+1893 -627 0
+628 -1893 0
+627 -1893 0
+-633+1923 -635 0
+633 -1923 0
+635 -1923 0
+-754+755+2026 -756 0
+754+755 -2026 0
+756 -2026 0
+-705+707 -708+1987 0
+708 -1987 0
+705+707 -1987 0
+-731+1238 -1236 0
+731 -1238 0
+1236 -1238 0
+-829+832+2079 -831 0
+829+832 -2079 0
+831 -2079 0
+-595+1798 -1797 0
+595 -1798 0
+1797 -1798 0
+-605+607+1841 -606 0
+605+607 -1841 0
+606 -1841 0
+-555+556+2113 -553 0
+555+556 -2113 0
+553 -2113 0
+-522+1577 -524 0
+522 -1577 0
+524 -1577 0
+-546+547+2110 -548 0
+546+547 -2110 0
+548 -2110 0
+-1282+1284 -746 0
+1282 -1284 0
+746 -1284 0
+-799+1448 -797 0
+799 -1448 0
+797 -1448 0
+-526+1596 -525 0
+526 -1596 0
+525 -1596 0
+-714+1191 -1189 0
+714 -1191 0
+1189 -1191 0
+-643+963 -644 0
+643 -963 0
+644 -963 0
+-658+1011 -1009 0
+658 -1011 0
+1009 -1011 0
+-587+1773 -1771 0
+587 -1773 0
+1771 -1773 0
+-1386+1387 -779 0
+1386 -1387 0
+779 -1387 0
+-1179+1182 -709 0
+1179 -1182 0
+709 -1182 0
+-701+702+1154 -703 0
+701+702 -1154 0
+703 -1154 0
+-566+1713 -568 0
+566 -1713 0
+568 -1713 0
+-555+1683 -554 0
+555 -1683 0
+554 -1683 0
+-528+2095 -525 0
+528 -2095 0
+525 -2095 0
+-607+1832 -608 0
+607 -1832 0
+608 -1832 0
+-648+977 -646 0
+648 -977 0
+646 -977 0
+-1003+1005 -656 0
+1003 -1005 0
+656 -1005 0
+-571+1724 -1723 0
+571 -1724 0
+1723 -1724 0
+-709+1178 -711 0
+709 -1178 0
+711 -1178 0
+-820+1505 -818 0
+820 -1505 0
+818 -1505 0
+-792+1416 -791 0
+792 -1416 0
+791 -1416 0
+-767+768+2033 -765 0
+767+768 -2033 0
+765 -2033 0
+-672+1055 -1053 0
+672 -1055 0
+1053 -1055 0
+-693+694+1981 -696 0
+693+694 -1981 0
+696 -1981 0
+-546+1654 -1653 0
+546 -1654 0
+1653 -1654 0
+-1123+1124 -695 0
+1123 -1124 0
+695 -1124 0
+-624+2161 -621 0
+624 -2161 0
+621 -2161 0
+-801+2061 -804 0
+801 -2061 0
+804 -2061 0
+-792+1419 -790 0
+792 -1419 0
+790 -1419 0
+-581+2134 -584 0
+581 -2134 0
+584 -2134 0
+-751+1298 -750 0
+751 -1298 0
+750 -1298 0
+-1738+1740 -576 0
+1738 -1740 0
+576 -1740 0
+-518+520+1571 -519 0
+518+520 -1571 0
+519 -1571 0
+-832+1547 -1546 0
+832 -1547 0
+1546 -1547 0
+-744+1281 -1278 0
+744 -1281 0
+1278 -1281 0
+-643+965 -641 0
+643 -965 0
+641 -965 0
+-829+1545 -830 0
+829 -1545 0
+830 -1545 0
+-1694+1696 -560 0
+1694 -1696 0
+560 -1696 0
+-1622+1623 -538 0
+1622 -1623 0
+538 -1623 0
+-566+1716 -1714 0
+566 -1716 0
+1714 -1716 0
+-1445+1447 -800 0
+1445 -1447 0
+800 -1447 0
+-706+707+1989 -708 0
+706+707 -1989 0
+708 -1989 0
+-825+1532 -827 0
+825 -1532 0
+827 -1532 0
+-1173+1174 -711 0
+1173 -1174 0
+711 -1174 0
+-1059+1060 -674 0
+1059 -1060 0
+674 -1060 0
+-762+1339 -1338 0
+762 -1339 0
+1338 -1339 0
+-588+1772 -586 0
+588 -1772 0
+586 -1772 0
+-621+622+1887 -623 0
+621+622 -1887 0
+623 -1887 0
+-686+1107 -685 0
+686 -1107 0
+685 -1107 0
+-1907+1909 -631 0
+1907 -1909 0
+631 -1909 0
+-668+1038 -666 0
+668 -1038 0
+666 -1038 0
+-770+772 -771+1366 0
+771 -1366 0
+770+772 -1366 0
+-514+1551 -1549 0
+514 -1551 0
+1549 -1551 0
+-1504+1506 -819 0
+1504 -1506 0
+819 -1506 0
+-585+1779 -1777 0
+585 -1779 0
+1777 -1779 0
+-778+1385 -780 0
+778 -1385 0
+780 -1385 0
+-707+1159 -708 0
+707 -1159 0
+708 -1159 0
+-565+568+2123 -567 0
+565+568 -2123 0
+567 -2123 0
+-1666+1668 -550 0
+1666 -1668 0
+550 -1668 0
+-612+1849 -1846 0
+612 -1849 0
+1846 -1849 0
+-665+1041 -667 0
+665 -1041 0
+667 -1041 0
+-688+1103 -1101 0
+688 -1103 0
+1101 -1103 0
+-1395+1396 -784 0
+1395 -1396 0
+784 -1396 0
+-703+1150 -702 0
+703 -1150 0
+702 -1150 0
+-771+1364 -769 0
+771 -1364 0
+769 -1364 0
+-1297+1299 -752 0
+1297 -1299 0
+752 -1299 0
+-517+520 -518+1568 0
+518 -1568 0
+517+520 -1568 0
+-1027+1029 -662 0
+1027 -1029 0
+662 -1029 0
+-1239+1240 -730 0
+1239 -1240 0
+730 -1240 0
+-1726+1727 -570 0
+1726 -1727 0
+570 -1727 0
+-589+591+1788 -590 0
+589+591 -1788 0
+590 -1788 0
+-1362+1363 -770 0
+1362 -1363 0
+770 -1363 0
+-513+2085 -516 0
+513 -2085 0
+516 -2085 0
+-674+1069 -675 0
+674 -1069 0
+675 -1069 0
+-710+1171 -1170 0
+710 -1171 0
+1170 -1171 0
+-562+1699 -1697 0
+562 -1699 0
+1697 -1699 0
+-640+1939 -1938 0
+640 -1939 0
+1938 -1939 0
+-826+827 -828+2078 0
+828 -2078 0
+826+827 -2078 0
+-700+1984 -697 0
+700 -1984 0
+697 -1984 0
+-714+1187 -716 0
+714 -1187 0
+716 -1187 0
+-978+979 -646 0
+978 -979 0
+646 -979 0
+-723+1214 -1212 0
+723 -1214 0
+1212 -1214 0
+-1672+1674 -554 0
+1672 -1674 0
+554 -1674 0
+-703+1147 -704 0
+703 -1147 0
+704 -1147 0
+-757+758+2028 -760 0
+757+758 -2028 0
+760 -2028 0
+-1625+1627 -539 0
+1625 -1627 0
+539 -1627 0
+-721+1216 -723 0
+721 -1216 0
+723 -1216 0
+-1033+1035 -666 0
+1033 -1035 0
+666 -1035 0
+-783+1400 -781 0
+783 -1400 0
+781 -1400 0
+-1585+1587 -526 0
+1585 -1587 0
+526 -1587 0
+-710+1175 -712 0
+710 -1175 0
+712 -1175 0
+-546+1658 -547 0
+546 -1658 0
+547 -1658 0
+-638+639+2172 -637 0
+638+639 -2172 0
+637 -2172 0
+-758+1321 -1319 0
+758 -1321 0
+1319 -1321 0
+-649+1950 -650+651 0
+649 -1950 0
+650+651 -1950 0
+-616+1858 -614 0
+616 -1858 0
+614 -1858 0
+-574+575+1739 -573 0
+574+575 -1739 0
+573 -1739 0
+-572+2126 -569 0
+572 -2126 0
+569 -2126 0
+-1142+1144 -697 0
+1142 -1144 0
+697 -1144 0
+-832+1541 -1540 0
+832 -1541 0
+1540 -1541 0
+-629+632 -631+2164 0
+631 -2164 0
+629+632 -2164 0
+-1604+1606 -530 0
+1604 -1606 0
+530 -1606 0
+-594+1802 -1800 0
+594 -1802 0
+1800 -1802 0
+-673+1070 -1068 0
+673 -1070 0
+1068 -1070 0
+-690+691 -692+1979 0
+692 -1979 0
+690+691 -1979 0
+-794+1428 -1427 0
+794 -1428 0
+1427 -1428 0
+-766+1352 -765 0
+766 -1352 0
+765 -1352 0
+-698+700 -699+1143 0
+699 -1143 0
+698+700 -1143 0
+-817+818 -820+2072 0
+820 -2072 0
+817+818 -2072 0
+-765+767 -766+1355 0
+766 -1355 0
+765+767 -1355 0
+-670+1050 -671 0
+670 -1050 0
+671 -1050 0
+-741+1280 -742 0
+741 -1280 0
+742 -1280 0
+-658+660+1019 -659 0
+658+660 -1019 0
+659 -1019 0
+-588+1770 -587 0
+588 -1770 0
+587 -1770 0
+-797+799 -800+2056 0
+800 -2056 0
+797+799 -2056 0
+-538+1633 -539 0
+538 -1633 0
+539 -1633 0
+-778+1381 -1380 0
+778 -1381 0
+1380 -1381 0
+-599+1807 -600 0
+599 -1807 0
+600 -1807 0
+-794+1435 -1433 0
+794 -1435 0
+1433 -1435 0
+-791+1420 -1418 0
+791 -1420 0
+1418 -1420 0
+-537+540+2102 -539 0
+537+540 -2102 0
+539 -2102 0
+-1466+1468 -807 0
+1466 -1468 0
+807 -1468 0
+-1411+1412 -786 0
+1411 -1412 0
+786 -1412 0
+-801+803+2060 -804 0
+801+803 -2060 0
+804 -2060 0
+-772+1361 -770 0
+772 -1361 0
+770 -1361 0
+-1148+1151 -704 0
+1148 -1151 0
+704 -1151 0
+-789+791 -792+2052 0
+792 -2052 0
+789+791 -2052 0
+-734+2010 -735 0
+734 -2010 0
+735 -2010 0
+-818+820+1512 -819 0
+818+820 -1512 0
+819 -1512 0
+-1833+1834 -608 0
+1833 -1834 0
+608 -1834 0
+-1012+1013 -659 0
+1012 -1013 0
+659 -1013 0
+-676+1061 -675 0
+676 -1061 0
+675 -1061 0
+-667+1045 -666 0
+667 -1045 0
+666 -1045 0
+-1221+1222 -726 0
+1221 -1222 0
+726 -1222 0
+-1786+1787 -592 0
+1786 -1787 0
+592 -1787 0
+-632+1906 -631 0
+632 -1906 0
+631 -1906 0
+-608+1838 -1836 0
+608 -1838 0
+1836 -1838 0
+-817+1509 -819 0
+817 -1509 0
+819 -1509 0
+-529+1609 -1607 0
+529 -1609 0
+1607 -1609 0
+-733+736 -735+2008 0
+735 -2008 0
+733+736 -2008 0
+-774+1372 -776 0
+774 -1372 0
+776 -1372 0
+-787+1406 -788 0
+787 -1406 0
+788 -1406 0
+-600+1810 -598 0
+600 -1810 0
+598 -1810 0
+-787+1409 -786 0
+787 -1409 0
+786 -1409 0
+-618+1867 -1866 0
+618 -1867 0
+1866 -1867 0
+-584+1759 -583 0
+584 -1759 0
+583 -1759 0
+-726+727+2004 -728 0
+726+727 -2004 0
+728 -2004 0
+-681+1974 -682+683 0
+681 -1974 0
+682+683 -1974 0
+-650+988 -652 0
+650 -988 0
+652 -988 0
+-777+779 -778+1390 0
+778 -1390 0
+777+779 -1390 0
+-816+1496 -1495 0
+816 -1496 0
+1495 -1496 0
+-1895+1897 -627 0
+1895 -1897 0
+627 -1897 0
+-832+2080 -829 0
+832 -2080 0
+829 -2080 0
+-809+1485 -810 0
+809 -1485 0
+810 -1485 0
+-693+1128 -695 0
+693 -1128 0
+695 -1128 0
+-578+1747 -1745 0
+578 -1747 0
+1745 -1747 0
+-612+2152 -609 0
+612 -2152 0
+609 -2152 0
+-657+1017 -659 0
+657 -1017 0
+659 -1017 0
+-732+1237 -730 0
+732 -1237 0
+730 -1237 0
+-691+692+1977 -689 0
+691+692 -1977 0
+689 -1977 0
+-534+1617 -1616 0
+534 -1617 0
+1616 -1617 0
+-1684+1685 -558 0
+1684 -1685 0
+558 -1685 0
+-654+1953 -655 0
+654 -1953 0
+655 -1953 0
+-768+1354 -1353 0
+768 -1354 0
+1353 -1354 0
+-566+1709 -1708 0
+566 -1709 0
+1708 -1709 0
+-717+1998 -718+719 0
+717 -1998 0
+718+719 -1998 0
+-653+654+1001 -655 0
+653+654 -1001 0
+655 -1001 0
+-1824+1826 -602 0
+1824 -1826 0
+602 -1826 0
+-775+1373 -1371 0
+775 -1373 0
+1371 -1373 0
+-594+596 -595+1804 0
+595 -1804 0
+594+596 -1804 0
+-647+983 -646 0
+647 -983 0
+646 -983 0
+-802+804 -803+1461 0
+803 -1461 0
+802+804 -1461 0
+-698+1134 -1133 0
+698 -1134 0
+1133 -1134 0
+-733+735 -734+1252 0
+734 -1252 0
+733+735 -1252 0
+-658+1016 -1015 0
+658 -1016 0
+1015 -1016 0
+-528+1597 -1595 0
+528 -1597 0
+1595 -1597 0
+-678+680+1081 -679 0
+678+680 -1081 0
+679 -1081 0
+-726+1229 -1227 0
+726 -1229 0
+1227 -1229 0
+-1203+1205 -720 0
+1203 -1205 0
+720 -1205 0
+-759+1323 -1322 0
+759 -1323 0
+1322 -1323 0
+-572+1725 -570 0
+572 -1725 0
+570 -1725 0
+-1404+1405 -786 0
+1404 -1405 0
+786 -1405 0
+-1192+1193 -716 0
+1192 -1193 0
+716 -1193 0
+-812+2066 -809 0
+812 -2066 0
+809 -2066 0
+-593+596 -595+2141 0
+595 -2141 0
+593+596 -2141 0
+-562+1705 -1704 0
+562 -1705 0
+1704 -1705 0
+-639+1932 -637 0
+639 -1932 0
+637 -1932 0
+-713+1190 -715 0
+713 -1190 0
+715 -1190 0
+-744+1273 -742 0
+744 -1273 0
+742 -1273 0
+-569+1731 -1729 0
+569 -1731 0
+1729 -1731 0
+-726+728+1231 -727 0
+726+728 -1231 0
+727 -1231 0
+-808+1467 -806 0
+808 -1467 0
+806 -1467 0
+-673+1966 -676 0
+673 -1966 0
+676 -1966 0
+-734+1246 -1245 0
+734 -1246 0
+1245 -1246 0
+-964+966 -644 0
+964 -966 0
+644 -966 0
+-1365+1367 -769 0
+1365 -1367 0
+769 -1367 0
+-1152+1153 -704 0
+1152 -1153 0
+704 -1153 0
+-536+2100 -533 0
+536 -2100 0
+533 -2100 0
+-1449+1450 -800 0
+1449 -1450 0
+800 -1450 0
+-1898+1899 -626 0
+1898 -1899 0
+626 -1899 0
+-672+1047 -671 0
+672 -1047 0
+671 -1047 0
+-582+1762 -583 0
+582 -1762 0
+583 -1762 0
+-1176+1177 -710 0
+1176 -1177 0
+710 -1177 0
+-987+989 -651 0
+987 -989 0
+651 -989 0
+-762+764+1342 -763 0
+762+764 -1342 0
+763 -1342 0
+-638+1929 -1928 0
+638 -1929 0
+1928 -1929 0
+-657+1955 -659+660 0
+657 -1955 0
+659+660 -1955 0
+-586+1769 -1768 0
+586 -1769 0
+1768 -1769 0
+-592+1791 -1790 0
+592 -1791 0
+1790 -1791 0
+-751+752+2021 -749 0
+751+752 -2021 0
+749 -2021 0
+-557+1695 -558 0
+557 -1695 0
+558 -1695 0
+-1218+1219 -721 0
+1218 -1219 0
+721 -1219 0
+-747+1293 -746 0
+747 -1293 0
+746 -1293 0
+-1158+1160 -706 0
+1158 -1160 0
+706 -1160 0
+-707+1168 -706 0
+707 -1168 0
+706 -1168 0
+-538+1629 -537 0
+538 -1629 0
+537 -1629 0
+-621+1884 -623 0
+621 -1884 0
+623 -1884 0
+-738+739+2014 -740 0
+738+739 -2014 0
+740 -2014 0
+-515+1560 -514 0
+515 -1560 0
+514 -1560 0
+-555+1673 -556 0
+555 -1673 0
+556 -1673 0
+-1650+1651 -547 0
+1650 -1651 0
+547 -1651 0
+-1732+1734 -574 0
+1732 -1734 0
+574 -1734 0
+-760+1330 -1328 0
+760 -1330 0
+1328 -1330 0
+-775+1369 -776 0
+775 -1369 0
+776 -1369 0
+-731+732+2005 -729 0
+731+732 -2005 0
+729 -2005 0
+-1039+1040 -666 0
+1039 -1040 0
+666 -1040 0
+-1206+1207 -720 0
+1206 -1207 0
+720 -1207 0
+-694+1130 -695 0
+694 -1130 0
+695 -1130 0
+-801+1459 -803 0
+801 -1459 0
+803 -1459 0
+-684+1093 -1092 0
+684 -1093 0
+1092 -1093 0
+-541+1638 -543 0
+541 -1638 0
+543 -1638 0
+-560+1692 -1691 0
+560 -1692 0
+1691 -1692 0
+-582+1758 -1757 0
+582 -1758 0
+1757 -1758 0
+-1857+1859 -615 0
+1857 -1859 0
+615 -1859 0
+-817+820+2070 -819 0
+817+820 -2070 0
+819 -2070 0
+-1105+1106 -688 0
+1105 -1106 0
+688 -1106 0
+-609+1853 -1852 0
+609 -1853 0
+1852 -1853 0
+-1457+1458 -802 0
+1457 -1458 0
+802 -1458 0
+-826+828+1536 -827 0
+826+828 -1536 0
+827 -1536 0
+-570+1721 -1720 0
+570 -1721 0
+1720 -1721 0
+-783+1393 -784 0
+783 -1393 0
+784 -1393 0
+-1516+1517 -823 0
+1516 -1517 0
+823 -1517 0
+-649+1948 -652 0
+649 -1948 0
+652 -1948 0
+-805+1470 -807 0
+805 -1470 0
+807 -1470 0
+-1555+1556 -514 0
+1555 -1556 0
+514 -1556 0
+-540+1624 -539 0
+540 -1624 0
+539 -1624 0
+-681+684 -683+1972 0
+683 -1972 0
+681+684 -1972 0
+-1233+1234 -730 0
+1233 -1234 0
+730 -1234 0
+-773+2038 -775+776 0
+773 -2038 0
+775+776 -2038 0
+-533+536 -535+2099 0
+535 -2099 0
+533+536 -2099 0
+-789+1422 -791 0
+789 -1422 0
+791 -1422 0
+-594+1795 -1794 0
+594 -1795 0
+1794 -1795 0
+-1519+1521 -822 0
+1519 -1521 0
+822 -1521 0
+-1809+1811 -599 0
+1809 -1811 0
+599 -1811 0
+-802+1455 -804 0
+802 -1455 0
+804 -1455 0
+-997+999 -654 0
+997 -999 0
+654 -999 0
+-582+583 -584+2136 0
+584 -2136 0
+582+583 -2136 0
+-650+985 -984 0
+650 -985 0
+984 -985 0
+-696+1122 -695 0
+696 -1122 0
+695 -1122 0
+-779+1384 -1383 0
+779 -1384 0
+1383 -1384 0
+-653+656+1951 -655 0
+653+656 -1951 0
+655 -1951 0
+-698+1140 -1139 0
+698 -1140 0
+1139 -1140 0
+-758+1331 -759 0
+758 -1331 0
+759 -1331 0
+-1498+1500 -816 0
+1498 -1500 0
+816 -1500 0
+-672+1964 -669 0
+672 -1964 0
+669 -1964 0
+-576+1733 -575 0
+576 -1733 0
+575 -1733 0
+-770+1357 -1356 0
+770 -1357 0
+1356 -1357 0
+-624+1880 -623 0
+624 -1880 0
+623 -1880 0
+-1136+1138 -699 0
+1136 -1138 0
+699 -1138 0
+-806+808+1474 -807 0
+806+808 -1474 0
+807 -1474 0
+-560+1688 -1687 0
+560 -1688 0
+1687 -1688 0
+-589+591+2140 -592 0
+589+591 -2140 0
+592 -2140 0
+-1305+1306 -752 0
+1305 -1306 0
+752 -1306 0
+-665+1961 -668 0
+665 -1961 0
+668 -1961 0
+-788+2051 -786 0
+788 -2051 0
+786 -2051 0
+-785+2049 -787+788 0
+785 -2049 0
+787+788 -2049 0
+-564+2122 -562 0
+564 -2122 0
+562 -2122 0
+-812+1479 -810 0
+812 -1479 0
+810 -1479 0
+-777+2044 -778+779 0
+777 -2044 0
+778+779 -2044 0
+-1525+1527 -826 0
+1525 -1527 0
+826 -1527 0
+-517+2088 -519 0
+517 -2088 0
+519 -2088 0
+-609+612 -611+2151 0
+611 -2151 0
+609+612 -2151 0
+-618+1877 -619 0
+618 -1877 0
+619 -1877 0
+-585+2137 -587+588 0
+585 -2137 0
+587+588 -2137 0
+-808+2064 -805 0
+808 -2064 0
+805 -2064 0
+-809+812+2065 -811 0
+809+812 -2065 0
+811 -2065 0
+-1129+1132 -693 0
+1129 -1132 0
+693 -1132 0
+-652+996 -994 0
+652 -996 0
+994 -996 0
+-542+2107 -541 0
+542 -2107 0
+541 -2107 0
+-1475+1476 -810 0
+1475 -1476 0
+810 -1476 0
+-1669+1670 -549 0
+1669 -1670 0
+549 -1670 0
+-755+1311 -1310 0
+755 -1311 0
+1310 -1311 0
+-1570+1572 -517 0
+1570 -1572 0
+517 -1572 0
+-681+1090 -683 0
+681 -1090 0
+683 -1090 0
+-597+1814 -599 0
+597 -1814 0
+599 -1814 0
+-815+1492 -814 0
+815 -1492 0
+814 -1492 0
+-766+1345 -1344 0
+766 -1345 0
+1344 -1345 0
+-724+1213 -722 0
+724 -1213 0
+722 -1213 0
+-739+1258 -740 0
+739 -1258 0
+740 -1258 0
+-513+1559 -1558 0
+513 -1559 0
+1558 -1559 0
+-1402+1403 -784 0
+1402 -1403 0
+784 -1403 0
+-814+1489 -1488 0
+814 -1489 0
+1488 -1489 0
+-1209+1210 -722 0
+1209 -1210 0
+722 -1210 0
+-664+1026 -662 0
+664 -1026 0
+662 -1026 0
+-1472+1473 -805 0
+1472 -1473 0
+805 -1473 0
+-534+536 -535+1620 0
+535 -1620 0
+534+536 -1620 0
+-701+703+1986 -704 0
+701+703 -1986 0
+704 -1986 0
+-1610+1611 -534 0
+1610 -1611 0
+534 -1611 0
+-1869+1870 -619 0
+1869 -1870 0
+619 -1870 0
+-823+1520 -821 0
+823 -1520 0
+821 -1520 0
+-659+1956 -660 0
+659 -1956 0
+660 -1956 0
+-551+1667 -549 0
+551 -1667 0
+549 -1667 0
+-649+650+991 -651 0
+649+650 -991 0
+651 -991 0
+-961+962 -642 0
+961 -962 0
+642 -962 0
+-691+1119 -690 0
+691 -1119 0
+690 -1119 0
+-704+1157 -1156 0
+704 -1157 0
+1156 -1157 0
+-596+2142 -593 0
+596 -2142 0
+593 -2142 0
+-657+1020 -1018 0
+657 -1020 0
+1018 -1020 0
+-598+1813 -1812 0
+598 -1813 0
+1812 -1813 0
+-573+575 -576+2128 0
+576 -2128 0
+573+575 -2128 0
+-1598+1600 -530 0
+1598 -1600 0
+530 -1600 0
+-642+643+1942 -644 0
+642+643 -1942 0
+644 -1942 0
+-733+2009 -736 0
+733 -2009 0
+736 -2009 0
+-633+1927 -1925 0
+633 -1927 0
+1925 -1927 0
+-1717+1719 -565 0
+1717 -1719 0
+565 -1719 0
+-598+1808 -1806 0
+598 -1808 0
+1806 -1808 0
+-785+1414 -1413 0
+785 -1414 0
+1413 -1414 0
+-522+1583 -523 0
+522 -1583 0
+523 -1583 0
+-564+2120 -561 0
+564 -2120 0
+561 -2120 0
+-571+1730 -570 0
+571 -1730 0
+570 -1730 0
+-815+1494 -813 0
+815 -1494 0
+813 -1494 0
+-598+600+1816 -599 0
+598+600 -1816 0
+599 -1816 0
+-713+715+1993 -716 0
+713+715 -1993 0
+716 -1993 0
+-1881+1882 -624 0
+1881 -1882 0
+624 -1882 0
+-830+1539 -1537 0
+830 -1539 0
+1537 -1539 0
+-714+1194 -715 0
+714 -1194 0
+715 -1194 0
+-626+1902 -627 0
+626 -1902 0
+627 -1902 0
+-1451+1453 -802 0
+1451 -1453 0
+802 -1453 0
+-670+1048 -1046 0
+670 -1048 0
+1046 -1048 0
+-685+686 -687+1099 0
+687 -1099 0
+685+686 -1099 0
+-1631+1632 -537 0
+1631 -1632 0
+537 -1632 0
+-1678+1680 -554 0
+1678 -1680 0
+554 -1680 0
+-581+1767 -1766 0
+581 -1767 0
+1766 -1767 0
+-699+1141 -697 0
+699 -1141 0
+697 -1141 0
+-767+1346 -768 0
+767 -1346 0
+768 -1346 0
+-1552+1553 -515 0
+1552 -1553 0
+515 -1553 0
+-667+1034 -668 0
+667 -1034 0
+668 -1034 0
+-806+1465 -1463 0
+806 -1465 0
+1463 -1465 0
+-547+1649 -548 0
+547 -1649 0
+548 -1649 0
+-972+974 -646 0
+972 -974 0
+646 -974 0
+-1916+1917 -634 0
+1916 -1917 0
+634 -1917 0
+-739+1261 -1260 0
+739 -1261 0
+1260 -1261 0
+-832+1544 -1543 0
+832 -1544 0
+1543 -1544 0
+-816+1490 -815 0
+816 -1490 0
+815 -1490 0
+-541+543 -542+1645 0
+542 -1645 0
+541+543 -1645 0
+-578+2132 -580 0
+578 -2132 0
+580 -2132 0
+-757+1326 -759 0
+757 -1326 0
+759 -1326 0
+-1501+1503 -818 0
+1501 -1503 0
+818 -1503 0
+-1561+1563 -518 0
+1561 -1563 0
+518 -1563 0
+-1601+1603 -532 0
+1601 -1603 0
+532 -1603 0
+-1619+1621 -533 0
+1619 -1621 0
+533 -1621 0
+-968+969 -642 0
+968 -969 0
+642 -969 0
+-1316+1318 -753 0
+1316 -1318 0
+753 -1318 0
+-544+1646 -1644 0
+544 -1646 0
+1644 -1646 0
+-614+1861 -1860 0
+614 -1861 0
+1860 -1861 0
+-715+1185 -716 0
+715 -1185 0
+716 -1185 0
+-662+664 -663+1031 0
+663 -1031 0
+662+664 -1031 0
+-528+1593 -1591 0
+528 -1593 0
+1591 -1593 0
+-522+1575 -1573 0
+522 -1575 0
+1573 -1575 0
+-745+1292 -1291 0
+745 -1292 0
+1291 -1292 0
+-613+1865 -1863 0
+613 -1865 0
+1863 -1865 0
+-1074+1076 -679 0
+1074 -1076 0
+679 -1076 0
+-817+1511 -1510 0
+817 -1511 0
+1510 -1511 0
+-970+971 -641 0
+970 -971 0
+641 -971 0
+-1164+1165 -706 0
+1164 -1165 0
+706 -1165 0
+-1389+1391 -780 0
+1389 -1391 0
+780 -1391 0
+-738+1265 -1263 0
+738 -1265 0
+1263 -1265 0
+-722+724+1220 -723 0
+722+724 -1220 0
+723 -1220 0
+-736+1253 -1251 0
+736 -1253 0
+1251 -1253 0
+-681+1973 -684 0
+681 -1973 0
+684 -1973 0
+-790+1425 -791 0
+790 -1425 0
+791 -1425 0
+-761+1343 -1341 0
+761 -1343 0
+1341 -1343 0
+-743+1279 -742 0
+743 -1279 0
+742 -1279 0
+-1754+1756 -577 0
+1754 -1756 0
+577 -1756 0
+-1248+1250 -736 0
+1248 -1250 0
+736 -1250 0
+-798+1440 -1439 0
+798 -1440 0
+1439 -1440 0
+-1117+1118 -689 0
+1117 -1118 0
+689 -1118 0
+-777+778+2043 -780 0
+777+778 -2043 0
+780 -2043 0
+-822+1524 -823 0
+822 -1524 0
+823 -1524 0
+-1186+1188 -715 0
+1186 -1188 0
+715 -1188 0
+-762+1334 -1332 0
+762 -1334 0
+1332 -1334 0
+-522+1580 -1579 0
+522 -1580 0
+1579 -1580 0
+-642+967 -643 0
+642 -967 0
+643 -967 0
+-737+1268 -1266 0
+737 -1268 0
+1266 -1268 0
+-701+1155 -702 0
+701 -1155 0
+702 -1155 0
+-545+1655 -547 0
+545 -1655 0
+547 -1655 0
+-738+740+1267 -739 0
+738+740 -1267 0
+739 -1267 0
+-1935+1937 -640 0
+1935 -1937 0
+640 -1937 0
+-1114+1115 -690 0
+1114 -1115 0
+690 -1115 0
+-521+2092 -524 0
+521 -2092 0
+524 -2092 0
+-761+1340 -763 0
+761 -1340 0
+763 -1340 0
+-773+1376 -775 0
+773 -1376 0
+775 -1376 0
+-803+1456 -1454 0
+803 -1456 0
+1454 -1456 0
+-634+1926 -635 0
+634 -1926 0
+635 -1926 0
+-530+531+2098 -532 0
+530+531 -2098 0
+532 -2098 0
+-656+1008 -1007 0
+656 -1008 0
+1007 -1008 0
+-1748+1749 -580 0
+1748 -1749 0
+580 -1749 0
+-535+1615 -1613 0
+535 -1615 0
+1613 -1615 0
+-564+1703 -1700 0
+564 -1703 0
+1700 -1703 0
+-596+1799 -594 0
+596 -1799 0
+594 -1799 0
+-685+1975 -687+688 0
+685 -1975 0
+687+688 -1975 0
+-1481+1483 -810 0
+1481 -1483 0
+810 -1483 0
+-578+1752 -1751 0
+578 -1752 0
+1751 -1752 0
+-672+1058 -1057 0
+672 -1058 0
+1057 -1058 0
+-725+1232 -1230 0
+725 -1232 0
+1230 -1232 0
+-565+2124 -568 0
+565 -2124 0
+568 -2124 0
+-1294+1296 -750 0
+1294 -1296 0
+750 -1296 0
+-1582+1584 -521 0
+1582 -1584 0
+521 -1584 0
+-743+1274 -1272 0
+743 -1274 0
+1272 -1274 0
+-710+1180 -711 0
+710 -1180 0
+711 -1180 0
+-1377+1379 -776 0
+1377 -1379 0
+776 -1379 0
+-608+1842 -1840 0
+608 -1842 0
+1840 -1842 0
+-1564+1565 -519 0
+1564 -1565 0
+519 -1565 0
+-2057+2058 0
+-980+1943+1944 0
+-2154+2155+2156 0
+-1135+1983+1985 0
+-1434+2054+2055 0
+-1698+1702+2119+2121 0
+-1820+1823+2147 0
+-1337+2030+2031+2032 0
+-1868+2157+2158 0
+-1839+1841+2150 0
+-1599+1608+2097 0
+-1550+1557+2084 0
+-1562+1566+2090 0
+-1102+1107+1976 0
+-1308+1312+2026 0
+-1050+1051+1054 0
+-1110+1112+1979 0
+-1298+1300+1302 0
+-1586+1592+1596+2094 0
+-1249+1254+2010 0
+-973+977+1945 0
+-1041+1043+1962 0
+-1352+1355+2034 0
+-1788+1792+1793 0
+-1312+2024+2025 0
+-1686+1689+2116+2118 0
+-1987+1988+1989 0
+-1837+1839+1841+2149 0
+-2018+2019+2020 0
+-1073+1969+1970 0
+-963+965+1940 0
+-1223+2003+2004 0
+-1807+2143+2144 0
+-1514+1518+2073+2074 0
+-1739+1743+2129 0
+-1271+1277+2015 0
+-1856+1858+2156 0
+-1599+1602+1605+1608 0
+-1073+1075+1971 0
+-1893+1900+2162 0
+-1172+1181 0
+-1312+1315+2023+2026 0
+-1574+1581+2091 0
+-1228+2001+2002 0
+-1201+1202+1997 0
+-1908+2165+2166 0
+-1505+2071+2072 0
+-1225+2003 0
+-1759+1763+2133 0
+-1452+2060+2061 0
+-1750+1753+2131 0
+-1673+1677+2115 0
+-1581+2091+2093 0
+-1201+1208+1998 0
+-1526+2076+2077+2078 0
+-1920+2167+2168+2169 0
+-1820+1825+2145+2146+2147 0
+-1247+1249+2008+2010 0
+-1932+1934+1936+2172 0
+-1542+2081+2082 0
+-1586+1589+1594+2094 0
+-1502+1509+2070 0
+-1883+1884+1887 0
+-1464+1470+2063 0
+-998+1001+1951+1953 0
+-1175+1181+1990+1991 0
+-1446+1448+2057+2059 0
+-1884+1887+1888+1890 0
+-1416+1419+2052+2053 0
+-1298+1302+1304+2022 0
+-1149+1150+1154 0
+-1746+1755+2131 0
+-1725+1728+2125+2127 0
+-1770+1772+2139 0
+-1775+2137+2138 0
+-1845+1847+2151 0
+-1235+1237+2007 0
+-1001+1004+1954 0
+-1393+1400+2045 0
+-2108+2109+2110 0
+-1679+2113+2114 0
+-1204+1997+1998 0
+-1135+1137+1985 0
+-1061+1966+1967+1968 0
+-1686+1693+1695+2116 0
+-1397+1399+1400+2048 0
+-1554+2085+2086 0
+-986+1946+1948 0
+-1175+1181+1992 0
+-1061+1066+1965 0
+-1736+1739+1741+1743 0
+-2167+2168+2169+2170 0
+-1408+1409+2050 0
+-1918+2169 0
+-1759+1762+2133+2135 0
+-1122+1125+1980+1981 0
+-1063+1966+1967 0
+-1538+2079+2081 0
+-1122+1131 0
+-991+1947+1949 0
+-1638+1642+2107 0
+-991+995+1947 0
+-1333+1337+2032 0
+-1159+1163+1989 0
+-1085+1090+1972 0
+-1796+1801+2141 0
+-1258+1264+2012+2013+2014 0
+-1612+1618+2099 0
+-1868+1871+2159 0
+-1382+1388+2041+2044 0
+-1710+1715+2123 0
+-1661+1667+2111 0
+-1492+1494+2069 0
+-1880+1884+2160 0
+-1258+1262+2014 0
+-1542+1545+1548+2081 0
+-1649+1652+2110 0
+-2103+2104 0
+-1320+1324+2027+2028 0
+-1014+1017+1955+1957 0
+-1273+2016+2017 0
+-1023+1958+1959 0
+-1326+1329+2029 0
+-1532+2075+2076+2077+2078 0
+-1530+2076+2077 0
+-1785+1788+1789+1793 0
+-992+1947+1950 0
+-1047+1051+1963 0
+-1640+1645+2107 0
+-1649+1659 0
+-1185+1187+1993+1994 0
+-1252+2010+2011 0
+-1010+1956 0
+-1283+1287+2020 0
+-1211+1999+2000 0
+-1545+2081+2083 0
+-1494+1497+1499 0
+-1135+1982+1984 0
+-1041+1960+1961 0
+-1112+1116+1977+1978 0
+-1348+1352+1355+2035 0
+-1686+1690+2116 0
+-1190+1195+1995 0
+-1482+1485+2067 0
+-1237+1241+2005+2006 0
+-1385+2042+2043 0
+-1612+1614+2101 0
+-1099+1102+1104+1107 0
+-1835+1837+1841 0
+-1562+1566+2087+2089 0
+-1001+1006+1953 0
+-1455+2060+2061+2062 0
+-1624+1626+2105 0
+-1361+1364+2036+2037 0
+-1376+2038+2039 0
+-1722+1725+2127 0
+-1443+1448+2057 0
+-1477+1485+2065+2067 0
+-1397+1400+2047 0
+-1698+1701+2119 0

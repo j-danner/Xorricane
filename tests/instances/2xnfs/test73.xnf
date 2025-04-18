@@ -1,0 +1,3 @@
+p xnf 2 1
+1+1 -1+1 0
+c SATISFIABLE -- if parsed correctly the clause can be skipped!

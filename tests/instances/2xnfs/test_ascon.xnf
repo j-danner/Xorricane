@@ -1,0 +1,7371 @@
+c Format: XNF
+c Type: Key recovery from state after initialization on Ascon-128
+c 2 initialization rounds, 6 processing rounds, 8 plaintext bytes.
+c variant = Ascon-128
+c a = 2
+c b = 6
+c K = 11100111011111000100111011110100101101100100110001110011011100111100100011100011111010001111011000101010111011010000010101101111
+c N = 11111010101010110111010101000101001000000001101010010011101011010110111001000110111100100111011101010010010010000100111001010010
+c S = 00101011111011110111011000111000101101110011111000100001001001101110011010101001100010101110011000001110001010000100100110010110000000111001100100001011010111110110111111100101011110001001010111011001010011101011010001111100100110110010100001111100001110100010001011100011101100110111010110100100000110011110110001001100
+c Assignments of the variables:
+c K[1] 1
+c K[2] 2
+c K[3] 3
+c K[4] 4
+c K[5] 5
+c K[6] 6
+c K[7] 7
+c K[8] 8
+c K[9] 9
+c K[10] 10
+c K[11] 11
+c K[12] 12
+c K[13] 13
+c K[14] 14
+c K[15] 15
+c K[16] 16
+c K[17] 17
+c K[18] 18
+c K[19] 19
+c K[20] 20
+c K[21] 21
+c K[22] 22
+c K[23] 23
+c K[24] 24
+c K[25] 25
+c K[26] 26
+c K[27] 27
+c K[28] 28
+c K[29] 29
+c K[30] 30
+c K[31] 31
+c K[32] 32
+c K[33] 33
+c K[34] 34
+c K[35] 35
+c K[36] 36
+c K[37] 37
+c K[38] 38
+c K[39] 39
+c K[40] 40
+c K[41] 41
+c K[42] 42
+c K[43] 43
+c K[44] 44
+c K[45] 45
+c K[46] 46
+c K[47] 47
+c K[48] 48
+c K[49] 49
+c K[50] 50
+c K[51] 51
+c K[52] 52
+c K[53] 53
+c K[54] 54
+c K[55] 55
+c K[56] 56
+c K[57] 57
+c K[58] 58
+c K[59] 59
+c K[60] 60
+c K[61] 61
+c K[62] 62
+c K[63] 63
+c K[64] 64
+c K[65] 65
+c K[66] 66
+c K[67] 67
+c K[68] 68
+c K[69] 69
+c K[70] 70
+c K[71] 71
+c K[72] 72
+c K[73] 73
+c K[74] 74
+c K[75] 75
+c K[76] 76
+c K[77] 77
+c K[78] 78
+c K[79] 79
+c K[80] 80
+c K[81] 81
+c K[82] 82
+c K[83] 83
+c K[84] 84
+c K[85] 85
+c K[86] 86
+c K[87] 87
+c K[88] 88
+c K[89] 89
+c K[90] 90
+c K[91] 91
+c K[92] 92
+c K[93] 93
+c K[94] 94
+c K[95] 95
+c K[96] 96
+c K[97] 97
+c K[98] 98
+c K[99] 99
+c K[100] 100
+c K[101] 101
+c K[102] 102
+c K[103] 103
+c K[104] 104
+c K[105] 105
+c K[106] 106
+c K[107] 107
+c K[108] 108
+c K[109] 109
+c K[110] 110
+c K[111] 111
+c K[112] 112
+c K[113] 113
+c K[114] 114
+c K[115] 115
+c K[116] 116
+c K[117] 117
+c K[118] 118
+c K[119] 119
+c K[120] 120
+c K[121] 121
+c K[122] 122
+c K[123] 123
+c K[124] 124
+c K[125] 125
+c K[126] 126
+c K[127] 127
+c K[128] 128
+c N[1] 129
+c N[2] 130
+c N[3] 131
+c N[4] 132
+c N[5] 133
+c N[6] 134
+c N[7] 135
+c N[8] 136
+c N[9] 137
+c N[10] 138
+c N[11] 139
+c N[12] 140
+c N[13] 141
+c N[14] 142
+c N[15] 143
+c N[16] 144
+c N[17] 145
+c N[18] 146
+c N[19] 147
+c N[20] 148
+c N[21] 149
+c N[22] 150
+c N[23] 151
+c N[24] 152
+c N[25] 153
+c N[26] 154
+c N[27] 155
+c N[28] 156
+c N[29] 157
+c N[30] 158
+c N[31] 159
+c N[32] 160
+c N[33] 161
+c N[34] 162
+c N[35] 163
+c N[36] 164
+c N[37] 165
+c N[38] 166
+c N[39] 167
+c N[40] 168
+c N[41] 169
+c N[42] 170
+c N[43] 171
+c N[44] 172
+c N[45] 173
+c N[46] 174
+c N[47] 175
+c N[48] 176
+c N[49] 177
+c N[50] 178
+c N[51] 179
+c N[52] 180
+c N[53] 181
+c N[54] 182
+c N[55] 183
+c N[56] 184
+c N[57] 185
+c N[58] 186
+c N[59] 187
+c N[60] 188
+c N[61] 189
+c N[62] 190
+c N[63] 191
+c N[64] 192
+c N[65] 193
+c N[66] 194
+c N[67] 195
+c N[68] 196
+c N[69] 197
+c N[70] 198
+c N[71] 199
+c N[72] 200
+c N[73] 201
+c N[74] 202
+c N[75] 203
+c N[76] 204
+c N[77] 205
+c N[78] 206
+c N[79] 207
+c N[80] 208
+c N[81] 209
+c N[82] 210
+c N[83] 211
+c N[84] 212
+c N[85] 213
+c N[86] 214
+c N[87] 215
+c N[88] 216
+c N[89] 217
+c N[90] 218
+c N[91] 219
+c N[92] 220
+c N[93] 221
+c N[94] 222
+c N[95] 223
+c N[96] 224
+c N[97] 225
+c N[98] 226
+c N[99] 227
+c N[100] 228
+c N[101] 229
+c N[102] 230
+c N[103] 231
+c N[104] 232
+c N[105] 233
+c N[106] 234
+c N[107] 235
+c N[108] 236
+c N[109] 237
+c N[110] 238
+c N[111] 239
+c N[112] 240
+c N[113] 241
+c N[114] 242
+c N[115] 243
+c N[116] 244
+c N[117] 245
+c N[118] 246
+c N[119] 247
+c N[120] 248
+c N[121] 249
+c N[122] 250
+c N[123] 251
+c N[124] 252
+c N[125] 253
+c N[126] 254
+c N[127] 255
+c N[128] 256
+c sbox_input_init[1,1] 257
+c sbox_input_init[1,2] 258
+c sbox_input_init[1,3] 259
+c sbox_input_init[1,4] 260
+c sbox_input_init[1,5] 261
+c sbox_input_init[1,6] 262
+c sbox_input_init[1,7] 263
+c sbox_input_init[1,8] 264
+c sbox_input_init[1,9] 265
+c sbox_input_init[1,10] 266
+c sbox_input_init[1,11] 267
+c sbox_input_init[1,12] 268
+c sbox_input_init[1,13] 269
+c sbox_input_init[1,14] 270
+c sbox_input_init[1,15] 271
+c sbox_input_init[1,16] 272
+c sbox_input_init[1,17] 273
+c sbox_input_init[1,18] 274
+c sbox_input_init[1,19] 275
+c sbox_input_init[1,20] 276
+c sbox_input_init[1,21] 277
+c sbox_input_init[1,22] 278
+c sbox_input_init[1,23] 279
+c sbox_input_init[1,24] 280
+c sbox_input_init[1,25] 281
+c sbox_input_init[1,26] 282
+c sbox_input_init[1,27] 283
+c sbox_input_init[1,28] 284
+c sbox_input_init[1,29] 285
+c sbox_input_init[1,30] 286
+c sbox_input_init[1,31] 287
+c sbox_input_init[1,32] 288
+c sbox_input_init[1,33] 289
+c sbox_input_init[1,34] 290
+c sbox_input_init[1,35] 291
+c sbox_input_init[1,36] 292
+c sbox_input_init[1,37] 293
+c sbox_input_init[1,38] 294
+c sbox_input_init[1,39] 295
+c sbox_input_init[1,40] 296
+c sbox_input_init[1,41] 297
+c sbox_input_init[1,42] 298
+c sbox_input_init[1,43] 299
+c sbox_input_init[1,44] 300
+c sbox_input_init[1,45] 301
+c sbox_input_init[1,46] 302
+c sbox_input_init[1,47] 303
+c sbox_input_init[1,48] 304
+c sbox_input_init[1,49] 305
+c sbox_input_init[1,50] 306
+c sbox_input_init[1,51] 307
+c sbox_input_init[1,52] 308
+c sbox_input_init[1,53] 309
+c sbox_input_init[1,54] 310
+c sbox_input_init[1,55] 311
+c sbox_input_init[1,56] 312
+c sbox_input_init[1,57] 313
+c sbox_input_init[1,58] 314
+c sbox_input_init[1,59] 315
+c sbox_input_init[1,60] 316
+c sbox_input_init[1,61] 317
+c sbox_input_init[1,62] 318
+c sbox_input_init[1,63] 319
+c sbox_input_init[1,64] 320
+c sbox_input_init[1,65] 321
+c sbox_input_init[1,66] 322
+c sbox_input_init[1,67] 323
+c sbox_input_init[1,68] 324
+c sbox_input_init[1,69] 325
+c sbox_input_init[1,70] 326
+c sbox_input_init[1,71] 327
+c sbox_input_init[1,72] 328
+c sbox_input_init[1,73] 329
+c sbox_input_init[1,74] 330
+c sbox_input_init[1,75] 331
+c sbox_input_init[1,76] 332
+c sbox_input_init[1,77] 333
+c sbox_input_init[1,78] 334
+c sbox_input_init[1,79] 335
+c sbox_input_init[1,80] 336
+c sbox_input_init[1,81] 337
+c sbox_input_init[1,82] 338
+c sbox_input_init[1,83] 339
+c sbox_input_init[1,84] 340
+c sbox_input_init[1,85] 341
+c sbox_input_init[1,86] 342
+c sbox_input_init[1,87] 343
+c sbox_input_init[1,88] 344
+c sbox_input_init[1,89] 345
+c sbox_input_init[1,90] 346
+c sbox_input_init[1,91] 347
+c sbox_input_init[1,92] 348
+c sbox_input_init[1,93] 349
+c sbox_input_init[1,94] 350
+c sbox_input_init[1,95] 351
+c sbox_input_init[1,96] 352
+c sbox_input_init[1,97] 353
+c sbox_input_init[1,98] 354
+c sbox_input_init[1,99] 355
+c sbox_input_init[1,100] 356
+c sbox_input_init[1,101] 357
+c sbox_input_init[1,102] 358
+c sbox_input_init[1,103] 359
+c sbox_input_init[1,104] 360
+c sbox_input_init[1,105] 361
+c sbox_input_init[1,106] 362
+c sbox_input_init[1,107] 363
+c sbox_input_init[1,108] 364
+c sbox_input_init[1,109] 365
+c sbox_input_init[1,110] 366
+c sbox_input_init[1,111] 367
+c sbox_input_init[1,112] 368
+c sbox_input_init[1,113] 369
+c sbox_input_init[1,114] 370
+c sbox_input_init[1,115] 371
+c sbox_input_init[1,116] 372
+c sbox_input_init[1,117] 373
+c sbox_input_init[1,118] 374
+c sbox_input_init[1,119] 375
+c sbox_input_init[1,120] 376
+c sbox_input_init[1,121] 377
+c sbox_input_init[1,122] 378
+c sbox_input_init[1,123] 379
+c sbox_input_init[1,124] 380
+c sbox_input_init[1,125] 381
+c sbox_input_init[1,126] 382
+c sbox_input_init[1,127] 383
+c sbox_input_init[1,128] 384
+c sbox_input_init[1,129] 385
+c sbox_input_init[1,130] 386
+c sbox_input_init[1,131] 387
+c sbox_input_init[1,132] 388
+c sbox_input_init[1,133] 389
+c sbox_input_init[1,134] 390
+c sbox_input_init[1,135] 391
+c sbox_input_init[1,136] 392
+c sbox_input_init[1,137] 393
+c sbox_input_init[1,138] 394
+c sbox_input_init[1,139] 395
+c sbox_input_init[1,140] 396
+c sbox_input_init[1,141] 397
+c sbox_input_init[1,142] 398
+c sbox_input_init[1,143] 399
+c sbox_input_init[1,144] 400
+c sbox_input_init[1,145] 401
+c sbox_input_init[1,146] 402
+c sbox_input_init[1,147] 403
+c sbox_input_init[1,148] 404
+c sbox_input_init[1,149] 405
+c sbox_input_init[1,150] 406
+c sbox_input_init[1,151] 407
+c sbox_input_init[1,152] 408
+c sbox_input_init[1,153] 409
+c sbox_input_init[1,154] 410
+c sbox_input_init[1,155] 411
+c sbox_input_init[1,156] 412
+c sbox_input_init[1,157] 413
+c sbox_input_init[1,158] 414
+c sbox_input_init[1,159] 415
+c sbox_input_init[1,160] 416
+c sbox_input_init[1,161] 417
+c sbox_input_init[1,162] 418
+c sbox_input_init[1,163] 419
+c sbox_input_init[1,164] 420
+c sbox_input_init[1,165] 421
+c sbox_input_init[1,166] 422
+c sbox_input_init[1,167] 423
+c sbox_input_init[1,168] 424
+c sbox_input_init[1,169] 425
+c sbox_input_init[1,170] 426
+c sbox_input_init[1,171] 427
+c sbox_input_init[1,172] 428
+c sbox_input_init[1,173] 429
+c sbox_input_init[1,174] 430
+c sbox_input_init[1,175] 431
+c sbox_input_init[1,176] 432
+c sbox_input_init[1,177] 433
+c sbox_input_init[1,178] 434
+c sbox_input_init[1,179] 435
+c sbox_input_init[1,180] 436
+c sbox_input_init[1,181] 437
+c sbox_input_init[1,182] 438
+c sbox_input_init[1,183] 439
+c sbox_input_init[1,184] 440
+c sbox_input_init[1,185] 441
+c sbox_input_init[1,186] 442
+c sbox_input_init[1,187] 443
+c sbox_input_init[1,188] 444
+c sbox_input_init[1,189] 445
+c sbox_input_init[1,190] 446
+c sbox_input_init[1,191] 447
+c sbox_input_init[1,192] 448
+c sbox_input_init[1,193] 449
+c sbox_input_init[1,194] 450
+c sbox_input_init[1,195] 451
+c sbox_input_init[1,196] 452
+c sbox_input_init[1,197] 453
+c sbox_input_init[1,198] 454
+c sbox_input_init[1,199] 455
+c sbox_input_init[1,200] 456
+c sbox_input_init[1,201] 457
+c sbox_input_init[1,202] 458
+c sbox_input_init[1,203] 459
+c sbox_input_init[1,204] 460
+c sbox_input_init[1,205] 461
+c sbox_input_init[1,206] 462
+c sbox_input_init[1,207] 463
+c sbox_input_init[1,208] 464
+c sbox_input_init[1,209] 465
+c sbox_input_init[1,210] 466
+c sbox_input_init[1,211] 467
+c sbox_input_init[1,212] 468
+c sbox_input_init[1,213] 469
+c sbox_input_init[1,214] 470
+c sbox_input_init[1,215] 471
+c sbox_input_init[1,216] 472
+c sbox_input_init[1,217] 473
+c sbox_input_init[1,218] 474
+c sbox_input_init[1,219] 475
+c sbox_input_init[1,220] 476
+c sbox_input_init[1,221] 477
+c sbox_input_init[1,222] 478
+c sbox_input_init[1,223] 479
+c sbox_input_init[1,224] 480
+c sbox_input_init[1,225] 481
+c sbox_input_init[1,226] 482
+c sbox_input_init[1,227] 483
+c sbox_input_init[1,228] 484
+c sbox_input_init[1,229] 485
+c sbox_input_init[1,230] 486
+c sbox_input_init[1,231] 487
+c sbox_input_init[1,232] 488
+c sbox_input_init[1,233] 489
+c sbox_input_init[1,234] 490
+c sbox_input_init[1,235] 491
+c sbox_input_init[1,236] 492
+c sbox_input_init[1,237] 493
+c sbox_input_init[1,238] 494
+c sbox_input_init[1,239] 495
+c sbox_input_init[1,240] 496
+c sbox_input_init[1,241] 497
+c sbox_input_init[1,242] 498
+c sbox_input_init[1,243] 499
+c sbox_input_init[1,244] 500
+c sbox_input_init[1,245] 501
+c sbox_input_init[1,246] 502
+c sbox_input_init[1,247] 503
+c sbox_input_init[1,248] 504
+c sbox_input_init[1,249] 505
+c sbox_input_init[1,250] 506
+c sbox_input_init[1,251] 507
+c sbox_input_init[1,252] 508
+c sbox_input_init[1,253] 509
+c sbox_input_init[1,254] 510
+c sbox_input_init[1,255] 511
+c sbox_input_init[1,256] 512
+c sbox_input_init[1,257] 513
+c sbox_input_init[1,258] 514
+c sbox_input_init[1,259] 515
+c sbox_input_init[1,260] 516
+c sbox_input_init[1,261] 517
+c sbox_input_init[1,262] 518
+c sbox_input_init[1,263] 519
+c sbox_input_init[1,264] 520
+c sbox_input_init[1,265] 521
+c sbox_input_init[1,266] 522
+c sbox_input_init[1,267] 523
+c sbox_input_init[1,268] 524
+c sbox_input_init[1,269] 525
+c sbox_input_init[1,270] 526
+c sbox_input_init[1,271] 527
+c sbox_input_init[1,272] 528
+c sbox_input_init[1,273] 529
+c sbox_input_init[1,274] 530
+c sbox_input_init[1,275] 531
+c sbox_input_init[1,276] 532
+c sbox_input_init[1,277] 533
+c sbox_input_init[1,278] 534
+c sbox_input_init[1,279] 535
+c sbox_input_init[1,280] 536
+c sbox_input_init[1,281] 537
+c sbox_input_init[1,282] 538
+c sbox_input_init[1,283] 539
+c sbox_input_init[1,284] 540
+c sbox_input_init[1,285] 541
+c sbox_input_init[1,286] 542
+c sbox_input_init[1,287] 543
+c sbox_input_init[1,288] 544
+c sbox_input_init[1,289] 545
+c sbox_input_init[1,290] 546
+c sbox_input_init[1,291] 547
+c sbox_input_init[1,292] 548
+c sbox_input_init[1,293] 549
+c sbox_input_init[1,294] 550
+c sbox_input_init[1,295] 551
+c sbox_input_init[1,296] 552
+c sbox_input_init[1,297] 553
+c sbox_input_init[1,298] 554
+c sbox_input_init[1,299] 555
+c sbox_input_init[1,300] 556
+c sbox_input_init[1,301] 557
+c sbox_input_init[1,302] 558
+c sbox_input_init[1,303] 559
+c sbox_input_init[1,304] 560
+c sbox_input_init[1,305] 561
+c sbox_input_init[1,306] 562
+c sbox_input_init[1,307] 563
+c sbox_input_init[1,308] 564
+c sbox_input_init[1,309] 565
+c sbox_input_init[1,310] 566
+c sbox_input_init[1,311] 567
+c sbox_input_init[1,312] 568
+c sbox_input_init[1,313] 569
+c sbox_input_init[1,314] 570
+c sbox_input_init[1,315] 571
+c sbox_input_init[1,316] 572
+c sbox_input_init[1,317] 573
+c sbox_input_init[1,318] 574
+c sbox_input_init[1,319] 575
+c sbox_input_init[1,320] 576
+c sbox_input_init[2,1] 577
+c sbox_input_init[2,2] 578
+c sbox_input_init[2,3] 579
+c sbox_input_init[2,4] 580
+c sbox_input_init[2,5] 581
+c sbox_input_init[2,6] 582
+c sbox_input_init[2,7] 583
+c sbox_input_init[2,8] 584
+c sbox_input_init[2,9] 585
+c sbox_input_init[2,10] 586
+c sbox_input_init[2,11] 587
+c sbox_input_init[2,12] 588
+c sbox_input_init[2,13] 589
+c sbox_input_init[2,14] 590
+c sbox_input_init[2,15] 591
+c sbox_input_init[2,16] 592
+c sbox_input_init[2,17] 593
+c sbox_input_init[2,18] 594
+c sbox_input_init[2,19] 595
+c sbox_input_init[2,20] 596
+c sbox_input_init[2,21] 597
+c sbox_input_init[2,22] 598
+c sbox_input_init[2,23] 599
+c sbox_input_init[2,24] 600
+c sbox_input_init[2,25] 601
+c sbox_input_init[2,26] 602
+c sbox_input_init[2,27] 603
+c sbox_input_init[2,28] 604
+c sbox_input_init[2,29] 605
+c sbox_input_init[2,30] 606
+c sbox_input_init[2,31] 607
+c sbox_input_init[2,32] 608
+c sbox_input_init[2,33] 609
+c sbox_input_init[2,34] 610
+c sbox_input_init[2,35] 611
+c sbox_input_init[2,36] 612
+c sbox_input_init[2,37] 613
+c sbox_input_init[2,38] 614
+c sbox_input_init[2,39] 615
+c sbox_input_init[2,40] 616
+c sbox_input_init[2,41] 617
+c sbox_input_init[2,42] 618
+c sbox_input_init[2,43] 619
+c sbox_input_init[2,44] 620
+c sbox_input_init[2,45] 621
+c sbox_input_init[2,46] 622
+c sbox_input_init[2,47] 623
+c sbox_input_init[2,48] 624
+c sbox_input_init[2,49] 625
+c sbox_input_init[2,50] 626
+c sbox_input_init[2,51] 627
+c sbox_input_init[2,52] 628
+c sbox_input_init[2,53] 629
+c sbox_input_init[2,54] 630
+c sbox_input_init[2,55] 631
+c sbox_input_init[2,56] 632
+c sbox_input_init[2,57] 633
+c sbox_input_init[2,58] 634
+c sbox_input_init[2,59] 635
+c sbox_input_init[2,60] 636
+c sbox_input_init[2,61] 637
+c sbox_input_init[2,62] 638
+c sbox_input_init[2,63] 639
+c sbox_input_init[2,64] 640
+c sbox_input_init[2,65] 641
+c sbox_input_init[2,66] 642
+c sbox_input_init[2,67] 643
+c sbox_input_init[2,68] 644
+c sbox_input_init[2,69] 645
+c sbox_input_init[2,70] 646
+c sbox_input_init[2,71] 647
+c sbox_input_init[2,72] 648
+c sbox_input_init[2,73] 649
+c sbox_input_init[2,74] 650
+c sbox_input_init[2,75] 651
+c sbox_input_init[2,76] 652
+c sbox_input_init[2,77] 653
+c sbox_input_init[2,78] 654
+c sbox_input_init[2,79] 655
+c sbox_input_init[2,80] 656
+c sbox_input_init[2,81] 657
+c sbox_input_init[2,82] 658
+c sbox_input_init[2,83] 659
+c sbox_input_init[2,84] 660
+c sbox_input_init[2,85] 661
+c sbox_input_init[2,86] 662
+c sbox_input_init[2,87] 663
+c sbox_input_init[2,88] 664
+c sbox_input_init[2,89] 665
+c sbox_input_init[2,90] 666
+c sbox_input_init[2,91] 667
+c sbox_input_init[2,92] 668
+c sbox_input_init[2,93] 669
+c sbox_input_init[2,94] 670
+c sbox_input_init[2,95] 671
+c sbox_input_init[2,96] 672
+c sbox_input_init[2,97] 673
+c sbox_input_init[2,98] 674
+c sbox_input_init[2,99] 675
+c sbox_input_init[2,100] 676
+c sbox_input_init[2,101] 677
+c sbox_input_init[2,102] 678
+c sbox_input_init[2,103] 679
+c sbox_input_init[2,104] 680
+c sbox_input_init[2,105] 681
+c sbox_input_init[2,106] 682
+c sbox_input_init[2,107] 683
+c sbox_input_init[2,108] 684
+c sbox_input_init[2,109] 685
+c sbox_input_init[2,110] 686
+c sbox_input_init[2,111] 687
+c sbox_input_init[2,112] 688
+c sbox_input_init[2,113] 689
+c sbox_input_init[2,114] 690
+c sbox_input_init[2,115] 691
+c sbox_input_init[2,116] 692
+c sbox_input_init[2,117] 693
+c sbox_input_init[2,118] 694
+c sbox_input_init[2,119] 695
+c sbox_input_init[2,120] 696
+c sbox_input_init[2,121] 697
+c sbox_input_init[2,122] 698
+c sbox_input_init[2,123] 699
+c sbox_input_init[2,124] 700
+c sbox_input_init[2,125] 701
+c sbox_input_init[2,126] 702
+c sbox_input_init[2,127] 703
+c sbox_input_init[2,128] 704
+c sbox_input_init[2,129] 705
+c sbox_input_init[2,130] 706
+c sbox_input_init[2,131] 707
+c sbox_input_init[2,132] 708
+c sbox_input_init[2,133] 709
+c sbox_input_init[2,134] 710
+c sbox_input_init[2,135] 711
+c sbox_input_init[2,136] 712
+c sbox_input_init[2,137] 713
+c sbox_input_init[2,138] 714
+c sbox_input_init[2,139] 715
+c sbox_input_init[2,140] 716
+c sbox_input_init[2,141] 717
+c sbox_input_init[2,142] 718
+c sbox_input_init[2,143] 719
+c sbox_input_init[2,144] 720
+c sbox_input_init[2,145] 721
+c sbox_input_init[2,146] 722
+c sbox_input_init[2,147] 723
+c sbox_input_init[2,148] 724
+c sbox_input_init[2,149] 725
+c sbox_input_init[2,150] 726
+c sbox_input_init[2,151] 727
+c sbox_input_init[2,152] 728
+c sbox_input_init[2,153] 729
+c sbox_input_init[2,154] 730
+c sbox_input_init[2,155] 731
+c sbox_input_init[2,156] 732
+c sbox_input_init[2,157] 733
+c sbox_input_init[2,158] 734
+c sbox_input_init[2,159] 735
+c sbox_input_init[2,160] 736
+c sbox_input_init[2,161] 737
+c sbox_input_init[2,162] 738
+c sbox_input_init[2,163] 739
+c sbox_input_init[2,164] 740
+c sbox_input_init[2,165] 741
+c sbox_input_init[2,166] 742
+c sbox_input_init[2,167] 743
+c sbox_input_init[2,168] 744
+c sbox_input_init[2,169] 745
+c sbox_input_init[2,170] 746
+c sbox_input_init[2,171] 747
+c sbox_input_init[2,172] 748
+c sbox_input_init[2,173] 749
+c sbox_input_init[2,174] 750
+c sbox_input_init[2,175] 751
+c sbox_input_init[2,176] 752
+c sbox_input_init[2,177] 753
+c sbox_input_init[2,178] 754
+c sbox_input_init[2,179] 755
+c sbox_input_init[2,180] 756
+c sbox_input_init[2,181] 757
+c sbox_input_init[2,182] 758
+c sbox_input_init[2,183] 759
+c sbox_input_init[2,184] 760
+c sbox_input_init[2,185] 761
+c sbox_input_init[2,186] 762
+c sbox_input_init[2,187] 763
+c sbox_input_init[2,188] 764
+c sbox_input_init[2,189] 765
+c sbox_input_init[2,190] 766
+c sbox_input_init[2,191] 767
+c sbox_input_init[2,192] 768
+c sbox_input_init[2,193] 769
+c sbox_input_init[2,194] 770
+c sbox_input_init[2,195] 771
+c sbox_input_init[2,196] 772
+c sbox_input_init[2,197] 773
+c sbox_input_init[2,198] 774
+c sbox_input_init[2,199] 775
+c sbox_input_init[2,200] 776
+c sbox_input_init[2,201] 777
+c sbox_input_init[2,202] 778
+c sbox_input_init[2,203] 779
+c sbox_input_init[2,204] 780
+c sbox_input_init[2,205] 781
+c sbox_input_init[2,206] 782
+c sbox_input_init[2,207] 783
+c sbox_input_init[2,208] 784
+c sbox_input_init[2,209] 785
+c sbox_input_init[2,210] 786
+c sbox_input_init[2,211] 787
+c sbox_input_init[2,212] 788
+c sbox_input_init[2,213] 789
+c sbox_input_init[2,214] 790
+c sbox_input_init[2,215] 791
+c sbox_input_init[2,216] 792
+c sbox_input_init[2,217] 793
+c sbox_input_init[2,218] 794
+c sbox_input_init[2,219] 795
+c sbox_input_init[2,220] 796
+c sbox_input_init[2,221] 797
+c sbox_input_init[2,222] 798
+c sbox_input_init[2,223] 799
+c sbox_input_init[2,224] 800
+c sbox_input_init[2,225] 801
+c sbox_input_init[2,226] 802
+c sbox_input_init[2,227] 803
+c sbox_input_init[2,228] 804
+c sbox_input_init[2,229] 805
+c sbox_input_init[2,230] 806
+c sbox_input_init[2,231] 807
+c sbox_input_init[2,232] 808
+c sbox_input_init[2,233] 809
+c sbox_input_init[2,234] 810
+c sbox_input_init[2,235] 811
+c sbox_input_init[2,236] 812
+c sbox_input_init[2,237] 813
+c sbox_input_init[2,238] 814
+c sbox_input_init[2,239] 815
+c sbox_input_init[2,240] 816
+c sbox_input_init[2,241] 817
+c sbox_input_init[2,242] 818
+c sbox_input_init[2,243] 819
+c sbox_input_init[2,244] 820
+c sbox_input_init[2,245] 821
+c sbox_input_init[2,246] 822
+c sbox_input_init[2,247] 823
+c sbox_input_init[2,248] 824
+c sbox_input_init[2,249] 825
+c sbox_input_init[2,250] 826
+c sbox_input_init[2,251] 827
+c sbox_input_init[2,252] 828
+c sbox_input_init[2,253] 829
+c sbox_input_init[2,254] 830
+c sbox_input_init[2,255] 831
+c sbox_input_init[2,256] 832
+c sbox_input_init[2,257] 833
+c sbox_input_init[2,258] 834
+c sbox_input_init[2,259] 835
+c sbox_input_init[2,260] 836
+c sbox_input_init[2,261] 837
+c sbox_input_init[2,262] 838
+c sbox_input_init[2,263] 839
+c sbox_input_init[2,264] 840
+c sbox_input_init[2,265] 841
+c sbox_input_init[2,266] 842
+c sbox_input_init[2,267] 843
+c sbox_input_init[2,268] 844
+c sbox_input_init[2,269] 845
+c sbox_input_init[2,270] 846
+c sbox_input_init[2,271] 847
+c sbox_input_init[2,272] 848
+c sbox_input_init[2,273] 849
+c sbox_input_init[2,274] 850
+c sbox_input_init[2,275] 851
+c sbox_input_init[2,276] 852
+c sbox_input_init[2,277] 853
+c sbox_input_init[2,278] 854
+c sbox_input_init[2,279] 855
+c sbox_input_init[2,280] 856
+c sbox_input_init[2,281] 857
+c sbox_input_init[2,282] 858
+c sbox_input_init[2,283] 859
+c sbox_input_init[2,284] 860
+c sbox_input_init[2,285] 861
+c sbox_input_init[2,286] 862
+c sbox_input_init[2,287] 863
+c sbox_input_init[2,288] 864
+c sbox_input_init[2,289] 865
+c sbox_input_init[2,290] 866
+c sbox_input_init[2,291] 867
+c sbox_input_init[2,292] 868
+c sbox_input_init[2,293] 869
+c sbox_input_init[2,294] 870
+c sbox_input_init[2,295] 871
+c sbox_input_init[2,296] 872
+c sbox_input_init[2,297] 873
+c sbox_input_init[2,298] 874
+c sbox_input_init[2,299] 875
+c sbox_input_init[2,300] 876
+c sbox_input_init[2,301] 877
+c sbox_input_init[2,302] 878
+c sbox_input_init[2,303] 879
+c sbox_input_init[2,304] 880
+c sbox_input_init[2,305] 881
+c sbox_input_init[2,306] 882
+c sbox_input_init[2,307] 883
+c sbox_input_init[2,308] 884
+c sbox_input_init[2,309] 885
+c sbox_input_init[2,310] 886
+c sbox_input_init[2,311] 887
+c sbox_input_init[2,312] 888
+c sbox_input_init[2,313] 889
+c sbox_input_init[2,314] 890
+c sbox_input_init[2,315] 891
+c sbox_input_init[2,316] 892
+c sbox_input_init[2,317] 893
+c sbox_input_init[2,318] 894
+c sbox_input_init[2,319] 895
+c sbox_input_init[2,320] 896
+c sbox_output_init[1,1] 897
+c sbox_output_init[1,2] 898
+c sbox_output_init[1,3] 899
+c sbox_output_init[1,4] 900
+c sbox_output_init[1,5] 901
+c sbox_output_init[1,6] 902
+c sbox_output_init[1,7] 903
+c sbox_output_init[1,8] 904
+c sbox_output_init[1,9] 905
+c sbox_output_init[1,10] 906
+c sbox_output_init[1,11] 907
+c sbox_output_init[1,12] 908
+c sbox_output_init[1,13] 909
+c sbox_output_init[1,14] 910
+c sbox_output_init[1,15] 911
+c sbox_output_init[1,16] 912
+c sbox_output_init[1,17] 913
+c sbox_output_init[1,18] 914
+c sbox_output_init[1,19] 915
+c sbox_output_init[1,20] 916
+c sbox_output_init[1,21] 917
+c sbox_output_init[1,22] 918
+c sbox_output_init[1,23] 919
+c sbox_output_init[1,24] 920
+c sbox_output_init[1,25] 921
+c sbox_output_init[1,26] 922
+c sbox_output_init[1,27] 923
+c sbox_output_init[1,28] 924
+c sbox_output_init[1,29] 925
+c sbox_output_init[1,30] 926
+c sbox_output_init[1,31] 927
+c sbox_output_init[1,32] 928
+c sbox_output_init[1,33] 929
+c sbox_output_init[1,34] 930
+c sbox_output_init[1,35] 931
+c sbox_output_init[1,36] 932
+c sbox_output_init[1,37] 933
+c sbox_output_init[1,38] 934
+c sbox_output_init[1,39] 935
+c sbox_output_init[1,40] 936
+c sbox_output_init[1,41] 937
+c sbox_output_init[1,42] 938
+c sbox_output_init[1,43] 939
+c sbox_output_init[1,44] 940
+c sbox_output_init[1,45] 941
+c sbox_output_init[1,46] 942
+c sbox_output_init[1,47] 943
+c sbox_output_init[1,48] 944
+c sbox_output_init[1,49] 945
+c sbox_output_init[1,50] 946
+c sbox_output_init[1,51] 947
+c sbox_output_init[1,52] 948
+c sbox_output_init[1,53] 949
+c sbox_output_init[1,54] 950
+c sbox_output_init[1,55] 951
+c sbox_output_init[1,56] 952
+c sbox_output_init[1,57] 953
+c sbox_output_init[1,58] 954
+c sbox_output_init[1,59] 955
+c sbox_output_init[1,60] 956
+c sbox_output_init[1,61] 957
+c sbox_output_init[1,62] 958
+c sbox_output_init[1,63] 959
+c sbox_output_init[1,64] 960
+c sbox_output_init[1,65] 961
+c sbox_output_init[1,66] 962
+c sbox_output_init[1,67] 963
+c sbox_output_init[1,68] 964
+c sbox_output_init[1,69] 965
+c sbox_output_init[1,70] 966
+c sbox_output_init[1,71] 967
+c sbox_output_init[1,72] 968
+c sbox_output_init[1,73] 969
+c sbox_output_init[1,74] 970
+c sbox_output_init[1,75] 971
+c sbox_output_init[1,76] 972
+c sbox_output_init[1,77] 973
+c sbox_output_init[1,78] 974
+c sbox_output_init[1,79] 975
+c sbox_output_init[1,80] 976
+c sbox_output_init[1,81] 977
+c sbox_output_init[1,82] 978
+c sbox_output_init[1,83] 979
+c sbox_output_init[1,84] 980
+c sbox_output_init[1,85] 981
+c sbox_output_init[1,86] 982
+c sbox_output_init[1,87] 983
+c sbox_output_init[1,88] 984
+c sbox_output_init[1,89] 985
+c sbox_output_init[1,90] 986
+c sbox_output_init[1,91] 987
+c sbox_output_init[1,92] 988
+c sbox_output_init[1,93] 989
+c sbox_output_init[1,94] 990
+c sbox_output_init[1,95] 991
+c sbox_output_init[1,96] 992
+c sbox_output_init[1,97] 993
+c sbox_output_init[1,98] 994
+c sbox_output_init[1,99] 995
+c sbox_output_init[1,100] 996
+c sbox_output_init[1,101] 997
+c sbox_output_init[1,102] 998
+c sbox_output_init[1,103] 999
+c sbox_output_init[1,104] 1000
+c sbox_output_init[1,105] 1001
+c sbox_output_init[1,106] 1002
+c sbox_output_init[1,107] 1003
+c sbox_output_init[1,108] 1004
+c sbox_output_init[1,109] 1005
+c sbox_output_init[1,110] 1006
+c sbox_output_init[1,111] 1007
+c sbox_output_init[1,112] 1008
+c sbox_output_init[1,113] 1009
+c sbox_output_init[1,114] 1010
+c sbox_output_init[1,115] 1011
+c sbox_output_init[1,116] 1012
+c sbox_output_init[1,117] 1013
+c sbox_output_init[1,118] 1014
+c sbox_output_init[1,119] 1015
+c sbox_output_init[1,120] 1016
+c sbox_output_init[1,121] 1017
+c sbox_output_init[1,122] 1018
+c sbox_output_init[1,123] 1019
+c sbox_output_init[1,124] 1020
+c sbox_output_init[1,125] 1021
+c sbox_output_init[1,126] 1022
+c sbox_output_init[1,127] 1023
+c sbox_output_init[1,128] 1024
+c sbox_output_init[1,129] 1025
+c sbox_output_init[1,130] 1026
+c sbox_output_init[1,131] 1027
+c sbox_output_init[1,132] 1028
+c sbox_output_init[1,133] 1029
+c sbox_output_init[1,134] 1030
+c sbox_output_init[1,135] 1031
+c sbox_output_init[1,136] 1032
+c sbox_output_init[1,137] 1033
+c sbox_output_init[1,138] 1034
+c sbox_output_init[1,139] 1035
+c sbox_output_init[1,140] 1036
+c sbox_output_init[1,141] 1037
+c sbox_output_init[1,142] 1038
+c sbox_output_init[1,143] 1039
+c sbox_output_init[1,144] 1040
+c sbox_output_init[1,145] 1041
+c sbox_output_init[1,146] 1042
+c sbox_output_init[1,147] 1043
+c sbox_output_init[1,148] 1044
+c sbox_output_init[1,149] 1045
+c sbox_output_init[1,150] 1046
+c sbox_output_init[1,151] 1047
+c sbox_output_init[1,152] 1048
+c sbox_output_init[1,153] 1049
+c sbox_output_init[1,154] 1050
+c sbox_output_init[1,155] 1051
+c sbox_output_init[1,156] 1052
+c sbox_output_init[1,157] 1053
+c sbox_output_init[1,158] 1054
+c sbox_output_init[1,159] 1055
+c sbox_output_init[1,160] 1056
+c sbox_output_init[1,161] 1057
+c sbox_output_init[1,162] 1058
+c sbox_output_init[1,163] 1059
+c sbox_output_init[1,164] 1060
+c sbox_output_init[1,165] 1061
+c sbox_output_init[1,166] 1062
+c sbox_output_init[1,167] 1063
+c sbox_output_init[1,168] 1064
+c sbox_output_init[1,169] 1065
+c sbox_output_init[1,170] 1066
+c sbox_output_init[1,171] 1067
+c sbox_output_init[1,172] 1068
+c sbox_output_init[1,173] 1069
+c sbox_output_init[1,174] 1070
+c sbox_output_init[1,175] 1071
+c sbox_output_init[1,176] 1072
+c sbox_output_init[1,177] 1073
+c sbox_output_init[1,178] 1074
+c sbox_output_init[1,179] 1075
+c sbox_output_init[1,180] 1076
+c sbox_output_init[1,181] 1077
+c sbox_output_init[1,182] 1078
+c sbox_output_init[1,183] 1079
+c sbox_output_init[1,184] 1080
+c sbox_output_init[1,185] 1081
+c sbox_output_init[1,186] 1082
+c sbox_output_init[1,187] 1083
+c sbox_output_init[1,188] 1084
+c sbox_output_init[1,189] 1085
+c sbox_output_init[1,190] 1086
+c sbox_output_init[1,191] 1087
+c sbox_output_init[1,192] 1088
+c sbox_output_init[1,193] 1089
+c sbox_output_init[1,194] 1090
+c sbox_output_init[1,195] 1091
+c sbox_output_init[1,196] 1092
+c sbox_output_init[1,197] 1093
+c sbox_output_init[1,198] 1094
+c sbox_output_init[1,199] 1095
+c sbox_output_init[1,200] 1096
+c sbox_output_init[1,201] 1097
+c sbox_output_init[1,202] 1098
+c sbox_output_init[1,203] 1099
+c sbox_output_init[1,204] 1100
+c sbox_output_init[1,205] 1101
+c sbox_output_init[1,206] 1102
+c sbox_output_init[1,207] 1103
+c sbox_output_init[1,208] 1104
+c sbox_output_init[1,209] 1105
+c sbox_output_init[1,210] 1106
+c sbox_output_init[1,211] 1107
+c sbox_output_init[1,212] 1108
+c sbox_output_init[1,213] 1109
+c sbox_output_init[1,214] 1110
+c sbox_output_init[1,215] 1111
+c sbox_output_init[1,216] 1112
+c sbox_output_init[1,217] 1113
+c sbox_output_init[1,218] 1114
+c sbox_output_init[1,219] 1115
+c sbox_output_init[1,220] 1116
+c sbox_output_init[1,221] 1117
+c sbox_output_init[1,222] 1118
+c sbox_output_init[1,223] 1119
+c sbox_output_init[1,224] 1120
+c sbox_output_init[1,225] 1121
+c sbox_output_init[1,226] 1122
+c sbox_output_init[1,227] 1123
+c sbox_output_init[1,228] 1124
+c sbox_output_init[1,229] 1125
+c sbox_output_init[1,230] 1126
+c sbox_output_init[1,231] 1127
+c sbox_output_init[1,232] 1128
+c sbox_output_init[1,233] 1129
+c sbox_output_init[1,234] 1130
+c sbox_output_init[1,235] 1131
+c sbox_output_init[1,236] 1132
+c sbox_output_init[1,237] 1133
+c sbox_output_init[1,238] 1134
+c sbox_output_init[1,239] 1135
+c sbox_output_init[1,240] 1136
+c sbox_output_init[1,241] 1137
+c sbox_output_init[1,242] 1138
+c sbox_output_init[1,243] 1139
+c sbox_output_init[1,244] 1140
+c sbox_output_init[1,245] 1141
+c sbox_output_init[1,246] 1142
+c sbox_output_init[1,247] 1143
+c sbox_output_init[1,248] 1144
+c sbox_output_init[1,249] 1145
+c sbox_output_init[1,250] 1146
+c sbox_output_init[1,251] 1147
+c sbox_output_init[1,252] 1148
+c sbox_output_init[1,253] 1149
+c sbox_output_init[1,254] 1150
+c sbox_output_init[1,255] 1151
+c sbox_output_init[1,256] 1152
+c sbox_output_init[1,257] 1153
+c sbox_output_init[1,258] 1154
+c sbox_output_init[1,259] 1155
+c sbox_output_init[1,260] 1156
+c sbox_output_init[1,261] 1157
+c sbox_output_init[1,262] 1158
+c sbox_output_init[1,263] 1159
+c sbox_output_init[1,264] 1160
+c sbox_output_init[1,265] 1161
+c sbox_output_init[1,266] 1162
+c sbox_output_init[1,267] 1163
+c sbox_output_init[1,268] 1164
+c sbox_output_init[1,269] 1165
+c sbox_output_init[1,270] 1166
+c sbox_output_init[1,271] 1167
+c sbox_output_init[1,272] 1168
+c sbox_output_init[1,273] 1169
+c sbox_output_init[1,274] 1170
+c sbox_output_init[1,275] 1171
+c sbox_output_init[1,276] 1172
+c sbox_output_init[1,277] 1173
+c sbox_output_init[1,278] 1174
+c sbox_output_init[1,279] 1175
+c sbox_output_init[1,280] 1176
+c sbox_output_init[1,281] 1177
+c sbox_output_init[1,282] 1178
+c sbox_output_init[1,283] 1179
+c sbox_output_init[1,284] 1180
+c sbox_output_init[1,285] 1181
+c sbox_output_init[1,286] 1182
+c sbox_output_init[1,287] 1183
+c sbox_output_init[1,288] 1184
+c sbox_output_init[1,289] 1185
+c sbox_output_init[1,290] 1186
+c sbox_output_init[1,291] 1187
+c sbox_output_init[1,292] 1188
+c sbox_output_init[1,293] 1189
+c sbox_output_init[1,294] 1190
+c sbox_output_init[1,295] 1191
+c sbox_output_init[1,296] 1192
+c sbox_output_init[1,297] 1193
+c sbox_output_init[1,298] 1194
+c sbox_output_init[1,299] 1195
+c sbox_output_init[1,300] 1196
+c sbox_output_init[1,301] 1197
+c sbox_output_init[1,302] 1198
+c sbox_output_init[1,303] 1199
+c sbox_output_init[1,304] 1200
+c sbox_output_init[1,305] 1201
+c sbox_output_init[1,306] 1202
+c sbox_output_init[1,307] 1203
+c sbox_output_init[1,308] 1204
+c sbox_output_init[1,309] 1205
+c sbox_output_init[1,310] 1206
+c sbox_output_init[1,311] 1207
+c sbox_output_init[1,312] 1208
+c sbox_output_init[1,313] 1209
+c sbox_output_init[1,314] 1210
+c sbox_output_init[1,315] 1211
+c sbox_output_init[1,316] 1212
+c sbox_output_init[1,317] 1213
+c sbox_output_init[1,318] 1214
+c sbox_output_init[1,319] 1215
+c sbox_output_init[1,320] 1216
+c sbox_output_init[2,1] 1217
+c sbox_output_init[2,2] 1218
+c sbox_output_init[2,3] 1219
+c sbox_output_init[2,4] 1220
+c sbox_output_init[2,5] 1221
+c sbox_output_init[2,6] 1222
+c sbox_output_init[2,7] 1223
+c sbox_output_init[2,8] 1224
+c sbox_output_init[2,9] 1225
+c sbox_output_init[2,10] 1226
+c sbox_output_init[2,11] 1227
+c sbox_output_init[2,12] 1228
+c sbox_output_init[2,13] 1229
+c sbox_output_init[2,14] 1230
+c sbox_output_init[2,15] 1231
+c sbox_output_init[2,16] 1232
+c sbox_output_init[2,17] 1233
+c sbox_output_init[2,18] 1234
+c sbox_output_init[2,19] 1235
+c sbox_output_init[2,20] 1236
+c sbox_output_init[2,21] 1237
+c sbox_output_init[2,22] 1238
+c sbox_output_init[2,23] 1239
+c sbox_output_init[2,24] 1240
+c sbox_output_init[2,25] 1241
+c sbox_output_init[2,26] 1242
+c sbox_output_init[2,27] 1243
+c sbox_output_init[2,28] 1244
+c sbox_output_init[2,29] 1245
+c sbox_output_init[2,30] 1246
+c sbox_output_init[2,31] 1247
+c sbox_output_init[2,32] 1248
+c sbox_output_init[2,33] 1249
+c sbox_output_init[2,34] 1250
+c sbox_output_init[2,35] 1251
+c sbox_output_init[2,36] 1252
+c sbox_output_init[2,37] 1253
+c sbox_output_init[2,38] 1254
+c sbox_output_init[2,39] 1255
+c sbox_output_init[2,40] 1256
+c sbox_output_init[2,41] 1257
+c sbox_output_init[2,42] 1258
+c sbox_output_init[2,43] 1259
+c sbox_output_init[2,44] 1260
+c sbox_output_init[2,45] 1261
+c sbox_output_init[2,46] 1262
+c sbox_output_init[2,47] 1263
+c sbox_output_init[2,48] 1264
+c sbox_output_init[2,49] 1265
+c sbox_output_init[2,50] 1266
+c sbox_output_init[2,51] 1267
+c sbox_output_init[2,52] 1268
+c sbox_output_init[2,53] 1269
+c sbox_output_init[2,54] 1270
+c sbox_output_init[2,55] 1271
+c sbox_output_init[2,56] 1272
+c sbox_output_init[2,57] 1273
+c sbox_output_init[2,58] 1274
+c sbox_output_init[2,59] 1275
+c sbox_output_init[2,60] 1276
+c sbox_output_init[2,61] 1277
+c sbox_output_init[2,62] 1278
+c sbox_output_init[2,63] 1279
+c sbox_output_init[2,64] 1280
+c sbox_output_init[2,65] 1281
+c sbox_output_init[2,66] 1282
+c sbox_output_init[2,67] 1283
+c sbox_output_init[2,68] 1284
+c sbox_output_init[2,69] 1285
+c sbox_output_init[2,70] 1286
+c sbox_output_init[2,71] 1287
+c sbox_output_init[2,72] 1288
+c sbox_output_init[2,73] 1289
+c sbox_output_init[2,74] 1290
+c sbox_output_init[2,75] 1291
+c sbox_output_init[2,76] 1292
+c sbox_output_init[2,77] 1293
+c sbox_output_init[2,78] 1294
+c sbox_output_init[2,79] 1295
+c sbox_output_init[2,80] 1296
+c sbox_output_init[2,81] 1297
+c sbox_output_init[2,82] 1298
+c sbox_output_init[2,83] 1299
+c sbox_output_init[2,84] 1300
+c sbox_output_init[2,85] 1301
+c sbox_output_init[2,86] 1302
+c sbox_output_init[2,87] 1303
+c sbox_output_init[2,88] 1304
+c sbox_output_init[2,89] 1305
+c sbox_output_init[2,90] 1306
+c sbox_output_init[2,91] 1307
+c sbox_output_init[2,92] 1308
+c sbox_output_init[2,93] 1309
+c sbox_output_init[2,94] 1310
+c sbox_output_init[2,95] 1311
+c sbox_output_init[2,96] 1312
+c sbox_output_init[2,97] 1313
+c sbox_output_init[2,98] 1314
+c sbox_output_init[2,99] 1315
+c sbox_output_init[2,100] 1316
+c sbox_output_init[2,101] 1317
+c sbox_output_init[2,102] 1318
+c sbox_output_init[2,103] 1319
+c sbox_output_init[2,104] 1320
+c sbox_output_init[2,105] 1321
+c sbox_output_init[2,106] 1322
+c sbox_output_init[2,107] 1323
+c sbox_output_init[2,108] 1324
+c sbox_output_init[2,109] 1325
+c sbox_output_init[2,110] 1326
+c sbox_output_init[2,111] 1327
+c sbox_output_init[2,112] 1328
+c sbox_output_init[2,113] 1329
+c sbox_output_init[2,114] 1330
+c sbox_output_init[2,115] 1331
+c sbox_output_init[2,116] 1332
+c sbox_output_init[2,117] 1333
+c sbox_output_init[2,118] 1334
+c sbox_output_init[2,119] 1335
+c sbox_output_init[2,120] 1336
+c sbox_output_init[2,121] 1337
+c sbox_output_init[2,122] 1338
+c sbox_output_init[2,123] 1339
+c sbox_output_init[2,124] 1340
+c sbox_output_init[2,125] 1341
+c sbox_output_init[2,126] 1342
+c sbox_output_init[2,127] 1343
+c sbox_output_init[2,128] 1344
+c sbox_output_init[2,129] 1345
+c sbox_output_init[2,130] 1346
+c sbox_output_init[2,131] 1347
+c sbox_output_init[2,132] 1348
+c sbox_output_init[2,133] 1349
+c sbox_output_init[2,134] 1350
+c sbox_output_init[2,135] 1351
+c sbox_output_init[2,136] 1352
+c sbox_output_init[2,137] 1353
+c sbox_output_init[2,138] 1354
+c sbox_output_init[2,139] 1355
+c sbox_output_init[2,140] 1356
+c sbox_output_init[2,141] 1357
+c sbox_output_init[2,142] 1358
+c sbox_output_init[2,143] 1359
+c sbox_output_init[2,144] 1360
+c sbox_output_init[2,145] 1361
+c sbox_output_init[2,146] 1362
+c sbox_output_init[2,147] 1363
+c sbox_output_init[2,148] 1364
+c sbox_output_init[2,149] 1365
+c sbox_output_init[2,150] 1366
+c sbox_output_init[2,151] 1367
+c sbox_output_init[2,152] 1368
+c sbox_output_init[2,153] 1369
+c sbox_output_init[2,154] 1370
+c sbox_output_init[2,155] 1371
+c sbox_output_init[2,156] 1372
+c sbox_output_init[2,157] 1373
+c sbox_output_init[2,158] 1374
+c sbox_output_init[2,159] 1375
+c sbox_output_init[2,160] 1376
+c sbox_output_init[2,161] 1377
+c sbox_output_init[2,162] 1378
+c sbox_output_init[2,163] 1379
+c sbox_output_init[2,164] 1380
+c sbox_output_init[2,165] 1381
+c sbox_output_init[2,166] 1382
+c sbox_output_init[2,167] 1383
+c sbox_output_init[2,168] 1384
+c sbox_output_init[2,169] 1385
+c sbox_output_init[2,170] 1386
+c sbox_output_init[2,171] 1387
+c sbox_output_init[2,172] 1388
+c sbox_output_init[2,173] 1389
+c sbox_output_init[2,174] 1390
+c sbox_output_init[2,175] 1391
+c sbox_output_init[2,176] 1392
+c sbox_output_init[2,177] 1393
+c sbox_output_init[2,178] 1394
+c sbox_output_init[2,179] 1395
+c sbox_output_init[2,180] 1396
+c sbox_output_init[2,181] 1397
+c sbox_output_init[2,182] 1398
+c sbox_output_init[2,183] 1399
+c sbox_output_init[2,184] 1400
+c sbox_output_init[2,185] 1401
+c sbox_output_init[2,186] 1402
+c sbox_output_init[2,187] 1403
+c sbox_output_init[2,188] 1404
+c sbox_output_init[2,189] 1405
+c sbox_output_init[2,190] 1406
+c sbox_output_init[2,191] 1407
+c sbox_output_init[2,192] 1408
+c sbox_output_init[2,193] 1409
+c sbox_output_init[2,194] 1410
+c sbox_output_init[2,195] 1411
+c sbox_output_init[2,196] 1412
+c sbox_output_init[2,197] 1413
+c sbox_output_init[2,198] 1414
+c sbox_output_init[2,199] 1415
+c sbox_output_init[2,200] 1416
+c sbox_output_init[2,201] 1417
+c sbox_output_init[2,202] 1418
+c sbox_output_init[2,203] 1419
+c sbox_output_init[2,204] 1420
+c sbox_output_init[2,205] 1421
+c sbox_output_init[2,206] 1422
+c sbox_output_init[2,207] 1423
+c sbox_output_init[2,208] 1424
+c sbox_output_init[2,209] 1425
+c sbox_output_init[2,210] 1426
+c sbox_output_init[2,211] 1427
+c sbox_output_init[2,212] 1428
+c sbox_output_init[2,213] 1429
+c sbox_output_init[2,214] 1430
+c sbox_output_init[2,215] 1431
+c sbox_output_init[2,216] 1432
+c sbox_output_init[2,217] 1433
+c sbox_output_init[2,218] 1434
+c sbox_output_init[2,219] 1435
+c sbox_output_init[2,220] 1436
+c sbox_output_init[2,221] 1437
+c sbox_output_init[2,222] 1438
+c sbox_output_init[2,223] 1439
+c sbox_output_init[2,224] 1440
+c sbox_output_init[2,225] 1441
+c sbox_output_init[2,226] 1442
+c sbox_output_init[2,227] 1443
+c sbox_output_init[2,228] 1444
+c sbox_output_init[2,229] 1445
+c sbox_output_init[2,230] 1446
+c sbox_output_init[2,231] 1447
+c sbox_output_init[2,232] 1448
+c sbox_output_init[2,233] 1449
+c sbox_output_init[2,234] 1450
+c sbox_output_init[2,235] 1451
+c sbox_output_init[2,236] 1452
+c sbox_output_init[2,237] 1453
+c sbox_output_init[2,238] 1454
+c sbox_output_init[2,239] 1455
+c sbox_output_init[2,240] 1456
+c sbox_output_init[2,241] 1457
+c sbox_output_init[2,242] 1458
+c sbox_output_init[2,243] 1459
+c sbox_output_init[2,244] 1460
+c sbox_output_init[2,245] 1461
+c sbox_output_init[2,246] 1462
+c sbox_output_init[2,247] 1463
+c sbox_output_init[2,248] 1464
+c sbox_output_init[2,249] 1465
+c sbox_output_init[2,250] 1466
+c sbox_output_init[2,251] 1467
+c sbox_output_init[2,252] 1468
+c sbox_output_init[2,253] 1469
+c sbox_output_init[2,254] 1470
+c sbox_output_init[2,255] 1471
+c sbox_output_init[2,256] 1472
+c sbox_output_init[2,257] 1473
+c sbox_output_init[2,258] 1474
+c sbox_output_init[2,259] 1475
+c sbox_output_init[2,260] 1476
+c sbox_output_init[2,261] 1477
+c sbox_output_init[2,262] 1478
+c sbox_output_init[2,263] 1479
+c sbox_output_init[2,264] 1480
+c sbox_output_init[2,265] 1481
+c sbox_output_init[2,266] 1482
+c sbox_output_init[2,267] 1483
+c sbox_output_init[2,268] 1484
+c sbox_output_init[2,269] 1485
+c sbox_output_init[2,270] 1486
+c sbox_output_init[2,271] 1487
+c sbox_output_init[2,272] 1488
+c sbox_output_init[2,273] 1489
+c sbox_output_init[2,274] 1490
+c sbox_output_init[2,275] 1491
+c sbox_output_init[2,276] 1492
+c sbox_output_init[2,277] 1493
+c sbox_output_init[2,278] 1494
+c sbox_output_init[2,279] 1495
+c sbox_output_init[2,280] 1496
+c sbox_output_init[2,281] 1497
+c sbox_output_init[2,282] 1498
+c sbox_output_init[2,283] 1499
+c sbox_output_init[2,284] 1500
+c sbox_output_init[2,285] 1501
+c sbox_output_init[2,286] 1502
+c sbox_output_init[2,287] 1503
+c sbox_output_init[2,288] 1504
+c sbox_output_init[2,289] 1505
+c sbox_output_init[2,290] 1506
+c sbox_output_init[2,291] 1507
+c sbox_output_init[2,292] 1508
+c sbox_output_init[2,293] 1509
+c sbox_output_init[2,294] 1510
+c sbox_output_init[2,295] 1511
+c sbox_output_init[2,296] 1512
+c sbox_output_init[2,297] 1513
+c sbox_output_init[2,298] 1514
+c sbox_output_init[2,299] 1515
+c sbox_output_init[2,300] 1516
+c sbox_output_init[2,301] 1517
+c sbox_output_init[2,302] 1518
+c sbox_output_init[2,303] 1519
+c sbox_output_init[2,304] 1520
+c sbox_output_init[2,305] 1521
+c sbox_output_init[2,306] 1522
+c sbox_output_init[2,307] 1523
+c sbox_output_init[2,308] 1524
+c sbox_output_init[2,309] 1525
+c sbox_output_init[2,310] 1526
+c sbox_output_init[2,311] 1527
+c sbox_output_init[2,312] 1528
+c sbox_output_init[2,313] 1529
+c sbox_output_init[2,314] 1530
+c sbox_output_init[2,315] 1531
+c sbox_output_init[2,316] 1532
+c sbox_output_init[2,317] 1533
+c sbox_output_init[2,318] 1534
+c sbox_output_init[2,319] 1535
+c sbox_output_init[2,320] 1536
+c S_after_init[1] 1537
+c S_after_init[2] 1538
+c S_after_init[3] 1539
+c S_after_init[4] 1540
+c S_after_init[5] 1541
+c S_after_init[6] 1542
+c S_after_init[7] 1543
+c S_after_init[8] 1544
+c S_after_init[9] 1545
+c S_after_init[10] 1546
+c S_after_init[11] 1547
+c S_after_init[12] 1548
+c S_after_init[13] 1549
+c S_after_init[14] 1550
+c S_after_init[15] 1551
+c S_after_init[16] 1552
+c S_after_init[17] 1553
+c S_after_init[18] 1554
+c S_after_init[19] 1555
+c S_after_init[20] 1556
+c S_after_init[21] 1557
+c S_after_init[22] 1558
+c S_after_init[23] 1559
+c S_after_init[24] 1560
+c S_after_init[25] 1561
+c S_after_init[26] 1562
+c S_after_init[27] 1563
+c S_after_init[28] 1564
+c S_after_init[29] 1565
+c S_after_init[30] 1566
+c S_after_init[31] 1567
+c S_after_init[32] 1568
+c S_after_init[33] 1569
+c S_after_init[34] 1570
+c S_after_init[35] 1571
+c S_after_init[36] 1572
+c S_after_init[37] 1573
+c S_after_init[38] 1574
+c S_after_init[39] 1575
+c S_after_init[40] 1576
+c S_after_init[41] 1577
+c S_after_init[42] 1578
+c S_after_init[43] 1579
+c S_after_init[44] 1580
+c S_after_init[45] 1581
+c S_after_init[46] 1582
+c S_after_init[47] 1583
+c S_after_init[48] 1584
+c S_after_init[49] 1585
+c S_after_init[50] 1586
+c S_after_init[51] 1587
+c S_after_init[52] 1588
+c S_after_init[53] 1589
+c S_after_init[54] 1590
+c S_after_init[55] 1591
+c S_after_init[56] 1592
+c S_after_init[57] 1593
+c S_after_init[58] 1594
+c S_after_init[59] 1595
+c S_after_init[60] 1596
+c S_after_init[61] 1597
+c S_after_init[62] 1598
+c S_after_init[63] 1599
+c S_after_init[64] 1600
+c S_after_init[65] 1601
+c S_after_init[66] 1602
+c S_after_init[67] 1603
+c S_after_init[68] 1604
+c S_after_init[69] 1605
+c S_after_init[70] 1606
+c S_after_init[71] 1607
+c S_after_init[72] 1608
+c S_after_init[73] 1609
+c S_after_init[74] 1610
+c S_after_init[75] 1611
+c S_after_init[76] 1612
+c S_after_init[77] 1613
+c S_after_init[78] 1614
+c S_after_init[79] 1615
+c S_after_init[80] 1616
+c S_after_init[81] 1617
+c S_after_init[82] 1618
+c S_after_init[83] 1619
+c S_after_init[84] 1620
+c S_after_init[85] 1621
+c S_after_init[86] 1622
+c S_after_init[87] 1623
+c S_after_init[88] 1624
+c S_after_init[89] 1625
+c S_after_init[90] 1626
+c S_after_init[91] 1627
+c S_after_init[92] 1628
+c S_after_init[93] 1629
+c S_after_init[94] 1630
+c S_after_init[95] 1631
+c S_after_init[96] 1632
+c S_after_init[97] 1633
+c S_after_init[98] 1634
+c S_after_init[99] 1635
+c S_after_init[100] 1636
+c S_after_init[101] 1637
+c S_after_init[102] 1638
+c S_after_init[103] 1639
+c S_after_init[104] 1640
+c S_after_init[105] 1641
+c S_after_init[106] 1642
+c S_after_init[107] 1643
+c S_after_init[108] 1644
+c S_after_init[109] 1645
+c S_after_init[110] 1646
+c S_after_init[111] 1647
+c S_after_init[112] 1648
+c S_after_init[113] 1649
+c S_after_init[114] 1650
+c S_after_init[115] 1651
+c S_after_init[116] 1652
+c S_after_init[117] 1653
+c S_after_init[118] 1654
+c S_after_init[119] 1655
+c S_after_init[120] 1656
+c S_after_init[121] 1657
+c S_after_init[122] 1658
+c S_after_init[123] 1659
+c S_after_init[124] 1660
+c S_after_init[125] 1661
+c S_after_init[126] 1662
+c S_after_init[127] 1663
+c S_after_init[128] 1664
+c S_after_init[129] 1665
+c S_after_init[130] 1666
+c S_after_init[131] 1667
+c S_after_init[132] 1668
+c S_after_init[133] 1669
+c S_after_init[134] 1670
+c S_after_init[135] 1671
+c S_after_init[136] 1672
+c S_after_init[137] 1673
+c S_after_init[138] 1674
+c S_after_init[139] 1675
+c S_after_init[140] 1676
+c S_after_init[141] 1677
+c S_after_init[142] 1678
+c S_after_init[143] 1679
+c S_after_init[144] 1680
+c S_after_init[145] 1681
+c S_after_init[146] 1682
+c S_after_init[147] 1683
+c S_after_init[148] 1684
+c S_after_init[149] 1685
+c S_after_init[150] 1686
+c S_after_init[151] 1687
+c S_after_init[152] 1688
+c S_after_init[153] 1689
+c S_after_init[154] 1690
+c S_after_init[155] 1691
+c S_after_init[156] 1692
+c S_after_init[157] 1693
+c S_after_init[158] 1694
+c S_after_init[159] 1695
+c S_after_init[160] 1696
+c S_after_init[161] 1697
+c S_after_init[162] 1698
+c S_after_init[163] 1699
+c S_after_init[164] 1700
+c S_after_init[165] 1701
+c S_after_init[166] 1702
+c S_after_init[167] 1703
+c S_after_init[168] 1704
+c S_after_init[169] 1705
+c S_after_init[170] 1706
+c S_after_init[171] 1707
+c S_after_init[172] 1708
+c S_after_init[173] 1709
+c S_after_init[174] 1710
+c S_after_init[175] 1711
+c S_after_init[176] 1712
+c S_after_init[177] 1713
+c S_after_init[178] 1714
+c S_after_init[179] 1715
+c S_after_init[180] 1716
+c S_after_init[181] 1717
+c S_after_init[182] 1718
+c S_after_init[183] 1719
+c S_after_init[184] 1720
+c S_after_init[185] 1721
+c S_after_init[186] 1722
+c S_after_init[187] 1723
+c S_after_init[188] 1724
+c S_after_init[189] 1725
+c S_after_init[190] 1726
+c S_after_init[191] 1727
+c S_after_init[192] 1728
+c S_after_init[193] 1729
+c S_after_init[194] 1730
+c S_after_init[195] 1731
+c S_after_init[196] 1732
+c S_after_init[197] 1733
+c S_after_init[198] 1734
+c S_after_init[199] 1735
+c S_after_init[200] 1736
+c S_after_init[201] 1737
+c S_after_init[202] 1738
+c S_after_init[203] 1739
+c S_after_init[204] 1740
+c S_after_init[205] 1741
+c S_after_init[206] 1742
+c S_after_init[207] 1743
+c S_after_init[208] 1744
+c S_after_init[209] 1745
+c S_after_init[210] 1746
+c S_after_init[211] 1747
+c S_after_init[212] 1748
+c S_after_init[213] 1749
+c S_after_init[214] 1750
+c S_after_init[215] 1751
+c S_after_init[216] 1752
+c S_after_init[217] 1753
+c S_after_init[218] 1754
+c S_after_init[219] 1755
+c S_after_init[220] 1756
+c S_after_init[221] 1757
+c S_after_init[222] 1758
+c S_after_init[223] 1759
+c S_after_init[224] 1760
+c S_after_init[225] 1761
+c S_after_init[226] 1762
+c S_after_init[227] 1763
+c S_after_init[228] 1764
+c S_after_init[229] 1765
+c S_after_init[230] 1766
+c S_after_init[231] 1767
+c S_after_init[232] 1768
+c S_after_init[233] 1769
+c S_after_init[234] 1770
+c S_after_init[235] 1771
+c S_after_init[236] 1772
+c S_after_init[237] 1773
+c S_after_init[238] 1774
+c S_after_init[239] 1775
+c S_after_init[240] 1776
+c S_after_init[241] 1777
+c S_after_init[242] 1778
+c S_after_init[243] 1779
+c S_after_init[244] 1780
+c S_after_init[245] 1781
+c S_after_init[246] 1782
+c S_after_init[247] 1783
+c S_after_init[248] 1784
+c S_after_init[249] 1785
+c S_after_init[250] 1786
+c S_after_init[251] 1787
+c S_after_init[252] 1788
+c S_after_init[253] 1789
+c S_after_init[254] 1790
+c S_after_init[255] 1791
+c S_after_init[256] 1792
+c S_after_init[257] 1793
+c S_after_init[258] 1794
+c S_after_init[259] 1795
+c S_after_init[260] 1796
+c S_after_init[261] 1797
+c S_after_init[262] 1798
+c S_after_init[263] 1799
+c S_after_init[264] 1800
+c S_after_init[265] 1801
+c S_after_init[266] 1802
+c S_after_init[267] 1803
+c S_after_init[268] 1804
+c S_after_init[269] 1805
+c S_after_init[270] 1806
+c S_after_init[271] 1807
+c S_after_init[272] 1808
+c S_after_init[273] 1809
+c S_after_init[274] 1810
+c S_after_init[275] 1811
+c S_after_init[276] 1812
+c S_after_init[277] 1813
+c S_after_init[278] 1814
+c S_after_init[279] 1815
+c S_after_init[280] 1816
+c S_after_init[281] 1817
+c S_after_init[282] 1818
+c S_after_init[283] 1819
+c S_after_init[284] 1820
+c S_after_init[285] 1821
+c S_after_init[286] 1822
+c S_after_init[287] 1823
+c S_after_init[288] 1824
+c S_after_init[289] 1825
+c S_after_init[290] 1826
+c S_after_init[291] 1827
+c S_after_init[292] 1828
+c S_after_init[293] 1829
+c S_after_init[294] 1830
+c S_after_init[295] 1831
+c S_after_init[296] 1832
+c S_after_init[297] 1833
+c S_after_init[298] 1834
+c S_after_init[299] 1835
+c S_after_init[300] 1836
+c S_after_init[301] 1837
+c S_after_init[302] 1838
+c S_after_init[303] 1839
+c S_after_init[304] 1840
+c S_after_init[305] 1841
+c S_after_init[306] 1842
+c S_after_init[307] 1843
+c S_after_init[308] 1844
+c S_after_init[309] 1845
+c S_after_init[310] 1846
+c S_after_init[311] 1847
+c S_after_init[312] 1848
+c S_after_init[313] 1849
+c S_after_init[314] 1850
+c S_after_init[315] 1851
+c S_after_init[316] 1852
+c S_after_init[317] 1853
+c S_after_init[318] 1854
+c S_after_init[319] 1855
+c S_after_init[320] 1856
+p xnf 1856 5504
+257 0
+-258 0
+-259 0
+-260 0
+-261 0
+-262 0
+-263 0
+-264 0
+-265 0
+266 0
+-267 0
+-268 0
+-269 0
+-270 0
+-271 0
+-272 0
+-273 0
+-274 0
+-275 0
+-276 0
+-277 0
+-278 0
+279 0
+-280 0
+-281 0
+-282 0
+-283 0
+-284 0
+-285 0
+286 0
+287 0
+-288 0
+-289 0
+-290 0
+-291 0
+-292 0
+-293 0
+-294 0
+-295 0
+-296 0
+-297 0
+-298 0
+-299 0
+-300 0
+-301 0
+-302 0
+-303 0
+-304 0
+-305 0
+-306 0
+-307 0
+-308 0
+-309 0
+-310 0
+-311 0
+-312 0
+-313 0
+-314 0
+-315 0
+-316 0
+-317 0
+-318 0
+-319 0
+-320 0
+-1+321 0
+-2+322 0
+-3+323 0
+-4+324 0
+-5+325 0
+-6+326 0
+-7+327 0
+-8+328 0
+-9+329 0
+-10+330 0
+-11+331 0
+-12+332 0
+-13+333 0
+-14+334 0
+-15+335 0
+-16+336 0
+-17+337 0
+-18+338 0
+-19+339 0
+-20+340 0
+-21+341 0
+-22+342 0
+-23+343 0
+-24+344 0
+-25+345 0
+-26+346 0
+-27+347 0
+-28+348 0
+-29+349 0
+-30+350 0
+-31+351 0
+-32+352 0
+-33+353 0
+-34+354 0
+-35+355 0
+-36+356 0
+-37+357 0
+-38+358 0
+-39+359 0
+-40+360 0
+-41+361 0
+-42+362 0
+-43+363 0
+-44+364 0
+-45+365 0
+-46+366 0
+-47+367 0
+-48+368 0
+-49+369 0
+-50+370 0
+-51+371 0
+-52+372 0
+-53+373 0
+-54+374 0
+-55+375 0
+-56+376 0
+-57+377 0
+-58+378 0
+-59+379 0
+-60+380 0
+-61+381 0
+-62+382 0
+-63+383 0
+-64+384 0
+-65+385 0
+-66+386 0
+-67+387 0
+-68+388 0
+-69+389 0
+-70+390 0
+-71+391 0
+-72+392 0
+-73+393 0
+-74+394 0
+-75+395 0
+-76+396 0
+-77+397 0
+-78+398 0
+-79+399 0
+-80+400 0
+-81+401 0
+-82+402 0
+-83+403 0
+-84+404 0
+-85+405 0
+-86+406 0
+-87+407 0
+-88+408 0
+-89+409 0
+-90+410 0
+-91+411 0
+-92+412 0
+-93+413 0
+-94+414 0
+-95+415 0
+-96+416 0
+-97+417 0
+-98+418 0
+-99+419 0
+-100+420 0
+-101+421 0
+-102+422 0
+-103+423 0
+-104+424 0
+-105+425 0
+-106+426 0
+-107+427 0
+-108+428 0
+-109+429 0
+-110+430 0
+-111+431 0
+-112+432 0
+-113+433 0
+-114+434 0
+-115+435 0
+-116+436 0
+-117+437 0
+-118+438 0
+-119+439 0
+-120+440 0
+-121+441 0
+122+442 0
+-123+443 0
+124+444 0
+125+445 0
+-126+446 0
+127+447 0
+-128+448 0
+-129+449 0
+-130+450 0
+-131+451 0
+-132+452 0
+-133+453 0
+-134+454 0
+-135+455 0
+-136+456 0
+-137+457 0
+-138+458 0
+-139+459 0
+-140+460 0
+-141+461 0
+-142+462 0
+-143+463 0
+-144+464 0
+-145+465 0
+-146+466 0
+-147+467 0
+-148+468 0
+-149+469 0
+-150+470 0
+-151+471 0
+-152+472 0
+-153+473 0
+-154+474 0
+-155+475 0
+-156+476 0
+-157+477 0
+-158+478 0
+-159+479 0
+-160+480 0
+-161+481 0
+-162+482 0
+-163+483 0
+-164+484 0
+-165+485 0
+-166+486 0
+-167+487 0
+-168+488 0
+-169+489 0
+-170+490 0
+-171+491 0
+-172+492 0
+-173+493 0
+-174+494 0
+-175+495 0
+-176+496 0
+-177+497 0
+-178+498 0
+-179+499 0
+-180+500 0
+-181+501 0
+-182+502 0
+-183+503 0
+-184+504 0
+-185+505 0
+-186+506 0
+-187+507 0
+-188+508 0
+-189+509 0
+-190+510 0
+-191+511 0
+-192+512 0
+-193+513 0
+-194+514 0
+-195+515 0
+-196+516 0
+-197+517 0
+-198+518 0
+-199+519 0
+-200+520 0
+-201+521 0
+-202+522 0
+-203+523 0
+-204+524 0
+-205+525 0
+-206+526 0
+-207+527 0
+-208+528 0
+-209+529 0
+-210+530 0
+-211+531 0
+-212+532 0
+-213+533 0
+-214+534 0
+-215+535 0
+-216+536 0
+-217+537 0
+-218+538 0
+-219+539 0
+-220+540 0
+-221+541 0
+-222+542 0
+-223+543 0
+-224+544 0
+-225+545 0
+-226+546 0
+-227+547 0
+-228+548 0
+-229+549 0
+-230+550 0
+-231+551 0
+-232+552 0
+-233+553 0
+-234+554 0
+-235+555 0
+-236+556 0
+-237+557 0
+-238+558 0
+-239+559 0
+-240+560 0
+-241+561 0
+-242+562 0
+-243+563 0
+-244+564 0
+-245+565 0
+-246+566 0
+-247+567 0
+-248+568 0
+-249+569 0
+-250+570 0
+-251+571 0
+-252+572 0
+-253+573 0
+-254+574 0
+-255+575 0
+-256+576 0
+-321+385+449+513+1089 257 0
+321+385+1089 -257 0
+-257+321+385+449+897 257+385+513 0
+-257+385+449+897 -257+385+513 0
+-257+385+449+897 321 0
+-257+385+513+897+1153 321 0
+-257+513+897+1153 -321 0
+449+513+897 -321 0
+-321+449+897+961+1153 321+385 0
+-321+897+961+1153 -321+385 0
+-257+513+897+1153 385 0
+257+321+513+897+1153 -385 0
+-321+897+961+1153 449 0
+321+385+513+1025 449 0
+385+897+961+1153 -449 0
+321+385+1025 -449 0
+-257+321+385+1089 449+513 0
+321+385+1089 -449+513 0
+321+385+1025 513 0
+-321+385+449+1025 -513 0
+-449+513+1153 321 0
+385+513+897+961+1025+1153 449 0
+449+513+897 -897+1153 0
+-321+449+513+1153 897+1153 0
+257+513+961 -897+961+1153 0
+-257+321+385+513+961 897+961+1153 0
+449+1025+1089 -1153 0
+257+449+513+1025+1089 1153 0
+321+449+897+961+1025+1153 -1025 0
+-321+897+961+1153 1025 0
+321+385+449+513+1025 -1025+1089 0
+321+385+1025 1025+1089 0
+-322+386+450+514+1090 258 0
+322+386+1090 -258 0
+-258+322+386+450+898 258+386+514 0
+-258+386+450+898 -258+386+514 0
+-258+386+450+898 322 0
+-258+386+514+898+1154 322 0
+-258+514+898+1154 -322 0
+450+514+898 -322 0
+-322+450+898+962+1154 322+386 0
+-322+898+962+1154 -322+386 0
+-258+514+898+1154 386 0
+258+322+514+898+1154 -386 0
+-322+898+962+1154 450 0
+322+386+514+1026 450 0
+386+898+962+1154 -450 0
+322+386+1026 -450 0
+-258+322+386+1090 450+514 0
+322+386+1090 -450+514 0
+322+386+1026 514 0
+-322+386+450+1026 -514 0
+-450+514+1154 322 0
+386+514+898+962+1026+1154 450 0
+450+514+898 -898+1154 0
+-322+450+514+1154 898+1154 0
+258+514+962 -898+962+1154 0
+-258+322+386+514+962 898+962+1154 0
+450+1026+1090 -1154 0
+258+450+514+1026+1090 1154 0
+322+450+898+962+1026+1154 -1026 0
+-322+898+962+1154 1026 0
+322+386+450+514+1026 -1026+1090 0
+322+386+1026 1026+1090 0
+-323+387+451+515+1091 259 0
+323+387+1091 -259 0
+-259+323+387+451+899 259+387+515 0
+-259+387+451+899 -259+387+515 0
+-259+387+451+899 323 0
+-259+387+515+899+1155 323 0
+-259+515+899+1155 -323 0
+451+515+899 -323 0
+-323+451+899+963+1155 323+387 0
+-323+899+963+1155 -323+387 0
+-259+515+899+1155 387 0
+259+323+515+899+1155 -387 0
+-323+899+963+1155 451 0
+323+387+515+1027 451 0
+387+899+963+1155 -451 0
+323+387+1027 -451 0
+-259+323+387+1091 451+515 0
+323+387+1091 -451+515 0
+323+387+1027 515 0
+-323+387+451+1027 -515 0
+-451+515+1155 323 0
+387+515+899+963+1027+1155 451 0
+451+515+899 -899+1155 0
+-323+451+515+1155 899+1155 0
+259+515+963 -899+963+1155 0
+-259+323+387+515+963 899+963+1155 0
+451+1027+1091 -1155 0
+259+451+515+1027+1091 1155 0
+323+451+899+963+1027+1155 -1027 0
+-323+899+963+1155 1027 0
+323+387+451+515+1027 -1027+1091 0
+323+387+1027 1027+1091 0
+-324+388+452+516+1092 260 0
+324+388+1092 -260 0
+-260+324+388+452+900 260+388+516 0
+-260+388+452+900 -260+388+516 0
+-260+388+452+900 324 0
+-260+388+516+900+1156 324 0
+-260+516+900+1156 -324 0
+452+516+900 -324 0
+-324+452+900+964+1156 324+388 0
+-324+900+964+1156 -324+388 0
+-260+516+900+1156 388 0
+260+324+516+900+1156 -388 0
+-324+900+964+1156 452 0
+324+388+516+1028 452 0
+388+900+964+1156 -452 0
+324+388+1028 -452 0
+-260+324+388+1092 452+516 0
+324+388+1092 -452+516 0
+324+388+1028 516 0
+-324+388+452+1028 -516 0
+-452+516+1156 324 0
+388+516+900+964+1028+1156 452 0
+452+516+900 -900+1156 0
+-324+452+516+1156 900+1156 0
+260+516+964 -900+964+1156 0
+-260+324+388+516+964 900+964+1156 0
+452+1028+1092 -1156 0
+260+452+516+1028+1092 1156 0
+324+452+900+964+1028+1156 -1028 0
+-324+900+964+1156 1028 0
+324+388+452+516+1028 -1028+1092 0
+324+388+1028 1028+1092 0
+-325+389+453+517+1093 261 0
+325+389+1093 -261 0
+-261+325+389+453+901 261+389+517 0
+-261+389+453+901 -261+389+517 0
+-261+389+453+901 325 0
+-261+389+517+901+1157 325 0
+-261+517+901+1157 -325 0
+453+517+901 -325 0
+-325+453+901+965+1157 325+389 0
+-325+901+965+1157 -325+389 0
+-261+517+901+1157 389 0
+261+325+517+901+1157 -389 0
+-325+901+965+1157 453 0
+325+389+517+1029 453 0
+389+901+965+1157 -453 0
+325+389+1029 -453 0
+-261+325+389+1093 453+517 0
+325+389+1093 -453+517 0
+325+389+1029 517 0
+-325+389+453+1029 -517 0
+-453+517+1157 325 0
+389+517+901+965+1029+1157 453 0
+453+517+901 -901+1157 0
+-325+453+517+1157 901+1157 0
+261+517+965 -901+965+1157 0
+-261+325+389+517+965 901+965+1157 0
+453+1029+1093 -1157 0
+261+453+517+1029+1093 1157 0
+325+453+901+965+1029+1157 -1029 0
+-325+901+965+1157 1029 0
+325+389+453+517+1029 -1029+1093 0
+325+389+1029 1029+1093 0
+-326+390+454+518+1094 262 0
+326+390+1094 -262 0
+-262+326+390+454+902 262+390+518 0
+-262+390+454+902 -262+390+518 0
+-262+390+454+902 326 0
+-262+390+518+902+1158 326 0
+-262+518+902+1158 -326 0
+454+518+902 -326 0
+-326+454+902+966+1158 326+390 0
+-326+902+966+1158 -326+390 0
+-262+518+902+1158 390 0
+262+326+518+902+1158 -390 0
+-326+902+966+1158 454 0
+326+390+518+1030 454 0
+390+902+966+1158 -454 0
+326+390+1030 -454 0
+-262+326+390+1094 454+518 0
+326+390+1094 -454+518 0
+326+390+1030 518 0
+-326+390+454+1030 -518 0
+-454+518+1158 326 0
+390+518+902+966+1030+1158 454 0
+454+518+902 -902+1158 0
+-326+454+518+1158 902+1158 0
+262+518+966 -902+966+1158 0
+-262+326+390+518+966 902+966+1158 0
+454+1030+1094 -1158 0
+262+454+518+1030+1094 1158 0
+326+454+902+966+1030+1158 -1030 0
+-326+902+966+1158 1030 0
+326+390+454+518+1030 -1030+1094 0
+326+390+1030 1030+1094 0
+-327+391+455+519+1095 263 0
+327+391+1095 -263 0
+-263+327+391+455+903 263+391+519 0
+-263+391+455+903 -263+391+519 0
+-263+391+455+903 327 0
+-263+391+519+903+1159 327 0
+-263+519+903+1159 -327 0
+455+519+903 -327 0
+-327+455+903+967+1159 327+391 0
+-327+903+967+1159 -327+391 0
+-263+519+903+1159 391 0
+263+327+519+903+1159 -391 0
+-327+903+967+1159 455 0
+327+391+519+1031 455 0
+391+903+967+1159 -455 0
+327+391+1031 -455 0
+-263+327+391+1095 455+519 0
+327+391+1095 -455+519 0
+327+391+1031 519 0
+-327+391+455+1031 -519 0
+-455+519+1159 327 0
+391+519+903+967+1031+1159 455 0
+455+519+903 -903+1159 0
+-327+455+519+1159 903+1159 0
+263+519+967 -903+967+1159 0
+-263+327+391+519+967 903+967+1159 0
+455+1031+1095 -1159 0
+263+455+519+1031+1095 1159 0
+327+455+903+967+1031+1159 -1031 0
+-327+903+967+1159 1031 0
+327+391+455+519+1031 -1031+1095 0
+327+391+1031 1031+1095 0
+-328+392+456+520+1096 264 0
+328+392+1096 -264 0
+-264+328+392+456+904 264+392+520 0
+-264+392+456+904 -264+392+520 0
+-264+392+456+904 328 0
+-264+392+520+904+1160 328 0
+-264+520+904+1160 -328 0
+456+520+904 -328 0
+-328+456+904+968+1160 328+392 0
+-328+904+968+1160 -328+392 0
+-264+520+904+1160 392 0
+264+328+520+904+1160 -392 0
+-328+904+968+1160 456 0
+328+392+520+1032 456 0
+392+904+968+1160 -456 0
+328+392+1032 -456 0
+-264+328+392+1096 456+520 0
+328+392+1096 -456+520 0
+328+392+1032 520 0
+-328+392+456+1032 -520 0
+-456+520+1160 328 0
+392+520+904+968+1032+1160 456 0
+456+520+904 -904+1160 0
+-328+456+520+1160 904+1160 0
+264+520+968 -904+968+1160 0
+-264+328+392+520+968 904+968+1160 0
+456+1032+1096 -1160 0
+264+456+520+1032+1096 1160 0
+328+456+904+968+1032+1160 -1032 0
+-328+904+968+1160 1032 0
+328+392+456+520+1032 -1032+1096 0
+328+392+1032 1032+1096 0
+-329+393+457+521+1097 265 0
+329+393+1097 -265 0
+-265+329+393+457+905 265+393+521 0
+-265+393+457+905 -265+393+521 0
+-265+393+457+905 329 0
+-265+393+521+905+1161 329 0
+-265+521+905+1161 -329 0
+457+521+905 -329 0
+-329+457+905+969+1161 329+393 0
+-329+905+969+1161 -329+393 0
+-265+521+905+1161 393 0
+265+329+521+905+1161 -393 0
+-329+905+969+1161 457 0
+329+393+521+1033 457 0
+393+905+969+1161 -457 0
+329+393+1033 -457 0
+-265+329+393+1097 457+521 0
+329+393+1097 -457+521 0
+329+393+1033 521 0
+-329+393+457+1033 -521 0
+-457+521+1161 329 0
+393+521+905+969+1033+1161 457 0
+457+521+905 -905+1161 0
+-329+457+521+1161 905+1161 0
+265+521+969 -905+969+1161 0
+-265+329+393+521+969 905+969+1161 0
+457+1033+1097 -1161 0
+265+457+521+1033+1097 1161 0
+329+457+905+969+1033+1161 -1033 0
+-329+905+969+1161 1033 0
+329+393+457+521+1033 -1033+1097 0
+329+393+1033 1033+1097 0
+-330+394+458+522+1098 266 0
+330+394+1098 -266 0
+-266+330+394+458+906 266+394+522 0
+-266+394+458+906 -266+394+522 0
+-266+394+458+906 330 0
+-266+394+522+906+1162 330 0
+-266+522+906+1162 -330 0
+458+522+906 -330 0
+-330+458+906+970+1162 330+394 0
+-330+906+970+1162 -330+394 0
+-266+522+906+1162 394 0
+266+330+522+906+1162 -394 0
+-330+906+970+1162 458 0
+330+394+522+1034 458 0
+394+906+970+1162 -458 0
+330+394+1034 -458 0
+-266+330+394+1098 458+522 0
+330+394+1098 -458+522 0
+330+394+1034 522 0
+-330+394+458+1034 -522 0
+-458+522+1162 330 0
+394+522+906+970+1034+1162 458 0
+458+522+906 -906+1162 0
+-330+458+522+1162 906+1162 0
+266+522+970 -906+970+1162 0
+-266+330+394+522+970 906+970+1162 0
+458+1034+1098 -1162 0
+266+458+522+1034+1098 1162 0
+330+458+906+970+1034+1162 -1034 0
+-330+906+970+1162 1034 0
+330+394+458+522+1034 -1034+1098 0
+330+394+1034 1034+1098 0
+-331+395+459+523+1099 267 0
+331+395+1099 -267 0
+-267+331+395+459+907 267+395+523 0
+-267+395+459+907 -267+395+523 0
+-267+395+459+907 331 0
+-267+395+523+907+1163 331 0
+-267+523+907+1163 -331 0
+459+523+907 -331 0
+-331+459+907+971+1163 331+395 0
+-331+907+971+1163 -331+395 0
+-267+523+907+1163 395 0
+267+331+523+907+1163 -395 0
+-331+907+971+1163 459 0
+331+395+523+1035 459 0
+395+907+971+1163 -459 0
+331+395+1035 -459 0
+-267+331+395+1099 459+523 0
+331+395+1099 -459+523 0
+331+395+1035 523 0
+-331+395+459+1035 -523 0
+-459+523+1163 331 0
+395+523+907+971+1035+1163 459 0
+459+523+907 -907+1163 0
+-331+459+523+1163 907+1163 0
+267+523+971 -907+971+1163 0
+-267+331+395+523+971 907+971+1163 0
+459+1035+1099 -1163 0
+267+459+523+1035+1099 1163 0
+331+459+907+971+1035+1163 -1035 0
+-331+907+971+1163 1035 0
+331+395+459+523+1035 -1035+1099 0
+331+395+1035 1035+1099 0
+-332+396+460+524+1100 268 0
+332+396+1100 -268 0
+-268+332+396+460+908 268+396+524 0
+-268+396+460+908 -268+396+524 0
+-268+396+460+908 332 0
+-268+396+524+908+1164 332 0
+-268+524+908+1164 -332 0
+460+524+908 -332 0
+-332+460+908+972+1164 332+396 0
+-332+908+972+1164 -332+396 0
+-268+524+908+1164 396 0
+268+332+524+908+1164 -396 0
+-332+908+972+1164 460 0
+332+396+524+1036 460 0
+396+908+972+1164 -460 0
+332+396+1036 -460 0
+-268+332+396+1100 460+524 0
+332+396+1100 -460+524 0
+332+396+1036 524 0
+-332+396+460+1036 -524 0
+-460+524+1164 332 0
+396+524+908+972+1036+1164 460 0
+460+524+908 -908+1164 0
+-332+460+524+1164 908+1164 0
+268+524+972 -908+972+1164 0
+-268+332+396+524+972 908+972+1164 0
+460+1036+1100 -1164 0
+268+460+524+1036+1100 1164 0
+332+460+908+972+1036+1164 -1036 0
+-332+908+972+1164 1036 0
+332+396+460+524+1036 -1036+1100 0
+332+396+1036 1036+1100 0
+-333+397+461+525+1101 269 0
+333+397+1101 -269 0
+-269+333+397+461+909 269+397+525 0
+-269+397+461+909 -269+397+525 0
+-269+397+461+909 333 0
+-269+397+525+909+1165 333 0
+-269+525+909+1165 -333 0
+461+525+909 -333 0
+-333+461+909+973+1165 333+397 0
+-333+909+973+1165 -333+397 0
+-269+525+909+1165 397 0
+269+333+525+909+1165 -397 0
+-333+909+973+1165 461 0
+333+397+525+1037 461 0
+397+909+973+1165 -461 0
+333+397+1037 -461 0
+-269+333+397+1101 461+525 0
+333+397+1101 -461+525 0
+333+397+1037 525 0
+-333+397+461+1037 -525 0
+-461+525+1165 333 0
+397+525+909+973+1037+1165 461 0
+461+525+909 -909+1165 0
+-333+461+525+1165 909+1165 0
+269+525+973 -909+973+1165 0
+-269+333+397+525+973 909+973+1165 0
+461+1037+1101 -1165 0
+269+461+525+1037+1101 1165 0
+333+461+909+973+1037+1165 -1037 0
+-333+909+973+1165 1037 0
+333+397+461+525+1037 -1037+1101 0
+333+397+1037 1037+1101 0
+-334+398+462+526+1102 270 0
+334+398+1102 -270 0
+-270+334+398+462+910 270+398+526 0
+-270+398+462+910 -270+398+526 0
+-270+398+462+910 334 0
+-270+398+526+910+1166 334 0
+-270+526+910+1166 -334 0
+462+526+910 -334 0
+-334+462+910+974+1166 334+398 0
+-334+910+974+1166 -334+398 0
+-270+526+910+1166 398 0
+270+334+526+910+1166 -398 0
+-334+910+974+1166 462 0
+334+398+526+1038 462 0
+398+910+974+1166 -462 0
+334+398+1038 -462 0
+-270+334+398+1102 462+526 0
+334+398+1102 -462+526 0
+334+398+1038 526 0
+-334+398+462+1038 -526 0
+-462+526+1166 334 0
+398+526+910+974+1038+1166 462 0
+462+526+910 -910+1166 0
+-334+462+526+1166 910+1166 0
+270+526+974 -910+974+1166 0
+-270+334+398+526+974 910+974+1166 0
+462+1038+1102 -1166 0
+270+462+526+1038+1102 1166 0
+334+462+910+974+1038+1166 -1038 0
+-334+910+974+1166 1038 0
+334+398+462+526+1038 -1038+1102 0
+334+398+1038 1038+1102 0
+-335+399+463+527+1103 271 0
+335+399+1103 -271 0
+-271+335+399+463+911 271+399+527 0
+-271+399+463+911 -271+399+527 0
+-271+399+463+911 335 0
+-271+399+527+911+1167 335 0
+-271+527+911+1167 -335 0
+463+527+911 -335 0
+-335+463+911+975+1167 335+399 0
+-335+911+975+1167 -335+399 0
+-271+527+911+1167 399 0
+271+335+527+911+1167 -399 0
+-335+911+975+1167 463 0
+335+399+527+1039 463 0
+399+911+975+1167 -463 0
+335+399+1039 -463 0
+-271+335+399+1103 463+527 0
+335+399+1103 -463+527 0
+335+399+1039 527 0
+-335+399+463+1039 -527 0
+-463+527+1167 335 0
+399+527+911+975+1039+1167 463 0
+463+527+911 -911+1167 0
+-335+463+527+1167 911+1167 0
+271+527+975 -911+975+1167 0
+-271+335+399+527+975 911+975+1167 0
+463+1039+1103 -1167 0
+271+463+527+1039+1103 1167 0
+335+463+911+975+1039+1167 -1039 0
+-335+911+975+1167 1039 0
+335+399+463+527+1039 -1039+1103 0
+335+399+1039 1039+1103 0
+-336+400+464+528+1104 272 0
+336+400+1104 -272 0
+-272+336+400+464+912 272+400+528 0
+-272+400+464+912 -272+400+528 0
+-272+400+464+912 336 0
+-272+400+528+912+1168 336 0
+-272+528+912+1168 -336 0
+464+528+912 -336 0
+-336+464+912+976+1168 336+400 0
+-336+912+976+1168 -336+400 0
+-272+528+912+1168 400 0
+272+336+528+912+1168 -400 0
+-336+912+976+1168 464 0
+336+400+528+1040 464 0
+400+912+976+1168 -464 0
+336+400+1040 -464 0
+-272+336+400+1104 464+528 0
+336+400+1104 -464+528 0
+336+400+1040 528 0
+-336+400+464+1040 -528 0
+-464+528+1168 336 0
+400+528+912+976+1040+1168 464 0
+464+528+912 -912+1168 0
+-336+464+528+1168 912+1168 0
+272+528+976 -912+976+1168 0
+-272+336+400+528+976 912+976+1168 0
+464+1040+1104 -1168 0
+272+464+528+1040+1104 1168 0
+336+464+912+976+1040+1168 -1040 0
+-336+912+976+1168 1040 0
+336+400+464+528+1040 -1040+1104 0
+336+400+1040 1040+1104 0
+-337+401+465+529+1105 273 0
+337+401+1105 -273 0
+-273+337+401+465+913 273+401+529 0
+-273+401+465+913 -273+401+529 0
+-273+401+465+913 337 0
+-273+401+529+913+1169 337 0
+-273+529+913+1169 -337 0
+465+529+913 -337 0
+-337+465+913+977+1169 337+401 0
+-337+913+977+1169 -337+401 0
+-273+529+913+1169 401 0
+273+337+529+913+1169 -401 0
+-337+913+977+1169 465 0
+337+401+529+1041 465 0
+401+913+977+1169 -465 0
+337+401+1041 -465 0
+-273+337+401+1105 465+529 0
+337+401+1105 -465+529 0
+337+401+1041 529 0
+-337+401+465+1041 -529 0
+-465+529+1169 337 0
+401+529+913+977+1041+1169 465 0
+465+529+913 -913+1169 0
+-337+465+529+1169 913+1169 0
+273+529+977 -913+977+1169 0
+-273+337+401+529+977 913+977+1169 0
+465+1041+1105 -1169 0
+273+465+529+1041+1105 1169 0
+337+465+913+977+1041+1169 -1041 0
+-337+913+977+1169 1041 0
+337+401+465+529+1041 -1041+1105 0
+337+401+1041 1041+1105 0
+-338+402+466+530+1106 274 0
+338+402+1106 -274 0
+-274+338+402+466+914 274+402+530 0
+-274+402+466+914 -274+402+530 0
+-274+402+466+914 338 0
+-274+402+530+914+1170 338 0
+-274+530+914+1170 -338 0
+466+530+914 -338 0
+-338+466+914+978+1170 338+402 0
+-338+914+978+1170 -338+402 0
+-274+530+914+1170 402 0
+274+338+530+914+1170 -402 0
+-338+914+978+1170 466 0
+338+402+530+1042 466 0
+402+914+978+1170 -466 0
+338+402+1042 -466 0
+-274+338+402+1106 466+530 0
+338+402+1106 -466+530 0
+338+402+1042 530 0
+-338+402+466+1042 -530 0
+-466+530+1170 338 0
+402+530+914+978+1042+1170 466 0
+466+530+914 -914+1170 0
+-338+466+530+1170 914+1170 0
+274+530+978 -914+978+1170 0
+-274+338+402+530+978 914+978+1170 0
+466+1042+1106 -1170 0
+274+466+530+1042+1106 1170 0
+338+466+914+978+1042+1170 -1042 0
+-338+914+978+1170 1042 0
+338+402+466+530+1042 -1042+1106 0
+338+402+1042 1042+1106 0
+-339+403+467+531+1107 275 0
+339+403+1107 -275 0
+-275+339+403+467+915 275+403+531 0
+-275+403+467+915 -275+403+531 0
+-275+403+467+915 339 0
+-275+403+531+915+1171 339 0
+-275+531+915+1171 -339 0
+467+531+915 -339 0
+-339+467+915+979+1171 339+403 0
+-339+915+979+1171 -339+403 0
+-275+531+915+1171 403 0
+275+339+531+915+1171 -403 0
+-339+915+979+1171 467 0
+339+403+531+1043 467 0
+403+915+979+1171 -467 0
+339+403+1043 -467 0
+-275+339+403+1107 467+531 0
+339+403+1107 -467+531 0
+339+403+1043 531 0
+-339+403+467+1043 -531 0
+-467+531+1171 339 0
+403+531+915+979+1043+1171 467 0
+467+531+915 -915+1171 0
+-339+467+531+1171 915+1171 0
+275+531+979 -915+979+1171 0
+-275+339+403+531+979 915+979+1171 0
+467+1043+1107 -1171 0
+275+467+531+1043+1107 1171 0
+339+467+915+979+1043+1171 -1043 0
+-339+915+979+1171 1043 0
+339+403+467+531+1043 -1043+1107 0
+339+403+1043 1043+1107 0
+-340+404+468+532+1108 276 0
+340+404+1108 -276 0
+-276+340+404+468+916 276+404+532 0
+-276+404+468+916 -276+404+532 0
+-276+404+468+916 340 0
+-276+404+532+916+1172 340 0
+-276+532+916+1172 -340 0
+468+532+916 -340 0
+-340+468+916+980+1172 340+404 0
+-340+916+980+1172 -340+404 0
+-276+532+916+1172 404 0
+276+340+532+916+1172 -404 0
+-340+916+980+1172 468 0
+340+404+532+1044 468 0
+404+916+980+1172 -468 0
+340+404+1044 -468 0
+-276+340+404+1108 468+532 0
+340+404+1108 -468+532 0
+340+404+1044 532 0
+-340+404+468+1044 -532 0
+-468+532+1172 340 0
+404+532+916+980+1044+1172 468 0
+468+532+916 -916+1172 0
+-340+468+532+1172 916+1172 0
+276+532+980 -916+980+1172 0
+-276+340+404+532+980 916+980+1172 0
+468+1044+1108 -1172 0
+276+468+532+1044+1108 1172 0
+340+468+916+980+1044+1172 -1044 0
+-340+916+980+1172 1044 0
+340+404+468+532+1044 -1044+1108 0
+340+404+1044 1044+1108 0
+-341+405+469+533+1109 277 0
+341+405+1109 -277 0
+-277+341+405+469+917 277+405+533 0
+-277+405+469+917 -277+405+533 0
+-277+405+469+917 341 0
+-277+405+533+917+1173 341 0
+-277+533+917+1173 -341 0
+469+533+917 -341 0
+-341+469+917+981+1173 341+405 0
+-341+917+981+1173 -341+405 0
+-277+533+917+1173 405 0
+277+341+533+917+1173 -405 0
+-341+917+981+1173 469 0
+341+405+533+1045 469 0
+405+917+981+1173 -469 0
+341+405+1045 -469 0
+-277+341+405+1109 469+533 0
+341+405+1109 -469+533 0
+341+405+1045 533 0
+-341+405+469+1045 -533 0
+-469+533+1173 341 0
+405+533+917+981+1045+1173 469 0
+469+533+917 -917+1173 0
+-341+469+533+1173 917+1173 0
+277+533+981 -917+981+1173 0
+-277+341+405+533+981 917+981+1173 0
+469+1045+1109 -1173 0
+277+469+533+1045+1109 1173 0
+341+469+917+981+1045+1173 -1045 0
+-341+917+981+1173 1045 0
+341+405+469+533+1045 -1045+1109 0
+341+405+1045 1045+1109 0
+-342+406+470+534+1110 278 0
+342+406+1110 -278 0
+-278+342+406+470+918 278+406+534 0
+-278+406+470+918 -278+406+534 0
+-278+406+470+918 342 0
+-278+406+534+918+1174 342 0
+-278+534+918+1174 -342 0
+470+534+918 -342 0
+-342+470+918+982+1174 342+406 0
+-342+918+982+1174 -342+406 0
+-278+534+918+1174 406 0
+278+342+534+918+1174 -406 0
+-342+918+982+1174 470 0
+342+406+534+1046 470 0
+406+918+982+1174 -470 0
+342+406+1046 -470 0
+-278+342+406+1110 470+534 0
+342+406+1110 -470+534 0
+342+406+1046 534 0
+-342+406+470+1046 -534 0
+-470+534+1174 342 0
+406+534+918+982+1046+1174 470 0
+470+534+918 -918+1174 0
+-342+470+534+1174 918+1174 0
+278+534+982 -918+982+1174 0
+-278+342+406+534+982 918+982+1174 0
+470+1046+1110 -1174 0
+278+470+534+1046+1110 1174 0
+342+470+918+982+1046+1174 -1046 0
+-342+918+982+1174 1046 0
+342+406+470+534+1046 -1046+1110 0
+342+406+1046 1046+1110 0
+-343+407+471+535+1111 279 0
+343+407+1111 -279 0
+-279+343+407+471+919 279+407+535 0
+-279+407+471+919 -279+407+535 0
+-279+407+471+919 343 0
+-279+407+535+919+1175 343 0
+-279+535+919+1175 -343 0
+471+535+919 -343 0
+-343+471+919+983+1175 343+407 0
+-343+919+983+1175 -343+407 0
+-279+535+919+1175 407 0
+279+343+535+919+1175 -407 0
+-343+919+983+1175 471 0
+343+407+535+1047 471 0
+407+919+983+1175 -471 0
+343+407+1047 -471 0
+-279+343+407+1111 471+535 0
+343+407+1111 -471+535 0
+343+407+1047 535 0
+-343+407+471+1047 -535 0
+-471+535+1175 343 0
+407+535+919+983+1047+1175 471 0
+471+535+919 -919+1175 0
+-343+471+535+1175 919+1175 0
+279+535+983 -919+983+1175 0
+-279+343+407+535+983 919+983+1175 0
+471+1047+1111 -1175 0
+279+471+535+1047+1111 1175 0
+343+471+919+983+1047+1175 -1047 0
+-343+919+983+1175 1047 0
+343+407+471+535+1047 -1047+1111 0
+343+407+1047 1047+1111 0
+-344+408+472+536+1112 280 0
+344+408+1112 -280 0
+-280+344+408+472+920 280+408+536 0
+-280+408+472+920 -280+408+536 0
+-280+408+472+920 344 0
+-280+408+536+920+1176 344 0
+-280+536+920+1176 -344 0
+472+536+920 -344 0
+-344+472+920+984+1176 344+408 0
+-344+920+984+1176 -344+408 0
+-280+536+920+1176 408 0
+280+344+536+920+1176 -408 0
+-344+920+984+1176 472 0
+344+408+536+1048 472 0
+408+920+984+1176 -472 0
+344+408+1048 -472 0
+-280+344+408+1112 472+536 0
+344+408+1112 -472+536 0
+344+408+1048 536 0
+-344+408+472+1048 -536 0
+-472+536+1176 344 0
+408+536+920+984+1048+1176 472 0
+472+536+920 -920+1176 0
+-344+472+536+1176 920+1176 0
+280+536+984 -920+984+1176 0
+-280+344+408+536+984 920+984+1176 0
+472+1048+1112 -1176 0
+280+472+536+1048+1112 1176 0
+344+472+920+984+1048+1176 -1048 0
+-344+920+984+1176 1048 0
+344+408+472+536+1048 -1048+1112 0
+344+408+1048 1048+1112 0
+-345+409+473+537+1113 281 0
+345+409+1113 -281 0
+-281+345+409+473+921 281+409+537 0
+-281+409+473+921 -281+409+537 0
+-281+409+473+921 345 0
+-281+409+537+921+1177 345 0
+-281+537+921+1177 -345 0
+473+537+921 -345 0
+-345+473+921+985+1177 345+409 0
+-345+921+985+1177 -345+409 0
+-281+537+921+1177 409 0
+281+345+537+921+1177 -409 0
+-345+921+985+1177 473 0
+345+409+537+1049 473 0
+409+921+985+1177 -473 0
+345+409+1049 -473 0
+-281+345+409+1113 473+537 0
+345+409+1113 -473+537 0
+345+409+1049 537 0
+-345+409+473+1049 -537 0
+-473+537+1177 345 0
+409+537+921+985+1049+1177 473 0
+473+537+921 -921+1177 0
+-345+473+537+1177 921+1177 0
+281+537+985 -921+985+1177 0
+-281+345+409+537+985 921+985+1177 0
+473+1049+1113 -1177 0
+281+473+537+1049+1113 1177 0
+345+473+921+985+1049+1177 -1049 0
+-345+921+985+1177 1049 0
+345+409+473+537+1049 -1049+1113 0
+345+409+1049 1049+1113 0
+-346+410+474+538+1114 282 0
+346+410+1114 -282 0
+-282+346+410+474+922 282+410+538 0
+-282+410+474+922 -282+410+538 0
+-282+410+474+922 346 0
+-282+410+538+922+1178 346 0
+-282+538+922+1178 -346 0
+474+538+922 -346 0
+-346+474+922+986+1178 346+410 0
+-346+922+986+1178 -346+410 0
+-282+538+922+1178 410 0
+282+346+538+922+1178 -410 0
+-346+922+986+1178 474 0
+346+410+538+1050 474 0
+410+922+986+1178 -474 0
+346+410+1050 -474 0
+-282+346+410+1114 474+538 0
+346+410+1114 -474+538 0
+346+410+1050 538 0
+-346+410+474+1050 -538 0
+-474+538+1178 346 0
+410+538+922+986+1050+1178 474 0
+474+538+922 -922+1178 0
+-346+474+538+1178 922+1178 0
+282+538+986 -922+986+1178 0
+-282+346+410+538+986 922+986+1178 0
+474+1050+1114 -1178 0
+282+474+538+1050+1114 1178 0
+346+474+922+986+1050+1178 -1050 0
+-346+922+986+1178 1050 0
+346+410+474+538+1050 -1050+1114 0
+346+410+1050 1050+1114 0
+-347+411+475+539+1115 283 0
+347+411+1115 -283 0
+-283+347+411+475+923 283+411+539 0
+-283+411+475+923 -283+411+539 0
+-283+411+475+923 347 0
+-283+411+539+923+1179 347 0
+-283+539+923+1179 -347 0
+475+539+923 -347 0
+-347+475+923+987+1179 347+411 0
+-347+923+987+1179 -347+411 0
+-283+539+923+1179 411 0
+283+347+539+923+1179 -411 0
+-347+923+987+1179 475 0
+347+411+539+1051 475 0
+411+923+987+1179 -475 0
+347+411+1051 -475 0
+-283+347+411+1115 475+539 0
+347+411+1115 -475+539 0
+347+411+1051 539 0
+-347+411+475+1051 -539 0
+-475+539+1179 347 0
+411+539+923+987+1051+1179 475 0
+475+539+923 -923+1179 0
+-347+475+539+1179 923+1179 0
+283+539+987 -923+987+1179 0
+-283+347+411+539+987 923+987+1179 0
+475+1051+1115 -1179 0
+283+475+539+1051+1115 1179 0
+347+475+923+987+1051+1179 -1051 0
+-347+923+987+1179 1051 0
+347+411+475+539+1051 -1051+1115 0
+347+411+1051 1051+1115 0
+-348+412+476+540+1116 284 0
+348+412+1116 -284 0
+-284+348+412+476+924 284+412+540 0
+-284+412+476+924 -284+412+540 0
+-284+412+476+924 348 0
+-284+412+540+924+1180 348 0
+-284+540+924+1180 -348 0
+476+540+924 -348 0
+-348+476+924+988+1180 348+412 0
+-348+924+988+1180 -348+412 0
+-284+540+924+1180 412 0
+284+348+540+924+1180 -412 0
+-348+924+988+1180 476 0
+348+412+540+1052 476 0
+412+924+988+1180 -476 0
+348+412+1052 -476 0
+-284+348+412+1116 476+540 0
+348+412+1116 -476+540 0
+348+412+1052 540 0
+-348+412+476+1052 -540 0
+-476+540+1180 348 0
+412+540+924+988+1052+1180 476 0
+476+540+924 -924+1180 0
+-348+476+540+1180 924+1180 0
+284+540+988 -924+988+1180 0
+-284+348+412+540+988 924+988+1180 0
+476+1052+1116 -1180 0
+284+476+540+1052+1116 1180 0
+348+476+924+988+1052+1180 -1052 0
+-348+924+988+1180 1052 0
+348+412+476+540+1052 -1052+1116 0
+348+412+1052 1052+1116 0
+-349+413+477+541+1117 285 0
+349+413+1117 -285 0
+-285+349+413+477+925 285+413+541 0
+-285+413+477+925 -285+413+541 0
+-285+413+477+925 349 0
+-285+413+541+925+1181 349 0
+-285+541+925+1181 -349 0
+477+541+925 -349 0
+-349+477+925+989+1181 349+413 0
+-349+925+989+1181 -349+413 0
+-285+541+925+1181 413 0
+285+349+541+925+1181 -413 0
+-349+925+989+1181 477 0
+349+413+541+1053 477 0
+413+925+989+1181 -477 0
+349+413+1053 -477 0
+-285+349+413+1117 477+541 0
+349+413+1117 -477+541 0
+349+413+1053 541 0
+-349+413+477+1053 -541 0
+-477+541+1181 349 0
+413+541+925+989+1053+1181 477 0
+477+541+925 -925+1181 0
+-349+477+541+1181 925+1181 0
+285+541+989 -925+989+1181 0
+-285+349+413+541+989 925+989+1181 0
+477+1053+1117 -1181 0
+285+477+541+1053+1117 1181 0
+349+477+925+989+1053+1181 -1053 0
+-349+925+989+1181 1053 0
+349+413+477+541+1053 -1053+1117 0
+349+413+1053 1053+1117 0
+-350+414+478+542+1118 286 0
+350+414+1118 -286 0
+-286+350+414+478+926 286+414+542 0
+-286+414+478+926 -286+414+542 0
+-286+414+478+926 350 0
+-286+414+542+926+1182 350 0
+-286+542+926+1182 -350 0
+478+542+926 -350 0
+-350+478+926+990+1182 350+414 0
+-350+926+990+1182 -350+414 0
+-286+542+926+1182 414 0
+286+350+542+926+1182 -414 0
+-350+926+990+1182 478 0
+350+414+542+1054 478 0
+414+926+990+1182 -478 0
+350+414+1054 -478 0
+-286+350+414+1118 478+542 0
+350+414+1118 -478+542 0
+350+414+1054 542 0
+-350+414+478+1054 -542 0
+-478+542+1182 350 0
+414+542+926+990+1054+1182 478 0
+478+542+926 -926+1182 0
+-350+478+542+1182 926+1182 0
+286+542+990 -926+990+1182 0
+-286+350+414+542+990 926+990+1182 0
+478+1054+1118 -1182 0
+286+478+542+1054+1118 1182 0
+350+478+926+990+1054+1182 -1054 0
+-350+926+990+1182 1054 0
+350+414+478+542+1054 -1054+1118 0
+350+414+1054 1054+1118 0
+-351+415+479+543+1119 287 0
+351+415+1119 -287 0
+-287+351+415+479+927 287+415+543 0
+-287+415+479+927 -287+415+543 0
+-287+415+479+927 351 0
+-287+415+543+927+1183 351 0
+-287+543+927+1183 -351 0
+479+543+927 -351 0
+-351+479+927+991+1183 351+415 0
+-351+927+991+1183 -351+415 0
+-287+543+927+1183 415 0
+287+351+543+927+1183 -415 0
+-351+927+991+1183 479 0
+351+415+543+1055 479 0
+415+927+991+1183 -479 0
+351+415+1055 -479 0
+-287+351+415+1119 479+543 0
+351+415+1119 -479+543 0
+351+415+1055 543 0
+-351+415+479+1055 -543 0
+-479+543+1183 351 0
+415+543+927+991+1055+1183 479 0
+479+543+927 -927+1183 0
+-351+479+543+1183 927+1183 0
+287+543+991 -927+991+1183 0
+-287+351+415+543+991 927+991+1183 0
+479+1055+1119 -1183 0
+287+479+543+1055+1119 1183 0
+351+479+927+991+1055+1183 -1055 0
+-351+927+991+1183 1055 0
+351+415+479+543+1055 -1055+1119 0
+351+415+1055 1055+1119 0
+-352+416+480+544+1120 288 0
+352+416+1120 -288 0
+-288+352+416+480+928 288+416+544 0
+-288+416+480+928 -288+416+544 0
+-288+416+480+928 352 0
+-288+416+544+928+1184 352 0
+-288+544+928+1184 -352 0
+480+544+928 -352 0
+-352+480+928+992+1184 352+416 0
+-352+928+992+1184 -352+416 0
+-288+544+928+1184 416 0
+288+352+544+928+1184 -416 0
+-352+928+992+1184 480 0
+352+416+544+1056 480 0
+416+928+992+1184 -480 0
+352+416+1056 -480 0
+-288+352+416+1120 480+544 0
+352+416+1120 -480+544 0
+352+416+1056 544 0
+-352+416+480+1056 -544 0
+-480+544+1184 352 0
+416+544+928+992+1056+1184 480 0
+480+544+928 -928+1184 0
+-352+480+544+1184 928+1184 0
+288+544+992 -928+992+1184 0
+-288+352+416+544+992 928+992+1184 0
+480+1056+1120 -1184 0
+288+480+544+1056+1120 1184 0
+352+480+928+992+1056+1184 -1056 0
+-352+928+992+1184 1056 0
+352+416+480+544+1056 -1056+1120 0
+352+416+1056 1056+1120 0
+-353+417+481+545+1121 289 0
+353+417+1121 -289 0
+-289+353+417+481+929 289+417+545 0
+-289+417+481+929 -289+417+545 0
+-289+417+481+929 353 0
+-289+417+545+929+1185 353 0
+-289+545+929+1185 -353 0
+481+545+929 -353 0
+-353+481+929+993+1185 353+417 0
+-353+929+993+1185 -353+417 0
+-289+545+929+1185 417 0
+289+353+545+929+1185 -417 0
+-353+929+993+1185 481 0
+353+417+545+1057 481 0
+417+929+993+1185 -481 0
+353+417+1057 -481 0
+-289+353+417+1121 481+545 0
+353+417+1121 -481+545 0
+353+417+1057 545 0
+-353+417+481+1057 -545 0
+-481+545+1185 353 0
+417+545+929+993+1057+1185 481 0
+481+545+929 -929+1185 0
+-353+481+545+1185 929+1185 0
+289+545+993 -929+993+1185 0
+-289+353+417+545+993 929+993+1185 0
+481+1057+1121 -1185 0
+289+481+545+1057+1121 1185 0
+353+481+929+993+1057+1185 -1057 0
+-353+929+993+1185 1057 0
+353+417+481+545+1057 -1057+1121 0
+353+417+1057 1057+1121 0
+-354+418+482+546+1122 290 0
+354+418+1122 -290 0
+-290+354+418+482+930 290+418+546 0
+-290+418+482+930 -290+418+546 0
+-290+418+482+930 354 0
+-290+418+546+930+1186 354 0
+-290+546+930+1186 -354 0
+482+546+930 -354 0
+-354+482+930+994+1186 354+418 0
+-354+930+994+1186 -354+418 0
+-290+546+930+1186 418 0
+290+354+546+930+1186 -418 0
+-354+930+994+1186 482 0
+354+418+546+1058 482 0
+418+930+994+1186 -482 0
+354+418+1058 -482 0
+-290+354+418+1122 482+546 0
+354+418+1122 -482+546 0
+354+418+1058 546 0
+-354+418+482+1058 -546 0
+-482+546+1186 354 0
+418+546+930+994+1058+1186 482 0
+482+546+930 -930+1186 0
+-354+482+546+1186 930+1186 0
+290+546+994 -930+994+1186 0
+-290+354+418+546+994 930+994+1186 0
+482+1058+1122 -1186 0
+290+482+546+1058+1122 1186 0
+354+482+930+994+1058+1186 -1058 0
+-354+930+994+1186 1058 0
+354+418+482+546+1058 -1058+1122 0
+354+418+1058 1058+1122 0
+-355+419+483+547+1123 291 0
+355+419+1123 -291 0
+-291+355+419+483+931 291+419+547 0
+-291+419+483+931 -291+419+547 0
+-291+419+483+931 355 0
+-291+419+547+931+1187 355 0
+-291+547+931+1187 -355 0
+483+547+931 -355 0
+-355+483+931+995+1187 355+419 0
+-355+931+995+1187 -355+419 0
+-291+547+931+1187 419 0
+291+355+547+931+1187 -419 0
+-355+931+995+1187 483 0
+355+419+547+1059 483 0
+419+931+995+1187 -483 0
+355+419+1059 -483 0
+-291+355+419+1123 483+547 0
+355+419+1123 -483+547 0
+355+419+1059 547 0
+-355+419+483+1059 -547 0
+-483+547+1187 355 0
+419+547+931+995+1059+1187 483 0
+483+547+931 -931+1187 0
+-355+483+547+1187 931+1187 0
+291+547+995 -931+995+1187 0
+-291+355+419+547+995 931+995+1187 0
+483+1059+1123 -1187 0
+291+483+547+1059+1123 1187 0
+355+483+931+995+1059+1187 -1059 0
+-355+931+995+1187 1059 0
+355+419+483+547+1059 -1059+1123 0
+355+419+1059 1059+1123 0
+-356+420+484+548+1124 292 0
+356+420+1124 -292 0
+-292+356+420+484+932 292+420+548 0
+-292+420+484+932 -292+420+548 0
+-292+420+484+932 356 0
+-292+420+548+932+1188 356 0
+-292+548+932+1188 -356 0
+484+548+932 -356 0
+-356+484+932+996+1188 356+420 0
+-356+932+996+1188 -356+420 0
+-292+548+932+1188 420 0
+292+356+548+932+1188 -420 0
+-356+932+996+1188 484 0
+356+420+548+1060 484 0
+420+932+996+1188 -484 0
+356+420+1060 -484 0
+-292+356+420+1124 484+548 0
+356+420+1124 -484+548 0
+356+420+1060 548 0
+-356+420+484+1060 -548 0
+-484+548+1188 356 0
+420+548+932+996+1060+1188 484 0
+484+548+932 -932+1188 0
+-356+484+548+1188 932+1188 0
+292+548+996 -932+996+1188 0
+-292+356+420+548+996 932+996+1188 0
+484+1060+1124 -1188 0
+292+484+548+1060+1124 1188 0
+356+484+932+996+1060+1188 -1060 0
+-356+932+996+1188 1060 0
+356+420+484+548+1060 -1060+1124 0
+356+420+1060 1060+1124 0
+-357+421+485+549+1125 293 0
+357+421+1125 -293 0
+-293+357+421+485+933 293+421+549 0
+-293+421+485+933 -293+421+549 0
+-293+421+485+933 357 0
+-293+421+549+933+1189 357 0
+-293+549+933+1189 -357 0
+485+549+933 -357 0
+-357+485+933+997+1189 357+421 0
+-357+933+997+1189 -357+421 0
+-293+549+933+1189 421 0
+293+357+549+933+1189 -421 0
+-357+933+997+1189 485 0
+357+421+549+1061 485 0
+421+933+997+1189 -485 0
+357+421+1061 -485 0
+-293+357+421+1125 485+549 0
+357+421+1125 -485+549 0
+357+421+1061 549 0
+-357+421+485+1061 -549 0
+-485+549+1189 357 0
+421+549+933+997+1061+1189 485 0
+485+549+933 -933+1189 0
+-357+485+549+1189 933+1189 0
+293+549+997 -933+997+1189 0
+-293+357+421+549+997 933+997+1189 0
+485+1061+1125 -1189 0
+293+485+549+1061+1125 1189 0
+357+485+933+997+1061+1189 -1061 0
+-357+933+997+1189 1061 0
+357+421+485+549+1061 -1061+1125 0
+357+421+1061 1061+1125 0
+-358+422+486+550+1126 294 0
+358+422+1126 -294 0
+-294+358+422+486+934 294+422+550 0
+-294+422+486+934 -294+422+550 0
+-294+422+486+934 358 0
+-294+422+550+934+1190 358 0
+-294+550+934+1190 -358 0
+486+550+934 -358 0
+-358+486+934+998+1190 358+422 0
+-358+934+998+1190 -358+422 0
+-294+550+934+1190 422 0
+294+358+550+934+1190 -422 0
+-358+934+998+1190 486 0
+358+422+550+1062 486 0
+422+934+998+1190 -486 0
+358+422+1062 -486 0
+-294+358+422+1126 486+550 0
+358+422+1126 -486+550 0
+358+422+1062 550 0
+-358+422+486+1062 -550 0
+-486+550+1190 358 0
+422+550+934+998+1062+1190 486 0
+486+550+934 -934+1190 0
+-358+486+550+1190 934+1190 0
+294+550+998 -934+998+1190 0
+-294+358+422+550+998 934+998+1190 0
+486+1062+1126 -1190 0
+294+486+550+1062+1126 1190 0
+358+486+934+998+1062+1190 -1062 0
+-358+934+998+1190 1062 0
+358+422+486+550+1062 -1062+1126 0
+358+422+1062 1062+1126 0
+-359+423+487+551+1127 295 0
+359+423+1127 -295 0
+-295+359+423+487+935 295+423+551 0
+-295+423+487+935 -295+423+551 0
+-295+423+487+935 359 0
+-295+423+551+935+1191 359 0
+-295+551+935+1191 -359 0
+487+551+935 -359 0
+-359+487+935+999+1191 359+423 0
+-359+935+999+1191 -359+423 0
+-295+551+935+1191 423 0
+295+359+551+935+1191 -423 0
+-359+935+999+1191 487 0
+359+423+551+1063 487 0
+423+935+999+1191 -487 0
+359+423+1063 -487 0
+-295+359+423+1127 487+551 0
+359+423+1127 -487+551 0
+359+423+1063 551 0
+-359+423+487+1063 -551 0
+-487+551+1191 359 0
+423+551+935+999+1063+1191 487 0
+487+551+935 -935+1191 0
+-359+487+551+1191 935+1191 0
+295+551+999 -935+999+1191 0
+-295+359+423+551+999 935+999+1191 0
+487+1063+1127 -1191 0
+295+487+551+1063+1127 1191 0
+359+487+935+999+1063+1191 -1063 0
+-359+935+999+1191 1063 0
+359+423+487+551+1063 -1063+1127 0
+359+423+1063 1063+1127 0
+-360+424+488+552+1128 296 0
+360+424+1128 -296 0
+-296+360+424+488+936 296+424+552 0
+-296+424+488+936 -296+424+552 0
+-296+424+488+936 360 0
+-296+424+552+936+1192 360 0
+-296+552+936+1192 -360 0
+488+552+936 -360 0
+-360+488+936+1000+1192 360+424 0
+-360+936+1000+1192 -360+424 0
+-296+552+936+1192 424 0
+296+360+552+936+1192 -424 0
+-360+936+1000+1192 488 0
+360+424+552+1064 488 0
+424+936+1000+1192 -488 0
+360+424+1064 -488 0
+-296+360+424+1128 488+552 0
+360+424+1128 -488+552 0
+360+424+1064 552 0
+-360+424+488+1064 -552 0
+-488+552+1192 360 0
+424+552+936+1000+1064+1192 488 0
+488+552+936 -936+1192 0
+-360+488+552+1192 936+1192 0
+296+552+1000 -936+1000+1192 0
+-296+360+424+552+1000 936+1000+1192 0
+488+1064+1128 -1192 0
+296+488+552+1064+1128 1192 0
+360+488+936+1000+1064+1192 -1064 0
+-360+936+1000+1192 1064 0
+360+424+488+552+1064 -1064+1128 0
+360+424+1064 1064+1128 0
+-361+425+489+553+1129 297 0
+361+425+1129 -297 0
+-297+361+425+489+937 297+425+553 0
+-297+425+489+937 -297+425+553 0
+-297+425+489+937 361 0
+-297+425+553+937+1193 361 0
+-297+553+937+1193 -361 0
+489+553+937 -361 0
+-361+489+937+1001+1193 361+425 0
+-361+937+1001+1193 -361+425 0
+-297+553+937+1193 425 0
+297+361+553+937+1193 -425 0
+-361+937+1001+1193 489 0
+361+425+553+1065 489 0
+425+937+1001+1193 -489 0
+361+425+1065 -489 0
+-297+361+425+1129 489+553 0
+361+425+1129 -489+553 0
+361+425+1065 553 0
+-361+425+489+1065 -553 0
+-489+553+1193 361 0
+425+553+937+1001+1065+1193 489 0
+489+553+937 -937+1193 0
+-361+489+553+1193 937+1193 0
+297+553+1001 -937+1001+1193 0
+-297+361+425+553+1001 937+1001+1193 0
+489+1065+1129 -1193 0
+297+489+553+1065+1129 1193 0
+361+489+937+1001+1065+1193 -1065 0
+-361+937+1001+1193 1065 0
+361+425+489+553+1065 -1065+1129 0
+361+425+1065 1065+1129 0
+-362+426+490+554+1130 298 0
+362+426+1130 -298 0
+-298+362+426+490+938 298+426+554 0
+-298+426+490+938 -298+426+554 0
+-298+426+490+938 362 0
+-298+426+554+938+1194 362 0
+-298+554+938+1194 -362 0
+490+554+938 -362 0
+-362+490+938+1002+1194 362+426 0
+-362+938+1002+1194 -362+426 0
+-298+554+938+1194 426 0
+298+362+554+938+1194 -426 0
+-362+938+1002+1194 490 0
+362+426+554+1066 490 0
+426+938+1002+1194 -490 0
+362+426+1066 -490 0
+-298+362+426+1130 490+554 0
+362+426+1130 -490+554 0
+362+426+1066 554 0
+-362+426+490+1066 -554 0
+-490+554+1194 362 0
+426+554+938+1002+1066+1194 490 0
+490+554+938 -938+1194 0
+-362+490+554+1194 938+1194 0
+298+554+1002 -938+1002+1194 0
+-298+362+426+554+1002 938+1002+1194 0
+490+1066+1130 -1194 0
+298+490+554+1066+1130 1194 0
+362+490+938+1002+1066+1194 -1066 0
+-362+938+1002+1194 1066 0
+362+426+490+554+1066 -1066+1130 0
+362+426+1066 1066+1130 0
+-363+427+491+555+1131 299 0
+363+427+1131 -299 0
+-299+363+427+491+939 299+427+555 0
+-299+427+491+939 -299+427+555 0
+-299+427+491+939 363 0
+-299+427+555+939+1195 363 0
+-299+555+939+1195 -363 0
+491+555+939 -363 0
+-363+491+939+1003+1195 363+427 0
+-363+939+1003+1195 -363+427 0
+-299+555+939+1195 427 0
+299+363+555+939+1195 -427 0
+-363+939+1003+1195 491 0
+363+427+555+1067 491 0
+427+939+1003+1195 -491 0
+363+427+1067 -491 0
+-299+363+427+1131 491+555 0
+363+427+1131 -491+555 0
+363+427+1067 555 0
+-363+427+491+1067 -555 0
+-491+555+1195 363 0
+427+555+939+1003+1067+1195 491 0
+491+555+939 -939+1195 0
+-363+491+555+1195 939+1195 0
+299+555+1003 -939+1003+1195 0
+-299+363+427+555+1003 939+1003+1195 0
+491+1067+1131 -1195 0
+299+491+555+1067+1131 1195 0
+363+491+939+1003+1067+1195 -1067 0
+-363+939+1003+1195 1067 0
+363+427+491+555+1067 -1067+1131 0
+363+427+1067 1067+1131 0
+-364+428+492+556+1132 300 0
+364+428+1132 -300 0
+-300+364+428+492+940 300+428+556 0
+-300+428+492+940 -300+428+556 0
+-300+428+492+940 364 0
+-300+428+556+940+1196 364 0
+-300+556+940+1196 -364 0
+492+556+940 -364 0
+-364+492+940+1004+1196 364+428 0
+-364+940+1004+1196 -364+428 0
+-300+556+940+1196 428 0
+300+364+556+940+1196 -428 0
+-364+940+1004+1196 492 0
+364+428+556+1068 492 0
+428+940+1004+1196 -492 0
+364+428+1068 -492 0
+-300+364+428+1132 492+556 0
+364+428+1132 -492+556 0
+364+428+1068 556 0
+-364+428+492+1068 -556 0
+-492+556+1196 364 0
+428+556+940+1004+1068+1196 492 0
+492+556+940 -940+1196 0
+-364+492+556+1196 940+1196 0
+300+556+1004 -940+1004+1196 0
+-300+364+428+556+1004 940+1004+1196 0
+492+1068+1132 -1196 0
+300+492+556+1068+1132 1196 0
+364+492+940+1004+1068+1196 -1068 0
+-364+940+1004+1196 1068 0
+364+428+492+556+1068 -1068+1132 0
+364+428+1068 1068+1132 0
+-365+429+493+557+1133 301 0
+365+429+1133 -301 0
+-301+365+429+493+941 301+429+557 0
+-301+429+493+941 -301+429+557 0
+-301+429+493+941 365 0
+-301+429+557+941+1197 365 0
+-301+557+941+1197 -365 0
+493+557+941 -365 0
+-365+493+941+1005+1197 365+429 0
+-365+941+1005+1197 -365+429 0
+-301+557+941+1197 429 0
+301+365+557+941+1197 -429 0
+-365+941+1005+1197 493 0
+365+429+557+1069 493 0
+429+941+1005+1197 -493 0
+365+429+1069 -493 0
+-301+365+429+1133 493+557 0
+365+429+1133 -493+557 0
+365+429+1069 557 0
+-365+429+493+1069 -557 0
+-493+557+1197 365 0
+429+557+941+1005+1069+1197 493 0
+493+557+941 -941+1197 0
+-365+493+557+1197 941+1197 0
+301+557+1005 -941+1005+1197 0
+-301+365+429+557+1005 941+1005+1197 0
+493+1069+1133 -1197 0
+301+493+557+1069+1133 1197 0
+365+493+941+1005+1069+1197 -1069 0
+-365+941+1005+1197 1069 0
+365+429+493+557+1069 -1069+1133 0
+365+429+1069 1069+1133 0
+-366+430+494+558+1134 302 0
+366+430+1134 -302 0
+-302+366+430+494+942 302+430+558 0
+-302+430+494+942 -302+430+558 0
+-302+430+494+942 366 0
+-302+430+558+942+1198 366 0
+-302+558+942+1198 -366 0
+494+558+942 -366 0
+-366+494+942+1006+1198 366+430 0
+-366+942+1006+1198 -366+430 0
+-302+558+942+1198 430 0
+302+366+558+942+1198 -430 0
+-366+942+1006+1198 494 0
+366+430+558+1070 494 0
+430+942+1006+1198 -494 0
+366+430+1070 -494 0
+-302+366+430+1134 494+558 0
+366+430+1134 -494+558 0
+366+430+1070 558 0
+-366+430+494+1070 -558 0
+-494+558+1198 366 0
+430+558+942+1006+1070+1198 494 0
+494+558+942 -942+1198 0
+-366+494+558+1198 942+1198 0
+302+558+1006 -942+1006+1198 0
+-302+366+430+558+1006 942+1006+1198 0
+494+1070+1134 -1198 0
+302+494+558+1070+1134 1198 0
+366+494+942+1006+1070+1198 -1070 0
+-366+942+1006+1198 1070 0
+366+430+494+558+1070 -1070+1134 0
+366+430+1070 1070+1134 0
+-367+431+495+559+1135 303 0
+367+431+1135 -303 0
+-303+367+431+495+943 303+431+559 0
+-303+431+495+943 -303+431+559 0
+-303+431+495+943 367 0
+-303+431+559+943+1199 367 0
+-303+559+943+1199 -367 0
+495+559+943 -367 0
+-367+495+943+1007+1199 367+431 0
+-367+943+1007+1199 -367+431 0
+-303+559+943+1199 431 0
+303+367+559+943+1199 -431 0
+-367+943+1007+1199 495 0
+367+431+559+1071 495 0
+431+943+1007+1199 -495 0
+367+431+1071 -495 0
+-303+367+431+1135 495+559 0
+367+431+1135 -495+559 0
+367+431+1071 559 0
+-367+431+495+1071 -559 0
+-495+559+1199 367 0
+431+559+943+1007+1071+1199 495 0
+495+559+943 -943+1199 0
+-367+495+559+1199 943+1199 0
+303+559+1007 -943+1007+1199 0
+-303+367+431+559+1007 943+1007+1199 0
+495+1071+1135 -1199 0
+303+495+559+1071+1135 1199 0
+367+495+943+1007+1071+1199 -1071 0
+-367+943+1007+1199 1071 0
+367+431+495+559+1071 -1071+1135 0
+367+431+1071 1071+1135 0
+-368+432+496+560+1136 304 0
+368+432+1136 -304 0
+-304+368+432+496+944 304+432+560 0
+-304+432+496+944 -304+432+560 0
+-304+432+496+944 368 0
+-304+432+560+944+1200 368 0
+-304+560+944+1200 -368 0
+496+560+944 -368 0
+-368+496+944+1008+1200 368+432 0
+-368+944+1008+1200 -368+432 0
+-304+560+944+1200 432 0
+304+368+560+944+1200 -432 0
+-368+944+1008+1200 496 0
+368+432+560+1072 496 0
+432+944+1008+1200 -496 0
+368+432+1072 -496 0
+-304+368+432+1136 496+560 0
+368+432+1136 -496+560 0
+368+432+1072 560 0
+-368+432+496+1072 -560 0
+-496+560+1200 368 0
+432+560+944+1008+1072+1200 496 0
+496+560+944 -944+1200 0
+-368+496+560+1200 944+1200 0
+304+560+1008 -944+1008+1200 0
+-304+368+432+560+1008 944+1008+1200 0
+496+1072+1136 -1200 0
+304+496+560+1072+1136 1200 0
+368+496+944+1008+1072+1200 -1072 0
+-368+944+1008+1200 1072 0
+368+432+496+560+1072 -1072+1136 0
+368+432+1072 1072+1136 0
+-369+433+497+561+1137 305 0
+369+433+1137 -305 0
+-305+369+433+497+945 305+433+561 0
+-305+433+497+945 -305+433+561 0
+-305+433+497+945 369 0
+-305+433+561+945+1201 369 0
+-305+561+945+1201 -369 0
+497+561+945 -369 0
+-369+497+945+1009+1201 369+433 0
+-369+945+1009+1201 -369+433 0
+-305+561+945+1201 433 0
+305+369+561+945+1201 -433 0
+-369+945+1009+1201 497 0
+369+433+561+1073 497 0
+433+945+1009+1201 -497 0
+369+433+1073 -497 0
+-305+369+433+1137 497+561 0
+369+433+1137 -497+561 0
+369+433+1073 561 0
+-369+433+497+1073 -561 0
+-497+561+1201 369 0
+433+561+945+1009+1073+1201 497 0
+497+561+945 -945+1201 0
+-369+497+561+1201 945+1201 0
+305+561+1009 -945+1009+1201 0
+-305+369+433+561+1009 945+1009+1201 0
+497+1073+1137 -1201 0
+305+497+561+1073+1137 1201 0
+369+497+945+1009+1073+1201 -1073 0
+-369+945+1009+1201 1073 0
+369+433+497+561+1073 -1073+1137 0
+369+433+1073 1073+1137 0
+-370+434+498+562+1138 306 0
+370+434+1138 -306 0
+-306+370+434+498+946 306+434+562 0
+-306+434+498+946 -306+434+562 0
+-306+434+498+946 370 0
+-306+434+562+946+1202 370 0
+-306+562+946+1202 -370 0
+498+562+946 -370 0
+-370+498+946+1010+1202 370+434 0
+-370+946+1010+1202 -370+434 0
+-306+562+946+1202 434 0
+306+370+562+946+1202 -434 0
+-370+946+1010+1202 498 0
+370+434+562+1074 498 0
+434+946+1010+1202 -498 0
+370+434+1074 -498 0
+-306+370+434+1138 498+562 0
+370+434+1138 -498+562 0
+370+434+1074 562 0
+-370+434+498+1074 -562 0
+-498+562+1202 370 0
+434+562+946+1010+1074+1202 498 0
+498+562+946 -946+1202 0
+-370+498+562+1202 946+1202 0
+306+562+1010 -946+1010+1202 0
+-306+370+434+562+1010 946+1010+1202 0
+498+1074+1138 -1202 0
+306+498+562+1074+1138 1202 0
+370+498+946+1010+1074+1202 -1074 0
+-370+946+1010+1202 1074 0
+370+434+498+562+1074 -1074+1138 0
+370+434+1074 1074+1138 0
+-371+435+499+563+1139 307 0
+371+435+1139 -307 0
+-307+371+435+499+947 307+435+563 0
+-307+435+499+947 -307+435+563 0
+-307+435+499+947 371 0
+-307+435+563+947+1203 371 0
+-307+563+947+1203 -371 0
+499+563+947 -371 0
+-371+499+947+1011+1203 371+435 0
+-371+947+1011+1203 -371+435 0
+-307+563+947+1203 435 0
+307+371+563+947+1203 -435 0
+-371+947+1011+1203 499 0
+371+435+563+1075 499 0
+435+947+1011+1203 -499 0
+371+435+1075 -499 0
+-307+371+435+1139 499+563 0
+371+435+1139 -499+563 0
+371+435+1075 563 0
+-371+435+499+1075 -563 0
+-499+563+1203 371 0
+435+563+947+1011+1075+1203 499 0
+499+563+947 -947+1203 0
+-371+499+563+1203 947+1203 0
+307+563+1011 -947+1011+1203 0
+-307+371+435+563+1011 947+1011+1203 0
+499+1075+1139 -1203 0
+307+499+563+1075+1139 1203 0
+371+499+947+1011+1075+1203 -1075 0
+-371+947+1011+1203 1075 0
+371+435+499+563+1075 -1075+1139 0
+371+435+1075 1075+1139 0
+-372+436+500+564+1140 308 0
+372+436+1140 -308 0
+-308+372+436+500+948 308+436+564 0
+-308+436+500+948 -308+436+564 0
+-308+436+500+948 372 0
+-308+436+564+948+1204 372 0
+-308+564+948+1204 -372 0
+500+564+948 -372 0
+-372+500+948+1012+1204 372+436 0
+-372+948+1012+1204 -372+436 0
+-308+564+948+1204 436 0
+308+372+564+948+1204 -436 0
+-372+948+1012+1204 500 0
+372+436+564+1076 500 0
+436+948+1012+1204 -500 0
+372+436+1076 -500 0
+-308+372+436+1140 500+564 0
+372+436+1140 -500+564 0
+372+436+1076 564 0
+-372+436+500+1076 -564 0
+-500+564+1204 372 0
+436+564+948+1012+1076+1204 500 0
+500+564+948 -948+1204 0
+-372+500+564+1204 948+1204 0
+308+564+1012 -948+1012+1204 0
+-308+372+436+564+1012 948+1012+1204 0
+500+1076+1140 -1204 0
+308+500+564+1076+1140 1204 0
+372+500+948+1012+1076+1204 -1076 0
+-372+948+1012+1204 1076 0
+372+436+500+564+1076 -1076+1140 0
+372+436+1076 1076+1140 0
+-373+437+501+565+1141 309 0
+373+437+1141 -309 0
+-309+373+437+501+949 309+437+565 0
+-309+437+501+949 -309+437+565 0
+-309+437+501+949 373 0
+-309+437+565+949+1205 373 0
+-309+565+949+1205 -373 0
+501+565+949 -373 0
+-373+501+949+1013+1205 373+437 0
+-373+949+1013+1205 -373+437 0
+-309+565+949+1205 437 0
+309+373+565+949+1205 -437 0
+-373+949+1013+1205 501 0
+373+437+565+1077 501 0
+437+949+1013+1205 -501 0
+373+437+1077 -501 0
+-309+373+437+1141 501+565 0
+373+437+1141 -501+565 0
+373+437+1077 565 0
+-373+437+501+1077 -565 0
+-501+565+1205 373 0
+437+565+949+1013+1077+1205 501 0
+501+565+949 -949+1205 0
+-373+501+565+1205 949+1205 0
+309+565+1013 -949+1013+1205 0
+-309+373+437+565+1013 949+1013+1205 0
+501+1077+1141 -1205 0
+309+501+565+1077+1141 1205 0
+373+501+949+1013+1077+1205 -1077 0
+-373+949+1013+1205 1077 0
+373+437+501+565+1077 -1077+1141 0
+373+437+1077 1077+1141 0
+-374+438+502+566+1142 310 0
+374+438+1142 -310 0
+-310+374+438+502+950 310+438+566 0
+-310+438+502+950 -310+438+566 0
+-310+438+502+950 374 0
+-310+438+566+950+1206 374 0
+-310+566+950+1206 -374 0
+502+566+950 -374 0
+-374+502+950+1014+1206 374+438 0
+-374+950+1014+1206 -374+438 0
+-310+566+950+1206 438 0
+310+374+566+950+1206 -438 0
+-374+950+1014+1206 502 0
+374+438+566+1078 502 0
+438+950+1014+1206 -502 0
+374+438+1078 -502 0
+-310+374+438+1142 502+566 0
+374+438+1142 -502+566 0
+374+438+1078 566 0
+-374+438+502+1078 -566 0
+-502+566+1206 374 0
+438+566+950+1014+1078+1206 502 0
+502+566+950 -950+1206 0
+-374+502+566+1206 950+1206 0
+310+566+1014 -950+1014+1206 0
+-310+374+438+566+1014 950+1014+1206 0
+502+1078+1142 -1206 0
+310+502+566+1078+1142 1206 0
+374+502+950+1014+1078+1206 -1078 0
+-374+950+1014+1206 1078 0
+374+438+502+566+1078 -1078+1142 0
+374+438+1078 1078+1142 0
+-375+439+503+567+1143 311 0
+375+439+1143 -311 0
+-311+375+439+503+951 311+439+567 0
+-311+439+503+951 -311+439+567 0
+-311+439+503+951 375 0
+-311+439+567+951+1207 375 0
+-311+567+951+1207 -375 0
+503+567+951 -375 0
+-375+503+951+1015+1207 375+439 0
+-375+951+1015+1207 -375+439 0
+-311+567+951+1207 439 0
+311+375+567+951+1207 -439 0
+-375+951+1015+1207 503 0
+375+439+567+1079 503 0
+439+951+1015+1207 -503 0
+375+439+1079 -503 0
+-311+375+439+1143 503+567 0
+375+439+1143 -503+567 0
+375+439+1079 567 0
+-375+439+503+1079 -567 0
+-503+567+1207 375 0
+439+567+951+1015+1079+1207 503 0
+503+567+951 -951+1207 0
+-375+503+567+1207 951+1207 0
+311+567+1015 -951+1015+1207 0
+-311+375+439+567+1015 951+1015+1207 0
+503+1079+1143 -1207 0
+311+503+567+1079+1143 1207 0
+375+503+951+1015+1079+1207 -1079 0
+-375+951+1015+1207 1079 0
+375+439+503+567+1079 -1079+1143 0
+375+439+1079 1079+1143 0
+-376+440+504+568+1144 312 0
+376+440+1144 -312 0
+-312+376+440+504+952 312+440+568 0
+-312+440+504+952 -312+440+568 0
+-312+440+504+952 376 0
+-312+440+568+952+1208 376 0
+-312+568+952+1208 -376 0
+504+568+952 -376 0
+-376+504+952+1016+1208 376+440 0
+-376+952+1016+1208 -376+440 0
+-312+568+952+1208 440 0
+312+376+568+952+1208 -440 0
+-376+952+1016+1208 504 0
+376+440+568+1080 504 0
+440+952+1016+1208 -504 0
+376+440+1080 -504 0
+-312+376+440+1144 504+568 0
+376+440+1144 -504+568 0
+376+440+1080 568 0
+-376+440+504+1080 -568 0
+-504+568+1208 376 0
+440+568+952+1016+1080+1208 504 0
+504+568+952 -952+1208 0
+-376+504+568+1208 952+1208 0
+312+568+1016 -952+1016+1208 0
+-312+376+440+568+1016 952+1016+1208 0
+504+1080+1144 -1208 0
+312+504+568+1080+1144 1208 0
+376+504+952+1016+1080+1208 -1080 0
+-376+952+1016+1208 1080 0
+376+440+504+568+1080 -1080+1144 0
+376+440+1080 1080+1144 0
+-377+441+505+569+1145 313 0
+377+441+1145 -313 0
+-313+377+441+505+953 313+441+569 0
+-313+441+505+953 -313+441+569 0
+-313+441+505+953 377 0
+-313+441+569+953+1209 377 0
+-313+569+953+1209 -377 0
+505+569+953 -377 0
+-377+505+953+1017+1209 377+441 0
+-377+953+1017+1209 -377+441 0
+-313+569+953+1209 441 0
+313+377+569+953+1209 -441 0
+-377+953+1017+1209 505 0
+377+441+569+1081 505 0
+441+953+1017+1209 -505 0
+377+441+1081 -505 0
+-313+377+441+1145 505+569 0
+377+441+1145 -505+569 0
+377+441+1081 569 0
+-377+441+505+1081 -569 0
+-505+569+1209 377 0
+441+569+953+1017+1081+1209 505 0
+505+569+953 -953+1209 0
+-377+505+569+1209 953+1209 0
+313+569+1017 -953+1017+1209 0
+-313+377+441+569+1017 953+1017+1209 0
+505+1081+1145 -1209 0
+313+505+569+1081+1145 1209 0
+377+505+953+1017+1081+1209 -1081 0
+-377+953+1017+1209 1081 0
+377+441+505+569+1081 -1081+1145 0
+377+441+1081 1081+1145 0
+-378+442+506+570+1146 314 0
+378+442+1146 -314 0
+-314+378+442+506+954 314+442+570 0
+-314+442+506+954 -314+442+570 0
+-314+442+506+954 378 0
+-314+442+570+954+1210 378 0
+-314+570+954+1210 -378 0
+506+570+954 -378 0
+-378+506+954+1018+1210 378+442 0
+-378+954+1018+1210 -378+442 0
+-314+570+954+1210 442 0
+314+378+570+954+1210 -442 0
+-378+954+1018+1210 506 0
+378+442+570+1082 506 0
+442+954+1018+1210 -506 0
+378+442+1082 -506 0
+-314+378+442+1146 506+570 0
+378+442+1146 -506+570 0
+378+442+1082 570 0
+-378+442+506+1082 -570 0
+-506+570+1210 378 0
+442+570+954+1018+1082+1210 506 0
+506+570+954 -954+1210 0
+-378+506+570+1210 954+1210 0
+314+570+1018 -954+1018+1210 0
+-314+378+442+570+1018 954+1018+1210 0
+506+1082+1146 -1210 0
+314+506+570+1082+1146 1210 0
+378+506+954+1018+1082+1210 -1082 0
+-378+954+1018+1210 1082 0
+378+442+506+570+1082 -1082+1146 0
+378+442+1082 1082+1146 0
+-379+443+507+571+1147 315 0
+379+443+1147 -315 0
+-315+379+443+507+955 315+443+571 0
+-315+443+507+955 -315+443+571 0
+-315+443+507+955 379 0
+-315+443+571+955+1211 379 0
+-315+571+955+1211 -379 0
+507+571+955 -379 0
+-379+507+955+1019+1211 379+443 0
+-379+955+1019+1211 -379+443 0
+-315+571+955+1211 443 0
+315+379+571+955+1211 -443 0
+-379+955+1019+1211 507 0
+379+443+571+1083 507 0
+443+955+1019+1211 -507 0
+379+443+1083 -507 0
+-315+379+443+1147 507+571 0
+379+443+1147 -507+571 0
+379+443+1083 571 0
+-379+443+507+1083 -571 0
+-507+571+1211 379 0
+443+571+955+1019+1083+1211 507 0
+507+571+955 -955+1211 0
+-379+507+571+1211 955+1211 0
+315+571+1019 -955+1019+1211 0
+-315+379+443+571+1019 955+1019+1211 0
+507+1083+1147 -1211 0
+315+507+571+1083+1147 1211 0
+379+507+955+1019+1083+1211 -1083 0
+-379+955+1019+1211 1083 0
+379+443+507+571+1083 -1083+1147 0
+379+443+1083 1083+1147 0
+-380+444+508+572+1148 316 0
+380+444+1148 -316 0
+-316+380+444+508+956 316+444+572 0
+-316+444+508+956 -316+444+572 0
+-316+444+508+956 380 0
+-316+444+572+956+1212 380 0
+-316+572+956+1212 -380 0
+508+572+956 -380 0
+-380+508+956+1020+1212 380+444 0
+-380+956+1020+1212 -380+444 0
+-316+572+956+1212 444 0
+316+380+572+956+1212 -444 0
+-380+956+1020+1212 508 0
+380+444+572+1084 508 0
+444+956+1020+1212 -508 0
+380+444+1084 -508 0
+-316+380+444+1148 508+572 0
+380+444+1148 -508+572 0
+380+444+1084 572 0
+-380+444+508+1084 -572 0
+-508+572+1212 380 0
+444+572+956+1020+1084+1212 508 0
+508+572+956 -956+1212 0
+-380+508+572+1212 956+1212 0
+316+572+1020 -956+1020+1212 0
+-316+380+444+572+1020 956+1020+1212 0
+508+1084+1148 -1212 0
+316+508+572+1084+1148 1212 0
+380+508+956+1020+1084+1212 -1084 0
+-380+956+1020+1212 1084 0
+380+444+508+572+1084 -1084+1148 0
+380+444+1084 1084+1148 0
+-381+445+509+573+1149 317 0
+381+445+1149 -317 0
+-317+381+445+509+957 317+445+573 0
+-317+445+509+957 -317+445+573 0
+-317+445+509+957 381 0
+-317+445+573+957+1213 381 0
+-317+573+957+1213 -381 0
+509+573+957 -381 0
+-381+509+957+1021+1213 381+445 0
+-381+957+1021+1213 -381+445 0
+-317+573+957+1213 445 0
+317+381+573+957+1213 -445 0
+-381+957+1021+1213 509 0
+381+445+573+1085 509 0
+445+957+1021+1213 -509 0
+381+445+1085 -509 0
+-317+381+445+1149 509+573 0
+381+445+1149 -509+573 0
+381+445+1085 573 0
+-381+445+509+1085 -573 0
+-509+573+1213 381 0
+445+573+957+1021+1085+1213 509 0
+509+573+957 -957+1213 0
+-381+509+573+1213 957+1213 0
+317+573+1021 -957+1021+1213 0
+-317+381+445+573+1021 957+1021+1213 0
+509+1085+1149 -1213 0
+317+509+573+1085+1149 1213 0
+381+509+957+1021+1085+1213 -1085 0
+-381+957+1021+1213 1085 0
+381+445+509+573+1085 -1085+1149 0
+381+445+1085 1085+1149 0
+-382+446+510+574+1150 318 0
+382+446+1150 -318 0
+-318+382+446+510+958 318+446+574 0
+-318+446+510+958 -318+446+574 0
+-318+446+510+958 382 0
+-318+446+574+958+1214 382 0
+-318+574+958+1214 -382 0
+510+574+958 -382 0
+-382+510+958+1022+1214 382+446 0
+-382+958+1022+1214 -382+446 0
+-318+574+958+1214 446 0
+318+382+574+958+1214 -446 0
+-382+958+1022+1214 510 0
+382+446+574+1086 510 0
+446+958+1022+1214 -510 0
+382+446+1086 -510 0
+-318+382+446+1150 510+574 0
+382+446+1150 -510+574 0
+382+446+1086 574 0
+-382+446+510+1086 -574 0
+-510+574+1214 382 0
+446+574+958+1022+1086+1214 510 0
+510+574+958 -958+1214 0
+-382+510+574+1214 958+1214 0
+318+574+1022 -958+1022+1214 0
+-318+382+446+574+1022 958+1022+1214 0
+510+1086+1150 -1214 0
+318+510+574+1086+1150 1214 0
+382+510+958+1022+1086+1214 -1086 0
+-382+958+1022+1214 1086 0
+382+446+510+574+1086 -1086+1150 0
+382+446+1086 1086+1150 0
+-383+447+511+575+1151 319 0
+383+447+1151 -319 0
+-319+383+447+511+959 319+447+575 0
+-319+447+511+959 -319+447+575 0
+-319+447+511+959 383 0
+-319+447+575+959+1215 383 0
+-319+575+959+1215 -383 0
+511+575+959 -383 0
+-383+511+959+1023+1215 383+447 0
+-383+959+1023+1215 -383+447 0
+-319+575+959+1215 447 0
+319+383+575+959+1215 -447 0
+-383+959+1023+1215 511 0
+383+447+575+1087 511 0
+447+959+1023+1215 -511 0
+383+447+1087 -511 0
+-319+383+447+1151 511+575 0
+383+447+1151 -511+575 0
+383+447+1087 575 0
+-383+447+511+1087 -575 0
+-511+575+1215 383 0
+447+575+959+1023+1087+1215 511 0
+511+575+959 -959+1215 0
+-383+511+575+1215 959+1215 0
+319+575+1023 -959+1023+1215 0
+-319+383+447+575+1023 959+1023+1215 0
+511+1087+1151 -1215 0
+319+511+575+1087+1151 1215 0
+383+511+959+1023+1087+1215 -1087 0
+-383+959+1023+1215 1087 0
+383+447+511+575+1087 -1087+1151 0
+383+447+1087 1087+1151 0
+-384+448+512+576+1152 320 0
+384+448+1152 -320 0
+-320+384+448+512+960 320+448+576 0
+-320+448+512+960 -320+448+576 0
+-320+448+512+960 384 0
+-320+448+576+960+1216 384 0
+-320+576+960+1216 -384 0
+512+576+960 -384 0
+-384+512+960+1024+1216 384+448 0
+-384+960+1024+1216 -384+448 0
+-320+576+960+1216 448 0
+320+384+576+960+1216 -448 0
+-384+960+1024+1216 512 0
+384+448+576+1088 512 0
+448+960+1024+1216 -512 0
+384+448+1088 -512 0
+-320+384+448+1152 512+576 0
+384+448+1152 -512+576 0
+384+448+1088 576 0
+-384+448+512+1088 -576 0
+-512+576+1216 384 0
+448+576+960+1024+1088+1216 512 0
+512+576+960 -960+1216 0
+-384+512+576+1216 960+1216 0
+320+576+1024 -960+1024+1216 0
+-320+384+448+576+1024 960+1024+1216 0
+512+1088+1152 -1216 0
+320+512+576+1088+1152 1216 0
+384+512+960+1024+1088+1216 -1088 0
+-384+960+1024+1216 1088 0
+384+448+512+576+1088 -1088+1152 0
+384+448+1088 1088+1152 0
+-577+897+933+942 0
+-578+898+934+943 0
+-579+899+935+944 0
+-580+900+936+945 0
+-581+901+937+946 0
+-582+902+938+947 0
+-583+903+939+948 0
+-584+904+940+949 0
+-585+905+941+950 0
+-586+906+942+951 0
+-587+907+943+952 0
+-588+908+944+953 0
+-589+909+945+954 0
+-590+910+946+955 0
+-591+911+947+956 0
+-592+912+948+957 0
+-593+913+949+958 0
+-594+914+950+959 0
+-595+915+951+960 0
+-596+897+916+952 0
+-597+898+917+953 0
+-598+899+918+954 0
+-599+900+919+955 0
+-600+901+920+956 0
+-601+902+921+957 0
+-602+903+922+958 0
+-603+904+923+959 0
+-604+905+924+960 0
+-605+897+906+925 0
+-606+898+907+926 0
+-607+899+908+927 0
+-608+900+909+928 0
+-609+901+910+929 0
+-610+902+911+930 0
+-611+903+912+931 0
+-612+904+913+932 0
+-613+905+914+933 0
+-614+906+915+934 0
+-615+907+916+935 0
+-616+908+917+936 0
+-617+909+918+937 0
+-618+910+919+938 0
+-619+911+920+939 0
+-620+912+921+940 0
+-621+913+922+941 0
+-622+914+923+942 0
+-623+915+924+943 0
+-624+916+925+944 0
+-625+917+926+945 0
+-626+918+927+946 0
+-627+919+928+947 0
+-628+920+929+948 0
+-629+921+930+949 0
+-630+922+931+950 0
+-631+923+932+951 0
+-632+924+933+952 0
+-633+925+934+953 0
+-634+926+935+954 0
+-635+927+936+955 0
+-636+928+937+956 0
+-637+929+938+957 0
+-638+930+939+958 0
+-639+931+940+959 0
+-640+932+941+960 0
+-641+961+964+986 0
+-642+962+965+987 0
+-643+963+966+988 0
+-644+964+967+989 0
+-645+965+968+990 0
+-646+966+969+991 0
+-647+967+970+992 0
+-648+968+971+993 0
+-649+969+972+994 0
+-650+970+973+995 0
+-651+971+974+996 0
+-652+972+975+997 0
+-653+973+976+998 0
+-654+974+977+999 0
+-655+975+978+1000 0
+-656+976+979+1001 0
+-657+977+980+1002 0
+-658+978+981+1003 0
+-659+979+982+1004 0
+-660+980+983+1005 0
+-661+981+984+1006 0
+-662+982+985+1007 0
+-663+983+986+1008 0
+-664+984+987+1009 0
+-665+985+988+1010 0
+-666+986+989+1011 0
+-667+987+990+1012 0
+-668+988+991+1013 0
+-669+989+992+1014 0
+-670+990+993+1015 0
+-671+991+994+1016 0
+-672+992+995+1017 0
+-673+993+996+1018 0
+-674+994+997+1019 0
+-675+995+998+1020 0
+-676+996+999+1021 0
+-677+997+1000+1022 0
+-678+998+1001+1023 0
+-679+999+1002+1024 0
+-680+961+1000+1003 0
+-681+962+1001+1004 0
+-682+963+1002+1005 0
+-683+964+1003+1006 0
+-684+965+1004+1007 0
+-685+966+1005+1008 0
+-686+967+1006+1009 0
+-687+968+1007+1010 0
+-688+969+1008+1011 0
+-689+970+1009+1012 0
+-690+971+1010+1013 0
+-691+972+1011+1014 0
+-692+973+1012+1015 0
+-693+974+1013+1016 0
+-694+975+1014+1017 0
+-695+976+1015+1018 0
+-696+977+1016+1019 0
+-697+978+1017+1020 0
+-698+979+1018+1021 0
+-699+980+1019+1022 0
+-700+981+1020+1023 0
+-701+982+1021+1024 0
+-702+961+983+1022 0
+-703+962+984+1023 0
+-704+963+985+1024 0
+-705+1025+1083+1088 0
+-706+1025+1026+1084 0
+-707+1026+1027+1085 0
+-708+1027+1028+1086 0
+-709+1028+1029+1087 0
+-710+1029+1030+1088 0
+-711+1025+1030+1031 0
+-712+1026+1031+1032 0
+-713+1027+1032+1033 0
+-714+1028+1033+1034 0
+-715+1029+1034+1035 0
+-716+1030+1035+1036 0
+-717+1031+1036+1037 0
+-718+1032+1037+1038 0
+-719+1033+1038+1039 0
+-720+1034+1039+1040 0
+-721+1035+1040+1041 0
+-722+1036+1041+1042 0
+-723+1037+1042+1043 0
+-724+1038+1043+1044 0
+-725+1039+1044+1045 0
+-726+1040+1045+1046 0
+-727+1041+1046+1047 0
+-728+1042+1047+1048 0
+-729+1043+1048+1049 0
+-730+1044+1049+1050 0
+-731+1045+1050+1051 0
+-732+1046+1051+1052 0
+-733+1047+1052+1053 0
+-734+1048+1053+1054 0
+-735+1049+1054+1055 0
+-736+1050+1055+1056 0
+-737+1051+1056+1057 0
+-738+1052+1057+1058 0
+-739+1053+1058+1059 0
+-740+1054+1059+1060 0
+-741+1055+1060+1061 0
+-742+1056+1061+1062 0
+-743+1057+1062+1063 0
+-744+1058+1063+1064 0
+-745+1059+1064+1065 0
+-746+1060+1065+1066 0
+-747+1061+1066+1067 0
+-748+1062+1067+1068 0
+-749+1063+1068+1069 0
+-750+1064+1069+1070 0
+-751+1065+1070+1071 0
+-752+1066+1071+1072 0
+-753+1067+1072+1073 0
+-754+1068+1073+1074 0
+-755+1069+1074+1075 0
+-756+1070+1075+1076 0
+-757+1071+1076+1077 0
+-758+1072+1077+1078 0
+-759+1073+1078+1079 0
+-760+1074+1079+1080 0
+-761+1075+1080+1081 0
+762+1076+1081+1082 0
+-763+1077+1082+1083 0
+-764+1078+1083+1084 0
+765+1079+1084+1085 0
+-766+1080+1085+1086 0
+767+1081+1086+1087 0
+768+1082+1087+1088 0
+-769+1089+1136+1143 0
+-770+1090+1137+1144 0
+-771+1091+1138+1145 0
+-772+1092+1139+1146 0
+-773+1093+1140+1147 0
+-774+1094+1141+1148 0
+-775+1095+1142+1149 0
+-776+1096+1143+1150 0
+-777+1097+1144+1151 0
+-778+1098+1145+1152 0
+-779+1089+1099+1146 0
+-780+1090+1100+1147 0
+-781+1091+1101+1148 0
+-782+1092+1102+1149 0
+-783+1093+1103+1150 0
+-784+1094+1104+1151 0
+-785+1095+1105+1152 0
+-786+1089+1096+1106 0
+-787+1090+1097+1107 0
+-788+1091+1098+1108 0
+-789+1092+1099+1109 0
+-790+1093+1100+1110 0
+-791+1094+1101+1111 0
+-792+1095+1102+1112 0
+-793+1096+1103+1113 0
+-794+1097+1104+1114 0
+-795+1098+1105+1115 0
+-796+1099+1106+1116 0
+-797+1100+1107+1117 0
+-798+1101+1108+1118 0
+-799+1102+1109+1119 0
+-800+1103+1110+1120 0
+-801+1104+1111+1121 0
+-802+1105+1112+1122 0
+-803+1106+1113+1123 0
+-804+1107+1114+1124 0
+-805+1108+1115+1125 0
+-806+1109+1116+1126 0
+-807+1110+1117+1127 0
+-808+1111+1118+1128 0
+-809+1112+1119+1129 0
+-810+1113+1120+1130 0
+-811+1114+1121+1131 0
+-812+1115+1122+1132 0
+-813+1116+1123+1133 0
+-814+1117+1124+1134 0
+-815+1118+1125+1135 0
+-816+1119+1126+1136 0
+-817+1120+1127+1137 0
+-818+1121+1128+1138 0
+-819+1122+1129+1139 0
+-820+1123+1130+1140 0
+-821+1124+1131+1141 0
+-822+1125+1132+1142 0
+-823+1126+1133+1143 0
+-824+1127+1134+1144 0
+-825+1128+1135+1145 0
+-826+1129+1136+1146 0
+-827+1130+1137+1147 0
+-828+1131+1138+1148 0
+-829+1132+1139+1149 0
+-830+1133+1140+1150 0
+-831+1134+1141+1151 0
+-832+1135+1142+1152 0
+-833+1153+1176+1210 0
+-834+1154+1177+1211 0
+-835+1155+1178+1212 0
+-836+1156+1179+1213 0
+-837+1157+1180+1214 0
+-838+1158+1181+1215 0
+-839+1159+1182+1216 0
+-840+1153+1160+1183 0
+-841+1154+1161+1184 0
+-842+1155+1162+1185 0
+-843+1156+1163+1186 0
+-844+1157+1164+1187 0
+-845+1158+1165+1188 0
+-846+1159+1166+1189 0
+-847+1160+1167+1190 0
+-848+1161+1168+1191 0
+-849+1162+1169+1192 0
+-850+1163+1170+1193 0
+-851+1164+1171+1194 0
+-852+1165+1172+1195 0
+-853+1166+1173+1196 0
+-854+1167+1174+1197 0
+-855+1168+1175+1198 0
+-856+1169+1176+1199 0
+-857+1170+1177+1200 0
+-858+1171+1178+1201 0
+-859+1172+1179+1202 0
+-860+1173+1180+1203 0
+-861+1174+1181+1204 0
+-862+1175+1182+1205 0
+-863+1176+1183+1206 0
+-864+1177+1184+1207 0
+-865+1178+1185+1208 0
+-866+1179+1186+1209 0
+-867+1180+1187+1210 0
+-868+1181+1188+1211 0
+-869+1182+1189+1212 0
+-870+1183+1190+1213 0
+-871+1184+1191+1214 0
+-872+1185+1192+1215 0
+-873+1186+1193+1216 0
+-874+1153+1187+1194 0
+-875+1154+1188+1195 0
+-876+1155+1189+1196 0
+-877+1156+1190+1197 0
+-878+1157+1191+1198 0
+-879+1158+1192+1199 0
+-880+1159+1193+1200 0
+-881+1160+1194+1201 0
+-882+1161+1195+1202 0
+-883+1162+1196+1203 0
+-884+1163+1197+1204 0
+-885+1164+1198+1205 0
+-886+1165+1199+1206 0
+-887+1166+1200+1207 0
+-888+1167+1201+1208 0
+-889+1168+1202+1209 0
+-890+1169+1203+1210 0
+-891+1170+1204+1211 0
+-892+1171+1205+1212 0
+-893+1172+1206+1213 0
+-894+1173+1207+1214 0
+-895+1174+1208+1215 0
+-896+1175+1209+1216 0
+-641+705+769+833+1409 577 0
+641+705+1409 -577 0
+-577+641+705+769+1217 577+705+833 0
+-577+705+769+1217 -577+705+833 0
+-577+705+769+1217 641 0
+-577+705+833+1217+1473 641 0
+-577+833+1217+1473 -641 0
+769+833+1217 -641 0
+-641+769+1217+1281+1473 641+705 0
+-641+1217+1281+1473 -641+705 0
+-577+833+1217+1473 705 0
+577+641+833+1217+1473 -705 0
+-641+1217+1281+1473 769 0
+641+705+833+1345 769 0
+705+1217+1281+1473 -769 0
+641+705+1345 -769 0
+-577+641+705+1409 769+833 0
+641+705+1409 -769+833 0
+641+705+1345 833 0
+-641+705+769+1345 -833 0
+-769+833+1473 641 0
+705+833+1217+1281+1345+1473 769 0
+769+833+1217 -1217+1473 0
+-641+769+833+1473 1217+1473 0
+577+833+1281 -1217+1281+1473 0
+-577+641+705+833+1281 1217+1281+1473 0
+769+1345+1409 -1473 0
+577+769+833+1345+1409 1473 0
+641+769+1217+1281+1345+1473 -1345 0
+-641+1217+1281+1473 1345 0
+641+705+769+833+1345 -1345+1409 0
+641+705+1345 1345+1409 0
+-642+706+770+834+1410 578 0
+642+706+1410 -578 0
+-578+642+706+770+1218 578+706+834 0
+-578+706+770+1218 -578+706+834 0
+-578+706+770+1218 642 0
+-578+706+834+1218+1474 642 0
+-578+834+1218+1474 -642 0
+770+834+1218 -642 0
+-642+770+1218+1282+1474 642+706 0
+-642+1218+1282+1474 -642+706 0
+-578+834+1218+1474 706 0
+578+642+834+1218+1474 -706 0
+-642+1218+1282+1474 770 0
+642+706+834+1346 770 0
+706+1218+1282+1474 -770 0
+642+706+1346 -770 0
+-578+642+706+1410 770+834 0
+642+706+1410 -770+834 0
+642+706+1346 834 0
+-642+706+770+1346 -834 0
+-770+834+1474 642 0
+706+834+1218+1282+1346+1474 770 0
+770+834+1218 -1218+1474 0
+-642+770+834+1474 1218+1474 0
+578+834+1282 -1218+1282+1474 0
+-578+642+706+834+1282 1218+1282+1474 0
+770+1346+1410 -1474 0
+578+770+834+1346+1410 1474 0
+642+770+1218+1282+1346+1474 -1346 0
+-642+1218+1282+1474 1346 0
+642+706+770+834+1346 -1346+1410 0
+642+706+1346 1346+1410 0
+-643+707+771+835+1411 579 0
+643+707+1411 -579 0
+-579+643+707+771+1219 579+707+835 0
+-579+707+771+1219 -579+707+835 0
+-579+707+771+1219 643 0
+-579+707+835+1219+1475 643 0
+-579+835+1219+1475 -643 0
+771+835+1219 -643 0
+-643+771+1219+1283+1475 643+707 0
+-643+1219+1283+1475 -643+707 0
+-579+835+1219+1475 707 0
+579+643+835+1219+1475 -707 0
+-643+1219+1283+1475 771 0
+643+707+835+1347 771 0
+707+1219+1283+1475 -771 0
+643+707+1347 -771 0
+-579+643+707+1411 771+835 0
+643+707+1411 -771+835 0
+643+707+1347 835 0
+-643+707+771+1347 -835 0
+-771+835+1475 643 0
+707+835+1219+1283+1347+1475 771 0
+771+835+1219 -1219+1475 0
+-643+771+835+1475 1219+1475 0
+579+835+1283 -1219+1283+1475 0
+-579+643+707+835+1283 1219+1283+1475 0
+771+1347+1411 -1475 0
+579+771+835+1347+1411 1475 0
+643+771+1219+1283+1347+1475 -1347 0
+-643+1219+1283+1475 1347 0
+643+707+771+835+1347 -1347+1411 0
+643+707+1347 1347+1411 0
+-644+708+772+836+1412 580 0
+644+708+1412 -580 0
+-580+644+708+772+1220 580+708+836 0
+-580+708+772+1220 -580+708+836 0
+-580+708+772+1220 644 0
+-580+708+836+1220+1476 644 0
+-580+836+1220+1476 -644 0
+772+836+1220 -644 0
+-644+772+1220+1284+1476 644+708 0
+-644+1220+1284+1476 -644+708 0
+-580+836+1220+1476 708 0
+580+644+836+1220+1476 -708 0
+-644+1220+1284+1476 772 0
+644+708+836+1348 772 0
+708+1220+1284+1476 -772 0
+644+708+1348 -772 0
+-580+644+708+1412 772+836 0
+644+708+1412 -772+836 0
+644+708+1348 836 0
+-644+708+772+1348 -836 0
+-772+836+1476 644 0
+708+836+1220+1284+1348+1476 772 0
+772+836+1220 -1220+1476 0
+-644+772+836+1476 1220+1476 0
+580+836+1284 -1220+1284+1476 0
+-580+644+708+836+1284 1220+1284+1476 0
+772+1348+1412 -1476 0
+580+772+836+1348+1412 1476 0
+644+772+1220+1284+1348+1476 -1348 0
+-644+1220+1284+1476 1348 0
+644+708+772+836+1348 -1348+1412 0
+644+708+1348 1348+1412 0
+-645+709+773+837+1413 581 0
+645+709+1413 -581 0
+-581+645+709+773+1221 581+709+837 0
+-581+709+773+1221 -581+709+837 0
+-581+709+773+1221 645 0
+-581+709+837+1221+1477 645 0
+-581+837+1221+1477 -645 0
+773+837+1221 -645 0
+-645+773+1221+1285+1477 645+709 0
+-645+1221+1285+1477 -645+709 0
+-581+837+1221+1477 709 0
+581+645+837+1221+1477 -709 0
+-645+1221+1285+1477 773 0
+645+709+837+1349 773 0
+709+1221+1285+1477 -773 0
+645+709+1349 -773 0
+-581+645+709+1413 773+837 0
+645+709+1413 -773+837 0
+645+709+1349 837 0
+-645+709+773+1349 -837 0
+-773+837+1477 645 0
+709+837+1221+1285+1349+1477 773 0
+773+837+1221 -1221+1477 0
+-645+773+837+1477 1221+1477 0
+581+837+1285 -1221+1285+1477 0
+-581+645+709+837+1285 1221+1285+1477 0
+773+1349+1413 -1477 0
+581+773+837+1349+1413 1477 0
+645+773+1221+1285+1349+1477 -1349 0
+-645+1221+1285+1477 1349 0
+645+709+773+837+1349 -1349+1413 0
+645+709+1349 1349+1413 0
+-646+710+774+838+1414 582 0
+646+710+1414 -582 0
+-582+646+710+774+1222 582+710+838 0
+-582+710+774+1222 -582+710+838 0
+-582+710+774+1222 646 0
+-582+710+838+1222+1478 646 0
+-582+838+1222+1478 -646 0
+774+838+1222 -646 0
+-646+774+1222+1286+1478 646+710 0
+-646+1222+1286+1478 -646+710 0
+-582+838+1222+1478 710 0
+582+646+838+1222+1478 -710 0
+-646+1222+1286+1478 774 0
+646+710+838+1350 774 0
+710+1222+1286+1478 -774 0
+646+710+1350 -774 0
+-582+646+710+1414 774+838 0
+646+710+1414 -774+838 0
+646+710+1350 838 0
+-646+710+774+1350 -838 0
+-774+838+1478 646 0
+710+838+1222+1286+1350+1478 774 0
+774+838+1222 -1222+1478 0
+-646+774+838+1478 1222+1478 0
+582+838+1286 -1222+1286+1478 0
+-582+646+710+838+1286 1222+1286+1478 0
+774+1350+1414 -1478 0
+582+774+838+1350+1414 1478 0
+646+774+1222+1286+1350+1478 -1350 0
+-646+1222+1286+1478 1350 0
+646+710+774+838+1350 -1350+1414 0
+646+710+1350 1350+1414 0
+-647+711+775+839+1415 583 0
+647+711+1415 -583 0
+-583+647+711+775+1223 583+711+839 0
+-583+711+775+1223 -583+711+839 0
+-583+711+775+1223 647 0
+-583+711+839+1223+1479 647 0
+-583+839+1223+1479 -647 0
+775+839+1223 -647 0
+-647+775+1223+1287+1479 647+711 0
+-647+1223+1287+1479 -647+711 0
+-583+839+1223+1479 711 0
+583+647+839+1223+1479 -711 0
+-647+1223+1287+1479 775 0
+647+711+839+1351 775 0
+711+1223+1287+1479 -775 0
+647+711+1351 -775 0
+-583+647+711+1415 775+839 0
+647+711+1415 -775+839 0
+647+711+1351 839 0
+-647+711+775+1351 -839 0
+-775+839+1479 647 0
+711+839+1223+1287+1351+1479 775 0
+775+839+1223 -1223+1479 0
+-647+775+839+1479 1223+1479 0
+583+839+1287 -1223+1287+1479 0
+-583+647+711+839+1287 1223+1287+1479 0
+775+1351+1415 -1479 0
+583+775+839+1351+1415 1479 0
+647+775+1223+1287+1351+1479 -1351 0
+-647+1223+1287+1479 1351 0
+647+711+775+839+1351 -1351+1415 0
+647+711+1351 1351+1415 0
+-648+712+776+840+1416 584 0
+648+712+1416 -584 0
+-584+648+712+776+1224 584+712+840 0
+-584+712+776+1224 -584+712+840 0
+-584+712+776+1224 648 0
+-584+712+840+1224+1480 648 0
+-584+840+1224+1480 -648 0
+776+840+1224 -648 0
+-648+776+1224+1288+1480 648+712 0
+-648+1224+1288+1480 -648+712 0
+-584+840+1224+1480 712 0
+584+648+840+1224+1480 -712 0
+-648+1224+1288+1480 776 0
+648+712+840+1352 776 0
+712+1224+1288+1480 -776 0
+648+712+1352 -776 0
+-584+648+712+1416 776+840 0
+648+712+1416 -776+840 0
+648+712+1352 840 0
+-648+712+776+1352 -840 0
+-776+840+1480 648 0
+712+840+1224+1288+1352+1480 776 0
+776+840+1224 -1224+1480 0
+-648+776+840+1480 1224+1480 0
+584+840+1288 -1224+1288+1480 0
+-584+648+712+840+1288 1224+1288+1480 0
+776+1352+1416 -1480 0
+584+776+840+1352+1416 1480 0
+648+776+1224+1288+1352+1480 -1352 0
+-648+1224+1288+1480 1352 0
+648+712+776+840+1352 -1352+1416 0
+648+712+1352 1352+1416 0
+-649+713+777+841+1417 585 0
+649+713+1417 -585 0
+-585+649+713+777+1225 585+713+841 0
+-585+713+777+1225 -585+713+841 0
+-585+713+777+1225 649 0
+-585+713+841+1225+1481 649 0
+-585+841+1225+1481 -649 0
+777+841+1225 -649 0
+-649+777+1225+1289+1481 649+713 0
+-649+1225+1289+1481 -649+713 0
+-585+841+1225+1481 713 0
+585+649+841+1225+1481 -713 0
+-649+1225+1289+1481 777 0
+649+713+841+1353 777 0
+713+1225+1289+1481 -777 0
+649+713+1353 -777 0
+-585+649+713+1417 777+841 0
+649+713+1417 -777+841 0
+649+713+1353 841 0
+-649+713+777+1353 -841 0
+-777+841+1481 649 0
+713+841+1225+1289+1353+1481 777 0
+777+841+1225 -1225+1481 0
+-649+777+841+1481 1225+1481 0
+585+841+1289 -1225+1289+1481 0
+-585+649+713+841+1289 1225+1289+1481 0
+777+1353+1417 -1481 0
+585+777+841+1353+1417 1481 0
+649+777+1225+1289+1353+1481 -1353 0
+-649+1225+1289+1481 1353 0
+649+713+777+841+1353 -1353+1417 0
+649+713+1353 1353+1417 0
+-650+714+778+842+1418 586 0
+650+714+1418 -586 0
+-586+650+714+778+1226 586+714+842 0
+-586+714+778+1226 -586+714+842 0
+-586+714+778+1226 650 0
+-586+714+842+1226+1482 650 0
+-586+842+1226+1482 -650 0
+778+842+1226 -650 0
+-650+778+1226+1290+1482 650+714 0
+-650+1226+1290+1482 -650+714 0
+-586+842+1226+1482 714 0
+586+650+842+1226+1482 -714 0
+-650+1226+1290+1482 778 0
+650+714+842+1354 778 0
+714+1226+1290+1482 -778 0
+650+714+1354 -778 0
+-586+650+714+1418 778+842 0
+650+714+1418 -778+842 0
+650+714+1354 842 0
+-650+714+778+1354 -842 0
+-778+842+1482 650 0
+714+842+1226+1290+1354+1482 778 0
+778+842+1226 -1226+1482 0
+-650+778+842+1482 1226+1482 0
+586+842+1290 -1226+1290+1482 0
+-586+650+714+842+1290 1226+1290+1482 0
+778+1354+1418 -1482 0
+586+778+842+1354+1418 1482 0
+650+778+1226+1290+1354+1482 -1354 0
+-650+1226+1290+1482 1354 0
+650+714+778+842+1354 -1354+1418 0
+650+714+1354 1354+1418 0
+-651+715+779+843+1419 587 0
+651+715+1419 -587 0
+-587+651+715+779+1227 587+715+843 0
+-587+715+779+1227 -587+715+843 0
+-587+715+779+1227 651 0
+-587+715+843+1227+1483 651 0
+-587+843+1227+1483 -651 0
+779+843+1227 -651 0
+-651+779+1227+1291+1483 651+715 0
+-651+1227+1291+1483 -651+715 0
+-587+843+1227+1483 715 0
+587+651+843+1227+1483 -715 0
+-651+1227+1291+1483 779 0
+651+715+843+1355 779 0
+715+1227+1291+1483 -779 0
+651+715+1355 -779 0
+-587+651+715+1419 779+843 0
+651+715+1419 -779+843 0
+651+715+1355 843 0
+-651+715+779+1355 -843 0
+-779+843+1483 651 0
+715+843+1227+1291+1355+1483 779 0
+779+843+1227 -1227+1483 0
+-651+779+843+1483 1227+1483 0
+587+843+1291 -1227+1291+1483 0
+-587+651+715+843+1291 1227+1291+1483 0
+779+1355+1419 -1483 0
+587+779+843+1355+1419 1483 0
+651+779+1227+1291+1355+1483 -1355 0
+-651+1227+1291+1483 1355 0
+651+715+779+843+1355 -1355+1419 0
+651+715+1355 1355+1419 0
+-652+716+780+844+1420 588 0
+652+716+1420 -588 0
+-588+652+716+780+1228 588+716+844 0
+-588+716+780+1228 -588+716+844 0
+-588+716+780+1228 652 0
+-588+716+844+1228+1484 652 0
+-588+844+1228+1484 -652 0
+780+844+1228 -652 0
+-652+780+1228+1292+1484 652+716 0
+-652+1228+1292+1484 -652+716 0
+-588+844+1228+1484 716 0
+588+652+844+1228+1484 -716 0
+-652+1228+1292+1484 780 0
+652+716+844+1356 780 0
+716+1228+1292+1484 -780 0
+652+716+1356 -780 0
+-588+652+716+1420 780+844 0
+652+716+1420 -780+844 0
+652+716+1356 844 0
+-652+716+780+1356 -844 0
+-780+844+1484 652 0
+716+844+1228+1292+1356+1484 780 0
+780+844+1228 -1228+1484 0
+-652+780+844+1484 1228+1484 0
+588+844+1292 -1228+1292+1484 0
+-588+652+716+844+1292 1228+1292+1484 0
+780+1356+1420 -1484 0
+588+780+844+1356+1420 1484 0
+652+780+1228+1292+1356+1484 -1356 0
+-652+1228+1292+1484 1356 0
+652+716+780+844+1356 -1356+1420 0
+652+716+1356 1356+1420 0
+-653+717+781+845+1421 589 0
+653+717+1421 -589 0
+-589+653+717+781+1229 589+717+845 0
+-589+717+781+1229 -589+717+845 0
+-589+717+781+1229 653 0
+-589+717+845+1229+1485 653 0
+-589+845+1229+1485 -653 0
+781+845+1229 -653 0
+-653+781+1229+1293+1485 653+717 0
+-653+1229+1293+1485 -653+717 0
+-589+845+1229+1485 717 0
+589+653+845+1229+1485 -717 0
+-653+1229+1293+1485 781 0
+653+717+845+1357 781 0
+717+1229+1293+1485 -781 0
+653+717+1357 -781 0
+-589+653+717+1421 781+845 0
+653+717+1421 -781+845 0
+653+717+1357 845 0
+-653+717+781+1357 -845 0
+-781+845+1485 653 0
+717+845+1229+1293+1357+1485 781 0
+781+845+1229 -1229+1485 0
+-653+781+845+1485 1229+1485 0
+589+845+1293 -1229+1293+1485 0
+-589+653+717+845+1293 1229+1293+1485 0
+781+1357+1421 -1485 0
+589+781+845+1357+1421 1485 0
+653+781+1229+1293+1357+1485 -1357 0
+-653+1229+1293+1485 1357 0
+653+717+781+845+1357 -1357+1421 0
+653+717+1357 1357+1421 0
+-654+718+782+846+1422 590 0
+654+718+1422 -590 0
+-590+654+718+782+1230 590+718+846 0
+-590+718+782+1230 -590+718+846 0
+-590+718+782+1230 654 0
+-590+718+846+1230+1486 654 0
+-590+846+1230+1486 -654 0
+782+846+1230 -654 0
+-654+782+1230+1294+1486 654+718 0
+-654+1230+1294+1486 -654+718 0
+-590+846+1230+1486 718 0
+590+654+846+1230+1486 -718 0
+-654+1230+1294+1486 782 0
+654+718+846+1358 782 0
+718+1230+1294+1486 -782 0
+654+718+1358 -782 0
+-590+654+718+1422 782+846 0
+654+718+1422 -782+846 0
+654+718+1358 846 0
+-654+718+782+1358 -846 0
+-782+846+1486 654 0
+718+846+1230+1294+1358+1486 782 0
+782+846+1230 -1230+1486 0
+-654+782+846+1486 1230+1486 0
+590+846+1294 -1230+1294+1486 0
+-590+654+718+846+1294 1230+1294+1486 0
+782+1358+1422 -1486 0
+590+782+846+1358+1422 1486 0
+654+782+1230+1294+1358+1486 -1358 0
+-654+1230+1294+1486 1358 0
+654+718+782+846+1358 -1358+1422 0
+654+718+1358 1358+1422 0
+-655+719+783+847+1423 591 0
+655+719+1423 -591 0
+-591+655+719+783+1231 591+719+847 0
+-591+719+783+1231 -591+719+847 0
+-591+719+783+1231 655 0
+-591+719+847+1231+1487 655 0
+-591+847+1231+1487 -655 0
+783+847+1231 -655 0
+-655+783+1231+1295+1487 655+719 0
+-655+1231+1295+1487 -655+719 0
+-591+847+1231+1487 719 0
+591+655+847+1231+1487 -719 0
+-655+1231+1295+1487 783 0
+655+719+847+1359 783 0
+719+1231+1295+1487 -783 0
+655+719+1359 -783 0
+-591+655+719+1423 783+847 0
+655+719+1423 -783+847 0
+655+719+1359 847 0
+-655+719+783+1359 -847 0
+-783+847+1487 655 0
+719+847+1231+1295+1359+1487 783 0
+783+847+1231 -1231+1487 0
+-655+783+847+1487 1231+1487 0
+591+847+1295 -1231+1295+1487 0
+-591+655+719+847+1295 1231+1295+1487 0
+783+1359+1423 -1487 0
+591+783+847+1359+1423 1487 0
+655+783+1231+1295+1359+1487 -1359 0
+-655+1231+1295+1487 1359 0
+655+719+783+847+1359 -1359+1423 0
+655+719+1359 1359+1423 0
+-656+720+784+848+1424 592 0
+656+720+1424 -592 0
+-592+656+720+784+1232 592+720+848 0
+-592+720+784+1232 -592+720+848 0
+-592+720+784+1232 656 0
+-592+720+848+1232+1488 656 0
+-592+848+1232+1488 -656 0
+784+848+1232 -656 0
+-656+784+1232+1296+1488 656+720 0
+-656+1232+1296+1488 -656+720 0
+-592+848+1232+1488 720 0
+592+656+848+1232+1488 -720 0
+-656+1232+1296+1488 784 0
+656+720+848+1360 784 0
+720+1232+1296+1488 -784 0
+656+720+1360 -784 0
+-592+656+720+1424 784+848 0
+656+720+1424 -784+848 0
+656+720+1360 848 0
+-656+720+784+1360 -848 0
+-784+848+1488 656 0
+720+848+1232+1296+1360+1488 784 0
+784+848+1232 -1232+1488 0
+-656+784+848+1488 1232+1488 0
+592+848+1296 -1232+1296+1488 0
+-592+656+720+848+1296 1232+1296+1488 0
+784+1360+1424 -1488 0
+592+784+848+1360+1424 1488 0
+656+784+1232+1296+1360+1488 -1360 0
+-656+1232+1296+1488 1360 0
+656+720+784+848+1360 -1360+1424 0
+656+720+1360 1360+1424 0
+-657+721+785+849+1425 593 0
+657+721+1425 -593 0
+-593+657+721+785+1233 593+721+849 0
+-593+721+785+1233 -593+721+849 0
+-593+721+785+1233 657 0
+-593+721+849+1233+1489 657 0
+-593+849+1233+1489 -657 0
+785+849+1233 -657 0
+-657+785+1233+1297+1489 657+721 0
+-657+1233+1297+1489 -657+721 0
+-593+849+1233+1489 721 0
+593+657+849+1233+1489 -721 0
+-657+1233+1297+1489 785 0
+657+721+849+1361 785 0
+721+1233+1297+1489 -785 0
+657+721+1361 -785 0
+-593+657+721+1425 785+849 0
+657+721+1425 -785+849 0
+657+721+1361 849 0
+-657+721+785+1361 -849 0
+-785+849+1489 657 0
+721+849+1233+1297+1361+1489 785 0
+785+849+1233 -1233+1489 0
+-657+785+849+1489 1233+1489 0
+593+849+1297 -1233+1297+1489 0
+-593+657+721+849+1297 1233+1297+1489 0
+785+1361+1425 -1489 0
+593+785+849+1361+1425 1489 0
+657+785+1233+1297+1361+1489 -1361 0
+-657+1233+1297+1489 1361 0
+657+721+785+849+1361 -1361+1425 0
+657+721+1361 1361+1425 0
+-658+722+786+850+1426 594 0
+658+722+1426 -594 0
+-594+658+722+786+1234 594+722+850 0
+-594+722+786+1234 -594+722+850 0
+-594+722+786+1234 658 0
+-594+722+850+1234+1490 658 0
+-594+850+1234+1490 -658 0
+786+850+1234 -658 0
+-658+786+1234+1298+1490 658+722 0
+-658+1234+1298+1490 -658+722 0
+-594+850+1234+1490 722 0
+594+658+850+1234+1490 -722 0
+-658+1234+1298+1490 786 0
+658+722+850+1362 786 0
+722+1234+1298+1490 -786 0
+658+722+1362 -786 0
+-594+658+722+1426 786+850 0
+658+722+1426 -786+850 0
+658+722+1362 850 0
+-658+722+786+1362 -850 0
+-786+850+1490 658 0
+722+850+1234+1298+1362+1490 786 0
+786+850+1234 -1234+1490 0
+-658+786+850+1490 1234+1490 0
+594+850+1298 -1234+1298+1490 0
+-594+658+722+850+1298 1234+1298+1490 0
+786+1362+1426 -1490 0
+594+786+850+1362+1426 1490 0
+658+786+1234+1298+1362+1490 -1362 0
+-658+1234+1298+1490 1362 0
+658+722+786+850+1362 -1362+1426 0
+658+722+1362 1362+1426 0
+-659+723+787+851+1427 595 0
+659+723+1427 -595 0
+-595+659+723+787+1235 595+723+851 0
+-595+723+787+1235 -595+723+851 0
+-595+723+787+1235 659 0
+-595+723+851+1235+1491 659 0
+-595+851+1235+1491 -659 0
+787+851+1235 -659 0
+-659+787+1235+1299+1491 659+723 0
+-659+1235+1299+1491 -659+723 0
+-595+851+1235+1491 723 0
+595+659+851+1235+1491 -723 0
+-659+1235+1299+1491 787 0
+659+723+851+1363 787 0
+723+1235+1299+1491 -787 0
+659+723+1363 -787 0
+-595+659+723+1427 787+851 0
+659+723+1427 -787+851 0
+659+723+1363 851 0
+-659+723+787+1363 -851 0
+-787+851+1491 659 0
+723+851+1235+1299+1363+1491 787 0
+787+851+1235 -1235+1491 0
+-659+787+851+1491 1235+1491 0
+595+851+1299 -1235+1299+1491 0
+-595+659+723+851+1299 1235+1299+1491 0
+787+1363+1427 -1491 0
+595+787+851+1363+1427 1491 0
+659+787+1235+1299+1363+1491 -1363 0
+-659+1235+1299+1491 1363 0
+659+723+787+851+1363 -1363+1427 0
+659+723+1363 1363+1427 0
+-660+724+788+852+1428 596 0
+660+724+1428 -596 0
+-596+660+724+788+1236 596+724+852 0
+-596+724+788+1236 -596+724+852 0
+-596+724+788+1236 660 0
+-596+724+852+1236+1492 660 0
+-596+852+1236+1492 -660 0
+788+852+1236 -660 0
+-660+788+1236+1300+1492 660+724 0
+-660+1236+1300+1492 -660+724 0
+-596+852+1236+1492 724 0
+596+660+852+1236+1492 -724 0
+-660+1236+1300+1492 788 0
+660+724+852+1364 788 0
+724+1236+1300+1492 -788 0
+660+724+1364 -788 0
+-596+660+724+1428 788+852 0
+660+724+1428 -788+852 0
+660+724+1364 852 0
+-660+724+788+1364 -852 0
+-788+852+1492 660 0
+724+852+1236+1300+1364+1492 788 0
+788+852+1236 -1236+1492 0
+-660+788+852+1492 1236+1492 0
+596+852+1300 -1236+1300+1492 0
+-596+660+724+852+1300 1236+1300+1492 0
+788+1364+1428 -1492 0
+596+788+852+1364+1428 1492 0
+660+788+1236+1300+1364+1492 -1364 0
+-660+1236+1300+1492 1364 0
+660+724+788+852+1364 -1364+1428 0
+660+724+1364 1364+1428 0
+-661+725+789+853+1429 597 0
+661+725+1429 -597 0
+-597+661+725+789+1237 597+725+853 0
+-597+725+789+1237 -597+725+853 0
+-597+725+789+1237 661 0
+-597+725+853+1237+1493 661 0
+-597+853+1237+1493 -661 0
+789+853+1237 -661 0
+-661+789+1237+1301+1493 661+725 0
+-661+1237+1301+1493 -661+725 0
+-597+853+1237+1493 725 0
+597+661+853+1237+1493 -725 0
+-661+1237+1301+1493 789 0
+661+725+853+1365 789 0
+725+1237+1301+1493 -789 0
+661+725+1365 -789 0
+-597+661+725+1429 789+853 0
+661+725+1429 -789+853 0
+661+725+1365 853 0
+-661+725+789+1365 -853 0
+-789+853+1493 661 0
+725+853+1237+1301+1365+1493 789 0
+789+853+1237 -1237+1493 0
+-661+789+853+1493 1237+1493 0
+597+853+1301 -1237+1301+1493 0
+-597+661+725+853+1301 1237+1301+1493 0
+789+1365+1429 -1493 0
+597+789+853+1365+1429 1493 0
+661+789+1237+1301+1365+1493 -1365 0
+-661+1237+1301+1493 1365 0
+661+725+789+853+1365 -1365+1429 0
+661+725+1365 1365+1429 0
+-662+726+790+854+1430 598 0
+662+726+1430 -598 0
+-598+662+726+790+1238 598+726+854 0
+-598+726+790+1238 -598+726+854 0
+-598+726+790+1238 662 0
+-598+726+854+1238+1494 662 0
+-598+854+1238+1494 -662 0
+790+854+1238 -662 0
+-662+790+1238+1302+1494 662+726 0
+-662+1238+1302+1494 -662+726 0
+-598+854+1238+1494 726 0
+598+662+854+1238+1494 -726 0
+-662+1238+1302+1494 790 0
+662+726+854+1366 790 0
+726+1238+1302+1494 -790 0
+662+726+1366 -790 0
+-598+662+726+1430 790+854 0
+662+726+1430 -790+854 0
+662+726+1366 854 0
+-662+726+790+1366 -854 0
+-790+854+1494 662 0
+726+854+1238+1302+1366+1494 790 0
+790+854+1238 -1238+1494 0
+-662+790+854+1494 1238+1494 0
+598+854+1302 -1238+1302+1494 0
+-598+662+726+854+1302 1238+1302+1494 0
+790+1366+1430 -1494 0
+598+790+854+1366+1430 1494 0
+662+790+1238+1302+1366+1494 -1366 0
+-662+1238+1302+1494 1366 0
+662+726+790+854+1366 -1366+1430 0
+662+726+1366 1366+1430 0
+-663+727+791+855+1431 599 0
+663+727+1431 -599 0
+-599+663+727+791+1239 599+727+855 0
+-599+727+791+1239 -599+727+855 0
+-599+727+791+1239 663 0
+-599+727+855+1239+1495 663 0
+-599+855+1239+1495 -663 0
+791+855+1239 -663 0
+-663+791+1239+1303+1495 663+727 0
+-663+1239+1303+1495 -663+727 0
+-599+855+1239+1495 727 0
+599+663+855+1239+1495 -727 0
+-663+1239+1303+1495 791 0
+663+727+855+1367 791 0
+727+1239+1303+1495 -791 0
+663+727+1367 -791 0
+-599+663+727+1431 791+855 0
+663+727+1431 -791+855 0
+663+727+1367 855 0
+-663+727+791+1367 -855 0
+-791+855+1495 663 0
+727+855+1239+1303+1367+1495 791 0
+791+855+1239 -1239+1495 0
+-663+791+855+1495 1239+1495 0
+599+855+1303 -1239+1303+1495 0
+-599+663+727+855+1303 1239+1303+1495 0
+791+1367+1431 -1495 0
+599+791+855+1367+1431 1495 0
+663+791+1239+1303+1367+1495 -1367 0
+-663+1239+1303+1495 1367 0
+663+727+791+855+1367 -1367+1431 0
+663+727+1367 1367+1431 0
+-664+728+792+856+1432 600 0
+664+728+1432 -600 0
+-600+664+728+792+1240 600+728+856 0
+-600+728+792+1240 -600+728+856 0
+-600+728+792+1240 664 0
+-600+728+856+1240+1496 664 0
+-600+856+1240+1496 -664 0
+792+856+1240 -664 0
+-664+792+1240+1304+1496 664+728 0
+-664+1240+1304+1496 -664+728 0
+-600+856+1240+1496 728 0
+600+664+856+1240+1496 -728 0
+-664+1240+1304+1496 792 0
+664+728+856+1368 792 0
+728+1240+1304+1496 -792 0
+664+728+1368 -792 0
+-600+664+728+1432 792+856 0
+664+728+1432 -792+856 0
+664+728+1368 856 0
+-664+728+792+1368 -856 0
+-792+856+1496 664 0
+728+856+1240+1304+1368+1496 792 0
+792+856+1240 -1240+1496 0
+-664+792+856+1496 1240+1496 0
+600+856+1304 -1240+1304+1496 0
+-600+664+728+856+1304 1240+1304+1496 0
+792+1368+1432 -1496 0
+600+792+856+1368+1432 1496 0
+664+792+1240+1304+1368+1496 -1368 0
+-664+1240+1304+1496 1368 0
+664+728+792+856+1368 -1368+1432 0
+664+728+1368 1368+1432 0
+-665+729+793+857+1433 601 0
+665+729+1433 -601 0
+-601+665+729+793+1241 601+729+857 0
+-601+729+793+1241 -601+729+857 0
+-601+729+793+1241 665 0
+-601+729+857+1241+1497 665 0
+-601+857+1241+1497 -665 0
+793+857+1241 -665 0
+-665+793+1241+1305+1497 665+729 0
+-665+1241+1305+1497 -665+729 0
+-601+857+1241+1497 729 0
+601+665+857+1241+1497 -729 0
+-665+1241+1305+1497 793 0
+665+729+857+1369 793 0
+729+1241+1305+1497 -793 0
+665+729+1369 -793 0
+-601+665+729+1433 793+857 0
+665+729+1433 -793+857 0
+665+729+1369 857 0
+-665+729+793+1369 -857 0
+-793+857+1497 665 0
+729+857+1241+1305+1369+1497 793 0
+793+857+1241 -1241+1497 0
+-665+793+857+1497 1241+1497 0
+601+857+1305 -1241+1305+1497 0
+-601+665+729+857+1305 1241+1305+1497 0
+793+1369+1433 -1497 0
+601+793+857+1369+1433 1497 0
+665+793+1241+1305+1369+1497 -1369 0
+-665+1241+1305+1497 1369 0
+665+729+793+857+1369 -1369+1433 0
+665+729+1369 1369+1433 0
+-666+730+794+858+1434 602 0
+666+730+1434 -602 0
+-602+666+730+794+1242 602+730+858 0
+-602+730+794+1242 -602+730+858 0
+-602+730+794+1242 666 0
+-602+730+858+1242+1498 666 0
+-602+858+1242+1498 -666 0
+794+858+1242 -666 0
+-666+794+1242+1306+1498 666+730 0
+-666+1242+1306+1498 -666+730 0
+-602+858+1242+1498 730 0
+602+666+858+1242+1498 -730 0
+-666+1242+1306+1498 794 0
+666+730+858+1370 794 0
+730+1242+1306+1498 -794 0
+666+730+1370 -794 0
+-602+666+730+1434 794+858 0
+666+730+1434 -794+858 0
+666+730+1370 858 0
+-666+730+794+1370 -858 0
+-794+858+1498 666 0
+730+858+1242+1306+1370+1498 794 0
+794+858+1242 -1242+1498 0
+-666+794+858+1498 1242+1498 0
+602+858+1306 -1242+1306+1498 0
+-602+666+730+858+1306 1242+1306+1498 0
+794+1370+1434 -1498 0
+602+794+858+1370+1434 1498 0
+666+794+1242+1306+1370+1498 -1370 0
+-666+1242+1306+1498 1370 0
+666+730+794+858+1370 -1370+1434 0
+666+730+1370 1370+1434 0
+-667+731+795+859+1435 603 0
+667+731+1435 -603 0
+-603+667+731+795+1243 603+731+859 0
+-603+731+795+1243 -603+731+859 0
+-603+731+795+1243 667 0
+-603+731+859+1243+1499 667 0
+-603+859+1243+1499 -667 0
+795+859+1243 -667 0
+-667+795+1243+1307+1499 667+731 0
+-667+1243+1307+1499 -667+731 0
+-603+859+1243+1499 731 0
+603+667+859+1243+1499 -731 0
+-667+1243+1307+1499 795 0
+667+731+859+1371 795 0
+731+1243+1307+1499 -795 0
+667+731+1371 -795 0
+-603+667+731+1435 795+859 0
+667+731+1435 -795+859 0
+667+731+1371 859 0
+-667+731+795+1371 -859 0
+-795+859+1499 667 0
+731+859+1243+1307+1371+1499 795 0
+795+859+1243 -1243+1499 0
+-667+795+859+1499 1243+1499 0
+603+859+1307 -1243+1307+1499 0
+-603+667+731+859+1307 1243+1307+1499 0
+795+1371+1435 -1499 0
+603+795+859+1371+1435 1499 0
+667+795+1243+1307+1371+1499 -1371 0
+-667+1243+1307+1499 1371 0
+667+731+795+859+1371 -1371+1435 0
+667+731+1371 1371+1435 0
+-668+732+796+860+1436 604 0
+668+732+1436 -604 0
+-604+668+732+796+1244 604+732+860 0
+-604+732+796+1244 -604+732+860 0
+-604+732+796+1244 668 0
+-604+732+860+1244+1500 668 0
+-604+860+1244+1500 -668 0
+796+860+1244 -668 0
+-668+796+1244+1308+1500 668+732 0
+-668+1244+1308+1500 -668+732 0
+-604+860+1244+1500 732 0
+604+668+860+1244+1500 -732 0
+-668+1244+1308+1500 796 0
+668+732+860+1372 796 0
+732+1244+1308+1500 -796 0
+668+732+1372 -796 0
+-604+668+732+1436 796+860 0
+668+732+1436 -796+860 0
+668+732+1372 860 0
+-668+732+796+1372 -860 0
+-796+860+1500 668 0
+732+860+1244+1308+1372+1500 796 0
+796+860+1244 -1244+1500 0
+-668+796+860+1500 1244+1500 0
+604+860+1308 -1244+1308+1500 0
+-604+668+732+860+1308 1244+1308+1500 0
+796+1372+1436 -1500 0
+604+796+860+1372+1436 1500 0
+668+796+1244+1308+1372+1500 -1372 0
+-668+1244+1308+1500 1372 0
+668+732+796+860+1372 -1372+1436 0
+668+732+1372 1372+1436 0
+-669+733+797+861+1437 605 0
+669+733+1437 -605 0
+-605+669+733+797+1245 605+733+861 0
+-605+733+797+1245 -605+733+861 0
+-605+733+797+1245 669 0
+-605+733+861+1245+1501 669 0
+-605+861+1245+1501 -669 0
+797+861+1245 -669 0
+-669+797+1245+1309+1501 669+733 0
+-669+1245+1309+1501 -669+733 0
+-605+861+1245+1501 733 0
+605+669+861+1245+1501 -733 0
+-669+1245+1309+1501 797 0
+669+733+861+1373 797 0
+733+1245+1309+1501 -797 0
+669+733+1373 -797 0
+-605+669+733+1437 797+861 0
+669+733+1437 -797+861 0
+669+733+1373 861 0
+-669+733+797+1373 -861 0
+-797+861+1501 669 0
+733+861+1245+1309+1373+1501 797 0
+797+861+1245 -1245+1501 0
+-669+797+861+1501 1245+1501 0
+605+861+1309 -1245+1309+1501 0
+-605+669+733+861+1309 1245+1309+1501 0
+797+1373+1437 -1501 0
+605+797+861+1373+1437 1501 0
+669+797+1245+1309+1373+1501 -1373 0
+-669+1245+1309+1501 1373 0
+669+733+797+861+1373 -1373+1437 0
+669+733+1373 1373+1437 0
+-670+734+798+862+1438 606 0
+670+734+1438 -606 0
+-606+670+734+798+1246 606+734+862 0
+-606+734+798+1246 -606+734+862 0
+-606+734+798+1246 670 0
+-606+734+862+1246+1502 670 0
+-606+862+1246+1502 -670 0
+798+862+1246 -670 0
+-670+798+1246+1310+1502 670+734 0
+-670+1246+1310+1502 -670+734 0
+-606+862+1246+1502 734 0
+606+670+862+1246+1502 -734 0
+-670+1246+1310+1502 798 0
+670+734+862+1374 798 0
+734+1246+1310+1502 -798 0
+670+734+1374 -798 0
+-606+670+734+1438 798+862 0
+670+734+1438 -798+862 0
+670+734+1374 862 0
+-670+734+798+1374 -862 0
+-798+862+1502 670 0
+734+862+1246+1310+1374+1502 798 0
+798+862+1246 -1246+1502 0
+-670+798+862+1502 1246+1502 0
+606+862+1310 -1246+1310+1502 0
+-606+670+734+862+1310 1246+1310+1502 0
+798+1374+1438 -1502 0
+606+798+862+1374+1438 1502 0
+670+798+1246+1310+1374+1502 -1374 0
+-670+1246+1310+1502 1374 0
+670+734+798+862+1374 -1374+1438 0
+670+734+1374 1374+1438 0
+-671+735+799+863+1439 607 0
+671+735+1439 -607 0
+-607+671+735+799+1247 607+735+863 0
+-607+735+799+1247 -607+735+863 0
+-607+735+799+1247 671 0
+-607+735+863+1247+1503 671 0
+-607+863+1247+1503 -671 0
+799+863+1247 -671 0
+-671+799+1247+1311+1503 671+735 0
+-671+1247+1311+1503 -671+735 0
+-607+863+1247+1503 735 0
+607+671+863+1247+1503 -735 0
+-671+1247+1311+1503 799 0
+671+735+863+1375 799 0
+735+1247+1311+1503 -799 0
+671+735+1375 -799 0
+-607+671+735+1439 799+863 0
+671+735+1439 -799+863 0
+671+735+1375 863 0
+-671+735+799+1375 -863 0
+-799+863+1503 671 0
+735+863+1247+1311+1375+1503 799 0
+799+863+1247 -1247+1503 0
+-671+799+863+1503 1247+1503 0
+607+863+1311 -1247+1311+1503 0
+-607+671+735+863+1311 1247+1311+1503 0
+799+1375+1439 -1503 0
+607+799+863+1375+1439 1503 0
+671+799+1247+1311+1375+1503 -1375 0
+-671+1247+1311+1503 1375 0
+671+735+799+863+1375 -1375+1439 0
+671+735+1375 1375+1439 0
+-672+736+800+864+1440 608 0
+672+736+1440 -608 0
+-608+672+736+800+1248 608+736+864 0
+-608+736+800+1248 -608+736+864 0
+-608+736+800+1248 672 0
+-608+736+864+1248+1504 672 0
+-608+864+1248+1504 -672 0
+800+864+1248 -672 0
+-672+800+1248+1312+1504 672+736 0
+-672+1248+1312+1504 -672+736 0
+-608+864+1248+1504 736 0
+608+672+864+1248+1504 -736 0
+-672+1248+1312+1504 800 0
+672+736+864+1376 800 0
+736+1248+1312+1504 -800 0
+672+736+1376 -800 0
+-608+672+736+1440 800+864 0
+672+736+1440 -800+864 0
+672+736+1376 864 0
+-672+736+800+1376 -864 0
+-800+864+1504 672 0
+736+864+1248+1312+1376+1504 800 0
+800+864+1248 -1248+1504 0
+-672+800+864+1504 1248+1504 0
+608+864+1312 -1248+1312+1504 0
+-608+672+736+864+1312 1248+1312+1504 0
+800+1376+1440 -1504 0
+608+800+864+1376+1440 1504 0
+672+800+1248+1312+1376+1504 -1376 0
+-672+1248+1312+1504 1376 0
+672+736+800+864+1376 -1376+1440 0
+672+736+1376 1376+1440 0
+-673+737+801+865+1441 609 0
+673+737+1441 -609 0
+-609+673+737+801+1249 609+737+865 0
+-609+737+801+1249 -609+737+865 0
+-609+737+801+1249 673 0
+-609+737+865+1249+1505 673 0
+-609+865+1249+1505 -673 0
+801+865+1249 -673 0
+-673+801+1249+1313+1505 673+737 0
+-673+1249+1313+1505 -673+737 0
+-609+865+1249+1505 737 0
+609+673+865+1249+1505 -737 0
+-673+1249+1313+1505 801 0
+673+737+865+1377 801 0
+737+1249+1313+1505 -801 0
+673+737+1377 -801 0
+-609+673+737+1441 801+865 0
+673+737+1441 -801+865 0
+673+737+1377 865 0
+-673+737+801+1377 -865 0
+-801+865+1505 673 0
+737+865+1249+1313+1377+1505 801 0
+801+865+1249 -1249+1505 0
+-673+801+865+1505 1249+1505 0
+609+865+1313 -1249+1313+1505 0
+-609+673+737+865+1313 1249+1313+1505 0
+801+1377+1441 -1505 0
+609+801+865+1377+1441 1505 0
+673+801+1249+1313+1377+1505 -1377 0
+-673+1249+1313+1505 1377 0
+673+737+801+865+1377 -1377+1441 0
+673+737+1377 1377+1441 0
+-674+738+802+866+1442 610 0
+674+738+1442 -610 0
+-610+674+738+802+1250 610+738+866 0
+-610+738+802+1250 -610+738+866 0
+-610+738+802+1250 674 0
+-610+738+866+1250+1506 674 0
+-610+866+1250+1506 -674 0
+802+866+1250 -674 0
+-674+802+1250+1314+1506 674+738 0
+-674+1250+1314+1506 -674+738 0
+-610+866+1250+1506 738 0
+610+674+866+1250+1506 -738 0
+-674+1250+1314+1506 802 0
+674+738+866+1378 802 0
+738+1250+1314+1506 -802 0
+674+738+1378 -802 0
+-610+674+738+1442 802+866 0
+674+738+1442 -802+866 0
+674+738+1378 866 0
+-674+738+802+1378 -866 0
+-802+866+1506 674 0
+738+866+1250+1314+1378+1506 802 0
+802+866+1250 -1250+1506 0
+-674+802+866+1506 1250+1506 0
+610+866+1314 -1250+1314+1506 0
+-610+674+738+866+1314 1250+1314+1506 0
+802+1378+1442 -1506 0
+610+802+866+1378+1442 1506 0
+674+802+1250+1314+1378+1506 -1378 0
+-674+1250+1314+1506 1378 0
+674+738+802+866+1378 -1378+1442 0
+674+738+1378 1378+1442 0
+-675+739+803+867+1443 611 0
+675+739+1443 -611 0
+-611+675+739+803+1251 611+739+867 0
+-611+739+803+1251 -611+739+867 0
+-611+739+803+1251 675 0
+-611+739+867+1251+1507 675 0
+-611+867+1251+1507 -675 0
+803+867+1251 -675 0
+-675+803+1251+1315+1507 675+739 0
+-675+1251+1315+1507 -675+739 0
+-611+867+1251+1507 739 0
+611+675+867+1251+1507 -739 0
+-675+1251+1315+1507 803 0
+675+739+867+1379 803 0
+739+1251+1315+1507 -803 0
+675+739+1379 -803 0
+-611+675+739+1443 803+867 0
+675+739+1443 -803+867 0
+675+739+1379 867 0
+-675+739+803+1379 -867 0
+-803+867+1507 675 0
+739+867+1251+1315+1379+1507 803 0
+803+867+1251 -1251+1507 0
+-675+803+867+1507 1251+1507 0
+611+867+1315 -1251+1315+1507 0
+-611+675+739+867+1315 1251+1315+1507 0
+803+1379+1443 -1507 0
+611+803+867+1379+1443 1507 0
+675+803+1251+1315+1379+1507 -1379 0
+-675+1251+1315+1507 1379 0
+675+739+803+867+1379 -1379+1443 0
+675+739+1379 1379+1443 0
+-676+740+804+868+1444 612 0
+676+740+1444 -612 0
+-612+676+740+804+1252 612+740+868 0
+-612+740+804+1252 -612+740+868 0
+-612+740+804+1252 676 0
+-612+740+868+1252+1508 676 0
+-612+868+1252+1508 -676 0
+804+868+1252 -676 0
+-676+804+1252+1316+1508 676+740 0
+-676+1252+1316+1508 -676+740 0
+-612+868+1252+1508 740 0
+612+676+868+1252+1508 -740 0
+-676+1252+1316+1508 804 0
+676+740+868+1380 804 0
+740+1252+1316+1508 -804 0
+676+740+1380 -804 0
+-612+676+740+1444 804+868 0
+676+740+1444 -804+868 0
+676+740+1380 868 0
+-676+740+804+1380 -868 0
+-804+868+1508 676 0
+740+868+1252+1316+1380+1508 804 0
+804+868+1252 -1252+1508 0
+-676+804+868+1508 1252+1508 0
+612+868+1316 -1252+1316+1508 0
+-612+676+740+868+1316 1252+1316+1508 0
+804+1380+1444 -1508 0
+612+804+868+1380+1444 1508 0
+676+804+1252+1316+1380+1508 -1380 0
+-676+1252+1316+1508 1380 0
+676+740+804+868+1380 -1380+1444 0
+676+740+1380 1380+1444 0
+-677+741+805+869+1445 613 0
+677+741+1445 -613 0
+-613+677+741+805+1253 613+741+869 0
+-613+741+805+1253 -613+741+869 0
+-613+741+805+1253 677 0
+-613+741+869+1253+1509 677 0
+-613+869+1253+1509 -677 0
+805+869+1253 -677 0
+-677+805+1253+1317+1509 677+741 0
+-677+1253+1317+1509 -677+741 0
+-613+869+1253+1509 741 0
+613+677+869+1253+1509 -741 0
+-677+1253+1317+1509 805 0
+677+741+869+1381 805 0
+741+1253+1317+1509 -805 0
+677+741+1381 -805 0
+-613+677+741+1445 805+869 0
+677+741+1445 -805+869 0
+677+741+1381 869 0
+-677+741+805+1381 -869 0
+-805+869+1509 677 0
+741+869+1253+1317+1381+1509 805 0
+805+869+1253 -1253+1509 0
+-677+805+869+1509 1253+1509 0
+613+869+1317 -1253+1317+1509 0
+-613+677+741+869+1317 1253+1317+1509 0
+805+1381+1445 -1509 0
+613+805+869+1381+1445 1509 0
+677+805+1253+1317+1381+1509 -1381 0
+-677+1253+1317+1509 1381 0
+677+741+805+869+1381 -1381+1445 0
+677+741+1381 1381+1445 0
+-678+742+806+870+1446 614 0
+678+742+1446 -614 0
+-614+678+742+806+1254 614+742+870 0
+-614+742+806+1254 -614+742+870 0
+-614+742+806+1254 678 0
+-614+742+870+1254+1510 678 0
+-614+870+1254+1510 -678 0
+806+870+1254 -678 0
+-678+806+1254+1318+1510 678+742 0
+-678+1254+1318+1510 -678+742 0
+-614+870+1254+1510 742 0
+614+678+870+1254+1510 -742 0
+-678+1254+1318+1510 806 0
+678+742+870+1382 806 0
+742+1254+1318+1510 -806 0
+678+742+1382 -806 0
+-614+678+742+1446 806+870 0
+678+742+1446 -806+870 0
+678+742+1382 870 0
+-678+742+806+1382 -870 0
+-806+870+1510 678 0
+742+870+1254+1318+1382+1510 806 0
+806+870+1254 -1254+1510 0
+-678+806+870+1510 1254+1510 0
+614+870+1318 -1254+1318+1510 0
+-614+678+742+870+1318 1254+1318+1510 0
+806+1382+1446 -1510 0
+614+806+870+1382+1446 1510 0
+678+806+1254+1318+1382+1510 -1382 0
+-678+1254+1318+1510 1382 0
+678+742+806+870+1382 -1382+1446 0
+678+742+1382 1382+1446 0
+-679+743+807+871+1447 615 0
+679+743+1447 -615 0
+-615+679+743+807+1255 615+743+871 0
+-615+743+807+1255 -615+743+871 0
+-615+743+807+1255 679 0
+-615+743+871+1255+1511 679 0
+-615+871+1255+1511 -679 0
+807+871+1255 -679 0
+-679+807+1255+1319+1511 679+743 0
+-679+1255+1319+1511 -679+743 0
+-615+871+1255+1511 743 0
+615+679+871+1255+1511 -743 0
+-679+1255+1319+1511 807 0
+679+743+871+1383 807 0
+743+1255+1319+1511 -807 0
+679+743+1383 -807 0
+-615+679+743+1447 807+871 0
+679+743+1447 -807+871 0
+679+743+1383 871 0
+-679+743+807+1383 -871 0
+-807+871+1511 679 0
+743+871+1255+1319+1383+1511 807 0
+807+871+1255 -1255+1511 0
+-679+807+871+1511 1255+1511 0
+615+871+1319 -1255+1319+1511 0
+-615+679+743+871+1319 1255+1319+1511 0
+807+1383+1447 -1511 0
+615+807+871+1383+1447 1511 0
+679+807+1255+1319+1383+1511 -1383 0
+-679+1255+1319+1511 1383 0
+679+743+807+871+1383 -1383+1447 0
+679+743+1383 1383+1447 0
+-680+744+808+872+1448 616 0
+680+744+1448 -616 0
+-616+680+744+808+1256 616+744+872 0
+-616+744+808+1256 -616+744+872 0
+-616+744+808+1256 680 0
+-616+744+872+1256+1512 680 0
+-616+872+1256+1512 -680 0
+808+872+1256 -680 0
+-680+808+1256+1320+1512 680+744 0
+-680+1256+1320+1512 -680+744 0
+-616+872+1256+1512 744 0
+616+680+872+1256+1512 -744 0
+-680+1256+1320+1512 808 0
+680+744+872+1384 808 0
+744+1256+1320+1512 -808 0
+680+744+1384 -808 0
+-616+680+744+1448 808+872 0
+680+744+1448 -808+872 0
+680+744+1384 872 0
+-680+744+808+1384 -872 0
+-808+872+1512 680 0
+744+872+1256+1320+1384+1512 808 0
+808+872+1256 -1256+1512 0
+-680+808+872+1512 1256+1512 0
+616+872+1320 -1256+1320+1512 0
+-616+680+744+872+1320 1256+1320+1512 0
+808+1384+1448 -1512 0
+616+808+872+1384+1448 1512 0
+680+808+1256+1320+1384+1512 -1384 0
+-680+1256+1320+1512 1384 0
+680+744+808+872+1384 -1384+1448 0
+680+744+1384 1384+1448 0
+-681+745+809+873+1449 617 0
+681+745+1449 -617 0
+-617+681+745+809+1257 617+745+873 0
+-617+745+809+1257 -617+745+873 0
+-617+745+809+1257 681 0
+-617+745+873+1257+1513 681 0
+-617+873+1257+1513 -681 0
+809+873+1257 -681 0
+-681+809+1257+1321+1513 681+745 0
+-681+1257+1321+1513 -681+745 0
+-617+873+1257+1513 745 0
+617+681+873+1257+1513 -745 0
+-681+1257+1321+1513 809 0
+681+745+873+1385 809 0
+745+1257+1321+1513 -809 0
+681+745+1385 -809 0
+-617+681+745+1449 809+873 0
+681+745+1449 -809+873 0
+681+745+1385 873 0
+-681+745+809+1385 -873 0
+-809+873+1513 681 0
+745+873+1257+1321+1385+1513 809 0
+809+873+1257 -1257+1513 0
+-681+809+873+1513 1257+1513 0
+617+873+1321 -1257+1321+1513 0
+-617+681+745+873+1321 1257+1321+1513 0
+809+1385+1449 -1513 0
+617+809+873+1385+1449 1513 0
+681+809+1257+1321+1385+1513 -1385 0
+-681+1257+1321+1513 1385 0
+681+745+809+873+1385 -1385+1449 0
+681+745+1385 1385+1449 0
+-682+746+810+874+1450 618 0
+682+746+1450 -618 0
+-618+682+746+810+1258 618+746+874 0
+-618+746+810+1258 -618+746+874 0
+-618+746+810+1258 682 0
+-618+746+874+1258+1514 682 0
+-618+874+1258+1514 -682 0
+810+874+1258 -682 0
+-682+810+1258+1322+1514 682+746 0
+-682+1258+1322+1514 -682+746 0
+-618+874+1258+1514 746 0
+618+682+874+1258+1514 -746 0
+-682+1258+1322+1514 810 0
+682+746+874+1386 810 0
+746+1258+1322+1514 -810 0
+682+746+1386 -810 0
+-618+682+746+1450 810+874 0
+682+746+1450 -810+874 0
+682+746+1386 874 0
+-682+746+810+1386 -874 0
+-810+874+1514 682 0
+746+874+1258+1322+1386+1514 810 0
+810+874+1258 -1258+1514 0
+-682+810+874+1514 1258+1514 0
+618+874+1322 -1258+1322+1514 0
+-618+682+746+874+1322 1258+1322+1514 0
+810+1386+1450 -1514 0
+618+810+874+1386+1450 1514 0
+682+810+1258+1322+1386+1514 -1386 0
+-682+1258+1322+1514 1386 0
+682+746+810+874+1386 -1386+1450 0
+682+746+1386 1386+1450 0
+-683+747+811+875+1451 619 0
+683+747+1451 -619 0
+-619+683+747+811+1259 619+747+875 0
+-619+747+811+1259 -619+747+875 0
+-619+747+811+1259 683 0
+-619+747+875+1259+1515 683 0
+-619+875+1259+1515 -683 0
+811+875+1259 -683 0
+-683+811+1259+1323+1515 683+747 0
+-683+1259+1323+1515 -683+747 0
+-619+875+1259+1515 747 0
+619+683+875+1259+1515 -747 0
+-683+1259+1323+1515 811 0
+683+747+875+1387 811 0
+747+1259+1323+1515 -811 0
+683+747+1387 -811 0
+-619+683+747+1451 811+875 0
+683+747+1451 -811+875 0
+683+747+1387 875 0
+-683+747+811+1387 -875 0
+-811+875+1515 683 0
+747+875+1259+1323+1387+1515 811 0
+811+875+1259 -1259+1515 0
+-683+811+875+1515 1259+1515 0
+619+875+1323 -1259+1323+1515 0
+-619+683+747+875+1323 1259+1323+1515 0
+811+1387+1451 -1515 0
+619+811+875+1387+1451 1515 0
+683+811+1259+1323+1387+1515 -1387 0
+-683+1259+1323+1515 1387 0
+683+747+811+875+1387 -1387+1451 0
+683+747+1387 1387+1451 0
+-684+748+812+876+1452 620 0
+684+748+1452 -620 0
+-620+684+748+812+1260 620+748+876 0
+-620+748+812+1260 -620+748+876 0
+-620+748+812+1260 684 0
+-620+748+876+1260+1516 684 0
+-620+876+1260+1516 -684 0
+812+876+1260 -684 0
+-684+812+1260+1324+1516 684+748 0
+-684+1260+1324+1516 -684+748 0
+-620+876+1260+1516 748 0
+620+684+876+1260+1516 -748 0
+-684+1260+1324+1516 812 0
+684+748+876+1388 812 0
+748+1260+1324+1516 -812 0
+684+748+1388 -812 0
+-620+684+748+1452 812+876 0
+684+748+1452 -812+876 0
+684+748+1388 876 0
+-684+748+812+1388 -876 0
+-812+876+1516 684 0
+748+876+1260+1324+1388+1516 812 0
+812+876+1260 -1260+1516 0
+-684+812+876+1516 1260+1516 0
+620+876+1324 -1260+1324+1516 0
+-620+684+748+876+1324 1260+1324+1516 0
+812+1388+1452 -1516 0
+620+812+876+1388+1452 1516 0
+684+812+1260+1324+1388+1516 -1388 0
+-684+1260+1324+1516 1388 0
+684+748+812+876+1388 -1388+1452 0
+684+748+1388 1388+1452 0
+-685+749+813+877+1453 621 0
+685+749+1453 -621 0
+-621+685+749+813+1261 621+749+877 0
+-621+749+813+1261 -621+749+877 0
+-621+749+813+1261 685 0
+-621+749+877+1261+1517 685 0
+-621+877+1261+1517 -685 0
+813+877+1261 -685 0
+-685+813+1261+1325+1517 685+749 0
+-685+1261+1325+1517 -685+749 0
+-621+877+1261+1517 749 0
+621+685+877+1261+1517 -749 0
+-685+1261+1325+1517 813 0
+685+749+877+1389 813 0
+749+1261+1325+1517 -813 0
+685+749+1389 -813 0
+-621+685+749+1453 813+877 0
+685+749+1453 -813+877 0
+685+749+1389 877 0
+-685+749+813+1389 -877 0
+-813+877+1517 685 0
+749+877+1261+1325+1389+1517 813 0
+813+877+1261 -1261+1517 0
+-685+813+877+1517 1261+1517 0
+621+877+1325 -1261+1325+1517 0
+-621+685+749+877+1325 1261+1325+1517 0
+813+1389+1453 -1517 0
+621+813+877+1389+1453 1517 0
+685+813+1261+1325+1389+1517 -1389 0
+-685+1261+1325+1517 1389 0
+685+749+813+877+1389 -1389+1453 0
+685+749+1389 1389+1453 0
+-686+750+814+878+1454 622 0
+686+750+1454 -622 0
+-622+686+750+814+1262 622+750+878 0
+-622+750+814+1262 -622+750+878 0
+-622+750+814+1262 686 0
+-622+750+878+1262+1518 686 0
+-622+878+1262+1518 -686 0
+814+878+1262 -686 0
+-686+814+1262+1326+1518 686+750 0
+-686+1262+1326+1518 -686+750 0
+-622+878+1262+1518 750 0
+622+686+878+1262+1518 -750 0
+-686+1262+1326+1518 814 0
+686+750+878+1390 814 0
+750+1262+1326+1518 -814 0
+686+750+1390 -814 0
+-622+686+750+1454 814+878 0
+686+750+1454 -814+878 0
+686+750+1390 878 0
+-686+750+814+1390 -878 0
+-814+878+1518 686 0
+750+878+1262+1326+1390+1518 814 0
+814+878+1262 -1262+1518 0
+-686+814+878+1518 1262+1518 0
+622+878+1326 -1262+1326+1518 0
+-622+686+750+878+1326 1262+1326+1518 0
+814+1390+1454 -1518 0
+622+814+878+1390+1454 1518 0
+686+814+1262+1326+1390+1518 -1390 0
+-686+1262+1326+1518 1390 0
+686+750+814+878+1390 -1390+1454 0
+686+750+1390 1390+1454 0
+-687+751+815+879+1455 623 0
+687+751+1455 -623 0
+-623+687+751+815+1263 623+751+879 0
+-623+751+815+1263 -623+751+879 0
+-623+751+815+1263 687 0
+-623+751+879+1263+1519 687 0
+-623+879+1263+1519 -687 0
+815+879+1263 -687 0
+-687+815+1263+1327+1519 687+751 0
+-687+1263+1327+1519 -687+751 0
+-623+879+1263+1519 751 0
+623+687+879+1263+1519 -751 0
+-687+1263+1327+1519 815 0
+687+751+879+1391 815 0
+751+1263+1327+1519 -815 0
+687+751+1391 -815 0
+-623+687+751+1455 815+879 0
+687+751+1455 -815+879 0
+687+751+1391 879 0
+-687+751+815+1391 -879 0
+-815+879+1519 687 0
+751+879+1263+1327+1391+1519 815 0
+815+879+1263 -1263+1519 0
+-687+815+879+1519 1263+1519 0
+623+879+1327 -1263+1327+1519 0
+-623+687+751+879+1327 1263+1327+1519 0
+815+1391+1455 -1519 0
+623+815+879+1391+1455 1519 0
+687+815+1263+1327+1391+1519 -1391 0
+-687+1263+1327+1519 1391 0
+687+751+815+879+1391 -1391+1455 0
+687+751+1391 1391+1455 0
+-688+752+816+880+1456 624 0
+688+752+1456 -624 0
+-624+688+752+816+1264 624+752+880 0
+-624+752+816+1264 -624+752+880 0
+-624+752+816+1264 688 0
+-624+752+880+1264+1520 688 0
+-624+880+1264+1520 -688 0
+816+880+1264 -688 0
+-688+816+1264+1328+1520 688+752 0
+-688+1264+1328+1520 -688+752 0
+-624+880+1264+1520 752 0
+624+688+880+1264+1520 -752 0
+-688+1264+1328+1520 816 0
+688+752+880+1392 816 0
+752+1264+1328+1520 -816 0
+688+752+1392 -816 0
+-624+688+752+1456 816+880 0
+688+752+1456 -816+880 0
+688+752+1392 880 0
+-688+752+816+1392 -880 0
+-816+880+1520 688 0
+752+880+1264+1328+1392+1520 816 0
+816+880+1264 -1264+1520 0
+-688+816+880+1520 1264+1520 0
+624+880+1328 -1264+1328+1520 0
+-624+688+752+880+1328 1264+1328+1520 0
+816+1392+1456 -1520 0
+624+816+880+1392+1456 1520 0
+688+816+1264+1328+1392+1520 -1392 0
+-688+1264+1328+1520 1392 0
+688+752+816+880+1392 -1392+1456 0
+688+752+1392 1392+1456 0
+-689+753+817+881+1457 625 0
+689+753+1457 -625 0
+-625+689+753+817+1265 625+753+881 0
+-625+753+817+1265 -625+753+881 0
+-625+753+817+1265 689 0
+-625+753+881+1265+1521 689 0
+-625+881+1265+1521 -689 0
+817+881+1265 -689 0
+-689+817+1265+1329+1521 689+753 0
+-689+1265+1329+1521 -689+753 0
+-625+881+1265+1521 753 0
+625+689+881+1265+1521 -753 0
+-689+1265+1329+1521 817 0
+689+753+881+1393 817 0
+753+1265+1329+1521 -817 0
+689+753+1393 -817 0
+-625+689+753+1457 817+881 0
+689+753+1457 -817+881 0
+689+753+1393 881 0
+-689+753+817+1393 -881 0
+-817+881+1521 689 0
+753+881+1265+1329+1393+1521 817 0
+817+881+1265 -1265+1521 0
+-689+817+881+1521 1265+1521 0
+625+881+1329 -1265+1329+1521 0
+-625+689+753+881+1329 1265+1329+1521 0
+817+1393+1457 -1521 0
+625+817+881+1393+1457 1521 0
+689+817+1265+1329+1393+1521 -1393 0
+-689+1265+1329+1521 1393 0
+689+753+817+881+1393 -1393+1457 0
+689+753+1393 1393+1457 0
+-690+754+818+882+1458 626 0
+690+754+1458 -626 0
+-626+690+754+818+1266 626+754+882 0
+-626+754+818+1266 -626+754+882 0
+-626+754+818+1266 690 0
+-626+754+882+1266+1522 690 0
+-626+882+1266+1522 -690 0
+818+882+1266 -690 0
+-690+818+1266+1330+1522 690+754 0
+-690+1266+1330+1522 -690+754 0
+-626+882+1266+1522 754 0
+626+690+882+1266+1522 -754 0
+-690+1266+1330+1522 818 0
+690+754+882+1394 818 0
+754+1266+1330+1522 -818 0
+690+754+1394 -818 0
+-626+690+754+1458 818+882 0
+690+754+1458 -818+882 0
+690+754+1394 882 0
+-690+754+818+1394 -882 0
+-818+882+1522 690 0
+754+882+1266+1330+1394+1522 818 0
+818+882+1266 -1266+1522 0
+-690+818+882+1522 1266+1522 0
+626+882+1330 -1266+1330+1522 0
+-626+690+754+882+1330 1266+1330+1522 0
+818+1394+1458 -1522 0
+626+818+882+1394+1458 1522 0
+690+818+1266+1330+1394+1522 -1394 0
+-690+1266+1330+1522 1394 0
+690+754+818+882+1394 -1394+1458 0
+690+754+1394 1394+1458 0
+-691+755+819+883+1459 627 0
+691+755+1459 -627 0
+-627+691+755+819+1267 627+755+883 0
+-627+755+819+1267 -627+755+883 0
+-627+755+819+1267 691 0
+-627+755+883+1267+1523 691 0
+-627+883+1267+1523 -691 0
+819+883+1267 -691 0
+-691+819+1267+1331+1523 691+755 0
+-691+1267+1331+1523 -691+755 0
+-627+883+1267+1523 755 0
+627+691+883+1267+1523 -755 0
+-691+1267+1331+1523 819 0
+691+755+883+1395 819 0
+755+1267+1331+1523 -819 0
+691+755+1395 -819 0
+-627+691+755+1459 819+883 0
+691+755+1459 -819+883 0
+691+755+1395 883 0
+-691+755+819+1395 -883 0
+-819+883+1523 691 0
+755+883+1267+1331+1395+1523 819 0
+819+883+1267 -1267+1523 0
+-691+819+883+1523 1267+1523 0
+627+883+1331 -1267+1331+1523 0
+-627+691+755+883+1331 1267+1331+1523 0
+819+1395+1459 -1523 0
+627+819+883+1395+1459 1523 0
+691+819+1267+1331+1395+1523 -1395 0
+-691+1267+1331+1523 1395 0
+691+755+819+883+1395 -1395+1459 0
+691+755+1395 1395+1459 0
+-692+756+820+884+1460 628 0
+692+756+1460 -628 0
+-628+692+756+820+1268 628+756+884 0
+-628+756+820+1268 -628+756+884 0
+-628+756+820+1268 692 0
+-628+756+884+1268+1524 692 0
+-628+884+1268+1524 -692 0
+820+884+1268 -692 0
+-692+820+1268+1332+1524 692+756 0
+-692+1268+1332+1524 -692+756 0
+-628+884+1268+1524 756 0
+628+692+884+1268+1524 -756 0
+-692+1268+1332+1524 820 0
+692+756+884+1396 820 0
+756+1268+1332+1524 -820 0
+692+756+1396 -820 0
+-628+692+756+1460 820+884 0
+692+756+1460 -820+884 0
+692+756+1396 884 0
+-692+756+820+1396 -884 0
+-820+884+1524 692 0
+756+884+1268+1332+1396+1524 820 0
+820+884+1268 -1268+1524 0
+-692+820+884+1524 1268+1524 0
+628+884+1332 -1268+1332+1524 0
+-628+692+756+884+1332 1268+1332+1524 0
+820+1396+1460 -1524 0
+628+820+884+1396+1460 1524 0
+692+820+1268+1332+1396+1524 -1396 0
+-692+1268+1332+1524 1396 0
+692+756+820+884+1396 -1396+1460 0
+692+756+1396 1396+1460 0
+-693+757+821+885+1461 629 0
+693+757+1461 -629 0
+-629+693+757+821+1269 629+757+885 0
+-629+757+821+1269 -629+757+885 0
+-629+757+821+1269 693 0
+-629+757+885+1269+1525 693 0
+-629+885+1269+1525 -693 0
+821+885+1269 -693 0
+-693+821+1269+1333+1525 693+757 0
+-693+1269+1333+1525 -693+757 0
+-629+885+1269+1525 757 0
+629+693+885+1269+1525 -757 0
+-693+1269+1333+1525 821 0
+693+757+885+1397 821 0
+757+1269+1333+1525 -821 0
+693+757+1397 -821 0
+-629+693+757+1461 821+885 0
+693+757+1461 -821+885 0
+693+757+1397 885 0
+-693+757+821+1397 -885 0
+-821+885+1525 693 0
+757+885+1269+1333+1397+1525 821 0
+821+885+1269 -1269+1525 0
+-693+821+885+1525 1269+1525 0
+629+885+1333 -1269+1333+1525 0
+-629+693+757+885+1333 1269+1333+1525 0
+821+1397+1461 -1525 0
+629+821+885+1397+1461 1525 0
+693+821+1269+1333+1397+1525 -1397 0
+-693+1269+1333+1525 1397 0
+693+757+821+885+1397 -1397+1461 0
+693+757+1397 1397+1461 0
+-694+758+822+886+1462 630 0
+694+758+1462 -630 0
+-630+694+758+822+1270 630+758+886 0
+-630+758+822+1270 -630+758+886 0
+-630+758+822+1270 694 0
+-630+758+886+1270+1526 694 0
+-630+886+1270+1526 -694 0
+822+886+1270 -694 0
+-694+822+1270+1334+1526 694+758 0
+-694+1270+1334+1526 -694+758 0
+-630+886+1270+1526 758 0
+630+694+886+1270+1526 -758 0
+-694+1270+1334+1526 822 0
+694+758+886+1398 822 0
+758+1270+1334+1526 -822 0
+694+758+1398 -822 0
+-630+694+758+1462 822+886 0
+694+758+1462 -822+886 0
+694+758+1398 886 0
+-694+758+822+1398 -886 0
+-822+886+1526 694 0
+758+886+1270+1334+1398+1526 822 0
+822+886+1270 -1270+1526 0
+-694+822+886+1526 1270+1526 0
+630+886+1334 -1270+1334+1526 0
+-630+694+758+886+1334 1270+1334+1526 0
+822+1398+1462 -1526 0
+630+822+886+1398+1462 1526 0
+694+822+1270+1334+1398+1526 -1398 0
+-694+1270+1334+1526 1398 0
+694+758+822+886+1398 -1398+1462 0
+694+758+1398 1398+1462 0
+-695+759+823+887+1463 631 0
+695+759+1463 -631 0
+-631+695+759+823+1271 631+759+887 0
+-631+759+823+1271 -631+759+887 0
+-631+759+823+1271 695 0
+-631+759+887+1271+1527 695 0
+-631+887+1271+1527 -695 0
+823+887+1271 -695 0
+-695+823+1271+1335+1527 695+759 0
+-695+1271+1335+1527 -695+759 0
+-631+887+1271+1527 759 0
+631+695+887+1271+1527 -759 0
+-695+1271+1335+1527 823 0
+695+759+887+1399 823 0
+759+1271+1335+1527 -823 0
+695+759+1399 -823 0
+-631+695+759+1463 823+887 0
+695+759+1463 -823+887 0
+695+759+1399 887 0
+-695+759+823+1399 -887 0
+-823+887+1527 695 0
+759+887+1271+1335+1399+1527 823 0
+823+887+1271 -1271+1527 0
+-695+823+887+1527 1271+1527 0
+631+887+1335 -1271+1335+1527 0
+-631+695+759+887+1335 1271+1335+1527 0
+823+1399+1463 -1527 0
+631+823+887+1399+1463 1527 0
+695+823+1271+1335+1399+1527 -1399 0
+-695+1271+1335+1527 1399 0
+695+759+823+887+1399 -1399+1463 0
+695+759+1399 1399+1463 0
+-696+760+824+888+1464 632 0
+696+760+1464 -632 0
+-632+696+760+824+1272 632+760+888 0
+-632+760+824+1272 -632+760+888 0
+-632+760+824+1272 696 0
+-632+760+888+1272+1528 696 0
+-632+888+1272+1528 -696 0
+824+888+1272 -696 0
+-696+824+1272+1336+1528 696+760 0
+-696+1272+1336+1528 -696+760 0
+-632+888+1272+1528 760 0
+632+696+888+1272+1528 -760 0
+-696+1272+1336+1528 824 0
+696+760+888+1400 824 0
+760+1272+1336+1528 -824 0
+696+760+1400 -824 0
+-632+696+760+1464 824+888 0
+696+760+1464 -824+888 0
+696+760+1400 888 0
+-696+760+824+1400 -888 0
+-824+888+1528 696 0
+760+888+1272+1336+1400+1528 824 0
+824+888+1272 -1272+1528 0
+-696+824+888+1528 1272+1528 0
+632+888+1336 -1272+1336+1528 0
+-632+696+760+888+1336 1272+1336+1528 0
+824+1400+1464 -1528 0
+632+824+888+1400+1464 1528 0
+696+824+1272+1336+1400+1528 -1400 0
+-696+1272+1336+1528 1400 0
+696+760+824+888+1400 -1400+1464 0
+696+760+1400 1400+1464 0
+-697+761+825+889+1465 633 0
+697+761+1465 -633 0
+-633+697+761+825+1273 633+761+889 0
+-633+761+825+1273 -633+761+889 0
+-633+761+825+1273 697 0
+-633+761+889+1273+1529 697 0
+-633+889+1273+1529 -697 0
+825+889+1273 -697 0
+-697+825+1273+1337+1529 697+761 0
+-697+1273+1337+1529 -697+761 0
+-633+889+1273+1529 761 0
+633+697+889+1273+1529 -761 0
+-697+1273+1337+1529 825 0
+697+761+889+1401 825 0
+761+1273+1337+1529 -825 0
+697+761+1401 -825 0
+-633+697+761+1465 825+889 0
+697+761+1465 -825+889 0
+697+761+1401 889 0
+-697+761+825+1401 -889 0
+-825+889+1529 697 0
+761+889+1273+1337+1401+1529 825 0
+825+889+1273 -1273+1529 0
+-697+825+889+1529 1273+1529 0
+633+889+1337 -1273+1337+1529 0
+-633+697+761+889+1337 1273+1337+1529 0
+825+1401+1465 -1529 0
+633+825+889+1401+1465 1529 0
+697+825+1273+1337+1401+1529 -1401 0
+-697+1273+1337+1529 1401 0
+697+761+825+889+1401 -1401+1465 0
+697+761+1401 1401+1465 0
+-698+762+826+890+1466 634 0
+698+762+1466 -634 0
+-634+698+762+826+1274 634+762+890 0
+-634+762+826+1274 -634+762+890 0
+-634+762+826+1274 698 0
+-634+762+890+1274+1530 698 0
+-634+890+1274+1530 -698 0
+826+890+1274 -698 0
+-698+826+1274+1338+1530 698+762 0
+-698+1274+1338+1530 -698+762 0
+-634+890+1274+1530 762 0
+634+698+890+1274+1530 -762 0
+-698+1274+1338+1530 826 0
+698+762+890+1402 826 0
+762+1274+1338+1530 -826 0
+698+762+1402 -826 0
+-634+698+762+1466 826+890 0
+698+762+1466 -826+890 0
+698+762+1402 890 0
+-698+762+826+1402 -890 0
+-826+890+1530 698 0
+762+890+1274+1338+1402+1530 826 0
+826+890+1274 -1274+1530 0
+-698+826+890+1530 1274+1530 0
+634+890+1338 -1274+1338+1530 0
+-634+698+762+890+1338 1274+1338+1530 0
+826+1402+1466 -1530 0
+634+826+890+1402+1466 1530 0
+698+826+1274+1338+1402+1530 -1402 0
+-698+1274+1338+1530 1402 0
+698+762+826+890+1402 -1402+1466 0
+698+762+1402 1402+1466 0
+-699+763+827+891+1467 635 0
+699+763+1467 -635 0
+-635+699+763+827+1275 635+763+891 0
+-635+763+827+1275 -635+763+891 0
+-635+763+827+1275 699 0
+-635+763+891+1275+1531 699 0
+-635+891+1275+1531 -699 0
+827+891+1275 -699 0
+-699+827+1275+1339+1531 699+763 0
+-699+1275+1339+1531 -699+763 0
+-635+891+1275+1531 763 0
+635+699+891+1275+1531 -763 0
+-699+1275+1339+1531 827 0
+699+763+891+1403 827 0
+763+1275+1339+1531 -827 0
+699+763+1403 -827 0
+-635+699+763+1467 827+891 0
+699+763+1467 -827+891 0
+699+763+1403 891 0
+-699+763+827+1403 -891 0
+-827+891+1531 699 0
+763+891+1275+1339+1403+1531 827 0
+827+891+1275 -1275+1531 0
+-699+827+891+1531 1275+1531 0
+635+891+1339 -1275+1339+1531 0
+-635+699+763+891+1339 1275+1339+1531 0
+827+1403+1467 -1531 0
+635+827+891+1403+1467 1531 0
+699+827+1275+1339+1403+1531 -1403 0
+-699+1275+1339+1531 1403 0
+699+763+827+891+1403 -1403+1467 0
+699+763+1403 1403+1467 0
+-700+764+828+892+1468 636 0
+700+764+1468 -636 0
+-636+700+764+828+1276 636+764+892 0
+-636+764+828+1276 -636+764+892 0
+-636+764+828+1276 700 0
+-636+764+892+1276+1532 700 0
+-636+892+1276+1532 -700 0
+828+892+1276 -700 0
+-700+828+1276+1340+1532 700+764 0
+-700+1276+1340+1532 -700+764 0
+-636+892+1276+1532 764 0
+636+700+892+1276+1532 -764 0
+-700+1276+1340+1532 828 0
+700+764+892+1404 828 0
+764+1276+1340+1532 -828 0
+700+764+1404 -828 0
+-636+700+764+1468 828+892 0
+700+764+1468 -828+892 0
+700+764+1404 892 0
+-700+764+828+1404 -892 0
+-828+892+1532 700 0
+764+892+1276+1340+1404+1532 828 0
+828+892+1276 -1276+1532 0
+-700+828+892+1532 1276+1532 0
+636+892+1340 -1276+1340+1532 0
+-636+700+764+892+1340 1276+1340+1532 0
+828+1404+1468 -1532 0
+636+828+892+1404+1468 1532 0
+700+828+1276+1340+1404+1532 -1404 0
+-700+1276+1340+1532 1404 0
+700+764+828+892+1404 -1404+1468 0
+700+764+1404 1404+1468 0
+-701+765+829+893+1469 637 0
+701+765+1469 -637 0
+-637+701+765+829+1277 637+765+893 0
+-637+765+829+1277 -637+765+893 0
+-637+765+829+1277 701 0
+-637+765+893+1277+1533 701 0
+-637+893+1277+1533 -701 0
+829+893+1277 -701 0
+-701+829+1277+1341+1533 701+765 0
+-701+1277+1341+1533 -701+765 0
+-637+893+1277+1533 765 0
+637+701+893+1277+1533 -765 0
+-701+1277+1341+1533 829 0
+701+765+893+1405 829 0
+765+1277+1341+1533 -829 0
+701+765+1405 -829 0
+-637+701+765+1469 829+893 0
+701+765+1469 -829+893 0
+701+765+1405 893 0
+-701+765+829+1405 -893 0
+-829+893+1533 701 0
+765+893+1277+1341+1405+1533 829 0
+829+893+1277 -1277+1533 0
+-701+829+893+1533 1277+1533 0
+637+893+1341 -1277+1341+1533 0
+-637+701+765+893+1341 1277+1341+1533 0
+829+1405+1469 -1533 0
+637+829+893+1405+1469 1533 0
+701+829+1277+1341+1405+1533 -1405 0
+-701+1277+1341+1533 1405 0
+701+765+829+893+1405 -1405+1469 0
+701+765+1405 1405+1469 0
+-702+766+830+894+1470 638 0
+702+766+1470 -638 0
+-638+702+766+830+1278 638+766+894 0
+-638+766+830+1278 -638+766+894 0
+-638+766+830+1278 702 0
+-638+766+894+1278+1534 702 0
+-638+894+1278+1534 -702 0
+830+894+1278 -702 0
+-702+830+1278+1342+1534 702+766 0
+-702+1278+1342+1534 -702+766 0
+-638+894+1278+1534 766 0
+638+702+894+1278+1534 -766 0
+-702+1278+1342+1534 830 0
+702+766+894+1406 830 0
+766+1278+1342+1534 -830 0
+702+766+1406 -830 0
+-638+702+766+1470 830+894 0
+702+766+1470 -830+894 0
+702+766+1406 894 0
+-702+766+830+1406 -894 0
+-830+894+1534 702 0
+766+894+1278+1342+1406+1534 830 0
+830+894+1278 -1278+1534 0
+-702+830+894+1534 1278+1534 0
+638+894+1342 -1278+1342+1534 0
+-638+702+766+894+1342 1278+1342+1534 0
+830+1406+1470 -1534 0
+638+830+894+1406+1470 1534 0
+702+830+1278+1342+1406+1534 -1406 0
+-702+1278+1342+1534 1406 0
+702+766+830+894+1406 -1406+1470 0
+702+766+1406 1406+1470 0
+-703+767+831+895+1471 639 0
+703+767+1471 -639 0
+-639+703+767+831+1279 639+767+895 0
+-639+767+831+1279 -639+767+895 0
+-639+767+831+1279 703 0
+-639+767+895+1279+1535 703 0
+-639+895+1279+1535 -703 0
+831+895+1279 -703 0
+-703+831+1279+1343+1535 703+767 0
+-703+1279+1343+1535 -703+767 0
+-639+895+1279+1535 767 0
+639+703+895+1279+1535 -767 0
+-703+1279+1343+1535 831 0
+703+767+895+1407 831 0
+767+1279+1343+1535 -831 0
+703+767+1407 -831 0
+-639+703+767+1471 831+895 0
+703+767+1471 -831+895 0
+703+767+1407 895 0
+-703+767+831+1407 -895 0
+-831+895+1535 703 0
+767+895+1279+1343+1407+1535 831 0
+831+895+1279 -1279+1535 0
+-703+831+895+1535 1279+1535 0
+639+895+1343 -1279+1343+1535 0
+-639+703+767+895+1343 1279+1343+1535 0
+831+1407+1471 -1535 0
+639+831+895+1407+1471 1535 0
+703+831+1279+1343+1407+1535 -1407 0
+-703+1279+1343+1535 1407 0
+703+767+831+895+1407 -1407+1471 0
+703+767+1407 1407+1471 0
+-704+768+832+896+1472 640 0
+704+768+1472 -640 0
+-640+704+768+832+1280 640+768+896 0
+-640+768+832+1280 -640+768+896 0
+-640+768+832+1280 704 0
+-640+768+896+1280+1536 704 0
+-640+896+1280+1536 -704 0
+832+896+1280 -704 0
+-704+832+1280+1344+1536 704+768 0
+-704+1280+1344+1536 -704+768 0
+-640+896+1280+1536 768 0
+640+704+896+1280+1536 -768 0
+-704+1280+1344+1536 832 0
+704+768+896+1408 832 0
+768+1280+1344+1536 -832 0
+704+768+1408 -832 0
+-640+704+768+1472 832+896 0
+704+768+1472 -832+896 0
+704+768+1408 896 0
+-704+768+832+1408 -896 0
+-832+896+1536 704 0
+768+896+1280+1344+1408+1536 832 0
+832+896+1280 -1280+1536 0
+-704+832+896+1536 1280+1536 0
+640+896+1344 -1280+1344+1536 0
+-640+704+768+896+1344 1280+1344+1536 0
+832+1408+1472 -1536 0
+640+832+896+1408+1472 1536 0
+704+832+1280+1344+1408+1536 -1408 0
+-704+1280+1344+1536 1408 0
+704+768+832+896+1408 -1408+1472 0
+704+768+1408 1408+1472 0
+-1217+1253+1262+1537 0
+-1218+1254+1263+1538 0
+-1219+1255+1264+1539 0
+-1220+1256+1265+1540 0
+-1221+1257+1266+1541 0
+-1222+1258+1267+1542 0
+-1223+1259+1268+1543 0
+-1224+1260+1269+1544 0
+-1225+1261+1270+1545 0
+-1226+1262+1271+1546 0
+-1227+1263+1272+1547 0
+-1228+1264+1273+1548 0
+-1229+1265+1274+1549 0
+-1230+1266+1275+1550 0
+-1231+1267+1276+1551 0
+-1232+1268+1277+1552 0
+-1233+1269+1278+1553 0
+-1234+1270+1279+1554 0
+-1235+1271+1280+1555 0
+-1217+1236+1272+1556 0
+-1218+1237+1273+1557 0
+-1219+1238+1274+1558 0
+-1220+1239+1275+1559 0
+-1221+1240+1276+1560 0
+-1222+1241+1277+1561 0
+-1223+1242+1278+1562 0
+-1224+1243+1279+1563 0
+-1225+1244+1280+1564 0
+-1217+1226+1245+1565 0
+-1218+1227+1246+1566 0
+-1219+1228+1247+1567 0
+-1220+1229+1248+1568 0
+-1221+1230+1249+1569 0
+-1222+1231+1250+1570 0
+-1223+1232+1251+1571 0
+-1224+1233+1252+1572 0
+-1225+1234+1253+1573 0
+-1226+1235+1254+1574 0
+-1227+1236+1255+1575 0
+-1228+1237+1256+1576 0
+-1229+1238+1257+1577 0
+-1230+1239+1258+1578 0
+-1231+1240+1259+1579 0
+-1232+1241+1260+1580 0
+-1233+1242+1261+1581 0
+-1234+1243+1262+1582 0
+-1235+1244+1263+1583 0
+-1236+1245+1264+1584 0
+-1237+1246+1265+1585 0
+-1238+1247+1266+1586 0
+-1239+1248+1267+1587 0
+-1240+1249+1268+1588 0
+-1241+1250+1269+1589 0
+-1242+1251+1270+1590 0
+-1243+1252+1271+1591 0
+-1244+1253+1272+1592 0
+-1245+1254+1273+1593 0
+-1246+1255+1274+1594 0
+-1247+1256+1275+1595 0
+-1248+1257+1276+1596 0
+-1249+1258+1277+1597 0
+-1250+1259+1278+1598 0
+-1251+1260+1279+1599 0
+-1252+1261+1280+1600 0
+-1281+1284+1306+1601 0
+-1282+1285+1307+1602 0
+-1283+1286+1308+1603 0
+-1284+1287+1309+1604 0
+-1285+1288+1310+1605 0
+-1286+1289+1311+1606 0
+-1287+1290+1312+1607 0
+-1288+1291+1313+1608 0
+-1289+1292+1314+1609 0
+-1290+1293+1315+1610 0
+-1291+1294+1316+1611 0
+-1292+1295+1317+1612 0
+-1293+1296+1318+1613 0
+-1294+1297+1319+1614 0
+-1295+1298+1320+1615 0
+-1296+1299+1321+1616 0
+-1297+1300+1322+1617 0
+-1298+1301+1323+1618 0
+-1299+1302+1324+1619 0
+-1300+1303+1325+1620 0
+-1301+1304+1326+1621 0
+-1302+1305+1327+1622 0
+-1303+1306+1328+1623 0
+-1304+1307+1329+1624 0
+-1305+1308+1330+1625 0
+-1306+1309+1331+1626 0
+-1307+1310+1332+1627 0
+-1308+1311+1333+1628 0
+-1309+1312+1334+1629 0
+-1310+1313+1335+1630 0
+-1311+1314+1336+1631 0
+-1312+1315+1337+1632 0
+-1313+1316+1338+1633 0
+-1314+1317+1339+1634 0
+-1315+1318+1340+1635 0
+-1316+1319+1341+1636 0
+-1317+1320+1342+1637 0
+-1318+1321+1343+1638 0
+-1319+1322+1344+1639 0
+-1281+1320+1323+1640 0
+-1282+1321+1324+1641 0
+-1283+1322+1325+1642 0
+-1284+1323+1326+1643 0
+-1285+1324+1327+1644 0
+-1286+1325+1328+1645 0
+-1287+1326+1329+1646 0
+-1288+1327+1330+1647 0
+-1289+1328+1331+1648 0
+-1290+1329+1332+1649 0
+-1291+1330+1333+1650 0
+-1292+1331+1334+1651 0
+-1293+1332+1335+1652 0
+-1294+1333+1336+1653 0
+-1295+1334+1337+1654 0
+-1296+1335+1338+1655 0
+-1297+1336+1339+1656 0
+-1298+1337+1340+1657 0
+-1299+1338+1341+1658 0
+-1300+1339+1342+1659 0
+-1301+1340+1343+1660 0
+-1302+1341+1344+1661 0
+-1281+1303+1342+1662 0
+-1282+1304+1343+1663 0
+-1283+1305+1344+1664 0
+-1345+1403+1408+1665 0
+-1345+1346+1404+1666 0
+-1346+1347+1405+1667 0
+-1347+1348+1406+1668 0
+-1348+1349+1407+1669 0
+-1349+1350+1408+1670 0
+-1345+1350+1351+1671 0
+-1346+1351+1352+1672 0
+-1347+1352+1353+1673 0
+-1348+1353+1354+1674 0
+-1349+1354+1355+1675 0
+-1350+1355+1356+1676 0
+-1351+1356+1357+1677 0
+-1352+1357+1358+1678 0
+-1353+1358+1359+1679 0
+-1354+1359+1360+1680 0
+-1355+1360+1361+1681 0
+-1356+1361+1362+1682 0
+-1357+1362+1363+1683 0
+-1358+1363+1364+1684 0
+-1359+1364+1365+1685 0
+-1360+1365+1366+1686 0
+-1361+1366+1367+1687 0
+-1362+1367+1368+1688 0
+-1363+1368+1369+1689 0
+-1364+1369+1370+1690 0
+-1365+1370+1371+1691 0
+-1366+1371+1372+1692 0
+-1367+1372+1373+1693 0
+-1368+1373+1374+1694 0
+-1369+1374+1375+1695 0
+-1370+1375+1376+1696 0
+-1371+1376+1377+1697 0
+-1372+1377+1378+1698 0
+-1373+1378+1379+1699 0
+-1374+1379+1380+1700 0
+-1375+1380+1381+1701 0
+-1376+1381+1382+1702 0
+-1377+1382+1383+1703 0
+-1378+1383+1384+1704 0
+-1379+1384+1385+1705 0
+-1380+1385+1386+1706 0
+-1381+1386+1387+1707 0
+-1382+1387+1388+1708 0
+-1383+1388+1389+1709 0
+-1384+1389+1390+1710 0
+-1385+1390+1391+1711 0
+-1386+1391+1392+1712 0
+-1387+1392+1393+1713 0
+-1388+1393+1394+1714 0
+-1389+1394+1395+1715 0
+-1390+1395+1396+1716 0
+-1391+1396+1397+1717 0
+-1392+1397+1398+1718 0
+-1393+1398+1399+1719 0
+-1394+1399+1400+1720 0
+-1395+1400+1401+1721 0
+-1396+1401+1402+1722 0
+-1397+1402+1403+1723 0
+-1398+1403+1404+1724 0
+-1399+1404+1405+1725 0
+-1400+1405+1406+1726 0
+-1401+1406+1407+1727 0
+-1402+1407+1408+1728 0
+-1+1409+1456+1463+1729 0
+-2+1410+1457+1464+1730 0
+-3+1411+1458+1465+1731 0
+-4+1412+1459+1466+1732 0
+-5+1413+1460+1467+1733 0
+-6+1414+1461+1468+1734 0
+-7+1415+1462+1469+1735 0
+-8+1416+1463+1470+1736 0
+-9+1417+1464+1471+1737 0
+-10+1418+1465+1472+1738 0
+-11+1409+1419+1466+1739 0
+-12+1410+1420+1467+1740 0
+-13+1411+1421+1468+1741 0
+-14+1412+1422+1469+1742 0
+-15+1413+1423+1470+1743 0
+-16+1414+1424+1471+1744 0
+-17+1415+1425+1472+1745 0
+-18+1409+1416+1426+1746 0
+-19+1410+1417+1427+1747 0
+-20+1411+1418+1428+1748 0
+-21+1412+1419+1429+1749 0
+-22+1413+1420+1430+1750 0
+-23+1414+1421+1431+1751 0
+-24+1415+1422+1432+1752 0
+-25+1416+1423+1433+1753 0
+-26+1417+1424+1434+1754 0
+-27+1418+1425+1435+1755 0
+-28+1419+1426+1436+1756 0
+-29+1420+1427+1437+1757 0
+-30+1421+1428+1438+1758 0
+-31+1422+1429+1439+1759 0
+-32+1423+1430+1440+1760 0
+-33+1424+1431+1441+1761 0
+-34+1425+1432+1442+1762 0
+-35+1426+1433+1443+1763 0
+-36+1427+1434+1444+1764 0
+-37+1428+1435+1445+1765 0
+-38+1429+1436+1446+1766 0
+-39+1430+1437+1447+1767 0
+-40+1431+1438+1448+1768 0
+-41+1432+1439+1449+1769 0
+-42+1433+1440+1450+1770 0
+-43+1434+1441+1451+1771 0
+-44+1435+1442+1452+1772 0
+-45+1436+1443+1453+1773 0
+-46+1437+1444+1454+1774 0
+-47+1438+1445+1455+1775 0
+-48+1439+1446+1456+1776 0
+-49+1440+1447+1457+1777 0
+-50+1441+1448+1458+1778 0
+-51+1442+1449+1459+1779 0
+-52+1443+1450+1460+1780 0
+-53+1444+1451+1461+1781 0
+-54+1445+1452+1462+1782 0
+-55+1446+1453+1463+1783 0
+-56+1447+1454+1464+1784 0
+-57+1448+1455+1465+1785 0
+-58+1449+1456+1466+1786 0
+-59+1450+1457+1467+1787 0
+-60+1451+1458+1468+1788 0
+-61+1452+1459+1469+1789 0
+-62+1453+1460+1470+1790 0
+-63+1454+1461+1471+1791 0
+-64+1455+1462+1472+1792 0
+-65+1473+1496+1530+1793 0
+-66+1474+1497+1531+1794 0
+-67+1475+1498+1532+1795 0
+-68+1476+1499+1533+1796 0
+-69+1477+1500+1534+1797 0
+-70+1478+1501+1535+1798 0
+-71+1479+1502+1536+1799 0
+-72+1473+1480+1503+1800 0
+-73+1474+1481+1504+1801 0
+-74+1475+1482+1505+1802 0
+-75+1476+1483+1506+1803 0
+-76+1477+1484+1507+1804 0
+-77+1478+1485+1508+1805 0
+-78+1479+1486+1509+1806 0
+-79+1480+1487+1510+1807 0
+-80+1481+1488+1511+1808 0
+-81+1482+1489+1512+1809 0
+-82+1483+1490+1513+1810 0
+-83+1484+1491+1514+1811 0
+-84+1485+1492+1515+1812 0
+-85+1486+1493+1516+1813 0
+-86+1487+1494+1517+1814 0
+-87+1488+1495+1518+1815 0
+-88+1489+1496+1519+1816 0
+-89+1490+1497+1520+1817 0
+-90+1491+1498+1521+1818 0
+-91+1492+1499+1522+1819 0
+-92+1493+1500+1523+1820 0
+-93+1494+1501+1524+1821 0
+-94+1495+1502+1525+1822 0
+-95+1496+1503+1526+1823 0
+-96+1497+1504+1527+1824 0
+-97+1498+1505+1528+1825 0
+-98+1499+1506+1529+1826 0
+-99+1500+1507+1530+1827 0
+-100+1501+1508+1531+1828 0
+-101+1502+1509+1532+1829 0
+-102+1503+1510+1533+1830 0
+-103+1504+1511+1534+1831 0
+-104+1505+1512+1535+1832 0
+-105+1506+1513+1536+1833 0
+-106+1473+1507+1514+1834 0
+-107+1474+1508+1515+1835 0
+-108+1475+1509+1516+1836 0
+-109+1476+1510+1517+1837 0
+-110+1477+1511+1518+1838 0
+-111+1478+1512+1519+1839 0
+-112+1479+1513+1520+1840 0
+-113+1480+1514+1521+1841 0
+-114+1481+1515+1522+1842 0
+-115+1482+1516+1523+1843 0
+-116+1483+1517+1524+1844 0
+-117+1484+1518+1525+1845 0
+-118+1485+1519+1526+1846 0
+-119+1486+1520+1527+1847 0
+-120+1487+1521+1528+1848 0
+-121+1488+1522+1529+1849 0
+-122+1489+1523+1530+1850 0
+-123+1490+1524+1531+1851 0
+-124+1491+1525+1532+1852 0
+-125+1492+1526+1533+1853 0
+-126+1493+1527+1534+1854 0
+-127+1494+1528+1535+1855 0
+-128+1495+1529+1536+1856 0
+129 0
+130 0
+131 0
+132 0
+133 0
+-134 0
+135 0
+-136 0
+137 0
+-138 0
+139 0
+-140 0
+141 0
+-142 0
+143 0
+144 0
+-145 0
+146 0
+147 0
+148 0
+-149 0
+150 0
+-151 0
+152 0
+-153 0
+154 0
+-155 0
+-156 0
+-157 0
+158 0
+-159 0
+160 0
+-161 0
+-162 0
+163 0
+-164 0
+-165 0
+-166 0
+-167 0
+-168 0
+-169 0
+-170 0
+-171 0
+172 0
+173 0
+-174 0
+175 0
+-176 0
+177 0
+-178 0
+-179 0
+180 0
+-181 0
+-182 0
+183 0
+184 0
+185 0
+-186 0
+187 0
+-188 0
+189 0
+190 0
+-191 0
+192 0
+-193 0
+194 0
+195 0
+-196 0
+197 0
+198 0
+199 0
+-200 0
+-201 0
+202 0
+-203 0
+-204 0
+-205 0
+206 0
+207 0
+-208 0
+209 0
+210 0
+211 0
+212 0
+-213 0
+-214 0
+215 0
+-216 0
+-217 0
+218 0
+219 0
+220 0
+-221 0
+222 0
+223 0
+224 0
+-225 0
+226 0
+-227 0
+228 0
+-229 0
+-230 0
+231 0
+-232 0
+-233 0
+234 0
+-235 0
+-236 0
+237 0
+-238 0
+-239 0
+-240 0
+-241 0
+242 0
+-243 0
+-244 0
+245 0
+246 0
+247 0
+-248 0
+-249 0
+250 0
+-251 0
+252 0
+-253 0
+-254 0
+255 0
+-256 0
+-1537 0
+-1538 0
+1539 0
+-1540 0
+1541 0
+-1542 0
+1543 0
+1544 0
+1545 0
+1546 0
+1547 0
+-1548 0
+1549 0
+1550 0
+1551 0
+1552 0
+-1553 0
+1554 0
+1555 0
+1556 0
+-1557 0
+1558 0
+1559 0
+-1560 0
+-1561 0
+-1562 0
+1563 0
+1564 0
+1565 0
+-1566 0
+-1567 0
+-1568 0
+1569 0
+-1570 0
+1571 0
+1572 0
+-1573 0
+1574 0
+1575 0
+1576 0
+-1577 0
+-1578 0
+1579 0
+1580 0
+1581 0
+1582 0
+1583 0
+-1584 0
+-1585 0
+-1586 0
+1587 0
+-1588 0
+-1589 0
+-1590 0
+-1591 0
+1592 0
+-1593 0
+-1594 0
+1595 0
+-1596 0
+-1597 0
+1598 0
+1599 0
+-1600 0
+1601 0
+1602 0
+1603 0
+-1604 0
+-1605 0
+1606 0
+1607 0
+-1608 0
+1609 0
+-1610 0
+1611 0
+-1612 0
+1613 0
+-1614 0
+-1615 0
+1616 0
+1617 0
+-1618 0
+-1619 0
+-1620 0
+1621 0
+-1622 0
+1623 0
+-1624 0
+1625 0
+1626 0
+1627 0
+-1628 0
+-1629 0
+1630 0
+1631 0
+-1632 0
+-1633 0
+-1634 0
+-1635 0
+-1636 0
+1637 0
+1638 0
+1639 0
+-1640 0
+-1641 0
+-1642 0
+1643 0
+-1644 0
+1645 0
+-1646 0
+-1647 0
+-1648 0
+-1649 0
+1650 0
+-1651 0
+-1652 0
+1653 0
+-1654 0
+-1655 0
+1656 0
+1657 0
+-1658 0
+-1659 0
+1660 0
+-1661 0
+1662 0
+1663 0
+-1664 0
+-1665 0
+-1666 0
+-1667 0
+-1668 0
+-1669 0
+-1670 0
+1671 0
+1672 0
+1673 0
+-1674 0
+-1675 0
+1676 0
+1677 0
+-1678 0
+-1679 0
+1680 0
+-1681 0
+-1682 0
+-1683 0
+-1684 0
+1685 0
+-1686 0
+1687 0
+1688 0
+-1689 0
+1690 0
+-1691 0
+1692 0
+1693 0
+1694 0
+1695 0
+1696 0
+-1697 0
+1698 0
+1699 0
+-1700 0
+1701 0
+1702 0
+1703 0
+1704 0
+1705 0
+1706 0
+1707 0
+-1708 0
+-1709 0
+1710 0
+-1711 0
+1712 0
+-1713 0
+1714 0
+1715 0
+1716 0
+1717 0
+-1718 0
+-1719 0
+-1720 0
+1721 0
+-1722 0
+-1723 0
+1724 0
+-1725 0
+1726 0
+-1727 0
+1728 0
+1729 0
+1730 0
+-1731 0
+1732 0
+1733 0
+-1734 0
+-1735 0
+1736 0
+-1737 0
+1738 0
+-1739 0
+-1740 0
+1741 0
+1742 0
+1743 0
+-1744 0
+1745 0
+-1746 0
+1747 0
+1748 0
+-1749 0
+1750 0
+-1751 0
+-1752 0
+-1753 0
+1754 0
+1755 0
+1756 0
+1757 0
+1758 0
+-1759 0
+-1760 0
+1761 0
+-1762 0
+-1763 0
+1764 0
+1765 0
+-1766 0
+1767 0
+1768 0
+-1769 0
+-1770 0
+1771 0
+-1772 0
+1773 0
+-1774 0
+-1775 0
+-1776 0
+-1777 0
+1778 0
+1779 0
+1780 0
+1781 0
+1782 0
+-1783 0
+-1784 0
+-1785 0
+-1786 0
+1787 0
+1788 0
+1789 0
+-1790 0
+1791 0
+-1792 0
+-1793 0
+-1794 0
+1795 0
+-1796 0
+-1797 0
+-1798 0
+1799 0
+-1800 0
+1801 0
+1802 0
+1803 0
+-1804 0
+-1805 0
+-1806 0
+1807 0
+1808 0
+1809 0
+-1810 0
+1811 0
+1812 0
+-1813 0
+-1814 0
+1815 0
+1816 0
+-1817 0
+1818 0
+1819 0
+1820 0
+-1821 0
+1822 0
+-1823 0
+1824 0
+1825 0
+-1826 0
+1827 0
+-1828 0
+-1829 0
+1830 0
+-1831 0
+-1832 0
+-1833 0
+-1834 0
+-1835 0
+1836 0
+1837 0
+-1838 0
+-1839 0
+1840 0
+1841 0
+1842 0
+1843 0
+-1844 0
+1845 0
+1846 0
+-1847 0
+-1848 0
+-1849 0
+1850 0
+-1851 0
+-1852 0
+1853 0
+1854 0
+-1855 0
+-1856 0
