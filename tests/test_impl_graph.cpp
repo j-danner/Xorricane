@@ -4,6 +4,8 @@
 
 #include <catch2/catch_all.hpp>
 
+const auto xnf_path = std::string(BENCH_FILES);
+
 TEST_CASE( "construct xornado::options" , "[impl_graph]" ) {
     xornado::options opt = xornado::options(10,12);
     CHECK( opt.dh == xornado::dec_heu::mp );
@@ -15,7 +17,7 @@ TEST_CASE( "construct xornado::stats" , "[impl_graph]" ) {
 }
 
 TEST_CASE( "construct impl_graph" , "[impl_graph]" ) {
-    auto clss = parse_file("../../benchmarks/instances/2xnfs/test5.xnf");
+    auto clss = parse_file(xnf_path + "/2xnfs/test5.xnf");
     CHECK( clss.cls.size()>0 );
     xornado::options opt = xornado::options(clss.num_vars, clss.num_cls);
     auto slvr = xornado::impl_graph(clss.cls, opt);

@@ -3,8 +3,9 @@
 #include "../src/io.hpp"
 #include "../src/misc.cpp"
 
-
 #include <catch2/catch_all.hpp>
+
+const auto xnf_path = std::string(BENCH_FILES);
 
 TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
   #ifndef NDEBUG
@@ -37,7 +38,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     options opt(dh, po, ca, cm, rh, ip, pp, equiv, lgj, la_sch, verb, -1, 1, P);
 
     SECTION( "test1.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test1.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test1.xnf");
         auto slvr = solver(clss, opt);
     
         stats s = slvr.solve();
@@ -47,7 +48,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test2.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test2.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test2.xnf");
         auto slvr = solver(clss, opt);
         CHECK( slvr.to_str() == "x1 x3+1; x1+1 x2+x3; x2 x3+1; x2+1 x1+x3;" );
         //CHECK( slvr.to_str() == "x1 x3+1; x1+1 x2+x3; x1+x3 x2+1; x2 x3+1;" );
@@ -59,7 +60,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test3.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test3.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test3.xnf");
         auto slvr = solver(clss, opt);
         //CHECK( ((ip!=initial_prop_opt::no) || (slvr.to_str() == "x1+x2+1; x1+x5; x2+x3+1; x3+x4+1; x4+x5;")) );
     
@@ -68,7 +69,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test18.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test18.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test18.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -77,7 +78,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test5.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test5.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test5.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -87,7 +88,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test6.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test6.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test6.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -97,7 +98,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test6_.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test6_.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test6_.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -107,7 +108,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test7.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test7.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test7.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -117,7 +118,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test8.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test8.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test8.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -127,7 +128,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test9.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test9.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test9.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -137,7 +138,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test10.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test10.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test10.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -147,7 +148,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test11.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test11.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test11.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -157,7 +158,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test12.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test12.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test12.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -166,7 +167,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test13.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test13.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test13.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -175,7 +176,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test14.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test14.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test14.xnf");
         auto slvr = solver(clss, opt);
         //CHECK( slvr.to_str() == "x2 x1+x2; x2+1 x1+x2+1;0" );
         //CHECK( slvr.to_str() == "x2 x1+x2; x2+1 x1+x2+1;" );
@@ -187,7 +188,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test15.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test15.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test15.xnf");
         auto slvr = solver(clss, opt);
         //CHECK( slvr.to_str() == "x1+x2 x1+1; x2+1 x1+x2+1;x2+1" );
         //CHECK( slvr.to_str() == "x1+x2 x1+1; x2+1 x1+x2+1;" );
@@ -199,7 +200,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test16.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test16.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test16.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -208,7 +209,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test17.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test17.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test17.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -217,7 +218,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test4.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test4.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test4.xnf");
         auto slvr = solver(clss, opt);
         CHECK( slvr.to_str() == "x1 x2+1; x2 x3+1; x3 x4+1; x3+x5 x6; x4 x5+x6+1; x5+x6 x1+1; x6+1 x7+1; x7 x3+x5+1;" );
         //CHECK( slvr.to_str() == "x1 x2+1; x1+1 x5+x6; x2 x3+1; x3 x4+1; x3+x5 x6; x3+x5+1 x7; x4 x5+x6+1; x6+1 x7+1;" );
@@ -227,7 +228,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test19.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test19.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test19.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -236,7 +237,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test20.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test20.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test20.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -245,7 +246,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test21.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test21.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test21.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -254,7 +255,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test22_.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test22_.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test22_.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -263,7 +264,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test22.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test22.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test22.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -272,7 +273,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test23.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test23.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test23.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -281,7 +282,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test24.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test24.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test24.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -290,7 +291,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test25.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test25.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test25.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -299,7 +300,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test26.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test26.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test26.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -308,7 +309,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test27.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test27.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test27.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -317,7 +318,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test28.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test28.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test28.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -326,7 +327,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test29.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test29.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test29.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -335,7 +336,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test30.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test30.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test30.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -344,7 +345,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test31.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test31.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test31.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -353,7 +354,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "rand-3-6.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/rand/rand-3-6.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -361,8 +362,8 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
         CHECK( check_sols(clss.cls, s.sols) );
     }
     
-    SECTION( "../../benchmarks/instances/2xnfs/cdcl/tmpzw1cx_np.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/tmpzw1cx_np.xnf");
+    SECTION( xnf_path + "/2xnfs/cdcl/tmpzw1cx_np.xnf" ) {
+        auto clss = parse_file(xnf_path + "/2xnfs/cdcl/tmpzw1cx_np.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -371,7 +372,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test32.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test32.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test32.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -380,7 +381,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test36.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test36.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test36.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -389,7 +390,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test37.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test37.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test37.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -398,7 +399,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test38.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test38.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test38.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -407,7 +408,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test39.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test39.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test39.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -416,7 +417,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test43.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test43.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test43.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -424,7 +425,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test44.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test44.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test44.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -433,7 +434,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test45.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test45.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test45.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -442,7 +443,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test47.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test47.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test47.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -451,7 +452,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test48.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test48.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test48.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -460,7 +461,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test49.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test49.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test49.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -469,7 +470,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test50.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test50.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test50.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -478,7 +479,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test51.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test51.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test51.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -487,7 +488,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test52.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test52.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test52.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -496,7 +497,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test53.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test53.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test53.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -505,7 +506,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test54.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test54.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test54.xnf");
         auto slvr = solver(clss, opt);
         //slvr.get_opts()->verb = 120;
 
@@ -515,7 +516,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test35.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test35.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test35.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -524,7 +525,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test69.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test69.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test69.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -532,7 +533,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test70.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test70.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test70.xnf");
         auto slvr = solver(clss, opt);
 
         stats s = slvr.solve();
@@ -541,7 +542,7 @@ TEST_CASE( "solving 2xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test72.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test72.xnf"); //only one empty clause
+        auto clss = parse_file(xnf_path + "/2xnfs/test72.xnf"); //only one empty clause
         CHECK(clss.num_cls==1);
         auto slvr = solver(clss, opt);
 
@@ -561,9 +562,9 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         P.insert(74);
         CHECK( P.assert_data_struct() );
         //auto P = parse_gp("gp");
-        auto clss_gp = parse_file("../../benchmarks/instances/2xnfs/flat/flat30-100.xnf");
+        auto clss_gp = parse_file(xnf_path + "/2xnfs/flat30-100.xnf");
         auto slvr_gp = solver(clss_gp, P);
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/flat/flat30-100.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/flat30-100.xnf");
         auto slvr = solver(clss);
 
         stats s_gp = slvr_gp.solve();
@@ -583,9 +584,9 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         P.insert(1, bool3::True);
         CHECK( P.assert_data_struct() );
         //auto P = parse_gp("gp");
-        auto clss_gp = parse_file("../../benchmarks/instances/2xnfs/test10.xnf");
+        auto clss_gp = parse_file(xnf_path + "/2xnfs/test10.xnf");
         auto slvr_gp = solver(clss_gp, P);
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test10.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test10.xnf");
         auto slvr = solver(clss);
 
         stats s_gp = slvr_gp.solve();
@@ -608,7 +609,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         P.insert(4, bool3::True);
         CHECK( P.assert_data_struct() );
         //auto P = parse_gp("gp");
-        auto clss_gp = parse_file("../../benchmarks/generate_instances/enocoro_fa/eno_s4_mixed_quad.xnf");
+        auto clss_gp = parse_file(xnf_path + "/2xnfs/enocoro_s4_mixed_quad.xnf");
         auto slvr_gp = solver(clss_gp, P);
 
         stats s_gp = slvr_gp.solve();
@@ -628,7 +629,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
         P.insert(8, bool3::True);
         CHECK( P.assert_data_struct() );
         //auto P = parse_gp("gp");
-        auto clss_gp = parse_file("../../benchmarks/generate_instances/enocoro_fa/eno_s4_mixed_quad.xnf");
+        auto clss_gp = parse_file(xnf_path + "/2xnfs/enocoro_s4_mixed_quad.xnf");
         auto slvr_gp = solver(clss_gp, P);
 
         stats s_gp = slvr_gp.solve();
@@ -643,7 +644,7 @@ TEST_CASE( "solving 2xnf test instances with gp" , "[solver][gp]" ) {
 
 TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     SECTION( "test1.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test1.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test1.xnf");
         auto slvr = solver(clss);
     
         stats s = slvr.solve();
@@ -652,7 +653,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test2.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test2.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test2.xnf");
         auto slvr = solver(clss);
     
         stats s = slvr.solve();
@@ -661,7 +662,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test3.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test3.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test3.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = ca_alg::dpll;
@@ -672,7 +673,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test3.xnf 2" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test3.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test3.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -682,7 +683,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test4.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test4.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test4.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -692,7 +693,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test5.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test5.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test5.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -702,7 +703,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test6.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test6.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test6.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -712,7 +713,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test7.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test7.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test7.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -722,7 +723,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
 
     SECTION( "test8.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test8.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test8.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -732,7 +733,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test9.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test9.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test9.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -742,7 +743,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test10.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test10.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test10.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -752,7 +753,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test11.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test11.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test11.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -762,7 +763,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test12.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test12.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test12.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -772,7 +773,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test13.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test13.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test13.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -781,7 +782,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     SECTION( "test14.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test14.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test14.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
 
@@ -790,7 +791,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
     }
     
     //SECTION( "test_hard.xnf" ) {
-    //    auto clss = parse_file("../../benchmarks/instances/xnfs/test_hard.xnf");
+    //    auto clss = parse_file(xnf_path + "/xnfs/test_hard.xnf");
     //    auto slvr = solver(clss);
     //    slvr.get_opts()->verb = 90;
 
@@ -802,7 +803,7 @@ TEST_CASE( "solving xnf test instances" , "[solver]" ) {
 
 TEST_CASE( "solving 2xnf test instances with preprocessing" , "[solver][preprocessing]" ) {
     SECTION( "test_ascon.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test_ascon.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test_ascon.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->pp = xornado_preproc::scc_fls;
         slvr.get_opts()->verb = 80;
@@ -817,7 +818,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     const bool cm = GENERATE(false, true);
 
     SECTION( "test0.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test0.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/cdcl/test0.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->verb = 80;
         slvr.get_opts()->cm = cm;
@@ -827,7 +828,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     }
 
     SECTION( "test1.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test1.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/cdcl/test1.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->verb = 0;
         slvr.get_opts()->cm = cm;
@@ -838,7 +839,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     }
 
     SECTION( "test2.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test2.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/cdcl/test2.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->verb = 0;
         slvr.get_opts()->cm = cm;
@@ -849,7 +850,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     }
     
     SECTION( "test3.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test3.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/cdcl/test3.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->verb = 0;
         slvr.get_opts()->cm = cm;
@@ -860,7 +861,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     }
     
     SECTION( "test4.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/cdcl/test4.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/cdcl/test4.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->verb = 0;
         slvr.get_opts()->cm = cm;
@@ -871,7 +872,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     }
 
     SECTION( "test61.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test61.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test61.xnf");
         options opt;
         opt.verb = 80;
         opt.ca = ca_alg::fuip;
@@ -888,7 +889,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     }
     
     SECTION( "test55.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test55.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test55.xnf");
         options opt;
         opt.verb = 10;
         opt.ca = ca_alg::fuip;
@@ -906,7 +907,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     }
     
     SECTION( "test55.xnf 2" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test55.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test55.xnf");
         options opt;
         opt.verb = 80;
         opt.ca = ca_alg::no;
@@ -924,7 +925,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     }
     
     SECTION( "test57.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test57.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test57.xnf");
         options opt;
         opt.verb = 80;
         opt.ca = ca_alg::fuip;
@@ -941,7 +942,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     }
     
     SECTION( "test58.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test58.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test58.xnf");
         options opt;
         opt.verb = 80;
         opt.ca = ca_alg::fuip;
@@ -958,7 +959,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     }
     
     SECTION( "test59.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test59.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test59.xnf");
         options opt;
         opt.verb = 80;
         opt.ca = ca_alg::fuip;
@@ -975,7 +976,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
     }
     
     SECTION( "test56.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test56.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test56.xnf");
         options opt;
         opt.verb = 80;
         opt.ca = ca_alg::fuip;
@@ -995,7 +996,7 @@ TEST_CASE( "solving 2xnf test instances with cdcl" , "[solver][cdcl]" ) {
 TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     
     SECTION( "test36.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test36.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test36.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
@@ -1007,7 +1008,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test37.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test37.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test37.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
@@ -1019,7 +1020,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test38.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test38.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test38.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
@@ -1031,7 +1032,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test10.xnf" ) {
-        auto fname = "../../benchmarks/instances/2xnfs/test10.xnf";
+        auto fname = xnf_path + "/2xnfs/test10.xnf";
         auto p_xnf = parse_file(fname);
         auto slvr = solver(p_xnf);
 
@@ -1089,7 +1090,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test46.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test46.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test46.xnf");
         auto slvr = solver(clss);
         slvr.get_opts()->sol_count = 2;
 
@@ -1099,7 +1100,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
 
     SECTION( "test40.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test40.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test40.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
@@ -1111,7 +1112,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test41.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test41.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test41.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
@@ -1124,7 +1125,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test42.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test42.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test42.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = ca_alg::no; //GENERATE(ca_alg::no, ca_alg::fuip_opt, ca_alg::fuip, ca_alg::dpll);
@@ -1138,7 +1139,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test51.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test51.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test51.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = ca_alg::fuip;
@@ -1152,7 +1153,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test52.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test52.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test52.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 90;
         slvr.get_opts()->ca = ca_alg::fuip;
@@ -1166,7 +1167,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test60.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test60.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test60.xnf");
         options opt(dec_heu::lex, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
         opt.sol_count = -1;
         auto slvr = solver(clss, opt);
@@ -1178,7 +1179,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test62.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test62.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test62.xnf");
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
         opt.sol_count = -1;
         auto slvr = solver(clss, opt);
@@ -1189,7 +1190,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test63.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test63.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test63.xnf");
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
         opt.sol_count = -1;
         auto slvr = solver(clss, opt);
@@ -1200,7 +1201,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
 
     SECTION( "test64.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test64.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test64.xnf");
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
         opt.sol_count = -1;
         auto slvr = solver(clss, opt);
@@ -1211,7 +1212,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
 
     SECTION( "test64.xnf 2" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test64.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test64.xnf");
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 1, 0);
         opt.sol_count = -1;
         auto slvr = solver(clss, opt);
@@ -1222,7 +1223,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
 
     SECTION( "test65.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test65.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test65.xnf");
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 1, 0);
         opt.sol_count = -1;
         auto slvr = solver(clss, opt);
@@ -1233,7 +1234,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
 
     SECTION( "test66.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test66.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test66.xnf");
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::no, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
         opt.sol_count = -1;
         auto slvr = solver(clss, opt);
@@ -1244,7 +1245,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
 
     SECTION( "test67.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test67.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test67.xnf");
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, true, 0, 0);
         opt.sol_count = -1;
         auto slvr = solver(clss, opt);
@@ -1255,7 +1256,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
 
     SECTION( "test71.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test71.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test71.xnf");
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, true, 0, 0);
         opt.sol_count = -1;
         auto slvr = solver(clss, opt);
@@ -1266,7 +1267,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
 
     SECTION( "test68.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test68.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test68.xnf");
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::nbu, true, 0, 0);
         opt.sol_count = -1;
         auto slvr = solver(clss, opt);
@@ -1277,7 +1278,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
     }
     
     SECTION( "test73.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test73.xnf"); //one clause that is trivially satisfied
+        auto clss = parse_file(xnf_path + "/2xnfs/test73.xnf"); //one clause that is trivially satisfied
         CHECK(clss.num_cls==0);
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::nbu, true, 0, 0);
         opt.sol_count = -1;
@@ -1292,7 +1293,7 @@ TEST_CASE( "solving 2xnf test instances with -ms", "[solver][maxsol][small]") {
 
 TEST_CASE( "solving harder instances", "[solver][maxsol][small][long]") {
     SECTION( "test_simon.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test_simon.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 10;
         slvr.get_opts()->ca = ca_alg::fuip;
@@ -1308,7 +1309,7 @@ TEST_CASE( "solving harder instances", "[solver][maxsol][small][long]") {
     }
     
     SECTION( "test_simon.xnf -la 28" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test_simon.xnf");
         auto slvr = solver(clss);
         //slvr.get_opts()->verb = 85;
         slvr.get_opts()->ca = ca_alg::fuip;
@@ -1324,7 +1325,7 @@ TEST_CASE( "solving harder instances", "[solver][maxsol][small][long]") {
     }
     
     SECTION( "test_bivium.xnf" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test_bivium.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test_bivium.xnf");
         options opt(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::no, initial_prop_opt::nbu, false, 3, 0);
         auto slvr = solver(clss, opt);
 
@@ -1334,7 +1335,7 @@ TEST_CASE( "solving harder instances", "[solver][maxsol][small][long]") {
     }
     
     SECTION( "test_simon_2.xnf -- 30s timeout" ) {
-        auto clss = parse_file("../../benchmarks/instances/2xnfs/test_simon_2.xnf");
+        auto clss = parse_file(xnf_path + "/2xnfs/test_simon_2.xnf");
         options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, xornado_preproc::no, true, false, -1, 0, 30, 1, guessing_path());
         //timeout 30secs; bug appeared after about 20secs
         stats s = solve(clss.cls, clss.num_vars, opts);
@@ -1343,7 +1344,7 @@ TEST_CASE( "solving harder instances", "[solver][maxsol][small][long]") {
     }
 
     SECTION( "test_prince.xnf -- 10s timeout" ) {
-        auto clss = parse_file("../../benchmarks/instances/xnfs/test_prince.xnf");
+        auto clss = parse_file(xnf_path + "/xnfs/test_prince.xnf");
         options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, 0, restart_opt::luby, initial_prop_opt::no, xornado_preproc::scc_fls, true, false, -1, 0, 10, 1, guessing_path());
         auto slvr = solver(clss, opts);
 
@@ -1356,7 +1357,7 @@ TEST_CASE( "solving harder instances", "[solver][maxsol][small][long]") {
 TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
     
     SECTION("linear system") {
-        auto fname = "../../benchmarks/instances/2xnfs/test34.xnf";
+        auto fname = xnf_path + "/2xnfs/test34.xnf";
 
         auto p_xnf = parse_file(fname);
         auto slvr = solver(p_xnf);
@@ -1421,7 +1422,7 @@ TEST_CASE("solving xnf instance with -ms","[solver][maxsol]") {
 }
 
 TEST_CASE( "read large instance", "[solver][parser]") {
-    auto fname = "../../benchmarks/instances/2xnfs/test_read.xnf";
+    auto fname = xnf_path + "/2xnfs/test_read.xnf";
     auto p_xnf = parse_file(fname);
     options opts(dec_heu::vsids, phase_opt::save, ca_alg::fuip, false, restart_opt::luby, initial_prop_opt::no, xornado_preproc::no, true, true, -1, 0, 10, 1, guessing_path());
     stats s = solve(p_xnf.cls, p_xnf.num_vars, opts);
@@ -1432,7 +1433,7 @@ TEST_CASE( "read large instance", "[solver][parser]") {
 }
 
 TEST_CASE( "solving simple instances", "[solver]") {
-    auto fname = GENERATE("../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpgvgj2vfs.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmp3bjwevbm.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpxwh016x1.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpe4wzt2ga.xnf", "../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type4-n10-seed0.xnf", "../../benchmarks/instances/2xnfs/cdcl/tmpzw1cx_np.xnf" );
+    auto fname = GENERATE(xnf_path + "/2xnfs/rand/rand-10-20.xnf", xnf_path + "/2xnfs/cdcl/tmpgvgj2vfs.xnf", xnf_path + "/2xnfs/cdcl/tmp3bjwevbm.xnf", xnf_path + "/2xnfs/cdcl/tmpxwh016x1.xnf", xnf_path + "/2xnfs/cdcl/tmpe4wzt2ga.xnf", xnf_path + "/2xnfs/mq/toyexamples/ToyExample-type4-n10-seed0.xnf", xnf_path + "/2xnfs/cdcl/tmpzw1cx_np.xnf" );
     auto p_xnf = parse_file(fname);
     auto slvr = solver(p_xnf);
 
@@ -1444,11 +1445,11 @@ TEST_CASE( "solving simple instances", "[solver]") {
 }
 
 TEST_CASE( "solving with different options" , "[parser][solve]" ) {
-    auto fname = GENERATE("../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf", "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf", "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf", "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf");
-    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf";
-    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf";
-    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf";
-    //auto fname = "../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf";
+    auto fname = GENERATE(xnf_path + "/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf", xnf_path + "/2xnfs/rand/rand-3-6.xnf", xnf_path + "/2xnfs/rand/rand-10-20.xnf", xnf_path + "/2xnfs/rand/rand-20-40.xnf");
+    //auto fname = xnf_path + "/2xnfs/rand/rand-20-40.xnf";
+    //auto fname = xnf_path + "/2xnfs/rand/rand-10-20.xnf";
+    //auto fname = xnf_path + "/2xnfs/rand/rand-3-6.xnf";
+    //auto fname = xnf_path + "/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf";
     auto clss = parse_file( fname );
     auto xnf = clss.cls;
     var_t num_vars = clss.num_vars;
@@ -1465,11 +1466,11 @@ TEST_CASE( "solving with different options" , "[parser][solve]" ) {
 
 
 TEST_CASE( "solving within timeout" , "[parser][solve]" ) {
-    auto fname = GENERATE("../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf", "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf", "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf", "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf");
-    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-20-40.xnf";
-    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-10-20.xnf";
-    //auto fname = "../../benchmarks/instances/2xnfs/rand/rand-3-6.xnf";
-    //auto fname = "../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf";
+    auto fname = GENERATE(xnf_path + "/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf", xnf_path + "/2xnfs/rand/rand-3-6.xnf", xnf_path + "/2xnfs/rand/rand-10-20.xnf", xnf_path + "/2xnfs/rand/rand-20-40.xnf");
+    //auto fname = xnf_path + "/2xnfs/rand/rand-20-40.xnf";
+    //auto fname = xnf_path + "/2xnfs/rand/rand-10-20.xnf";
+    //auto fname = xnf_path + "/2xnfs/rand/rand-3-6.xnf";
+    //auto fname = xnf_path + "/2xnfs/mq/toyexamples/ToyExample-type1-n10-seed0.xnf";
     auto clss = parse_file( fname );
     auto xnf = clss.cls;
     auto num_vars = clss.num_vars;
@@ -1497,9 +1498,9 @@ TEST_CASE( "solving within timeout" , "[parser][solve]" ) {
 
 TEST_CASE("solving with different options -- timeout", "[parser][solve]")  {
   #ifdef NDEBUG
-    auto clss = parse_file("../../benchmarks/instances/2xnfs/mq/challenge-1-55-0.xnf");
+    auto clss = parse_file(xnf_path + "/2xnfs/mq/challenge-1-55-0.xnf");
   #else
-    auto clss = parse_file("../../benchmarks/instances/2xnfs/mq/toyexamples/ToyExample-type1-n20-seed0.xnf");
+    auto clss = parse_file(xnf_path + "/2xnfs/mq/toyexamples/ToyExample-type1-n20-seed0.xnf");
   #endif
     auto xnf = clss.cls;
     auto num_vars = clss.num_vars;

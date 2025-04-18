@@ -37,7 +37,7 @@ struct parsed_xnf {
  * @param verbose true for verbosity output
  * @return parsed_xnf parsed num-cls, num-vars and parsed linerals
  */
-parsed_xnf parse_file(const std::string& fname, bool verbose);
+parsed_xnf parse_file(const std::string& fname, bool verbose = false);
 
 /**
  * @brief print parsed cls to string
@@ -54,7 +54,7 @@ std::string to_str(const vec< vec<lineral> >& clss);
  * @param verbose true for verbosity output
  * @return guessing_path of variables
  */
-guessing_path parse_gp(const std::string &fname, bool verbose);
+guessing_path parse_gp(const std::string &fname, bool verbose = false);
 
 void write_str(const std::string& fname, const std::string& out);
 

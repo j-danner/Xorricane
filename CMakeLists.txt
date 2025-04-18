@@ -111,7 +111,7 @@ else()
     message("benchmark lib not found!")
 endif()
 
-get_filename_component(BENCH_FILES "../benchmarks" ABSOLUTE CACHE)
+get_filename_component(BENCH_FILES "tests/instances" ABSOLUTE CACHE)
 add_definitions(-DBENCH_FILES="${BENCH_FILES}")
 
 
