@@ -1615,7 +1615,7 @@ class solver
     std::string to_str() const noexcept;
     std::string to_xnf_str() const noexcept;
 
-    solver& operator=(const solver& ig) = default;
+    solver& operator=(solver& ig) = default;
 
     bool assert_data_structs() const noexcept;
     void print_trail(std::string lead = "") const noexcept;
