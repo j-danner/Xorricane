@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
+cmake_policy(SET CMP0167 NEW) # ensure FindBoost module is present
 
 # set the project name
 project(Xorricane VERSION 0.4.2.11)
