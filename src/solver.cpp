@@ -193,6 +193,7 @@ void solver::init_clss(const vec< cls >& clss) noexcept {
     for(auto& cls : _clss) {
         if(!cls.is_zero()) init_and_add_cls_watch( std::move(cls), false );
     }
+    original_cls_count = xnf_clss.size();
 
     assert(active_cls+lazy_gauss_jordan->size() >= xnf_clss.size()-std::min(xnf_clss.size(),lineral_queue.size()));
 
@@ -579,6 +580,7 @@ void solver::clause_cleaning(stats& s) {
             if(xnf_clss[i].is_zero() || xnf_clss[i].is_sat0() ) {
                 xnf_clss[i].mark_for_removal(); //remove all clauses which are zero or satisfied in dl0!
                 --tier_count[tier[i]];
+                if(xnf_clss[i].is_irredundant()) original_cls_count--;
             } else if(tier[i]==1) {
                 if(utility[i] < util_cutoff_move && !xnf_clss[i].is_unit(dl_count) && xnf_clss[i].get_unit_at_lvl()>0) {
                     tier[i] = 2;
@@ -1133,6 +1135,8 @@ void solver::dpll_solve(stats &s) {
     lin_sys new_lin_sys;
     std::stack<lineral> dec_stack;
 
+    auto last_update = std::chrono::high_resolution_clock::now();
+
     // before anything else: collect implications that were found during initialization in lazy_gauss_jordan.
     if(need_LGJ_update()) find_implications_by_LGJ(s);
     // GCP -- before making decisions!
@@ -1170,6 +1174,12 @@ void solver::dpll_solve(stats &s) {
 
                 dec_stack.pop();
                 //decay_score();
+
+                const auto new_update = std::chrono::high_resolution_clock::now();
+                if (std::chrono::duration_cast<std::chrono::seconds>(new_update - last_update).count() >= 1) {
+                    solving_progress(s);
+                    last_update = new_update;
+                }
             } else {
                 ++dl;
                 trails.emplace_back( list<trail_elem>() );
@@ -1269,6 +1279,9 @@ void solver::solve(stats &s) {
         analyze = &solver::analyze_exp;
         break;
     }
+
+
+    auto last_update = std::chrono::high_resolution_clock::now();
     
     // before anything else: collect implications that were found during initialization in lazy_gauss_jordan.
     if(need_LGJ_update()) find_implications_by_LGJ(s);
@@ -1295,14 +1308,12 @@ void solver::solve(stats &s) {
                     return;
                 }
             
-                ///// BACKTRACKING /////
                 ///// CLAUSE LEARNING /////
                 const auto begin  = std::chrono::high_resolution_clock::now();
                 auto [lvl, learnt_cls] = (this->*analyze)(s);
                 const auto end  = std::chrono::high_resolution_clock::now();
                 s.total_ca_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
                 
-
                 //@heuristic; when to add this clause?!
                 //if( lvl==dl-1 && std::get<0>(learnt_cls.get_unit().get_watch_tuple(alpha_dl, alpha_trail_pos)) != trails.back().front().ind ) {
                 //    VERB(50, "c ")
@@ -1311,6 +1322,8 @@ void solver::solve(stats &s) {
                 //    add_learnt_cls( std::move(cls) );
                 //}
                 // backtrack
+
+                ///// BACKTRACKING /////
                 const auto unit_lvl = learnt_cls.get_unit_at_lvl();
                 assert(lvl >= unit_lvl);
                 //on unit_lvl a new unit is learnt: if not all decisions are necessary to get the unit assigning, backtrack to unit_lvl.
@@ -1333,6 +1346,12 @@ void solver::solve(stats &s) {
                 //restart?
                 if( need_restart(s) ) {
                     restart(s);
+                }
+
+                const auto new_update = std::chrono::high_resolution_clock::now();
+                if (std::chrono::duration_cast<std::chrono::seconds>(new_update - last_update).count() >= 1) {
+                    solving_progress(s);
+                    last_update = new_update;
                 }
             } else {
                 ++dl;

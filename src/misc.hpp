@@ -87,6 +87,8 @@
 #define CYAN(str) rang::fg::cyan<< str << rang::style::reset
 #define BLACK(str) rang::fg::black<< str << rang::style::reset
 
+#define PRINT_PERCENTAGE(val) std::right << std::setw(2) << static_cast<int>(val) << BLACK( static_cast<int>(std::floor(((val) - static_cast<int>(val)) * 10)) )
+
 #define PRINT_SECTION_HEADER(str) std::cout << "c " << BLUE("------<") << " " << BLUE(str) << " " << BLUE(">------") << std::endl << "c " << std::endl;
 #define EXIT(verbose,code) {if(verbose){std::cout << "c " << std::endl << "c " << "Exiting with code " << std::to_string(code) << std::endl;} return code;}
 

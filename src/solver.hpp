@@ -197,6 +197,7 @@ class solver
      * @brief xor-clause watchers
      */
     vec< cls_watch > xnf_clss;
+    size_t original_cls_count = 0;
 
     /**
      * @brief utility[i] gives number of unit propagations of clss[i] (with moving average) @todo fix this line!!
@@ -1219,7 +1220,72 @@ class solver
      * @brief restarts the solver; i.e. rm all assignments and backtracks to dl 0
      */
     void restart(stats& s);
-    
+
+
+    //logging functions
+    short header_every_lines = 15;
+    short lines_until_header = 0;
+    void info(const std::string& msg) {
+      if(opt.verb>0) {
+        std::cout << "c " << msg << std::endl;
+      }
+    };
+    void log(const std::string& msg) {
+      lines_until_header = 0; //ensure header is printed with next solving_progress.
+      std::cout << "c " << msg << std::endl;
+    };
+  
+    void header() {
+      std::cout << "c " << std::endl;
+      std::cout << "c   " << YELLOW("   decisions     restarts  \%assigned \%tier0  \%tier2 |     ") << std::endl;
+      std::cout << "c   " << YELLOW("dl        conflicts   blocked  learnts   \%tier1     | time") << std::endl;
+    };
+
+    /**
+     * @brief prints solving progress stats, i.e., number of conflicts, dl depth, number of learnt clauses, avg LBD of learnt clauses, tier0/1/2, number of assigned vars, number of learnt clauses, trail length, number of restarts
+     */
+    void solving_progress(stats& s) {
+      if(opt.verb<1) return;
+
+      //print header every header_every_lines
+      if(lines_until_header==0) {
+        header();
+        lines_until_header = header_every_lines;
+      } else {
+        --lines_until_header;
+      }
+
+      std::cout << "c   ";
+      //// Section I - 'DPLL' stats
+      //current dl
+      std::cout << std::left << std::setw(2) << std::to_string(dl) << " ";
+      //number of decisions
+      std::cout << std::left << std::setw(6) << std::to_string(s.no_dec) << " ";
+      //number of conflicts
+      std::cout << std::left << std::setw(6) << std::to_string(s.no_confl) << " ";
+      //number restarts
+      std::cout << std::left << std::setw(4) << std::to_string(s.no_restarts) << " ";
+      //number blocked restarts
+      std::cout << std::left << std::setw(4) << std::to_string(s.no_blocked_restarts) << " ";
+      //percentage of assigned vars
+      std::cout << std::left << PRINT_PERCENTAGE( 100.0*assigned_var_count/get_num_vars() ) << " ";
+      //number of learnt clauses
+      std::cout << std::left << std::setw(5) << std::to_string(xnf_clss.size() - original_cls_count) << " ";
+      //distribution of learnt clauses on tiers
+      const auto cls_count = xnf_clss.size() - original_cls_count;
+      std::cout << std::left << PRINT_PERCENTAGE( 100.0*(tier_count[0]-original_cls_count)/cls_count ) << " ";
+      std::cout << std::left << PRINT_PERCENTAGE( 100.0*tier_count[1]/cls_count ) << " ";
+      std::cout << std::left << PRINT_PERCENTAGE( 100.0*tier_count[2]/cls_count ) << " ";
+
+      //time since s.begin
+      std::cout << "   | ";
+      auto now = std::chrono::high_resolution_clock::now();
+      float time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(now - s.begin).count())/1000.0f;
+      std::cout << BOLD( time );
+
+      std::cout << std::endl;
+    }
+
   public:
     /**
      * @brief Construct main solver object
