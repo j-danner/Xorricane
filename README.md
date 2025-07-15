@@ -53,6 +53,7 @@ To solve systems in algebraic normal form (ANF), use our [`anf_to_2xnf`](https:/
 ## Build
 
 On Ubuntu/Debian ensure that the packages `build-essential`, `cmake`, and `libgmp-dev` (optionally `libjemalloc-dev`, `libbenchmark-dev`, `catch2`/`libcatch2-dev`) are installed. On Arch-based systems the packages `base-devel`, `cmake`, `gcc-libs`, `git`, and `gmp` (optionally `jemalloc`, `benchmark`, `catch2`) are required.
+Use `git submodule update --init` to clone all required submodules.
 Then run `cmake .` and `make xorricane`.
 
 Alternatively, use the docker image `jdanner/xorricane` (download via `docker pull jdanner/xorricane:latest`) or build it yourself using the provided [`Dockerfile`](Dockerfile) by `docker build -t jdanner/xorricane:latest .`. Then access Xorricane through [`docker_xorricane`](docker_xorricane).
