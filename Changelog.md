@@ -1,5 +1,22 @@
 # Changelog
 
+## TODO
+
+- stable/focused mode switching?
+- dynamic bump_mult adjustments?
+- dymanic tier_bound re-arrangement kissat-style? [https://github.com/arminbiere/kissat/blob/da2b0641996913cbc18c2e08cc3945367c395143/src/tiers.c#L23](see here)
+- drastically simplify heuristics?
+- use hyperparameter optimization tools?
+- fix LGJ, i.e. ensure it is complete. Reimplement or use Ole's interface?
+
+## v0.4.3 (planned)
+
+revised command line output
+added solving statistics
+simplified heuristics
+
+### current changes
+
 ## v0.4.2.11
 
 reset tier0 limit to LBD<=3
