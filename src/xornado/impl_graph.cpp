@@ -1025,7 +1025,7 @@ list<lineral> intersect(const lin_sys& U, const lin_sys& W) {
             mzd_write_bit(M, r, 0, 1);
             mzd_write_bit(M, r, n_vars+1, 1);
         }
-        for(const auto& i : l.get_idxs_()) {
+        for(var_t i : l) {
             assert(i>0);
             assert(Isupp[i]+n_vars+1 < (var_t) ncols);
             mzd_write_bit(M, r, Isupp[i], 1);
@@ -1037,7 +1037,7 @@ list<lineral> intersect(const lin_sys& U, const lin_sys& W) {
     for(const auto& l : W.get_linerals()) {
         if(l.is_zero()) continue;
         if(l.has_constant()) mzd_write_bit(M, r, 0, 1);
-        for(const auto& i : l.get_idxs_()) {
+        for(var_t i : l) {
             assert(i>0);
             mzd_write_bit(M, r, Isupp[i], 1);
         }
