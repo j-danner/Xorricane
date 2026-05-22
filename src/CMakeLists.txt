@@ -107,6 +107,15 @@ target_link_libraries(cms PUBLIC ${GMP_LIBRARIES})
 target_compile_options(cms PUBLIC "-Wno-all" )
 
 
+add_library(
+    gauss_elim
+    STATIC
+    gauss_elim/gauss_engine.hpp
+    gauss_elim/gauss_engine.cpp
+)
+add_dependencies(gauss_elim cms)
+target_link_libraries(gauss_elim PUBLIC lineral cms)
+
 #setup library for lazy version of lineral
 add_library(
     lineral_lazy
@@ -124,7 +133,7 @@ add_library(
     cryptominisat/src/gaussian.h
 )
 add_dependencies(lineral_lazy cms)
-target_link_libraries(lineral_lazy PUBLIC cms ${EXTRA_LIBS} lineral)
+target_link_libraries(lineral_lazy PUBLIC cms ${EXTRA_LIBS} lineral gauss_elim)
 
 
 

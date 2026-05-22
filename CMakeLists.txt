@@ -99,12 +99,13 @@ if(Catch2_FOUND)
     # These tests can use the Catch2-provided main
     add_executable(testing
         tests/test_cls_watch.cpp
-        tests/test_impl_graph.cpp 
+        tests/test_impl_graph.cpp
         tests/test_lin_sys_lazy.cpp
         tests/test_lin_sys.cpp
         tests/test_lineral_watch.cpp
         tests/test_lineral.cpp
         tests/test_solve.cpp
+        tests/test_gauss_engine.cpp
     )
     target_link_libraries(testing PUBLIC ${EXTRA_LIBS} PRIVATE solver Catch2::Catch2WithMain)
     target_include_directories(testing PUBLIC "${PROJECT_BINARY_DIR}" ${EXTRA_INCLUDES})
