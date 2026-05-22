@@ -5,9 +5,7 @@
 #include <limits>
 #include "../misc.hpp"
 #include "../lineral.hpp"
-#include "../cryptominisat/src/packedmatrix.h"
-#include "../cryptominisat/src/gausswatched.h"
-#include "../cryptominisat/src/solvertypes.h"
+#include "gj_types.hpp"
 
 class GaussElimEngine {
 public:
