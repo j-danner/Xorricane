@@ -9,6 +9,49 @@ const auto xnf_path = std::string(BENCH_FILES);
 
 // TEST CASES DEACTIVATED :: they fail as LGJ is not yet complete!
 
+TEST_CASE( "linsys_lazy_GE construction and propagation", "[lin_sys_lazy][propagation]" ) {
+    SECTION("3-variable chain: x1+x2=0, x2+x3=0") {
+        // Chain: x1+x2=0 and x2+x3=0 implies x1=x2=x3
+        lineral l1( vec<var_t>({1,2}) );
+        lineral l2( vec<var_t>({2,3}) );
+        lin_sys_lazy_GE lsl( vec<lineral>({l1, l2}), 3 );
+
+        // After construction (init_and_propagate), GJE produces x1+x3=0 as implied equivalence
+        auto& q = lsl.get_implied_literal_queue();
+        // May or may not immediately imply assignments — no assertion on size here
+        // as GJE may defer; just verify construction succeeded
+        lsl.clear_implied_literal_queue();
+
+        // Now assign x1=1 (i.e., alpha[1]=True) at decision level 1
+        vec<bool3> alpha(4, bool3::None);
+        alpha[1] = bool3::True;
+        bool ret = lsl.assign(1, alpha, 1);
+
+        // ret=true means new implied assignments were enqueued
+        CHECK( ret );
+        auto& q2 = lsl.get_implied_literal_queue();
+        // At least one implication should have been produced
+        CHECK( q2.size() >= 1 );
+        lsl.clear_implied_literal_queue();
+    }
+
+    SECTION("assigning lineral implies variable at construction") {
+        // x1+x2+x3=0 and x1+x2=0 => x3=0 (x3 is assigned)
+        lineral l1( vec<var_t>({1,2,3}) );
+        lineral l2( vec<var_t>({1,2}) );
+        lin_sys_lazy_GE lsl( vec<lineral>({l1, l2}), 3 );
+
+        auto& q = lsl.get_implied_literal_queue();
+        // GJE: l1+l2 = x3=0, so x3 should be in implied queue
+        CHECK( q.size() >= 1 );
+        bool found_x3 = false;
+        for(const auto& lin : q) {
+            if(lin.is_assigning() && lin.LT() == 3) found_x3 = true;
+        }
+        CHECK( found_x3 );
+        lsl.clear_implied_literal_queue();
+    }
+}
 
 //TEST_CASE( "linsys_lazy_GE basic operations" , "[lin_sys][assigning][propagation]" ) {
 //    SECTION("simple") {

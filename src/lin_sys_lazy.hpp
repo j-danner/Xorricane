@@ -125,7 +125,7 @@ class lin_sys_lazy_GE
         //compute num_vars and add new vars to cms
         if(num_vars==(var_t)-1) {
             num_vars = 0;
-            for(const auto& l : linerals.get_linerals()) if(!l.is_constant()) num_vars = std::max(num_vars, l.get_idxs_()[l.size()-1]);
+            for(const auto& l : linerals.get_linerals()) if(!l.is_constant()) num_vars = std::max(num_vars, l.get_max_var());
         }
         cms->new_vars( num_vars+1 );
 
@@ -139,7 +139,7 @@ class lin_sys_lazy_GE
             if(l.is_zero()) continue;
             if(!l.is_assigning()) {
                 xor_clause.clear(); xor_clause.reserve( l.size() );
-                for(const auto& i : l.get_idxs_()) xor_clause.emplace_back(i);
+                for(var_t i : l) xor_clause.emplace_back(i);
                 cms->add_xor_clause_outside( xor_clause, l.has_constant() );
             } else {
                 //assignments.clear();
@@ -334,7 +334,7 @@ class lin_sys_lazy_GE
                 assert( linerals.reduce(lin).is_zero() );
             #endif
 
-            assert(lin.get_idxs_().back()<=num_vars);
+            assert(lin.get_max_var()<=num_vars);
             implied_literal_queue.emplace_back( std::move(lin) );
 
             //if(trail_el.var()>num_vars) {
@@ -367,7 +367,7 @@ class lin_sys_lazy_GE
             //we have a conflict!
             cms->ok = false;
             lineral lin = confl_to_lineral(confl);
-            assert( lin.get_idxs_().back()<=num_vars );
+            assert( lin.get_max_var()<=num_vars );
             implied_literal_queue.emplace_back( std::move(lin) );
 
             ////remove possible clash variables from lin
