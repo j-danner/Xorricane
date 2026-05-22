@@ -71,9 +71,9 @@ void lin_sys::rref_bit() {
     bit::matrix<> M;
     for(const auto& l : linerals) {
         bit::vector<> row(ncols);
-        for(const auto& i : l.get_idxs_()) {
-            assert(i > 0 && i < ncols);
-            row.set(i - 1);
+        for(var_t v = l.first_var(); v != static_cast<var_t>(-1); v = l.next_var_after(v)) {
+            assert(v > 0 && (std::size_t)v < ncols);
+            row.set(v - 1);
         }
         if(l.has_constant()) row.set(n_vars);
         M.push_row(row);

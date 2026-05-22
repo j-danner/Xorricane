@@ -111,6 +111,93 @@ TEST_CASE( "lin_sys creation/reduction/addition", "[lin_sys]" ) {
 }
 
 
+TEST_CASE("lin_sys lt_update", "[lin_sys]") {
+    // RREF: x1+x2, x2+x3, x3+x4 -> x1+x4, x2+x4, x3+x4
+    lin_sys ls(vec<lineral>({
+        lineral(vec<var_t>({1,2})),
+        lineral(vec<var_t>({2,3})),
+        lineral(vec<var_t>({3,4}))
+    }));
+    CHECK(ls.to_str() == "x1+x4 x2+x4 x3+x4");
+
+    // lt_update with x1+1 (assigning x1=True, which is a pivot): x1+x4 becomes 0+x4+1 = x4+1
+    // After substituting x1=x4 XOR 1 into the system via pivot x1:
+    // x1 row: x1+x4 XOR x1+1 = x4+1; then other rows already have x1 gone.
+    // Result: x4+1 (now pivot x4), x2+x4, x3+x4 -> back-subst: x2+1, x3+1
+    bool changed = ls.lt_update(lineral(vec<var_t>({0,1})));
+    CHECK(changed);
+    // After lt_update(x1+1): pivot row x1+x4 XORs with x1+1 → x4+1 (new pivot on x4).
+    // The remaining rows x2+x4 and x3+x4 are not back-substituted against the new x4 pivot
+    // (lt_update only reduces the modified row against existing pivots, not vice versa).
+    // Sorted to_str output: "x2+x4", "x3+x4", "x4+1" → "x2+x4 x3+x4 x4+1"
+    CHECK(ls.to_str() == "x2+x4 x3+x4 x4+1");
+    // x4 is now a pivot, x1 is no longer a pivot
+    CHECK(ls.get_pivot_poly_idx().contains(4));
+    CHECK(!ls.get_pivot_poly_idx().contains(1));
+
+    // lt_update with a variable not in any pivot: returns false
+    lin_sys ls2(vec<lineral>({lineral(vec<var_t>({1,2}))}));
+    CHECK(!ls2.lt_update(lineral(vec<var_t>({0,5}))));
+}
+
+
+TEST_CASE("lin_sys add_reduced_lit and operator+=", "[lin_sys]") {
+    lin_sys ls(vec<lineral>({lineral(vec<var_t>({1,2}))}));
+    // x1+x2 in system; add x2+x3 (already reduced wrt x1+x2)
+    ls.add_reduced_lit(lineral(vec<var_t>({2,3})));
+    // now: x1+x2, x2+x3 -> RREF adds x1+x3 (after add_reduced_lit triggers back-substitution)
+    CHECK(ls.reduce(lineral(vec<var_t>({1,3}))).is_zero());
+
+    lin_sys s1(vec<lineral>({lineral(vec<var_t>({1,2}))}));
+    lin_sys s2(vec<lineral>({lineral(vec<var_t>({2,3}))}));
+    lin_sys s3 = s1 + s2;
+    CHECK(s3.reduce(lineral(vec<var_t>({1,3}))).is_zero());
+}
+
+
+TEST_CASE("lin_sys rref_bit path (>99 linerals)", "[lin_sys]") {
+    // Chain: xi + x(i+1) for i=1..100 -> all reduce to x1+x101, x2+x101, ...
+    vec<lineral> lins;
+    lins.reserve(100);
+    for(var_t i = 1; i <= 100; ++i)
+        lins.emplace_back(vec<var_t>({i, i+1}));
+    lin_sys ls(lins);
+
+    // Every xi should be equivalent to x101 in the system
+    CHECK(ls.reduce(lineral(vec<var_t>({1, 101}))).is_zero());
+    CHECK(ls.reduce(lineral(vec<var_t>({50, 101}))).is_zero());
+    // Variable outside the system is unchanged
+    CHECK(ls.reduce(lineral(vec<var_t>({102}))).to_str() == "x102");
+    // The system has exactly 100 rows
+    CHECK(ls.get_linerals().size() == 100);
+    // Pivot map must be populated: each xi (i=1..100) has a pivot row
+    CHECK(ls.get_pivot_poly_idx().contains(1));
+    CHECK(ls.get_pivot_poly_idx().contains(50));
+    CHECK(ls.get_pivot_poly_idx().contains(100));
+    // x101 is not a pivot (it is the free variable)
+    CHECK(!ls.get_pivot_poly_idx().contains(101));
+}
+
+
+TEST_CASE("lin_sys eval and solve", "[lin_sys]") {
+    // x1+1, x2+1 (x1=1, x2=1 is the unique solution)
+    lin_sys ls(vec<lineral>({
+        lineral(vec<var_t>({0,1})),
+        lineral(vec<var_t>({0,2}))
+    }));
+    vec<bool> sol = {true, true, false};  // sol[i-1] = value of xi
+    CHECK(ls.eval(sol));
+
+    vec<bool> bad = {false, true, false};
+    CHECK(!ls.eval(bad));
+
+    vec<bool> sol2 = {false, false, false};
+    ls.solve(sol2);
+    CHECK(sol2[0] == true);
+    CHECK(sol2[1] == true);
+}
+
+
 //TEST_CASE( "lin_sys creation addition", "[lin_sys]" ) {
 //    //bug when using hashmaps as pivot_map (!)
 //    lin_sys L;
