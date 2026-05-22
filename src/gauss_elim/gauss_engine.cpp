@@ -237,7 +237,6 @@ bool GaussElimEngine::find_truths(
         case CMSat::gret::prop:
             *j++ = *i;
             prop_lit(ret_lit_prop.var(), ret_lit_prop.sign(), row_n, dl);
-            update_cols_vals_set_var(ret_lit_prop.var(), ret_lit_prop.sign());
             if(was_resp_var) {
                 var_has_resp_row[row_to_var_non_resp[row_n]] = 0;
                 var_has_resp_row[var] = 1;
@@ -316,7 +315,6 @@ void GaussElimEngine::eliminate_col(var_t p, uint32_t new_resp_var, uint32_t new
                         gwatches[p].push_back(CMSat::GaussWatched(row_i, 0));
                         row_to_var_non_resp[row_i] = p;
                         prop_lit(ret_lit_prop.var(), ret_lit_prop.sign(), row_i, dl);
-                        update_cols_vals_set_var(ret_lit_prop.var(), ret_lit_prop.sign());
                         satisfied_xors[row_i] = 1;
                         break;
 
