@@ -109,7 +109,7 @@ void GaussElimEngine::create_temps() {
     auto alloc = [&]() {
         int64_t* x = new int64_t[num_64b + 1]();
         tofree.push_back(x);
-        return new CMSat::PackedRow(num_64b, x + 1);
+        return new CMSat::PackedRow(num_64b, x);
     };
     cols_unset = alloc(); cols_vals = alloc();
     tmp_col    = alloc(); tmp_col2  = alloc();
