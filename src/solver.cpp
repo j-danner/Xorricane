@@ -22,7 +22,7 @@
 #include <deque>
 #include <set>
 #include <queue>
-#include <m4ri/m4ri.h>
+#include "bit/matrix.h"
 
 #include "solver.hpp"
 
@@ -1807,12 +1807,11 @@ bool solver::find_implications_by_GE_core(stats& s) {
   }
   lin_sys L_( std::move(lits) );
 #endif
-  VERB(80, "c use M4RI to find implied alpha from linerals");
-  list< list<var_t> > r_clss;
+  VERB(80, "c use bit::matrix to find implied alpha from linerals");
 
   //(1) reduce watched linerals
 
-  //construct matrix only with occuring lits
+  //construct matrix only with occurring lits
   vec<var_t> perm(alpha.size(), 0);
   vec<var_t> perm_inv(alpha.size(), 0);
   var_t n_wlins = 0;
@@ -1822,160 +1821,150 @@ bool solver::find_implications_by_GE_core(stats& s) {
       ++n_wlins;
     }
   }
-  //apply alpha already? the following does not work, since if x1=0, x2=1 then the literal x1+x2 is omitted, despite resembling a conflict!
-  ////ignore all assigned values
-  //for(var_t i=0; i<alpha.size(); ++i) {
-  //  if(alpha[i]!=bool3::None) perm[i]=0;
-  //}
-  
+
+  if(n_wlins == 0) {
+    const auto end = std::chrono::high_resolution_clock::now();
+    s.total_linalg_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
+    return false;
+  }
+
   //construct permutation maps
   var_t idx = 0;
-  for (var_t i = 1; i < alpha.size(); ++i) { 
+  for (var_t i = 1; i < alpha.size(); ++i) {
     if(perm[i]==1) {
       perm[i] = idx; perm_inv[idx] = i; ++idx;
     }
   }
 
   const var_t n_vars = idx;
-  const rci_t nrows = n_wlins;
-  const rci_t ncols = n_vars+1;
+  const std::size_t ncols = n_vars + 1;
 
-  mzd_t* M = mzd_init(nrows, ncols);
-  assert( mzd_is_zero(M) );
-
-  //fill with linerals
-  rci_t r = 0;
+  // Phase 1: build M (n_wlins × ncols) and RREF — no identity augmentation.
+  // Cost: O(n_wlins × ncols² / 64) instead of O(n_wlins³ / 64) with M_aug.
+  bit::matrix<> M;
   for(const auto& l_dl : lineral_watches) {
     for(const auto& l : l_dl) {
-      //std::cout << l.to_str() << std::endl;
-      if(l.has_constant()) {
-          mzd_write_bit(M, r, n_vars, 1);
-      }
+      bit::vector<> row(ncols);
       for(const auto& i : l.get_idxs_()) {
-          assert(i>0); assert(perm[i] < (var_t) ncols-1);
-          mzd_write_bit(M, r, perm[i], 1);
+          assert(i > 0); assert(perm[i] < (var_t)ncols - 1);
+          row.set(perm[i]);
       }
-      ++r;
+      if(l.has_constant()) row.set(n_vars);
+      M.push_row(row);
     }
   }
-  assert(r == nrows);
-  //store transposed version (required to compute reason clauses)
-  mzd_t* M_tr = r>0 ? mzd_transpose(NULL, M) : mzd_init(0,0);
-  //TODO not memory efficient! we should really use PLUQ or PLE decomposition below and work from there...
-  
-  //compute rref
-  const rci_t rank = mzd_echelonize_m4ri(M, true, 0); //should we use mzd_echelonize instead?
- 
-  //read results
-  list<lineral> linerals_;
-  vec<var_t> idxs;
-  for(rci_t r = rank-1; r>0; --r) {
-    idxs.clear();
-    for(rci_t c=0; (unsigned)c<n_vars; ++c) {
-        if( mzd_read_bit(M, r, c) ) {
-          idxs.push_back(perm_inv[c]);
-          if(idxs.size()>2) continue; //early abort if weight too high
-        }
-    }
-    if(idxs.size()==0) {
-      //we got 1, i.e., we have a conflict; all other alpha assignments can be ignored
-      assert(linerals_.size()==0);
-      assert(mzd_read_bit(M,r,n_vars));
-      linerals_.emplace_back( 0, false );
-      break;
-    } else if(idxs.size()==1 && alpha[idxs[0]]!=to_bool3(mzd_read_bit(M,r,n_vars)) ) {
-      linerals_.emplace_back( idxs[0], (bool) mzd_read_bit(M, r, n_vars) );
-    //} else if(idxs.size()==2 && equiv_lits[idxs[0]].ind==0 && opt.eq) {
-    //  assert(idxs[0] < idxs[1]);
-    //  linerals_.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::yes );
-    }
-  }
-  mzd_free(M);
+
+  M.to_reduced_echelon_form();
+  const std::size_t rank = [&]() {
+    std::size_t r = M.rows();
+    while(r > 0 && M.row(r-1).none()) --r;
+    return r;
+  }();
+
   VERB(80, "c reduction done.");
-  // (2) if pure assignment is contained in sys, construct reason cls!
-  if(linerals_.size()==0) {
+
+  //scan RREF rows for unit assignments or conflict using first_set/next_set (fast for sparse rows)
+  list<lineral> linerals_;
+  for(std::size_t r = rank; r-- > 0;) {
+    const auto& row = M.row(r);
+    auto p = row.first_set();
+    if(p == bit::vector<>::npos) continue;
+    if(p == n_vars) {
+      // constant-only row: conflict
+      assert(linerals_.size() == 0);
+      linerals_.emplace_back(0, false);  // encodes constant-1 lineral
+      break;
+    }
+    auto q = row.next_set(p);
+    if(q < n_vars) continue;  // two+ variable bits: not a unit assignment
+    // exactly one variable bit at p; q == n_vars → has constant, q == npos → no constant
+    bool has_const = (q == n_vars);
+    if(alpha[perm_inv[p]] != to_bool3(has_const)) {
+      linerals_.emplace_back(perm_inv[p], has_const);
+    }
+  }
+
+  // (2) if no implied assignments/conflict found, return early (common case)
+  if(linerals_.size() == 0) {
     VERB(80, "c no new alpha-assignments found!")
-    mzd_free(M_tr);
     const auto end  = std::chrono::high_resolution_clock::now();
     s.total_linalg_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
     return false;
   }
 
-  mzd_t* B = mzd_init(std::max(ncols,nrows), linerals_.size());
   VERB(80, "c found "<<std::to_string(linerals_.size())<<" new alpha assignments and equivs");
-  idx = 0;
-  for(const auto& lit : linerals_) {
-    VERB(85, "c   `--> " << lit.to_str());
-    //set bits of b according to linerals_
-    for(const auto& jdx : lit.get_idxs_()) mzd_write_bit(B, perm[jdx], idx, 1);
-    mzd_write_bit(B, n_vars, idx, lit.has_constant()); //uses that supp[0]==0
-    ++idx;
+
+  // Phase 2: reason extraction via transpose solve.
+  // Build M_tr_b = [M_tr | B]: M_tr is the original M transposed (ncols × n_wlins),
+  // B has one column per implied lineral (ncols × k).
+  // After RREF: pivot row r at pivot column p_r → coefficient of original lineral p_r
+  // in implication i = M_tr_b.row(r).test(n_wlins + i).
+  // Cost: O(ncols² × n_wlins / 64) — ncols << n_wlins in practice.
+  const std::size_t k = linerals_.size();
+  bit::matrix<> M_tr_b;
+  {
+    const bit::vector<> zero_row(n_wlins + k);
+    for(std::size_t v = 0; v < ncols; ++v) M_tr_b.push_row(zero_row);
+    std::size_t col = 0;
+    for(const auto& l_dl : lineral_watches) {
+      for(const auto& l : l_dl) {
+        for(const auto& v : l.get_idxs_()) M_tr_b.row(perm[v]).set(col);
+        if(l.has_constant()) M_tr_b.row(n_vars).set(col);
+        ++col;
+      }
+    }
+    std::size_t bi = 0;
+    for(const auto& lit : linerals_) {
+      for(const auto& v : lit.get_idxs_()) M_tr_b.row(perm[v]).set(n_wlins + bi);
+      if(lit.has_constant()) M_tr_b.row(n_vars).set(n_wlins + bi);
+      ++bi;
+    }
   }
-  //solve for M^T x = B (i.e. linerals_)
-#ifndef NDEBUG
-  const auto ret = mzd_solve_left(M_tr, B, 0, true);
-  assert(ret == 0);
-#else
-  mzd_solve_left(M_tr, B, 0, false); //skip check for inconsistency; a solution exists i.e. is found!
-#endif
-   s.no_ge_prop += linerals_.size();
+  M_tr_b.to_reduced_echelon_form();
+
+  // Build pivot_to_row: column index (= original lineral index) → RREF row in M_tr_b.
+  // Non-pivot columns are marked with sentinel 'no_pivot'.
+  const std::size_t no_pivot = ncols;
+  vec<std::size_t> pivot_to_row(n_wlins, no_pivot);
+  for(std::size_t r = 0; r < M_tr_b.rows(); ++r) {
+    auto p = M_tr_b.row(r).first_set();
+    if(p == bit::vector<>::npos || p >= n_wlins) break;
+    pivot_to_row[p] = r;
+  }
+
+  s.no_ge_prop += linerals_.size();
 
   //construct corresponding reason clauses
   list< std::tuple<var_t, var_t, list<lin_w_it>, lineral> > tmp_queue;
-  lineral implied_lin;
-  idx = 0;
+  std::size_t bi = 0;
   for(auto&& lit : linerals_) {
     VERB(95, "c constructing reason cls indices for "<<lit.to_str());
-    implied_lin.clear();
-    
+    lineral implied_lin;
+
     list<lin_w_it> rs_lins;
     var_t resolving_lvl = 0;
     var_t assigning_lvl = 0;
-  
-  #ifdef DEBUG_SLOW
-    lineral tmp;
-  #endif
-  #ifdef DEBUG_SLOWER
-    r=0;
+
+    std::size_t r_coeff = 0;
     for(var_t lvl=0; lvl<=dl; ++lvl) {
       auto& l_dl = lineral_watches[lvl];
-      //check solution:
-      for(lin_w_it l_it = l_dl.begin(); l_it != l_dl.end() && r < B->nrows; ++l_it, ++r) {
-        if(!mzd_read_bit(B,r,idx)) continue;
-        tmp += *l_it;
-      }
-    }
-    assert(L_.reduce(tmp+lit).is_zero());
-    tmp.clear();
-  #endif
-  #ifdef DEBUG_SLOW
-    assert( L_.reduce(tmp+lit).is_zero() );
-  #endif
-    
-    r = 0;
-    for(var_t lvl=0; lvl<=dl; ++lvl) {
-      auto& l_dl = lineral_watches[lvl];
-      for(lin_w_it l_it = l_dl.begin(); l_it != l_dl.end() && r < B->nrows; ++l_it, ++r) {
-        if(!mzd_read_bit(B,r,idx)) continue;
-        //bump_score(*l_it);
+      for(lin_w_it l_it = l_dl.begin(); l_it != l_dl.end(); ++l_it, ++r_coeff) {
+        const std::size_t mtr_row = pivot_to_row[r_coeff];
+        if(mtr_row == no_pivot || !M_tr_b.row(mtr_row).test(n_wlins + bi)) continue;
         assigning_lvl = lvl;
-        //add all linerals EXCEPT when they are assigning, i.e., reflected in alpha!
         if(!l_it->is_assigning()) {
             resolving_lvl = lvl;
             implied_lin += *l_it;
-            rs_lins.emplace_back( l_it );
+            rs_lins.emplace_back(l_it);
         }
         assert_slower(L_.reduce(implied_lin+lit).is_zero());
       }
     }
-    //post-process r_cls_idxs -- so far r_cls_idxs will lead to a reason clause that ONLY contains GUESS variables; which is potentially cumbersome -- thus: remove all assigning linerals from 'inbetween' decisions-levels
     if(resolving_lvl==0) rs_lins.clear();
     rs_lins.remove_if([&resolving_lvl](const auto& lin){ return lin->get_lvl()!=0 && lin->get_lvl()!=resolving_lvl && lin->is_assigning(); });
     assert((implied_lin+lit).reduced(alpha).is_zero());
-    ++idx;
-    //NOTE    do not immediately add to lineral_watches as this tampers with the above looping!
-    //INSTEAD add it to queue to add it there after all reasons have been constructed!
-    tmp_queue.emplace_back( resolving_lvl, assigning_lvl, std::move(rs_lins), std::move(implied_lin) );
+    tmp_queue.emplace_back(resolving_lvl, assigning_lvl, std::move(rs_lins), std::move(implied_lin));
+    ++bi;
   }
   var_t assigning_lvl_min = dl;
   //queue new linerals
@@ -1991,20 +1980,16 @@ bool solver::find_implications_by_GE_core(stats& s) {
     //ensure that reason cls is reason for provided alpha
     assert(rcls.is_unit(dl_count) && (rcls.get_unit()+lin->to_lineral()).reduced(alpha).is_zero());
   #endif
-    
+
     if(assigning_lvl < assigning_lvl_min) assigning_lvl_min = assigning_lvl;
 
     queue_implied_lineral(std::prev(lineral_watches[resolving_lvl].end()), resolving_lvl, origin_t::LINERAL, queue_t::NEW_UNIT);
   }
 
-
   //backtrack if necessary!
   if(assigning_lvl_min < dl) {
     backtrack(assigning_lvl_min);
   }
-
-  mzd_free(B);
-  mzd_free(M_tr);
   
   const auto end  = std::chrono::high_resolution_clock::now();
   s.total_linalg_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - begin);
@@ -2022,80 +2007,59 @@ inline lin_sys solver::get_lineral_watches_lin_sys() const {
   lin_sys L_( std::move(lits) );
 #endif
 
-  //M4RI implementation
-  VERB(140, "c use M4RI to reduce watched linerals");
+  VERB(140, "c use bit::matrix to reduce watched linerals");
 
   //(1) reduce watched linerals
 
   //construct matrix only with occuring lits
   vec<var_t> perm(alpha.size(), 0);
   vec<var_t> perm_inv(alpha.size(), 0);
-  var_t n_wlins = 0;
-  for(const auto& l_dl : lineral_watches) {
-    for(const auto& l : l_dl) {
+  for(const auto& l_dl : lineral_watches)
+    for(const auto& l : l_dl)
       for(const auto& v : l.get_idxs_()) perm[v] = 1;
-      ++n_wlins;
-    }
-  }
-  //apply alpha already? the following does not work, since if x1=0, x2=1 then the literal x1+x2 is omitted, despite resembling a conflict!
-  
-  //construct permutation maps
+
   var_t idx = 0;
-  for (var_t i = 1; i < alpha.size(); ++i) { 
-    if(perm[i]==1) {
-      perm[i] = idx; perm_inv[idx] = i; ++idx;
-    }
+  for(var_t i = 1; i < alpha.size(); ++i) {
+    if(perm[i]==1) { perm[i] = idx; perm_inv[idx] = i; ++idx; }
   }
 
   const var_t n_vars = idx;
-  const rci_t nrows = n_wlins;
-  const rci_t ncols = n_vars+1;
+  const std::size_t ncols = n_vars + 1;
 
-  mzd_t* M = mzd_init(nrows, ncols);
-  assert( mzd_is_zero(M) );
-
-  //fill with linerals
-  rci_t r = 0;
+  bit::matrix<> M;
   for(const auto& l_dl : lineral_watches) {
     for(const auto& l : l_dl) {
-      //std::cout << l.to_str() << std::endl;
-      if(l.has_constant()) {
-          mzd_write_bit(M, r, n_vars, 1);
-      }
+      bit::vector<> row(ncols);
       for(const auto& i : l.get_idxs_()) {
-          assert(i>0); assert(perm[i] < (var_t) ncols-1);
-          mzd_write_bit(M, r, perm[i], 1);
+          assert(i > 0); assert(perm[i] < (var_t)ncols - 1);
+          row.set(perm[i]);
       }
-      ++r;
+      if(l.has_constant()) row.set(n_vars);
+      M.push_row(row);
     }
-  }
-  assert(r == nrows);
-  //store transposed version (required to compute reason clause for )
-  mzd_t* M_tr = r>0 ? mzd_transpose(NULL, M) : mzd_init(0,0);
-  //TODO not memory efficient! we should really use PLUQ or PLE decomposition below and work from there...
-  
-  //compute rref
-  const rci_t rank = mzd_echelonize_m4ri(M, true, 0); //should we use mzd_echelonize instead?
-  
-  //mzd_print(M);
-  //read results
-  list<lineral> linerals_;
-  vec<var_t> idxs;
-  for(rci_t r = 0; r<rank; ++r) {
-    idxs.clear();
-    for(rci_t c=0; (unsigned)c<n_vars; ++c) {
-        if( mzd_read_bit(M, r, c) ) idxs.push_back(perm_inv[c]);
-    }
-    linerals_.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::yes );
   }
 
-  lin_sys L = lin_sys( std::move(linerals_) );
+  M.to_reduced_echelon_form();
+  const std::size_t rank = [&]() {
+    std::size_t r = M.rows();
+    while(r > 0 && M.row(r-1).none()) --r;
+    return r;
+  }();
+
+  list<lineral> linerals_;
+  vec<var_t> idxs;
+  for(std::size_t r = 0; r < rank; ++r) {
+    const auto& row = M.row(r);
+    idxs.clear();
+    for(auto p = row.first_set(); p < n_vars; p = row.next_set(p))
+      idxs.push_back(perm_inv[p]);
+    linerals_.emplace_back(std::move(idxs), row.test(n_vars), presorted::yes);
+  }
+
+  lin_sys L = lin_sys(std::move(linerals_));
   assert_slower( L_.to_str() == L.to_str() );
   VERB(140, "c reduction done.");
 
-  mzd_free(M);
-  mzd_free(M_tr);
-  
   return L;
 };
 
@@ -2110,12 +2074,12 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
   lin_sys L_( std::move(lits) );
 #endif
 
-  //M4RI implementation
-  VERB(80, "c use M4RI to reduce watched linerals");
+  //bit library implementation
+  VERB(80, "c use bit::matrix to reduce watched linerals");
 
   //(1) reduce watched linerals
 
-  //construct matrix only with occuring lits
+  //construct matrix only with occurring lits
   vec<var_t> perm(alpha.size(), 0);
   vec<var_t> perm_inv(alpha.size(), 0);
   var_t n_wlins = 0;
@@ -2125,80 +2089,51 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
       ++n_wlins;
     }
   }
-  //apply alpha already? the following does not work, since if x1=0, x2=1 then the literal x1+x2 is omitted, despite resembling a conflict!
-  ////ignore all assigned values
-  //for(var_t i=0; i<alpha.size(); ++i) {
-  //  if(alpha[i]!=bool3::None) perm[i]=0;
-  //}
-  
+
   //construct permutation maps
   var_t idx = 0;
-  for (var_t i = 1; i < alpha.size(); ++i) { 
+  for (var_t i = 1; i < alpha.size(); ++i) {
     if(perm[i]==1) {
       perm[i] = idx; perm_inv[idx] = i; ++idx;
     }
   }
 
   const var_t n_vars = idx;
-  const rci_t nrows = n_wlins;
-  const rci_t ncols = n_vars+1;
+  const std::size_t ncols = n_vars + 1;
 
-  mzd_t* M = mzd_init(nrows, ncols);
-  assert( mzd_is_zero(M) );
-
-  //fill with linerals
-  rci_t r = 0;
-  for(const auto& l_dl : lineral_watches) {
-    for(const auto& l : l_dl) {
-      //std::cout << l.to_str() << std::endl;
-      if(l.has_constant()) {
-          mzd_write_bit(M, r, n_vars, 1);
+  // Phase 1: build M (n_wlins × ncols) and RREF — no identity augmentation.
+  // Cost: O(n_wlins × ncols² / 64) instead of O(n_wlins³ / 64) with M_aug.
+  bit::matrix<> M;
+  if(n_wlins > 0) {
+    for(const auto& l_dl : lineral_watches) {
+      for(const auto& l : l_dl) {
+        bit::vector<> row(ncols);
+        for(const auto& i : l.get_idxs_()) { row.set(perm[i]); }
+        if(l.has_constant()) row.set(n_vars);
+        M.push_row(row);
       }
-      for(const auto& i : l.get_idxs_()) {
-          assert(i>0); assert(perm[i] < (var_t) ncols-1);
-          mzd_write_bit(M, r, perm[i], 1);
-      }
-      ++r;
     }
+    M.to_reduced_echelon_form();
   }
-  assert(r == nrows);
-  //store transposed version (required to compute reason clause for )
-  mzd_t* M_tr = r>0 ? mzd_transpose(NULL, M) : mzd_init(0,0);
-  //TODO not memory efficient! we should really use PLUQ or PLE decomposition below and work from there...
-  
-  //for(var_t i=0; i<perm.size(); ++i) {
-  //  std::cout << std::to_string(i) << " ";
-  //}
-  //std::cout << std::endl;
-  //for(var_t i=0; i<perm.size(); ++i) {
-  //  std::cout << std::to_string(perm[i]) << " ";
-  //}
-  //std::cout << std::endl;
-  //mzd_print(M);
 
-  //compute rref
-  const rci_t rank = mzd_echelonize_m4ri(M, true, 0); //should we use mzd_echelonize instead?
-  
-  //mzd_print(M);
-  //read results
+  //build L using first_set/next_set for sparse-row efficiency
   list<lineral> linerals_;
   vec<var_t> idxs;
-  for(rci_t r = 0; r<rank; ++r) {
+  for(std::size_t r = 0; r < M.rows(); ++r) {
+    const auto& row = M.row(r);
+    if(row.none()) break;
     idxs.clear();
-    for(rci_t c=0; (unsigned)c<n_vars; ++c) {
-        if( mzd_read_bit(M, r, c) ) idxs.push_back(perm_inv[c]);
-    }
-    linerals_.emplace_back( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::yes );
+    for(auto p = row.first_set(); p < n_vars; p = row.next_set(p))
+      idxs.push_back(perm_inv[p]);
+    linerals_.emplace_back(std::move(idxs), row.test(n_vars), presorted::yes);
   }
 
-  lin_sys L = lin_sys( std::move(linerals_) );
-  assert_slower( L_.to_str() == L.to_str() );
+  lin_sys L = lin_sys(std::move(linerals_));
+  assert_slower(L_.to_str() == L.to_str());
   VERB(80, "c reduction done.");
 
   if(L.is_consistent()) {
-    mzd_free(M);
-    mzd_free(M_tr);
-    return {L,cls_watch()};
+    return {L, cls_watch()};
   }
 
   // (2) if 1 is contained in sys, construct reason cls!
@@ -2206,26 +2141,36 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
 
   VERB(80, "c check_lineral_watches_GE: " << RED("watched linerals are inconsistent!") );
 
-  //solve for M^T x = 1
-  mzd_t* b = mzd_init(std::max(ncols,nrows), 1);
-  mzd_write_bit(b, n_vars, 0, 1); //uses that supp[0]==0
+  // Phase 2: find combination of original rows that XOR to constant-1.
+  // Build M_tr_b = [M_tr | b]: transpose of original M (ncols × n_wlins) plus RHS column b
+  // where b has a 1 only at row n_vars (encoding the constant-1 lineral).
+  // Cost: O(ncols² × n_wlins / 64) — ncols << n_wlins in practice.
+  bit::matrix<> M_tr_b;
+  {
+    const bit::vector<> zero_row(n_wlins + 1);
+    for(std::size_t v = 0; v < ncols; ++v) M_tr_b.push_row(zero_row);
+    M_tr_b.row(n_vars).set(n_wlins);  // b: constant-1 lineral has bit n_vars set
+    std::size_t col = 0;
+    for(const auto& l_dl : lineral_watches) {
+      for(const auto& l : l_dl) {
+        for(const auto& v : l.get_idxs_()) M_tr_b.row(perm[v]).set(col);
+        if(l.has_constant()) M_tr_b.row(n_vars).set(col);
+        ++col;
+      }
+    }
+  }
+  M_tr_b.to_reduced_echelon_form();
 
-  //find solution
-  //mzd_print(M);
-  //std::cout << std::endl;
-  //mzd_print(M_tr);
-  //std::cout << std::endl;
-  //mzd_print(b);
-  //std::cout << std::endl;
-#ifndef NDEBUG
-  const auto ret = mzd_solve_left(M_tr, b, 0, true);
-  assert(ret == 0);
-#else
-  mzd_solve_left(M_tr, b, 0, false); //skip check for inconsistency; a solution exists i.e. is found!
-#endif
-  //mzd_print(b);
-  
-  r = 0;
+  // For pivot row r at pivot column p_r: solution[p_r] = M_tr_b.row(r).test(n_wlins).
+  // Non-pivot columns have solution value 0.
+  const std::size_t no_pivot = ncols;
+  vec<std::size_t> pivot_to_row(n_wlins, no_pivot);
+  for(std::size_t r = 0; r < M_tr_b.rows(); ++r) {
+    auto p = M_tr_b.row(r).first_set();
+    if(p == bit::vector<>::npos || p >= n_wlins) break;
+    pivot_to_row[p] = r;
+  }
+
   //resolve cls to get true reason cls
   list<lin_w_it> r_cls_idxs;
 
@@ -2233,63 +2178,61 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
   lineral tmp;
 #endif
 #ifdef DEBUG_SLOWER
-  r=0;
-  for(var_t lvl=0; lvl<=dl; ++lvl) {
-    auto& l_dl = lineral_watches[lvl];
-    //check solution:
-    for(lin_w_it l_it = l_dl.begin(); l_it != l_dl.end() && r < b->nrows; ++l_it, ++r) {
-      if(!mzd_read_bit(b,r,0)) continue;
-      tmp += *l_it;
+  {
+    std::size_t r_dbg = 0;
+    for(var_t lvl = 0; lvl <= dl; ++lvl) {
+      auto& l_dl = lineral_watches[lvl];
+      for(lin_w_it l_it = l_dl.begin(); l_it != l_dl.end(); ++l_it, ++r_dbg) {
+        const std::size_t mtr_row = pivot_to_row[r_dbg];
+        if(mtr_row == no_pivot || !M_tr_b.row(mtr_row).test(n_wlins)) continue;
+        tmp += *l_it;
+      }
     }
+    assert(L_.reduce(tmp).is_zero());
+    tmp.clear();
   }
-  assert(L_.reduce(tmp).is_zero());
-  tmp.clear();
 #endif
-  
-  r = 0;
+
+  std::size_t r_coeff = 0;
   var_t resolving_lvl = 0;
-  for(var_t lvl=0; lvl<=dl; ++lvl) {
+  for(var_t lvl = 0; lvl <= dl; ++lvl) {
     auto& l_dl = lineral_watches[lvl];
     if(l_dl.empty()) continue;
-    for(lin_w_it l_it = l_dl.begin(); l_it != l_dl.end() && r < b->nrows; ++l_it, ++r) {
-      if(!mzd_read_bit(b,r,0)) continue;
+    for(lin_w_it l_it = l_dl.begin(); l_it != l_dl.end(); ++l_it, ++r_coeff) {
+      const std::size_t mtr_row = pivot_to_row[r_coeff];
+      if(mtr_row == no_pivot || !M_tr_b.row(mtr_row).test(n_wlins)) continue;
     #ifndef NDEBUG
       tmp += *l_it;
-      assert_slower( L_.reduce(tmp).is_zero() );
+      assert_slower(L_.reduce(tmp).is_zero());
     #endif
       resolving_lvl = lvl;
       bump_score(*l_it);
       //add all linerals EXCEPT when they come from NEW_GUESS, i.e., are the first lin in l_dl
-      if(lvl==0 || l_it!=l_dl.begin()) {
-        r_cls_idxs.emplace_back( l_it );
+      if(lvl == 0 || l_it != l_dl.begin()) {
+        r_cls_idxs.emplace_back(l_it);
       }
 
       #ifdef DEBUG_SLOWER
-        const auto rcls = get_reason( l_it );
-        //ensure that reason cls is reason for provided alpha
-        assert_slow(rcls.is_unit(dl_count) && (rcls.get_unit()+*l_it).reduced(alpha).is_zero());
+        const auto rcls = get_reason(l_it);
+        assert_slow(rcls.is_unit(dl_count) && (rcls.get_unit() + *l_it).reduced(alpha).is_zero());
       #endif
     }
   }
   //post-process r_cls_idxs -- so far r_cls_idxs will lead to a reason clause that ONLY contains GUESS variables; which is potentially cumbersome -- thus: remove all assigning linerals from 'inbetween' decisions-levels
-  if(resolving_lvl==0) r_cls_idxs.clear();
+  if(resolving_lvl == 0) r_cls_idxs.clear();
   r_cls_idxs.remove_if([resolving_lvl](const auto lin){ return lin->get_lvl()!=0 && lin->get_lvl()!=resolving_lvl && lin->is_assigning(); });
 
   assert(tmp.reduced(alpha).is_one());
   assert(tmp.is_one());
-  
+
   list<lineral_watch> tmp_l;
-  tmp_l.emplace_back( lineral(0,false), alpha, alpha_dl, dl_count, std::move(r_cls_idxs), resolving_lvl );
+  tmp_l.emplace_back(lineral(0, false), alpha, alpha_dl, dl_count, std::move(r_cls_idxs), resolving_lvl);
   const auto lin = tmp_l.begin();
 
-  mzd_free(b);
-  mzd_free(M_tr);
-
 #ifdef DEBUG_SLOW
-  const auto reason_cls = get_reason( lin );
-  //ensure that reason cls is reason for provided alpha
+  const auto reason_cls = get_reason(lin);
   assert_slow(reason_cls.is_unit(dl_count) && reason_cls.get_unit().reduced(alpha).is_one());
 #endif
 
-  return {L, get_reason( lin ) };
+  return {L, get_reason(lin)};
 }

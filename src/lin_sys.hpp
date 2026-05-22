@@ -56,7 +56,7 @@ class lin_sys
 
     void rref();
     void rref_native();
-    void rref_m4ri();
+    void rref_bit();
   public:
     lin_sys() noexcept {};
     lin_sys(const lineral& lit) noexcept : linerals(list<lineral>({lit})) { rref(); };

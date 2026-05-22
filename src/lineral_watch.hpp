@@ -41,7 +41,7 @@ class lineral_watch : public lineral
 
   private:
     /**
-     * @brief literal watches; offset into idxs-set of idxs
+     * @brief literal watches; variable numbers (NOT offsets into idxs)
      */
     lit_watch ws[3] = {0,0,0};
 
@@ -92,29 +92,32 @@ class lineral_watch : public lineral
     void init(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count) {
       ws[0] = 0;
       ws[1] = 0;
-      if(idxs.size()<2) return;
+      if(size()==0) return;
 
-      //track two inds with highest dl (where 'unassigned' is (var_t) -1)
-      var_t max_w1 = 0, max_dl1 = alpha_dl[idxs[max_w1]];
-      var_t max_w2 = 1, max_dl2 = alpha_dl[idxs[max_w2]];
+      // For size==1: ws[1] must hold the variable so get_assigning_ind() returns it correctly.
+      // ws[0] also holds it so get_assigning_lvl() works.
+      var_t v0 = first_var();
+      if(size()<2) { ws[0] = v0; ws[1] = v0; return; }
+
+      var_t v1 = next_var_after(v0);
+
+      // Track two vars with highest dl ('unassigned' = (var_t)-1)
+      var_t max_w1 = v0, max_dl1 = alpha_dl[v0];
+      var_t max_w2 = v1, max_dl2 = alpha_dl[v1];
       if(max_dl1 < max_dl2) { std::swap(max_w1, max_w2); std::swap(max_dl1, max_dl2); }
-      //init watches greedily
-      for(var_t i=2; i<idxs.size(); ++i) {
-        if(alpha_dl[idxs[i]] > max_dl1) {
-          max_dl2 = max_dl1;
-          max_w2 = max_w1;
-          max_dl1 = alpha_dl[idxs[i]];
-          max_w1 = i;
-        } else if(alpha_dl[idxs[i]] > max_dl2) {
-          max_dl2 = alpha_dl[idxs[i]];
-          max_w2 = i;
+      for(var_t v = next_var_after(v1); v != static_cast<var_t>(-1); v = next_var_after(v)) {
+        if(alpha_dl[v] > max_dl1) {
+          max_dl2 = max_dl1; max_w2 = max_w1;
+          max_dl1 = alpha_dl[v]; max_w1 = v;
+        } else if(alpha_dl[v] > max_dl2) {
+          max_dl2 = alpha_dl[v]; max_w2 = v;
         }
-        if(max_dl2 == max_dl1 && max_dl1 == (var_t) -1) break;
+        if(max_dl2 == max_dl1 && max_dl1 == (var_t)-1) break;
       }
-      //init watches, ws[0] gets the higher dl
+      // ws[i] stores variable numbers directly
       ws[0] = max_w1;
       ws[1] = max_w2;
-      //if ws[0] is unassigned, swap! (to avoid that ws[0] is unassigned, but ws[1] is assigned)
+      // if ws[0] is unassigned, swap (ws[0] should be the assigned/higher-dl watch)
       if(alpha[get_wl0()] == bool3::None) {
         std::swap(ws[0], ws[1]);
       } else {
@@ -128,7 +131,7 @@ class lineral_watch : public lineral
      * @brief return the watched literal
      * @return lineral corr to watched lineral
      */
-    lineral to_lineral() const { return lineral(idxs, p1, presorted::yes); };
+    lineral to_lineral() const { return lineral(*static_cast<const lineral*>(this)); }
     
     /**
      * @brief checks whether the polynomial is assigning
@@ -151,7 +154,7 @@ class lineral_watch : public lineral
      * @return true iff lt is watched
      */
     bool watches(const var_t& lt) const {
-      return !idxs.empty() && (get_wl0() == lt || get_wl1() == lt);
+      return size() > 0 && (get_wl0() == lt || get_wl1() == lt);
     };
 
 
@@ -182,13 +185,14 @@ class lineral_watch : public lineral
      * @return the first watched literal
      * @todo caching?!
      */
-    var_t get_wl0() const { assert(ws[0]<idxs.size()); return idxs[ws[0]]; };
-    
+    // ws[i] now stores variable numbers directly
+    var_t get_wl0() const { return ws[0]; }
+
     /**
      * @brief get the second watched literal
      * @return the second watched literal
      */
-    var_t get_wl1() const { assert(ws[1]<idxs.size()); return idxs[ws[1]]; };
+    var_t get_wl1() const { return ws[1]; }
 
     /**
      * @brief returns the equivalent lit, if this is an equivalence
@@ -212,7 +216,7 @@ class lineral_watch : public lineral
      * @return var_t assigning ind
      */
     var_t get_assigning_ind() const {
-      return idxs.size()==0 ? 0 : get_wl1();
+      return size()==0 ? 0 : get_wl1();
     }
 
     /**
@@ -248,8 +252,8 @@ class lineral_watch : public lineral
      * @return var_t lvl at which the lineral became assigning
      */
     var_t get_assigning_lvl(const vec<var_t>& alpha_dl) const {
-      return (idxs.size()==0 || alpha_dl[get_wl0()] == (var_t) -1) ? 0 : alpha_dl[get_wl0()];
-    };
+      return (size()==0 || alpha_dl[get_wl0()] == (var_t)-1) ? 0 : alpha_dl[get_wl0()];
+    }
     
     /**
      * @brief returns lvl at which the lineral became an equivalence. BEWARE: the lvl at which the literal was constructed might be higher than the equiv-level!
@@ -283,7 +287,7 @@ class lineral_watch : public lineral
      */
     bool is_equiv(const vec<bool3>& alpha) const {
       var_t ct = 0;
-      for(const auto& v : idxs) {
+      for(auto v = first_var(); v != static_cast<var_t>(-1); v = next_var_after(v)) {
         ct += alpha[v] != bool3::None;
         if(ct>2) return false;
       }
@@ -408,17 +412,10 @@ class lineral_watch : public lineral
      * @return true iff upd_lt was removed
      */
     inline bool rm(const var_t lt, const bool3 val) {
-      if(idxs.empty()) return false;
+      if(is_constant()) return false;
       assert( !watches(lt) );
-      const auto wl0 = idxs[ws[0]];
-      const auto wl1 = idxs[ws[1]];
-      if ( !lineral::rm(lt, val) ) return false;
-      //adapt ws[0] and ws[1] accordingly:
-      if(wl0 > lt) ws[0]--;
-      if(wl1 > lt) ws[1]--;
-      assert(idxs[ws[0]] == wl0);
-      assert(idxs[ws[1]] == wl1);
-      return true;
+      // ws[i] stores variable numbers directly — no offset adjustment needed
+      return lineral::rm(lt, val);
     }
 
     /**
@@ -431,48 +428,49 @@ class lineral_watch : public lineral
      * @return var_t,lineral_upd_ret lineral_upd_ret is ASSIGNING if lineral is assigning; UNIT otherwise; var_t is the new watched literal
      */
     std::pair<var_t,lineral_upd_ret> update(const var_t& new_lit, const vec<bool3>& alpha, const var_t& lvl, const vec<dl_c_t>& dl_count) {
-      assert(idxs[ws[0]] == new_lit || idxs[ws[1]] == new_lit);
+      assert(ws[0] == new_lit || ws[1] == new_lit);
       assert(alpha[new_lit] != bool3::None);
 
-      //only update if lineral is not assigning! (i.e. idxs[ws[0]] AND idxs[ws[1]] are unassigned)
-      //if(is_assigning(alpha)) return {new_lit, lineral_upd_ret::ASSIGNING};
-      //todo this leads to bugs when x1 and x2 are in x1+x2+x3+x4 are watched and x1 gets assigned; immediately stops here...
+      // w.l.o.g. ws[0] needs to be updated
+      if(new_lit == ws[1]) std::swap(ws[0], ws[1]);
 
-      //w.l.o.g. ws[0] needs to be updated -- also ensures that invariants are satisfied after update
-      if(new_lit == idxs[ws[1]]) std::swap(ws[0], ws[1]);
+      const var_t old_w0 = ws[0]; // the assigned variable
 
-      //choose new indet to watch
-      var_t new_w = ws[0];
-      while(new_w < idxs.size() && (alpha[ idxs[new_w] ] != bool3::None || new_w == ws[1])) new_w++;
-      //wrap around if necessary
-      if(new_w == idxs.size()) new_w = 0;
-      while(new_w!=ws[0] && (alpha[ idxs[new_w] ] != bool3::None || new_w==ws[1])) new_w++;
-      //new_w == ws iff all literals are assigned!
-      std::swap(ws[0], new_w);
-      assert_slow( assert_data_struct(alpha) );
-      if(ws[0]==new_w) {
-        dl_c = {lvl, dl_count[lvl]};
-        return {get_wl0(), lineral_upd_ret::ASSIGNING};
+      // Scan forward from old_w0 for next unassigned variable != ws[1]
+      var_t nv = next_var_after(old_w0);
+      while(nv != static_cast<var_t>(-1) && (alpha[nv] != bool3::None || nv == ws[1]))
+          nv = next_var_after(nv);
+      if(nv == static_cast<var_t>(-1)) {
+          // Wrap around: scan from first variable up to old_w0
+          nv = first_var();
+          while(nv != old_w0 && (alpha[nv] != bool3::None || nv == ws[1]))
+              nv = next_var_after(nv);
       }
+      // nv == old_w0 iff all variables are assigned
+      if(nv == old_w0 || nv == static_cast<var_t>(-1)) {
+          ws[0] = old_w0;
+          dl_c = {lvl, dl_count[lvl]};
+          return {get_wl0(), lineral_upd_ret::ASSIGNING};
+      }
+      ws[0] = nv;
+      assert_slow( assert_data_struct(alpha) );
       return {get_wl0(), lineral_upd_ret::UNIT};
-    };
+    }
 
     bool assert_data_struct(const vec<bool3>& alpha) const {
-      if(idxs.size()<2) return true;
-      //assert(alpha_dl[idxs[ws[1]]]==0 || alpha_dl[idxs[ws[1]]] <= alpha_dl[idxs[ws[0]]]);
+      if(size()<2) return true;
       assert(ws[0] != ws[1]);
-      assert(ws[0] < idxs.size());
-      assert(ws[1] < idxs.size());
-      if(alpha[idxs[ws[1]]] != bool3::None) assert(alpha[idxs[ws[0]]] != bool3::None);
-      //assert that the lineral is assigning under alpha iff ws[1] is assigned
-      if(is_assigning(alpha)) assert(alpha[idxs[ws[0]]] != bool3::None);
+      assert(ws[0] < bitvec_.size() && bitvec_.test(ws[0]));
+      assert(ws[1] < bitvec_.size() && bitvec_.test(ws[1]));
+      if(alpha[ws[1]] != bool3::None) assert(alpha[ws[0]] != bool3::None);
+      if(is_assigning(alpha)) assert(alpha[ws[0]] != bool3::None);
       if(alpha[get_wl0()] != bool3::None) {
-        for(var_t i=0; i<idxs.size(); ++i) {
-          if(i!=ws[0] && i!=ws[1]) assert(alpha[idxs[i]] != bool3::None);
+        for(auto v = first_var(); v != static_cast<var_t>(-1); v = next_var_after(v)) {
+          if(v != ws[0] && v != ws[1]) assert(alpha[v] != bool3::None);
         }
       }
       return true;
-    };
+    }
     
     bool assert_data_struct(const vec<bool3>& alpha, [[maybe_unused]] const vec<dl_c_t>& dl_count) const {
       assert(is_zero() || is_active(dl_count) || is_assigning(alpha));
@@ -555,49 +553,24 @@ class lineral_watch : public lineral
     
     bool reduce_old(const vec<bool3>& alpha, const vec<var_t>& alpha_dl, const vec<dl_c_t>& dl_count, const vec<equivalence>& equiv_lits) {
       assert(reducible);
-      //@todo! do both reductions in one go!
       reduce(alpha, alpha_dl, dl_count);
-          //while(it != idxs.end()) {
-          //    if( alpha[*it] != bool3::None ) {
-          //        ret = true;
-          //        p1 ^= b3_to_bool(alpha[*it]);
-          //        it = idxs.erase(it);
-          //    } else {
-          //        ++it;
-          //    }
-          //}
-      const auto wl0 = size()>0 ? get_wl0() : 0;
-      const auto wl1 = size()>1 ? get_wl1() : 0;
       bool ret = false;
-      var_t offset = 0;
-      while(offset<idxs.size()) {
-          if( equiv_lits[ idxs[offset] ].is_active() ) {
-              const auto other_lit = equiv_lits[ idxs[offset] ].ind;
-              assert(idxs[offset] < other_lit);
-              //add reduction reasons
-              reason_lins.emplace_back( equiv_lits[idxs[offset]].reason_lin );
-              //adapt watches if necessary!
-              ret |= (ws[0]==offset) || (ws[1]==offset) || (wl0 == other_lit) || (wl1 == other_lit);
-              // idxs[offset] < wl < other_lit --> move wl by one!
-              if(offset < ws[0] && wl0 < other_lit)  --ws[0];
-              if(offset < ws[1] && wl1 < other_lit)  --ws[1];
-              // idxs[offset] < other_lit < wl AND other_lit contained in idxs --> move wl by two!
-              if(offset < ws[0] && other_lit < wl0 && this->operator[](other_lit)) { --ws[0]; --ws[0]; }
-              if(offset < ws[1] && other_lit < wl1 && this->operator[](other_lit)) { --ws[1]; --ws[1]; }
-              // idxs[offset] < other_lit < wl AND other_lit NOT contained in idxs --> leave wl as is!
-              *this += lineral({idxs[offset], other_lit}, equiv_lits[ idxs[offset] ].polarity, presorted::yes);
-              assert(ret || idxs[ws[0]] == wl0);
-              assert(ret || idxs[ws[1]] == wl1);
+      for(auto v = first_var(); v != static_cast<var_t>(-1); ) {
+          if( equiv_lits[v].is_active() ) {
+              const auto other_lit = equiv_lits[v].ind;
+              assert(v < other_lit);
+              reason_lins.emplace_back(equiv_lits[v].reason_lin);
+              ret |= (ws[0]==v) || (ws[1]==v) || (ws[0]==other_lit) || (ws[1]==other_lit);
+              *this += lineral({v, other_lit}, equiv_lits[v].polarity, presorted::yes);
+              v = first_var(); // restart
           } else {
-              ++offset;
+              v = next_var_after(v);
           }
       }
-      //re-init watches if watched literals were replaced!
-      //if( ret ) init(alpha, alpha_dl, dl_count);
       init(alpha, alpha_dl, dl_count);
       assert(assert_data_struct(alpha));
       return ret;
-    };
+    }
     
     bool operator ==(const lineral_watch& other) const noexcept {
       return lineral::operator ==(other) && (ws[0] == other.ws[0]) && (ws[1] == other.ws[1]) && (dl_c == other.dl_c) && (reason_lins == other.reason_lins) && (reason_cls_idxs == other.reason_cls_idxs) && (reducible == other.reducible);

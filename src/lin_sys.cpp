@@ -21,12 +21,12 @@
 
 #include "lin_sys.hpp"
 
-#include <m4ri/m4ri.h>
+#include "bit/matrix.h"
 
 void lin_sys::rref() {
     //use M4RI if system is large
     if(linerals.size()>99) {
-        rref_m4ri();
+        rref_bit();
     } else {
         rref_native();
     }
@@ -62,56 +62,40 @@ void lin_sys::rref_native() {
     }
 };
 
-void lin_sys::rref_m4ri() {
-    //get max num of inds
-    var_t num_vars = 0;
+void lin_sys::rref_bit() {
+    var_t n_vars = 0;
+    for(const auto& l : linerals) n_vars = std::max(n_vars, l.get_max_var());
+
+    const std::size_t ncols = n_vars + 1;
+
+    bit::matrix<> M;
     for(const auto& l : linerals) {
-        num_vars = std::max(num_vars, l.get_max_var());
-    } 
-
-    const var_t n_vars = num_vars;
-    const rci_t nrows = linerals.size();
-    const rci_t ncols = n_vars+1;
-
-    mzd_t* M = mzd_init(nrows, ncols);
-    assert( mzd_is_zero(M) );
-
-    //fill with linerals
-    rci_t r = 0;
-    for(const auto& l : linerals) {
-        //std::cout << l.to_str() << std::endl;
-        if(l.has_constant()) {
-            mzd_write_bit(M, r, n_vars, 1);
-        }
+        bit::vector<> row(ncols);
         for(const auto& i : l.get_idxs_()) {
-            assert(i>0); assert(i-1 < (var_t) ncols-1);
-            mzd_write_bit(M, r, i-1, 1);
+            assert(i > 0 && i < ncols);
+            row.set(i - 1);
         }
-        ++r;
+        if(l.has_constant()) row.set(n_vars);
+        M.push_row(row);
     }
-    assert(r == nrows);
-    
-    //compute rref
-    const rci_t rank = mzd_echelonize_m4ri(M, true, 0); //should we use mzd_echelonize instead?
 
-    //mzd_print(M);
- 
-    //read results
+    M.to_reduced_echelon_form();
+
     pivot_poly_its.clear();
     auto it = linerals.begin();
     vec<var_t> idxs;
-    for(rci_t r = 0; r<rank; ++r) {
-      idxs.clear();
-      for(rci_t c=0; (unsigned)c<n_vars; ++c) {
-          if( mzd_read_bit(M, r, c) ) idxs.push_back(c+1);
-      }
-      *it = lineral( std::move(idxs), (bool) mzd_read_bit(M, r, n_vars), presorted::yes );
-      assert(!it->is_zero());
-      pivot_poly_its[ it->LT() ] = it;
-      ++it;
+    for(std::size_t r = 0; r < M.rows(); ++r) {
+        const auto& row = M.row(r);
+        if(row.none()) break;
+        idxs.clear();
+        for(auto p = row.first_set(); p < n_vars; p = row.next_set(p))
+            idxs.push_back(p + 1);
+        *it = lineral(std::move(idxs), row.test(n_vars), presorted::yes);
+        assert(!it->is_zero());
+        pivot_poly_its[it->LT()] = it;
+        ++it;
     }
     linerals.erase(it, linerals.end());
-    mzd_free(M);
 }
 
 lineral lin_sys::reduce(const lineral& l) const {

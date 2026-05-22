@@ -63,8 +63,8 @@ private:
     //recalculate ws[0] and ws[1] if necessary! - can be skipped in theory, as ws[0] and ws[1] are not used + updated correctly either during 'resolve', but definitely during 'finalize' (!)
     //                                          - in practice, however, it is necessary when running in debug mode due to sanity checks on ptr_cache and ws !
   #ifndef NDEBUG
-    if(size()>0 && ptr_cache[0]!=WLIN0.get_idxs_()[ws[0]]) ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), ptr_cache[0]));
-    if(size()>1 && ptr_cache[1]!=WLIN1.get_idxs_()[ws[1]]) ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), ptr_cache[1]));
+    if(size()>0 && ptr_cache[0]!=ws[0]) ws[0] = ptr_cache[0];
+    if(size()>1 && ptr_cache[1]!=ws[1]) ws[1] = ptr_cache[1];
   #endif
 
     assert( assert_data_struct() );
@@ -180,8 +180,8 @@ public:
     WLIN1 += shared_part;
     if(!WLIN1[ptr_cache[1]]) WLIN1.swap(shared_part);
     
-    ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), ptr_cache[0]));
-    ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), ptr_cache[1]));
+    ws[0] = ptr_cache[0];
+    ws[1] = ptr_cache[1];
 
     assert( cls_watch::assert_data_struct() );
 
@@ -403,8 +403,8 @@ public:
       //}
       //assert(it->second.size()==1);
     }
-    assert( size()<1 || (linerals[idx[0]][ptr_cache[0]] && linerals[idx[0]].get_idxs_()[ws[0]]==ptr_cache[0] ));
-    assert( size()<2 || (linerals[idx[1]][ptr_cache[1]] && linerals[idx[1]].get_idxs_()[ws[1]]==ptr_cache[1] ));
+    assert( size()<1 || (linerals[idx[0]][ptr_cache[0]] && ws[0]==ptr_cache[0] ));
+    assert( size()<2 || (linerals[idx[1]][ptr_cache[1]] && ws[1]==ptr_cache[1] ));
   };
 
 
@@ -418,8 +418,8 @@ public:
 
   bool assert_data_struct() const {
     if(size()==1 && linerals[0].is_one()) return true;
-    assert( size()<1 || (linerals[idx[0]][ptr_cache[0]] && linerals[idx[0]].get_idxs_()[ws[0]]==ptr_cache[0] ));
-    assert( size()<2 || (linerals[idx[1]][ptr_cache[1]] && linerals[idx[1]].get_idxs_()[ws[1]]==ptr_cache[1] ));
+    assert( size()<1 || (linerals[idx[0]][ptr_cache[0]] && ws[0]==ptr_cache[0] ));
+    assert( size()<2 || (linerals[idx[1]][ptr_cache[1]] && ws[1]==ptr_cache[1] ));
 
     //check num_nz_lins
     assert( num_nz_lins == (var_t) std::count_if(linerals.begin(), linerals.end(), [](const auto& l){ return !l.is_zero(); }) );

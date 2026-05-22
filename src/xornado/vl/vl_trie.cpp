@@ -51,8 +51,7 @@ const trie_insert_return_type vl_trie::insert(const var_t v, const lineral& lit,
     curr_node = ROOT;
     bool node_added = false; //as soon as one node was added, we know that we never have to check nodes[curr_node].children again!
     //ignores constant!
-    for (auto it = lit.get_idxs_().rbegin(); it != lit.get_idxs_().rend(); ++it) {
-        var_t ind = *it;
+    for (var_t ind = lit.last_var(); ind != static_cast<var_t>(-1); ind = lit.prev_var_before(ind)) {
         const auto search = node_added ? nodes[curr_node].children.end() : nodes[curr_node].children.find(ind);
         if(search==nodes[curr_node].children.end()) {
             //add new node!
@@ -148,8 +147,7 @@ lineral vl_trie::at(const var_t v) const {
 
 var_t vl_trie::operator[](const lineral& lit) const {
     curr_node = ROOT;
-    for (auto it = lit.get_idxs_().rbegin(); it != lit.get_idxs_().rend(); ++it) {
-        var_t ind = *it;
+    for (var_t ind = lit.last_var(); ind != static_cast<var_t>(-1); ind = lit.prev_var_before(ind)) {
         const auto search = nodes[curr_node].children.find( ind );
         if(search != nodes[curr_node].children.end()) {
             curr_node = search->second;
@@ -171,8 +169,7 @@ var_t vl_trie::operator[](const lineral& lit) const {
 
 var_t vl_trie::at(const lineral& lit) const {
     curr_node = ROOT;
-    for (auto it = lit.get_idxs_().rbegin(); it != lit.get_idxs_().rend(); ++it) {
-        var_t ind = *it;
+    for (var_t ind = lit.last_var(); ind != static_cast<var_t>(-1); ind = lit.prev_var_before(ind)) {
         const auto search = nodes[curr_node].children.find( ind );
         if(search != nodes[curr_node].children.end()) {
             curr_node = search->second;
@@ -197,8 +194,7 @@ var_t vl_trie::at(const lineral& lit) const {
 std::pair<var_t,bool> vl_trie::at_(const lineral& lit) const {
     //iter down the trie!
     curr_node = ROOT;
-    for (auto it = lit.get_idxs_().rbegin(); it != lit.get_idxs_().rend(); ++it) {
-        var_t ind = *it;
+    for (var_t ind = lit.last_var(); ind != static_cast<var_t>(-1); ind = lit.prev_var_before(ind)) {
         const auto search = nodes[curr_node].children.find( ind );
         //go down one more lvl -- if possible!
         if(search != nodes[curr_node].children.end()) {
@@ -233,8 +229,7 @@ std::pair<var_t,bool> vl_trie::at_(const lineral& lit) const {
 bool vl_trie::contains(const lineral& lit) const {
     //if( lit.has_constant() ) return false;
     curr_node = ROOT;
-    for (auto it = lit.get_idxs_().rbegin(); it != lit.get_idxs_().rend(); ++it) {
-        var_t ind = *it;
+    for (var_t ind = lit.last_var(); ind != static_cast<var_t>(-1); ind = lit.prev_var_before(ind)) {
         const auto search = nodes[curr_node].children.find( ind );
         if(search != nodes[curr_node].children.end()) {
             curr_node = search->second;

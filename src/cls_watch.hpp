@@ -115,15 +115,15 @@ private:
       return;
     } else if (size() == 1) {
       idx[0] = 0;
-      ws[0] = 0;
-      ptr_cache[0] = ptr_(idx[0], ws[0]);
+      ws[0] = linerals[0].first_var();
+      ptr_cache[0] = ws[0];
       shared_part.clear();
       return;
     }
     assert(size() > 1);
     idx[0] = 0;
     idx[1] = 1;
-    
+
     // init shared
     shared_part = WLIN0.shared_part(WLIN1);
     // rm shared part from WLIN0 and WLIN1
@@ -135,21 +135,20 @@ private:
     // ensure that WLIN0 and WLIN1 are non-empty
     assert(WLIN0.size() > 0 && WLIN1.size() > 0);
 
-    // init ws/idx
-    ws[0] = 0;
-    ws[1] = 0;
-    ptr_cache[0] = ptr_(idx[0], ws[0]);
-    ptr_cache[1] = ptr_(idx[1], ws[1]);
+    // ws[i] stores variable numbers directly
+    ws[0] = WLIN0.first_var();
+    ws[1] = WLIN1.first_var();
+    ptr_cache[0] = ws[0];
+    ptr_cache[1] = ws[1];
     assert(get_wl0() != get_wl1());
 
     assert_slow(assert_data_struct());
   }
 
+  // ws[i] now stores variable numbers directly, so ptr_ is identity
   inline var_t ptr_(const cls_size_t &i, const var_t val) const {
     if(val == 0 && linerals[i].size()==0) return 0;
-    assert(val < linerals[i].size());
-    // return linerals[i].get_idxs_().at(val);
-    return linerals[i].get_idxs_()[val];
+    return val;
   }
 
   inline const var_t &ptr_ws(const cls_size_t &i) const {
@@ -203,152 +202,118 @@ private:
     if(alpha[ptr_ws(0)] == bool3::None) return {ptr_ws(0), cls_upd_ret::NONE};
     assert(alpha[ptr_ws(0)] != bool3::None);
 
-    // TODO shorter & cleaner impl with c++20 ranges?
-    // vec<std::ranges::subrange<lit_watch, lineral::iterator, std::ranges::subrange_kind::sized>> tmp{ std::ranges::subrange(ws[i], linerals[i].end()), std::ranges::subrange(linerals[i].begin(), ws[i]) };
-    // auto r = tmp | std::ranges::views::join;
-
-    // advance iterator as long as there is another unassigned idx to point to
-    auto new_w = ws[0];
-    while ((new_w < (var_t)WLIN0.size()) && (alpha[ptr_(idx[0], new_w)] != bool3::None)) { ++new_w; }
-    if (new_w == (var_t)WLIN0.size()) {
-      /*wrap around end if necessary */ new_w = 0;
-      while ((alpha[ptr_(idx[0], new_w)] != bool3::None) && (new_w != ws[0])) { ++new_w; }
+    // Scan WLIN0 for next unassigned variable (ws[i] stores variable numbers)
+    const var_t old_w0 = ws[0];
+    var_t nv = WLIN0.next_var_after(old_w0);
+    while(nv != static_cast<var_t>(-1) && alpha[nv] != bool3::None) nv = WLIN0.next_var_after(nv);
+    if(nv == static_cast<var_t>(-1)) {
+      // wrap around
+      nv = WLIN0.first_var();
+      while(nv != old_w0 && alpha[nv] != bool3::None) nv = WLIN0.next_var_after(nv);
     }
-    // advancing done; now new_w points to ws[0] or at an unassigned idx -- or again to ws[0] (!)
 
-    if (new_w != ws[0]) {
-      assert(alpha[ptr_(idx[0], new_w)] == bool3::None);
-      ws[0] = new_w;
-      ptr_cache[0] = ptr_(idx[0], ws[0]);
+    if(nv != old_w0) {
+      assert(alpha[nv] == bool3::None);
+      ws[0] = nv;
+      ptr_cache[0] = nv;
       assert(assert_data_struct());
       return {ptr_ws(0), cls_upd_ret::NONE};
     }
-    // now WLIN0 is constant under alpha! ...i.e. check shared part
-    new_w = 0;
-    while ((new_w < (var_t)shared_part.size()) && (alpha[shared_part.get_idxs_()[new_w]] != bool3::None)) ++new_w;
-    if (new_w != (var_t)shared_part.size()) {
-      // lit in shared_part can be watched!
-      // rewrite WLIN1:
+    // WLIN0 is constant under alpha; check shared_part
+    var_t sp_v = shared_part.first_var();
+    while(sp_v != static_cast<var_t>(-1) && alpha[sp_v] != bool3::None) sp_v = shared_part.next_var_after(sp_v);
+    if(sp_v != static_cast<var_t>(-1)) {
       WLIN0.swap(shared_part);
-      ws[0] = new_w;
-      ptr_cache[0] = ptr_(idx[0], ws[0]);
+      ws[0] = sp_v;
+      ptr_cache[0] = sp_v;
       assert(assert_data_struct());
       return {ptr_ws(0), cls_upd_ret::NONE};
     }
 
-    // now shared_part can also be evaluated --> WLIN0+shared_part can be evaluated!
-    if (WLIN0.eval(alpha) ^ shared_part.eval(alpha)) {
-      // WLIN0+shared_part evaluates to 1
-      // corresponding lineral is 1 --> clause does not need to be watched any longer!
-      // do not change watches!
+    // WLIN0+shared_part can be evaluated
+    if(WLIN0.eval(alpha) ^ shared_part.eval(alpha)) {
       SAT_dl_count = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
-      assert(!is_active(dl_count)); // clause is no longer active!
+      assert(!is_active(dl_count));
       assert(assert_data_struct());
       return {ptr_ws(0), cls_upd_ret::SAT};
     }
-    // now WLIN0+shared_part evaluates to 0 under alpha, i.e., we check whether a different lineral can be watched.
     lineral_dl_count0[idx[0]] = {alpha_dl[ptr_ws(0)], dl_count[alpha_dl[ptr_ws(0)]]};
-    //@todo how to obtain lineral_t_pos information without another iteration?
-    lineral_t_pos[idx[0]] = std::max( linerals[idx[0]].get_watch_var(alpha_trail_pos).first, shared_part.get_watch_var(alpha_trail_pos).first );
+    lineral_t_pos[idx[0]] = std::max(linerals[idx[0]].get_watch_var(alpha_trail_pos).first, shared_part.get_watch_var(alpha_trail_pos).first);
 
-    // note that WLIN0 and WLIN1 are always the linerals that are watched, i.e., start search from linerals[2] (!)
     cls_size_t new_i = 0;
     for (; new_i < size(); ++new_i) {
       if(new_i==idx[0] || new_i==idx[1]) continue;
-      // skip linerals which evaluate to 0 in current search tree
-      if (dl_count[lineral_dl_count0[new_i].first] == lineral_dl_count0[new_i].second)
-        continue;
-      
+      if(dl_count[lineral_dl_count0[new_i].first] == lineral_dl_count0[new_i].second) continue;
+
       if(linerals[new_i][ptr_ws(1)]) {
-        //add WLIN1 to linerals[new_i] to eliminate shared part in linerals[new_i]
         linerals[new_i] += WLIN1;
         linerals[new_i] += shared_part;
       }
 
       const auto& [v, dl_assigned, t_pos, _] = linerals[new_i].get_watch_tuple(alpha_dl, alpha_trail_pos);
-      new_w = _;
 
-      //rm linerals[new_i] if it is just zero!
       if(linerals[new_i].is_zero()) {
         remove_zero_lineral(new_i);
-        //repeat with same new_i
         --new_i;
         continue;
       } else if(linerals[new_i].is_one()) {
-        //leave watches untouched; but set SAT_dl_count s.t. clause is satisfied already at dl 0!
         SAT_dl_count = {0, 1};
         return {ptr_ws(0), cls_upd_ret::SAT};
       }
       assert(!linerals[new_i].is_one());
 
-      assert(!(v == ptr_ws(1) || ( linerals[new_i][ptr_ws(1)] && (WLIN1[v] || shared_part[v]) ) ));
-      if (alpha[v] == bool3::None ) {
-        //if ptr_(new_i,new_w) AND ptr_(idx[1],ws[1]) both are in shared part of WLIN1 AND linerals[new_i]; rewrite linerals[new_i] and start over
-        // new lineral to be watched found --> change watched lineral and return SAT
+      assert(!(v == ptr_ws(1) || (linerals[new_i][ptr_ws(1)] && (WLIN1[v] || shared_part[v]))));
+      if(alpha[v] == bool3::None) {
         const auto wl0 = v;
         const auto wl1 = ptr_ws(1);
         WLIN0 += shared_part;
         WLIN1 += shared_part;
         idx[0] = new_i;
-        // fix shared_parts && update ws[0] and ws[1] accordingly!
         shared_part = WLIN0.shared_part(WLIN1);
         WLIN0 += shared_part;
         WLIN1 += shared_part;
-        // fix ws[0] AND ws[1]!
-        ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), wl0));
-        //if ptr_(idx[0],ws[0]) is NOT wl0, then we need to rewrite WLIN0
-        if(ws[0] >= WLIN0.size() || ptr_(idx[0],ws[0])!=wl0 ) {
+        // ws[i] stores variable numbers directly
+        ws[0] = WLIN0[wl0] ? wl0 : static_cast<var_t>(-1);
+        if(ws[0] == static_cast<var_t>(-1)) {
           WLIN0.swap(shared_part);
-          assert( WLIN1[wl1] );
-          ws[0] = std::distance(WLIN0.get_idxs_().begin(), std::lower_bound(WLIN0.get_idxs_().begin(), WLIN0.get_idxs_().end(), wl0));
+          assert(WLIN1[wl1]);
+          ws[0] = wl0;
         }
-        ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), wl1));
-        if(ws[1] >= WLIN1.size() || ptr_(idx[1],ws[1])!=wl1 ) {
+        ws[1] = WLIN1[wl1] ? wl1 : static_cast<var_t>(-1);
+        if(ws[1] == static_cast<var_t>(-1)) {
           WLIN1.swap(shared_part);
-          assert( WLIN1[wl1] );
-          ws[1] = std::distance(WLIN1.get_idxs_().begin(), std::lower_bound(WLIN1.get_idxs_().begin(), WLIN1.get_idxs_().end(), wl1));
+          assert(WLIN1[wl1]);
+          ws[1] = wl1;
         }
-        ptr_cache[0] = ptr_(idx[0], ws[0]);
-        ptr_cache[1] = ptr_(idx[1], ws[1]);
+        ptr_cache[0] = ws[0];
+        ptr_cache[1] = ws[1];
         assert(ptr_cache[0] == wl0 && ptr_cache[1] == wl1);
         assert(is_active(dl_count));
         return {ptr_ws(0), cls_upd_ret::NONE};
       } else {
-        // linerals[new_i] evaluates to a constant; this is only useful if linerals[new_i].eval(alpha) is 1, i.e., the clause is SAT
         if(!linerals[new_i].eval(alpha)) {
-          //note: we can leave all watches as they were!
           SAT_dl_count = {dl_assigned, dl_count[dl_assigned]};
-          
           assert(!is_active(dl_count));
           assert(is_sat(dl_count));
           assert(assert_data_struct());
           assert(assert_data_struct(alpha, alpha_trail_pos, dl_count));
           return {ptr_ws(0), cls_upd_ret::SAT};
         }
-        // now linerals[new_i] evaluates to 0 --> choose different new_i
         lineral_dl_count0[new_i] = {dl_assigned, dl_count[dl_assigned]};
-        //update t_pos information
         lineral_t_pos[new_i] = t_pos;
         assert_slow(lineral_t_pos[new_i] == linerals[new_i].get_watch_var(alpha_trail_pos).first);
-        
-        assert( dl_assigned <= alpha_dl[ptr_ws(0)] );
+        assert(dl_assigned <= alpha_dl[ptr_ws(0)]);
       }
     }
-    // if the above did not yet return, then all linerals (except WLIN1) evaluate to 0 under alpha, i.e., we learn a unit clause!
-    // moreover, no watch literals need to be updated! (ws[0] is already at highest dl and WLIN0 evaluates to 0!)
-    
-    //set lineral_t_pos of unit to -1
-    //@todo can we also just set it to -1 ??
-    lineral_t_pos[idx[1]] = std::max( linerals[idx[1]].get_watch_var(alpha_trail_pos).first, shared_part.get_watch_var(alpha_trail_pos).first );
 
-    //ensure that WLIN0 is the unit:
+    lineral_t_pos[idx[1]] = std::max(linerals[idx[1]].get_watch_var(alpha_trail_pos).first, shared_part.get_watch_var(alpha_trail_pos).first);
     swap_wl();
     assert(!is_active(dl_count));
     assert(is_unit(dl_count));
-    assert( !(size()>1) || (lineral_t_pos[idx[0]] > lineral_t_pos[idx[1]]) );
+    assert(!(size()>1) || (lineral_t_pos[idx[0]] > lineral_t_pos[idx[1]]));
     assert(assert_data_struct());
     return {ptr_ws(1), cls_upd_ret::UNIT};
-  };
+  }
 
   /**
    * @brief swap watched literals
@@ -486,10 +451,9 @@ public:
         }
       }
     }
-    //rm from WLIN0
+    //rm from WLIN0 (ws[i] stores variable numbers, no offset adjustment needed)
     if( WLIN0.rm(upd_lt, val) ) {
-      //adapt ws[0]
-      if(ptr_cache[0] > upd_lt) ws[0]--;
+      assert(ptr_cache[0] != upd_lt); // ws[0] should not be the removed variable
       assert(ptr_(idx[0],ws[0]) == ptr_cache[0]);
       assert(!WLIN0.is_zero());
       if(lineral_t_pos[idx[0]]==alpha_trail_pos[upd_lt]) {
@@ -498,8 +462,7 @@ public:
     }
 
     if( size()>0 && WLIN1.rm(upd_lt, val) ) {
-      //adapt ws[0]
-      if(ptr_cache[1] > upd_lt) ws[1]--;
+      assert(ptr_cache[1] != upd_lt);
       assert(ptr_(idx[1],ws[1]) == ptr_cache[1]);
       assert(!WLIN1.is_zero());
       if(lineral_t_pos[idx[1]]==alpha_trail_pos[upd_lt]) {
@@ -639,8 +602,8 @@ public:
         return cls_upd_ret::SAT;
       } else if(size()==1) {
         assert(idx[0] == 0);
-        ws[0] = 0;
-        ptr_cache[0] = ptr_(idx[0],ws[0]);
+        ws[0] = linerals[idx[0]].first_var();
+        ptr_cache[0] = ws[0];
         return cls_upd_ret::UNIT;
       }
 
@@ -685,15 +648,15 @@ public:
           continue;
         }
         assert(size()==1);
-        ws[0] = 0;
-        ptr_cache[0] = WLIN0.size()>0 ? ptr_(idx[0], ws[0]) : 0;
+        ws[0] = WLIN0.size()>0 ? WLIN0.first_var() : 0;
+        ptr_cache[0] = ws[0];
         return cls_upd_ret::UNIT;
       } else {
         //clause is neither SAT nor UNIT --> NONE
-        ws[0] = 0;
-        ws[1] = 0;
-        ptr_cache[0] = ptr_(idx[0],ws[0]);
-        ptr_cache[1] = ptr_(idx[1],ws[1]);
+        ws[0] = WLIN0.first_var();
+        ws[1] = WLIN1.first_var();
+        ptr_cache[0] = ws[0];
+        ptr_cache[1] = ws[1];
         return cls_upd_ret::NONE;
       }
     }
@@ -770,11 +733,13 @@ public:
         const var_t new_i = std::distance(lineral_dl_count0.begin(), std::max_element(lineral_dl_count0.begin(), lineral_dl_count0.end(),
                                                                               [](const auto &a, const auto &b) { return a.first < b.first; }));
         idx[0] = new_i;
-        // esnure we watch the variable with hightest dl!
-        const var_t new_w = std::distance(WLIN0.begin(), std::max_element(WLIN0.begin(), WLIN0.end(), 
-                                                                              [&](const auto &a, const auto &b) { return alpha_trail_pos[a] < alpha_trail_pos[b]; }));
-        ws[0] = new_w;
-        ptr_cache[0] = ptr_(idx[0], ws[0]);
+        // ensure we watch the variable with highest trail_pos
+        var_t best_v = WLIN0.first_var();
+        for(auto v = best_v; v != static_cast<var_t>(-1); v = WLIN0.next_var_after(v)) {
+          if(alpha_trail_pos[v] > alpha_trail_pos[best_v]) best_v = v;
+        }
+        ws[0] = best_v;
+        ptr_cache[0] = best_v;
         std::swap(lineral_dl_count0[idx[0]], lineral_dl_count0[new_i]);
       }
     }
@@ -797,8 +762,8 @@ public:
       lineral_t_pos[i] = alpha_trail_pos[ lt ];
       lineral_dl_count0[i] = {alpha_dl[lt], dl_count[ alpha_dl[lt] ]};
     }
-    if(size()>=1) { idx[0]=(size()-1); ptr_cache[0]=linerals[(size()-1)].LT(); };
-    if(size()>=2) { idx[1]=(size()-2); ptr_cache[1]=linerals[(size()-2)].LT(); };
+    if(size()>=1) { idx[0]=(size()-1); ws[0]=linerals[(size()-1)].LT(); ptr_cache[0]=ws[0]; }
+    if(size()>=2) { idx[1]=(size()-2); ws[1]=linerals[(size()-2)].LT(); ptr_cache[1]=ws[1]; }
 
     assert( assert_data_struct(alpha, alpha_trail_pos, dl_count) );
   }
@@ -907,16 +872,12 @@ public:
     //  l.insert(lvl);
     //}
     for(const auto& lin : linerals) {
-      for(const auto& i : lin.get_idxs_()) {
-        l_tmp.insert(alpha_dl[i]);
-      }
-      for(const auto& i : shared_part) {
-        l_tmp.insert(alpha_dl[i]);
-      }
+      for(const auto i : lin) l_tmp.insert(alpha_dl[i]);
+      for(const auto i : shared_part) l_tmp.insert(alpha_dl[i]);
     }
     lbd = l_tmp.size();
     return lbd;
-  };
+  }
   var_t recompute_LBD(const vec<var_t>& alpha_dl) {
     lbd = (var_t) -1;
     return LBD(alpha_dl);
@@ -924,14 +885,9 @@ public:
 
   std::set<var_t> get_vars() const {
     l_tmp.clear();
-    //return vars;
     for(const auto& lin : linerals) {
-      for(const auto& i : lin.get_idxs_()) {
-        l_tmp.insert(i);
-      }
-      for(const auto& i : shared_part) {
-        l_tmp.insert(i);
-      }
+      for(const auto i : lin) l_tmp.insert(i);
+      for(const auto i : shared_part) l_tmp.insert(i);
     }
     return l_tmp;
   }
@@ -1050,9 +1006,9 @@ public:
     // check that WLIN0 and WLIN1 share no inds!
     assert(size()<2 || WLIN0.shared_part(WLIN1).is_zero());
 
-    // check ptr_cache
-    assert(size()==0 || (size()==1 && WLIN0.is_constant()) || ptr_cache[0] == ptr_(idx[0], ws[0]));
-    assert(size()<2 || ptr_cache[1] == ptr_(idx[1], ws[1]));
+    // check ptr_cache (ws[i] == ptr_cache[i] == variable number)
+    assert(size()==0 || (size()==1 && WLIN0.is_constant()) || (ptr_cache[0] == ws[0] && WLIN0[ws[0]]));
+    assert(size()<2 || (ptr_cache[1] == ws[1] && WLIN1[ws[1]]));
 
     // check size of linerals -- ensure it does not 'explode'
     assert( linerals.size() < ((int) 1) << 16);
