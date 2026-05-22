@@ -44,7 +44,8 @@ void GaussElimEngine::fill_matrix(const std::list<lineral>& lins) {
 
 void GaussElimEngine::eliminate() {
     if(num_rows == 0) return;
-    var_has_resp_row.assign(num_vars + 1, 0);
+    uint32_t max_col_var = col_to_var.empty() ? 0 : col_to_var.back();
+    var_has_resp_row.assign(max_col_var + 1, 0);
     auto end_row = mat.begin() + num_rows;
     auto rowI = mat.begin();
     uint32_t row_i = 0, col = 0;
