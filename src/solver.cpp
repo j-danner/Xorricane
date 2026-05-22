@@ -1817,7 +1817,7 @@ bool solver::find_implications_by_GE_core(stats& s) {
   var_t n_wlins = 0;
   for(const auto& l_dl : lineral_watches) {
     for(const auto& l : l_dl) {
-      for(const auto& v : l.get_idxs_()) perm[v] = 1;
+      for(var_t v : l) perm[v] = 1;
       ++n_wlins;
     }
   }
@@ -1845,7 +1845,7 @@ bool solver::find_implications_by_GE_core(stats& s) {
   for(const auto& l_dl : lineral_watches) {
     for(const auto& l : l_dl) {
       bit::vector<> row(ncols);
-      for(const auto& i : l.get_idxs_()) {
+      for(var_t i : l) {
           assert(i > 0); assert(perm[i] < (var_t)ncols - 1);
           row.set(perm[i]);
       }
@@ -1908,14 +1908,14 @@ bool solver::find_implications_by_GE_core(stats& s) {
     std::size_t col = 0;
     for(const auto& l_dl : lineral_watches) {
       for(const auto& l : l_dl) {
-        for(const auto& v : l.get_idxs_()) M_tr_b.row(perm[v]).set(col);
+        for(var_t v : l) M_tr_b.row(perm[v]).set(col);
         if(l.has_constant()) M_tr_b.row(n_vars).set(col);
         ++col;
       }
     }
     std::size_t bi = 0;
     for(const auto& lit : linerals_) {
-      for(const auto& v : lit.get_idxs_()) M_tr_b.row(perm[v]).set(n_wlins + bi);
+      for(var_t v : lit) M_tr_b.row(perm[v]).set(n_wlins + bi);
       if(lit.has_constant()) M_tr_b.row(n_vars).set(n_wlins + bi);
       ++bi;
     }
@@ -2016,7 +2016,7 @@ inline lin_sys solver::get_lineral_watches_lin_sys() const {
   vec<var_t> perm_inv(alpha.size(), 0);
   for(const auto& l_dl : lineral_watches)
     for(const auto& l : l_dl)
-      for(const auto& v : l.get_idxs_()) perm[v] = 1;
+      for(var_t v : l) perm[v] = 1;
 
   var_t idx = 0;
   for(var_t i = 1; i < alpha.size(); ++i) {
@@ -2030,7 +2030,7 @@ inline lin_sys solver::get_lineral_watches_lin_sys() const {
   for(const auto& l_dl : lineral_watches) {
     for(const auto& l : l_dl) {
       bit::vector<> row(ncols);
-      for(const auto& i : l.get_idxs_()) {
+      for(var_t i : l) {
           assert(i > 0); assert(perm[i] < (var_t)ncols - 1);
           row.set(perm[i]);
       }
@@ -2085,7 +2085,7 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
   var_t n_wlins = 0;
   for(const auto& l_dl : lineral_watches) {
     for(const auto& l : l_dl) {
-      for(const auto& v : l.get_idxs_()) perm[v] = 1;
+      for(var_t v : l) perm[v] = 1;
       ++n_wlins;
     }
   }
@@ -2108,7 +2108,7 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
     for(const auto& l_dl : lineral_watches) {
       for(const auto& l : l_dl) {
         bit::vector<> row(ncols);
-        for(const auto& i : l.get_idxs_()) { row.set(perm[i]); }
+        for(var_t i : l) { row.set(perm[i]); }
         if(l.has_constant()) row.set(n_vars);
         M.push_row(row);
       }
@@ -2153,7 +2153,7 @@ inline std::tuple<lin_sys,cls_watch> solver::check_lineral_watches_GE() {
     std::size_t col = 0;
     for(const auto& l_dl : lineral_watches) {
       for(const auto& l : l_dl) {
-        for(const auto& v : l.get_idxs_()) M_tr_b.row(perm[v]).set(col);
+        for(var_t v : l) M_tr_b.row(perm[v]).set(col);
         if(l.has_constant()) M_tr_b.row(n_vars).set(col);
         ++col;
       }
