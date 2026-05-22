@@ -159,6 +159,7 @@ void GaussElimEngine::init_adjust_matrix(const vec<bool3>&, std::list<lineral>& 
                 if(mat[row_i].rhs()) {
                     ok = false; confl_row = row_i; return;
                 }
+                mat[row_i].setZero();  // already zero after GJ, but explicit
                 satisfied_xors[row_i] = 1;
                 row_to_var_non_resp.push_back(UNASSIGNED_COL);
                 break;
@@ -172,7 +173,9 @@ void GaussElimEngine::init_adjust_matrix(const vec<bool3>&, std::list<lineral>& 
                 adjust_zero++;
                 satisfied_xors[row_i] = 1;
                 row_to_var_non_resp.push_back(UNASSIGNED_COL);
-                out_queue.push_back(row_to_lineral(row_i));
+                out_queue.push_back(row_to_lineral(row_i));  // capture BEFORE zeroing
+                mat[row_i].setZero();                         // zero AFTER capturing
+                mat[row_i].rhs() = 0;
                 enqueue_internal(var, val, row_i, 0);
                 new_props.push_back({var, val});
                 break;
@@ -187,10 +190,6 @@ void GaussElimEngine::init_adjust_matrix(const vec<bool3>&, std::list<lineral>& 
                 break;
         }
     }
-
-    // Shrink to exclude zero/unit rows
-    num_rows -= adjust_zero;
-    mat.resizeNumRows(num_rows);
 }
 
 void GaussElimEngine::enqueue_internal(var_t var, bool val, uint32_t row_n, uint32_t level) {
