@@ -97,3 +97,41 @@ TEST_CASE("GaussElimEngine propagation chain", "[gauss_engine]") {
     CHECK(found_x2);
     CHECK(found_x3);
 }
+
+TEST_CASE("GaussElimEngine backtrack restores state", "[gauss_engine]") {
+    // x1+x2+x3=0. Assign x1=TRUE dl=1, x2=TRUE dl=2 → x3 propagates TRUE.
+    // Backtrack to dl=1. x2,x3 should be unassigned. Re-assign x2=FALSE → x3=FALSE.
+    GaussElimEngine ge;
+    std::list<lineral> lins;
+    lins.push_back(lineral(vec<var_t>({1,2,3}), false, presorted::yes));
+    vec<bool3> alpha;
+    std::list<lineral> implied;
+    ge.init(lins, 3, alpha, implied);
+
+    ge.push_decision_level();
+    ge.enqueue(1, true, 1);
+    ge.propagate();
+    ge.clear_new_props();
+
+    ge.push_decision_level();
+    ge.enqueue(2, true, 2);
+    ge.propagate();
+    auto& props = ge.get_new_props();
+    REQUIRE(props.size() == 1);
+    CHECK(props[0].first == 3);  // x3 propagated
+    ge.clear_new_props();
+
+    // Backtrack to dl=1
+    ge.backtrack(1);
+    CHECK(ge.decision_level() == 1);
+    CHECK(ge.is_ok());
+
+    // Re-assign x2=FALSE at dl=2
+    ge.push_decision_level();
+    ge.enqueue(2, false, 2);
+    ge.propagate();
+    auto& props2 = ge.get_new_props();
+    REQUIRE(props2.size() == 1);
+    CHECK(props2[0].first == 3);
+    ge.clear_new_props();
+}

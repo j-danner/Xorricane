@@ -390,7 +390,27 @@ void GaussElimEngine::propagate() {
     }
     if(confl_row != UNASSIGNED_COL) ok = false;
 }
-void GaussElimEngine::backtrack(uint32_t) {}
+void GaussElimEngine::backtrack(uint32_t lvl) {
+    assert(lvl <= dl);
+    if(lvl >= dl) return;
+
+    // Unassign all vars added after lvl
+    uint32_t new_trail_size = lvl < trail_lim.size() ? trail_lim[lvl] : 0;
+    for(int k = (int)trail.size()-1; k >= (int)new_trail_size; k--) {
+        var_t var = trail[k].var;
+        assigns[var] = l_Undef;
+        var_data[var] = VarData{};
+    }
+    trail.resize(new_trail_size);
+    trail_lim.resize(lvl);
+    qhead = new_trail_size;
+    dl = lvl;
+    ok = true;
+    confl_row = UNASSIGNED_COL;
+    cancelled_since_val_update = true;
+    new_props.clear();
+    std::fill(satisfied_xors.begin(), satisfied_xors.end(), 0);
+}
 void GaussElimEngine::push_decision_level() { trail_lim.push_back(trail.size()); dl++; }
 lineral GaussElimEngine::get_reason(var_t) const { return lineral(); }
 lineral GaussElimEngine::get_conflict() const { return lineral(cnst::one); }
