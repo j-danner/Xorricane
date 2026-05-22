@@ -1,4 +1,5 @@
 #include "../src/gauss_elim/gauss_engine.hpp"
+#include "../src/lin_sys_lazy.hpp"
 #include "../src/lineral.hpp"
 #include <catch2/catch_all.hpp>
 #include <list>
@@ -167,4 +168,29 @@ TEST_CASE("GaussElimEngine get_reason returns correct lineral", "[gauss_engine]"
     CHECK(std::find(vars.begin(),vars.end(),1u) != vars.end());
     CHECK(std::find(vars.begin(),vars.end(),2u) != vars.end());
     CHECK(std::find(vars.begin(),vars.end(),3u) != vars.end());
+}
+
+TEST_CASE("lin_sys_lazy_GE uses GaussElimEngine", "[gauss_engine][integration]") {
+    SECTION("3-variable chain: x1+x2=0, x2+x3=0") {
+        lineral l1(vec<var_t>({1,2}));
+        lineral l2(vec<var_t>({2,3}));
+        lin_sys_lazy_GE lsl(vec<lineral>({l1, l2}), 3);
+        lsl.clear_implied_literal_queue();
+
+        vec<bool3> alpha(4, bool3::None);
+        alpha[1] = bool3::True;
+        bool ret = lsl.assign(1, alpha, 1);
+        CHECK(ret);
+        CHECK(lsl.get_implied_literal_queue().size() >= 1);
+    }
+
+    SECTION("unit lineral x3=0 at construction") {
+        lineral l1(vec<var_t>({1,2,3}));
+        lineral l2(vec<var_t>({1,2}));
+        lin_sys_lazy_GE lsl(vec<lineral>({l1, l2}), 3);
+        auto& q = lsl.get_implied_literal_queue();
+        bool found = false;
+        for(const auto& l : q) if(l.is_assigning() && l.LT()==3) found = true;
+        CHECK(found);
+    }
 }
