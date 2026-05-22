@@ -71,7 +71,7 @@ public:
     constexpr static Lit toLit(uint32_t data) { return Lit(data); }
 };
 
-static const Lit lit_Undef(var_Undef, false);
+inline constexpr Lit lit_Undef(var_Undef, false);
 
 inline std::ostream& operator<<(std::ostream& os, const Lit lit)
 {
@@ -336,7 +336,7 @@ public:
         }
         numRows = b.numRows;
         numCols = b.numCols;
-        memcpy(mp, b.mp, sizeof(int)*numRows*(numCols+1));
+        memcpy(mp, b.mp, sizeof(int64_t)*numRows*(numCols+1));
         return *this;
     }
 
