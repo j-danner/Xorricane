@@ -157,3 +157,71 @@ TEST_CASE( "lineral_watch", "[lineral_watch]" ) {
 
 };
 
+
+TEST_CASE("lineral_watch update propagation chain", "[lineral_watch]") {
+    // Lineral: x3+x4+x5+x6+1; assign x3=True@dl1, x4=False@dl2, leaving x5 and x6 as watches;
+    // then assign x5=True@dl2, at which point the lineral becomes assigning (x6 is forced).
+    vec<bool3> alpha(8, bool3::None);
+    vec<var_t>  alpha_dl(8, static_cast<var_t>(-1));
+    vec<dl_c_t> dl_count = {1, 1, 1};
+
+    // l = x3+x4+x5+x6+1
+    lineral l(vec<var_t>({0, 3, 4, 5, 6}));
+    lineral_watch lw(l, alpha, alpha_dl, dl_count, static_cast<var_t>(-1));
+    CHECK(!lw.is_assigning(alpha));
+
+    // Assign x3=True@dl1: update the watch for x3; lineral still has 3 free vars -> not assigning
+    alpha[3] = bool3::True; alpha_dl[3] = 1;
+    auto [nw1, ret1] = lw.update(3, alpha, 1, dl_count);
+    CHECK(ret1 == lineral_upd_ret::UNIT);
+    CHECK(!lw.is_assigning(alpha));
+
+    // Assign x4=False@dl2: update the watch for x4; lineral still has 2 free vars -> not assigning
+    alpha[4] = bool3::False; alpha_dl[4] = 2;
+    auto [nw2, ret2] = lw.update(4, alpha, 2, dl_count);
+    CHECK(ret2 == lineral_upd_ret::UNIT);
+    CHECK(!lw.is_assigning(alpha));
+
+    // Assign x5=True@dl2: update the watch for x5; now only x6 is free -> assigning
+    alpha[5] = bool3::True; alpha_dl[5] = 2;
+    auto [new_watch, upd_ret] = lw.update(5, alpha, 2, dl_count);
+    CHECK(upd_ret == lineral_upd_ret::ASSIGNING);
+    CHECK(lw.is_assigning(alpha));
+}
+
+
+TEST_CASE("lineral_watch get_assigning_lvl", "[lineral_watch]") {
+    // l = x2+x3+x4; assign x2=False@dl1 and x3=True@dl3; x4 is free -> assigning
+    // ws[0] holds the highest-dl assigned variable (x3@dl3), get_assigning_lvl returns dl3=3
+    vec<bool3> alpha(8, bool3::None);
+    vec<var_t>  alpha_dl(8, static_cast<var_t>(-1));
+    vec<dl_c_t> dl_count = {1, 2, 1, 1};
+
+    alpha[2] = bool3::False; alpha_dl[2] = 1;
+    alpha[3] = bool3::True;  alpha_dl[3] = 3;
+    lineral l(vec<var_t>({2, 3, 4}));
+    lineral_watch lw(l, alpha, alpha_dl, dl_count, static_cast<var_t>(-1));
+    REQUIRE(lw.is_assigning(alpha));
+    // ws[0] is the highest-dl assigned var (x3@dl3); get_assigning_lvl returns alpha_dl[ws[0]] = 3
+    CHECK(lw.get_assigning_lvl(alpha_dl) == 3);
+}
+
+
+TEST_CASE("lineral_watch to_lineral round-trip", "[lineral_watch]") {
+    vec<bool3> alpha(5, bool3::None);
+    vec<var_t>  alpha_dl(5, static_cast<var_t>(-1));
+    vec<dl_c_t> dl_count = {1, 1};
+
+    lineral original(vec<var_t>({0, 1, 3}));  // x1+x3+1
+    lineral_watch lw(original, alpha, alpha_dl, dl_count, static_cast<var_t>(-1));
+    // to_lineral() must return a lineral equal to the original even after assignments
+    CHECK(lw.to_lineral() == original);
+
+    // Assign x1=True@dl1: lw becomes assigning (only x3 left free)
+    alpha[1] = bool3::True; alpha_dl[1] = 1;
+    lw.update(1, alpha, 1, dl_count);
+    CHECK(lw.is_assigning(alpha));
+    // to_lineral() must still return the *original* unmodified lineral, not a reduced form
+    CHECK(lw.to_lineral() == original);
+}
+
