@@ -135,3 +135,36 @@ TEST_CASE("GaussElimEngine backtrack restores state", "[gauss_engine]") {
     CHECK(props2[0].first == 3);
     ge.clear_new_props();
 }
+
+TEST_CASE("GaussElimEngine get_reason returns correct lineral", "[gauss_engine]") {
+    // x1+x2+x3=0, assign x1=TRUE, x2=TRUE → propagates x3.
+    // Reason for x3: the row x1+x2+x3=0
+    GaussElimEngine ge;
+    std::list<lineral> lins;
+    lins.push_back(lineral(vec<var_t>({1,2,3}), false, presorted::yes));
+    vec<bool3> alpha;
+    std::list<lineral> implied;
+    ge.init(lins, 3, alpha, implied);
+
+    ge.push_decision_level();
+    ge.enqueue(1, true, 1);
+    ge.push_decision_level();
+    ge.enqueue(2, true, 2);
+    ge.propagate();
+
+    auto& props = ge.get_new_props();
+    REQUIRE(props.size() == 1);
+    var_t propagated_var = props[0].first;
+    CHECK(propagated_var == 3);
+
+    lineral reason = ge.get_reason(propagated_var);
+    // Reason should be x1+x2+x3=0 (or some equivalent row)
+    CHECK(reason.size() == 3);
+    CHECK(!reason.has_constant());  // rhs=0
+    // Variables in reason are 1,2,3
+    vec<var_t> vars;
+    for(var_t v : reason) vars.push_back(v);
+    CHECK(std::find(vars.begin(),vars.end(),1u) != vars.end());
+    CHECK(std::find(vars.begin(),vars.end(),2u) != vars.end());
+    CHECK(std::find(vars.begin(),vars.end(),3u) != vars.end());
+}

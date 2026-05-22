@@ -412,8 +412,16 @@ void GaussElimEngine::backtrack(uint32_t lvl) {
     std::fill(satisfied_xors.begin(), satisfied_xors.end(), 0);
 }
 void GaussElimEngine::push_decision_level() { trail_lim.push_back(trail.size()); dl++; }
-lineral GaussElimEngine::get_reason(var_t) const { return lineral(); }
-lineral GaussElimEngine::get_conflict() const { return lineral(cnst::one); }
+lineral GaussElimEngine::get_reason(var_t var) const {
+    assert(var < var_data.size());
+    assert(var_data[var].assigned);
+    assert(var_data[var].row_n != UNASSIGNED_COL);
+    return row_to_lineral(var_data[var].row_n);
+}
+lineral GaussElimEngine::get_conflict() const {
+    assert(confl_row != UNASSIGNED_COL);
+    return row_to_lineral(confl_row);
+}
 lineral GaussElimEngine::row_to_lineral(uint32_t row_n) const {
     vec<var_t> vars;
     for(uint32_t col = 0; col < num_cols; col++)
