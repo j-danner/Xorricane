@@ -3,8 +3,8 @@
 #include <cstring>
 
 using CMSat::l_True; using CMSat::l_False; using CMSat::l_Undef;
-using CMSat::boolToLBool; using CMSat::lbool;
-using CMSat::GaussWatched; using CMSat::gret;
+using CMSat::lbool;
+using CMSat::GaussWatched;
 
 void GaussElimEngine::init(const std::list<lineral>& lins, var_t num_vars_,
                             const vec<bool3>& alpha, std::list<lineral>& out_queue) {

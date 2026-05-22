@@ -13,6 +13,8 @@ class GaussElimEngine {
 public:
     static constexpr uint32_t UNASSIGNED_COL = std::numeric_limits<uint32_t>::max();
 
+    ~GaussElimEngine() { free_temps(); }
+
     // Build from linerals at dl=0. Populates out_queue with immediately implied linerals.
     void init(const std::list<lineral>& lins, var_t num_vars_,
               const vec<bool3>& alpha, std::list<lineral>& out_queue);
