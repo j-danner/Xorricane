@@ -42,69 +42,6 @@ target_include_directories(lineral PUBLIC ${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_D
 target_link_libraries(lineral PUBLIC ${EXTRA_LIBS})
 
 
-##build cryptominisatlib
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cryptominisat/src/GitSHA1.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/cryptominisat/GitSHA1.cpp" @ONLY)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cryptominisat/src/GitSHA1.h" "${CMAKE_CURRENT_BINARY_DIR}/cryptominisat/src/GitSHA1.h")
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cryptominisat/cmake)
-find_package(GMP REQUIRED)
-include_directories( SYSTEM ${GMP_INCLUDE_DIR} )
-# Needed for PicoSAT trace generation
-add_definitions( -DTRACE )
-# main files for lib
-add_library(cms
-    STATIC
-    cryptominisat/src/constants.h
-    cryptominisat/src/cnf.cpp
-    cryptominisat/src/probe.cpp
-    cryptominisat/src/oracle_use.cpp
-    cryptominisat/src/backbone.cpp
-    cryptominisat/src/frat.cpp
-    cryptominisat/src/propengine.cpp
-    cryptominisat/src/varreplacer.cpp
-    cryptominisat/src/clausecleaner.cpp
-    cryptominisat/src/occsimplifier.cpp
-    cryptominisat/src/gatefinder.cpp
-    cryptominisat/src/subsumestrengthen.cpp
-    cryptominisat/src/clauseallocator.cpp
-    cryptominisat/src/sccfinder.cpp
-    cryptominisat/src/solverconf.cpp
-    cryptominisat/src/distillerlong.cpp
-    cryptominisat/src/distillerlitrem.cpp
-    cryptominisat/src/distillerbin.cpp
-    cryptominisat/src/distillerlongwithimpl.cpp
-    cryptominisat/src/str_impl_w_impl.cpp
-    cryptominisat/src/solutionextender.cpp
-    cryptominisat/src/completedetachreattacher.cpp
-    cryptominisat/src/searcher.cpp
-    cryptominisat/src/solver.cpp
-    cryptominisat/src/hyperengine.cpp
-    cryptominisat/src/subsumeimplicit.cpp
-    cryptominisat/src/datasync.cpp
-    cryptominisat/src/reducedb.cpp
-    cryptominisat/src/intree.cpp
-    cryptominisat/src/searchstats.cpp
-    cryptominisat/src/xorfinder.cpp
-    cryptominisat/src/cardfinder.cpp
-    cryptominisat/src/cryptominisat_c.cpp
-    cryptominisat/src/sls.cpp
-    cryptominisat/src/sqlstats.cpp
-    cryptominisat/src/vardistgen.cpp
-    cryptominisat/src/ccnr.cpp
-    cryptominisat/src/ccnr_cms.cpp
-    cryptominisat/src/lucky.cpp
-    cryptominisat/src/get_clause_query.cpp
-    cryptominisat/src/gaussian.cpp
-    cryptominisat/src/packedrow.cpp
-    cryptominisat/src/matrixfinder.cpp
-    cryptominisat/src/mpicosat/mpicosat.c
-    cryptominisat/src/mpicosat/version.c
-    cryptominisat/src/oracle/oracle.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/cryptominisat/GitSHA1.cpp
-    cryptominisat/src/cryptominisat.cpp
-)
-target_link_libraries(cms PUBLIC ${GMP_LIBRARIES})
-target_compile_options(cms PUBLIC "-Wno-all" )
 
 
 add_library(
@@ -112,9 +49,9 @@ add_library(
     STATIC
     gauss_elim/gauss_engine.hpp
     gauss_elim/gauss_engine.cpp
+    gauss_elim/packedrow.cpp
 )
-add_dependencies(gauss_elim cms)
-target_link_libraries(gauss_elim PUBLIC lineral cms)
+target_link_libraries(gauss_elim PUBLIC lineral)
 
 #setup library for lazy version of lineral
 add_library(
@@ -128,12 +65,8 @@ add_library(
     #linsys_watched
     lin_sys_lazy.hpp
     lin_sys_lazy.cpp
-    cryptominisat/src/cryptominisat.h
-    cryptominisat/src/solver.h
-    cryptominisat/src/gaussian.h
 )
-add_dependencies(lineral_lazy cms)
-target_link_libraries(lineral_lazy PUBLIC cms ${EXTRA_LIBS} lineral gauss_elim)
+target_link_libraries(lineral_lazy PUBLIC ${EXTRA_LIBS} lineral gauss_elim)
 
 
 
