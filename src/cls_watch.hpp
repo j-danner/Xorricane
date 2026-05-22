@@ -158,21 +158,6 @@ private:
   }
 
   /**
-   * @brief check if clause in current repr is disjoint
-   */
-  bool is_disjoint() const {
-    if(!shared_part.is_constant()) return false;
-    std::unordered_set<var_t> idxs;
-    for(const auto& l : linerals) {
-      for(const auto& v : l.get_idxs_()) {
-        if(idxs.contains(v)) return false;
-        idxs.insert(v);
-      }
-    }
-    return true;
-  };
-  
-  /**
    * @brief advances ws[0] such that ws[0] and ws[1] satisfy all invariants; 'repairs' inactive watches
    * @note assumes that clause is UNIT under alpha
    *
@@ -336,6 +321,7 @@ public:
   };
 
   cls_watch(const lineral &l1, const lineral &l2) noexcept : linerals(vec<lineral>({l1, l2})), lineral_dl_count0({{0,0},{0,0}}) {
+    idx[0] = 0; idx[1] = 1;
     WLIN0.add_one(); WLIN1.add_one();
     assert(!l1.is_one() && !l1.is_zero());
     assert(!l2.is_one() && !l2.is_zero());
@@ -827,6 +813,21 @@ public:
   inline bool is_sat0() const {
     return SAT_dl_count.first == 0 && SAT_dl_count.second == 1;
   }
+
+  /**
+   * @brief check if clause in current repr is disjoint (all lineral supports are pairwise variable-disjoint)
+   */
+  bool is_disjoint() const {
+    if(!shared_part.is_constant()) return false;
+    std::unordered_set<var_t> idxs;
+    for(const auto& l : linerals) {
+      for(var_t v : l) {
+        if(idxs.contains(v)) return false;
+        idxs.insert(v);
+      }
+    }
+    return true;
+  };
 
   /**
    * @brief determines if cls is unit at current dl_count
