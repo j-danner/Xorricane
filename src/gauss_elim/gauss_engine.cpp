@@ -6,7 +6,7 @@ using CMSat::l_True; using CMSat::l_False; using CMSat::l_Undef;
 using CMSat::lbool;
 using CMSat::GaussWatched;
 
-void GaussElimEngine::fill_matrix(const std::list<lineral>& lins) {
+void GaussElimEngine::fill_matrix(const list<lineral>& lins) {
     // Collect all vars using dense iterator — no get_idxs_()
     vec<uint32_t> vars_sorted;
     for(const auto& l : lins)
@@ -68,8 +68,8 @@ void GaussElimEngine::eliminate() {
     }
 }
 
-void GaussElimEngine::init(const std::list<lineral>& lins, var_t num_vars_,
-                            const vec<bool3>& alpha, std::list<lineral>& out_queue) {
+void GaussElimEngine::init(const list<lineral>& lins, var_t num_vars_,
+                            const vec<bool3>& alpha, list<lineral>& out_queue) {
     num_vars = num_vars_;
     dl = 0; ok = true; qhead = 0;
     confl_row = UNASSIGNED_COL;
@@ -140,7 +140,7 @@ void GaussElimEngine::update_cols_vals_set_var(var_t var, bool val) {
     if(!val) cols_vals->setBit(col);  // val=false → var=FALSE in XOR sense → set bit
 }
 
-void GaussElimEngine::init_adjust_matrix(const vec<bool3>&, std::list<lineral>& out_queue) {
+void GaussElimEngine::init_adjust_matrix(const vec<bool3>&, list<lineral>& out_queue) {
     satisfied_xors.assign(num_rows, 0);
     row_to_var_non_resp.clear();
     row_to_var_non_resp.reserve(num_rows);

@@ -68,10 +68,8 @@ class lin_sys_lazy_GE
                 if(!l.is_constant()) num_vars = std::max(num_vars, l.get_max_var());
         }
         implied_literal_queue.clear();
-        // GaussElimEngine::init expects std::list<lineral>; copy from pool-allocated list
-        std::list<lineral> lins_std(linerals.get_linerals().begin(), linerals.get_linerals().end());
-        std::list<lineral> eng_implied;
-        ge->init(lins_std, num_vars, alpha, eng_implied);
+        list<lineral> eng_implied;
+        ge->init(linerals.get_linerals(), num_vars, alpha, eng_implied);
 
         var_t ct = 0;
         for(auto& lin : eng_implied) {
@@ -147,6 +145,7 @@ class lin_sys_lazy_GE
      * @return bool true iff new alpha assignments were deduced or queue still has implications
      */
     bool assign(const var_t var, const vec<bool3>& alpha, var_t dl) {
+        assert(ge != nullptr);
         assert(implied_literal_queue.empty());
         if(ge->decision_level() > dl) ge->backtrack(dl);
         while(ge->decision_level() < dl) ge->push_decision_level();
@@ -192,11 +191,13 @@ class lin_sys_lazy_GE
     }
 
     void backtrack(var_t lvl) {
+        assert(ge != nullptr);
         ge->backtrack(lvl);
         implied_literal_queue.clear();
     }
 
     vec<lineral> get_recovered_linerals() const {
+        assert(ge != nullptr);
         vec<lineral> result;
         for(uint32_t r = 0; r < ge->num_rows; r++) {
             auto l = ge->row_to_lineral(r);

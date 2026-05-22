@@ -6,11 +6,11 @@
 
 TEST_CASE("GaussElimEngine init basic", "[gauss_engine]") {
     GaussElimEngine ge;
-    std::list<lineral> lins;
+    list<lineral> lins;
     lins.push_back(lineral(vec<var_t>({1}), false, presorted::yes));   // x1=0
     lins.push_back(lineral(vec<var_t>({1,2}), false, presorted::yes)); // x1+x2=0
     vec<bool3> alpha;
-    std::list<lineral> implied;
+    list<lineral> implied;
     ge.init(lins, 2, alpha, implied);
     // x1=0 implies x2=0 via GJ
     CHECK(ge.is_ok());
@@ -20,11 +20,11 @@ TEST_CASE("GaussElimEngine init basic", "[gauss_engine]") {
 TEST_CASE("GaussElimEngine GJ produces RREF", "[gauss_engine]") {
     // x1+x2+x3=0, x1+x2=0 → after GJ: row0: x1+x2=0, row1: x3=0
     GaussElimEngine ge;
-    std::list<lineral> lins;
+    list<lineral> lins;
     lins.push_back(lineral(vec<var_t>({1,2,3}), false, presorted::yes));
     lins.push_back(lineral(vec<var_t>({1,2}),   false, presorted::yes));
     vec<bool3> alpha;
-    std::list<lineral> implied;
+    list<lineral> implied;
     ge.init(lins, 3, alpha, implied);
     // x3=0 must be immediately implied
     CHECK(ge.is_ok());
@@ -36,10 +36,10 @@ TEST_CASE("GaussElimEngine GJ produces RREF", "[gauss_engine]") {
 TEST_CASE("GaussElimEngine init detects unit and sets up watches", "[gauss_engine]") {
     GaussElimEngine ge;
     vec<bool3> alpha;
-    std::list<lineral> implied;
+    list<lineral> implied;
 
     SECTION("unit x1=1 detected at init") {
-        std::list<lineral> lins;
+        list<lineral> lins;
         lins.push_back(lineral(vec<var_t>({1}), true, presorted::yes));  // x1=1
         ge.init(lins, 2, alpha, implied);
         CHECK(ge.is_ok());
@@ -50,7 +50,7 @@ TEST_CASE("GaussElimEngine init detects unit and sets up watches", "[gauss_engin
     }
 
     SECTION("x1+x2=0 gets watches (no immediate implication)") {
-        std::list<lineral> lins;
+        list<lineral> lins;
         lins.push_back(lineral(vec<var_t>({1,2}), false, presorted::yes));
         ge.init(lins, 2, alpha, implied);
         CHECK(ge.is_ok());
@@ -65,7 +65,7 @@ TEST_CASE("GaussElimEngine init detects unit and sets up watches", "[gauss_engin
     }
 
     SECTION("conflict: x1=0 and x1=1") {
-        std::list<lineral> lins;
+        list<lineral> lins;
         lins.push_back(lineral(vec<var_t>({1}), false, presorted::yes)); // x1=0
         lins.push_back(lineral(vec<var_t>({1}), true,  presorted::yes)); // x1=1
         ge.init(lins, 1, alpha, implied);
@@ -76,11 +76,11 @@ TEST_CASE("GaussElimEngine init detects unit and sets up watches", "[gauss_engin
 TEST_CASE("GaussElimEngine propagation chain", "[gauss_engine]") {
     // x1+x2=0, x2+x3=0 → assign x1=TRUE → propagates x2=TRUE, x3=TRUE
     GaussElimEngine ge;
-    std::list<lineral> lins;
+    list<lineral> lins;
     lins.push_back(lineral(vec<var_t>({1,2}), false, presorted::yes));
     lins.push_back(lineral(vec<var_t>({2,3}), false, presorted::yes));
     vec<bool3> alpha;
-    std::list<lineral> implied;
+    list<lineral> implied;
     ge.init(lins, 3, alpha, implied);
     CHECK(implied.empty());  // no units at init
 
@@ -103,10 +103,10 @@ TEST_CASE("GaussElimEngine backtrack restores state", "[gauss_engine]") {
     // x1+x2+x3=0. Assign x1=TRUE dl=1, x2=TRUE dl=2 → x3 propagates TRUE.
     // Backtrack to dl=1. x2,x3 should be unassigned. Re-assign x2=FALSE → x3=FALSE.
     GaussElimEngine ge;
-    std::list<lineral> lins;
+    list<lineral> lins;
     lins.push_back(lineral(vec<var_t>({1,2,3}), false, presorted::yes));
     vec<bool3> alpha;
-    std::list<lineral> implied;
+    list<lineral> implied;
     ge.init(lins, 3, alpha, implied);
 
     ge.push_decision_level();
@@ -141,10 +141,10 @@ TEST_CASE("GaussElimEngine get_reason returns correct lineral", "[gauss_engine]"
     // x1+x2+x3=0, assign x1=TRUE, x2=TRUE → propagates x3.
     // Reason for x3: the row x1+x2+x3=0
     GaussElimEngine ge;
-    std::list<lineral> lins;
+    list<lineral> lins;
     lins.push_back(lineral(vec<var_t>({1,2,3}), false, presorted::yes));
     vec<bool3> alpha;
-    std::list<lineral> implied;
+    list<lineral> implied;
     ge.init(lins, 3, alpha, implied);
 
     ge.push_decision_level();

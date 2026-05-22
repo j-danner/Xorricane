@@ -16,8 +16,8 @@ public:
     ~GaussElimEngine() { free_temps(); }
 
     // Build from linerals at dl=0. Populates out_queue with immediately implied linerals.
-    void init(const std::list<lineral>& lins, var_t num_vars_,
-              const vec<bool3>& alpha, std::list<lineral>& out_queue);
+    void init(const list<lineral>& lins, var_t num_vars_,
+              const vec<bool3>& alpha, list<lineral>& out_queue);
 
     // Enqueue external assignment. Returns true if newly assigned.
     bool enqueue(var_t var, bool val, uint32_t dl_);
@@ -81,9 +81,9 @@ private:
 
     vec<std::pair<var_t,bool>> new_props;
 
-    void fill_matrix(const std::list<lineral>& lins);
+    void fill_matrix(const list<lineral>& lins);
     void eliminate();
-    void init_adjust_matrix(const vec<bool3>& alpha, std::list<lineral>& out_queue);
+    void init_adjust_matrix(const vec<bool3>& alpha, list<lineral>& out_queue);
     void create_temps();
     void free_temps();
     void update_cols_vals_set(bool force = false);
