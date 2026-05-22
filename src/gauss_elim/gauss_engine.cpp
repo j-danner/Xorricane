@@ -424,7 +424,6 @@ lineral GaussElimEngine::get_conflict() const {
 }
 lineral GaussElimEngine::row_to_lineral(uint32_t row_n) const {
     vec<var_t> vars;
-    for(uint32_t col = 0; col < num_cols; col++)
-        if(mat[row_n][col]) vars.push_back(col_to_var[col]);
+    mat[row_n].collect_vars(col_to_var, vars);
     return lineral(vars, mat[row_n].rhs() & 1, presorted::yes);
 }
