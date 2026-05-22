@@ -199,19 +199,199 @@ void GaussElimEngine::enqueue_internal(var_t var, bool val, uint32_t row_n, uint
     update_cols_vals_set_var(var, val);
 }
 
-bool GaussElimEngine::find_truths(GaussWatched*&, GaussWatched*&, var_t, uint32_t,
-                                   bool&, uint32_t&, uint32_t&) { return true; }
-void GaussElimEngine::eliminate_col(var_t, uint32_t, uint32_t) {}
-void GaussElimEngine::prop_lit(var_t, bool, uint32_t, uint32_t) {}
-void GaussElimEngine::gauss_jordan_elim(var_t) {}
+void GaussElimEngine::prop_lit(var_t var, bool val, uint32_t row_n, uint32_t level) {
+    enqueue_internal(var, val, row_n, level);
+    new_props.push_back({var, val});
+}
+
+bool GaussElimEngine::find_truths(
+    CMSat::GaussWatched*& i, CMSat::GaussWatched*& j,
+    var_t var, uint32_t row_n,
+    bool& do_eliminate, uint32_t& new_resp_var_out, uint32_t& new_resp_row_out)
+{
+    if(satisfied_xors[row_n]) { *j++ = *i; return true; }
+
+    bool was_resp_var = false;
+    if(var_has_resp_row[var] == 1) {
+        was_resp_var = true;
+        var_has_resp_row[row_to_var_non_resp[row_n]] = 1;
+        var_has_resp_row[var] = 0;
+    }
+
+    uint32_t new_resp_var = 0;
+    CMSat::Lit ret_lit_prop;
+    const CMSat::gret ret = mat[row_n].propGause(
+        assigns, col_to_var, var_has_resp_row,
+        new_resp_var, *tmp_col, *tmp_col2, *cols_vals, *cols_unset, ret_lit_prop);
+
+    switch(ret) {
+        case CMSat::gret::confl:
+            *j++ = *i;
+            if(was_resp_var) {
+                var_has_resp_row[row_to_var_non_resp[row_n]] = 0;
+                var_has_resp_row[var] = 1;
+            }
+            confl_row = row_n;
+            return false;
+
+        case CMSat::gret::prop:
+            *j++ = *i;
+            prop_lit(ret_lit_prop.var(), ret_lit_prop.sign(), row_n, dl);
+            update_cols_vals_set_var(ret_lit_prop.var(), ret_lit_prop.sign());
+            if(was_resp_var) {
+                var_has_resp_row[row_to_var_non_resp[row_n]] = 0;
+                var_has_resp_row[var] = 1;
+            }
+            satisfied_xors[row_n] = 1;
+            return true;
+
+        case CMSat::gret::nothing_fnewwatch:
+            if(was_resp_var) {
+                clear_gwatches(new_resp_var);
+                gwatches[new_resp_var].push_back(CMSat::GaussWatched(row_n, 0));
+                var_has_resp_row[row_to_var_non_resp[row_n]] = 0;
+                var_has_resp_row[new_resp_var] = 1;
+                do_eliminate     = true;
+                new_resp_var_out = new_resp_var;
+                new_resp_row_out = row_n;
+            } else {
+                gwatches[new_resp_var].push_back(CMSat::GaussWatched(row_n, 0));
+                row_to_var_non_resp[row_n] = new_resp_var;
+            }
+            return true;
+
+        case CMSat::gret::nothing_satisfied:
+            *j++ = *i;
+            if(was_resp_var) {
+                var_has_resp_row[row_to_var_non_resp[row_n]] = 0;
+                var_has_resp_row[var] = 1;
+            }
+            satisfied_xors[row_n] = 1;
+            return true;
+
+        default:
+            assert(false);
+            return true;
+    }
+}
+
+void GaussElimEngine::eliminate_col(var_t p, uint32_t new_resp_var, uint32_t new_resp_row_n) {
+    auto rowI = mat.begin();
+    auto end  = mat.end();
+    uint32_t new_resp_col = var_to_col[new_resp_var];
+    uint32_t row_i = 0;
+
+    while(rowI != end) {
+        if(new_resp_row_n != row_i && (*rowI)[new_resp_col]) {
+            if(satisfied_xors[row_i]) { ++rowI; row_i++; continue; }
+
+            uint32_t orig_non_resp_var = row_to_var_non_resp[row_i];
+            uint32_t orig_non_resp_col = var_to_col[orig_non_resp_var];
+
+            (*rowI).xor_in(*(mat.begin() + new_resp_row_n));
+
+            if(!(*rowI)[orig_non_resp_col]) {
+                if(orig_non_resp_var != new_resp_var) delete_gausswatch(row_i);
+
+                CMSat::Lit ret_lit_prop;
+                uint32_t new_non_resp_var = 0;
+                const CMSat::gret ret = (*rowI).propGause(
+                    assigns, col_to_var, var_has_resp_row,
+                    new_non_resp_var, *tmp_col, *tmp_col2, *cols_vals, *cols_unset,
+                    ret_lit_prop);
+
+                switch(ret) {
+                    case CMSat::gret::confl:
+                        gwatches[p].push_back(CMSat::GaussWatched(row_i, 0));
+                        row_to_var_non_resp[row_i] = p;
+                        confl_row = row_i;
+                        break;
+
+                    case CMSat::gret::prop:
+                        if(confl_row != UNASSIGNED_COL) {
+                            gwatches[p].push_back(CMSat::GaussWatched(row_i, 0));
+                            row_to_var_non_resp[row_i] = p;
+                            break;
+                        }
+                        gwatches[p].push_back(CMSat::GaussWatched(row_i, 0));
+                        row_to_var_non_resp[row_i] = p;
+                        prop_lit(ret_lit_prop.var(), ret_lit_prop.sign(), row_i, dl);
+                        update_cols_vals_set_var(ret_lit_prop.var(), ret_lit_prop.sign());
+                        satisfied_xors[row_i] = 1;
+                        break;
+
+                    case CMSat::gret::nothing_fnewwatch:
+                        gwatches[new_non_resp_var].push_back(CMSat::GaussWatched(row_i, 0));
+                        row_to_var_non_resp[row_i] = new_non_resp_var;
+                        break;
+
+                    case CMSat::gret::nothing_satisfied:
+                        gwatches[p].push_back(CMSat::GaussWatched(row_i, 0));
+                        row_to_var_non_resp[row_i] = p;
+                        satisfied_xors[row_i] = 1;
+                        break;
+
+                    default:
+                        assert(false);
+                }
+            }
+        }
+        ++rowI; row_i++;
+    }
+}
+
+void GaussElimEngine::gauss_jordan_elim(var_t var) {
+    if(num_rows == 0) return;
+    update_cols_vals_set();
+
+    bool do_eliminate = false;
+    uint32_t new_resp_var = 0, new_resp_row = 0;
+    bool confl_in_gauss = false;
+
+    auto& ws = gwatches[var];
+    CMSat::GaussWatched* i = ws.data();
+    CMSat::GaussWatched* j = i;
+    const CMSat::GaussWatched* end = ws.data() + ws.size();
+
+    for(; i != end; i++) {
+        if(!find_truths(i, j, var, i->row_n, do_eliminate, new_resp_var, new_resp_row)) {
+            confl_in_gauss = true;
+            i++;
+            break;
+        }
+    }
+    for(; i != end; i++) *j++ = *i;
+    ws.erase(ws.begin() + (j - ws.data()), ws.end());
+
+    if(do_eliminate && !confl_in_gauss)
+        eliminate_col(var, new_resp_var, new_resp_row);
+}
+
 void GaussElimEngine::clear_gwatches(var_t v) { if(v < gwatches.size()) gwatches[v].clear(); }
-void GaussElimEngine::delete_gausswatch(uint32_t) {}
+
+void GaussElimEngine::delete_gausswatch(uint32_t row_n) {
+    auto& ws = gwatches[row_to_var_non_resp[row_n]];
+    for(size_t k = 0; k < ws.size(); k++) {
+        if(ws[k].row_n == row_n) {
+            ws[k] = ws.back(); ws.pop_back(); return;
+        }
+    }
+    assert(false);
+}
+
 bool GaussElimEngine::enqueue(var_t var, bool val, uint32_t dl_) {
     if(var >= assigns.size() || assigns[var] != l_Undef) return false;
     enqueue_internal(var, val, UNASSIGNED_COL, dl_);
     return true;
 }
-void GaussElimEngine::propagate() {}
+
+void GaussElimEngine::propagate() {
+    while(qhead < trail.size() && confl_row == UNASSIGNED_COL) {
+        var_t var = trail[qhead++].var;
+        gauss_jordan_elim(var);
+    }
+    if(confl_row != UNASSIGNED_COL) ok = false;
+}
 void GaussElimEngine::backtrack(uint32_t) {}
 void GaussElimEngine::push_decision_level() { trail_lim.push_back(trail.size()); dl++; }
 lineral GaussElimEngine::get_reason(var_t) const { return lineral(); }

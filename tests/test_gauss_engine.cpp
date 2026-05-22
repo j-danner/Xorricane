@@ -71,3 +71,29 @@ TEST_CASE("GaussElimEngine init detects unit and sets up watches", "[gauss_engin
         CHECK(!ge.is_ok());
     }
 }
+
+TEST_CASE("GaussElimEngine propagation chain", "[gauss_engine]") {
+    // x1+x2=0, x2+x3=0 → assign x1=TRUE → propagates x2=TRUE, x3=TRUE
+    GaussElimEngine ge;
+    std::list<lineral> lins;
+    lins.push_back(lineral(vec<var_t>({1,2}), false, presorted::yes));
+    lins.push_back(lineral(vec<var_t>({2,3}), false, presorted::yes));
+    vec<bool3> alpha;
+    std::list<lineral> implied;
+    ge.init(lins, 3, alpha, implied);
+    CHECK(implied.empty());  // no units at init
+
+    ge.enqueue(1, true, 1);   // x1=TRUE at dl=1
+    ge.propagate();
+
+    auto& props = ge.get_new_props();
+    REQUIRE(props.size() == 2);
+    // Both x2 and x3 should be propagated
+    bool found_x2 = false, found_x3 = false;
+    for(auto& [v, val] : props) {
+        if(v == 2) found_x2 = true;
+        if(v == 3) found_x3 = true;
+    }
+    CHECK(found_x2);
+    CHECK(found_x3);
+}
