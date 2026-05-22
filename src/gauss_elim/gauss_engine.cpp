@@ -90,11 +90,116 @@ void GaussElimEngine::init(const std::list<lineral>& lins, var_t num_vars_,
     init_adjust_matrix(alpha, out_queue);
 }
 
-void GaussElimEngine::init_adjust_matrix(const vec<bool3>&, std::list<lineral>&) {}
-void GaussElimEngine::create_temps() {}
-void GaussElimEngine::free_temps() {}
-void GaussElimEngine::update_cols_vals_set(bool) {}
-void GaussElimEngine::update_cols_vals_set_var(var_t, bool) {}
+void GaussElimEngine::free_temps() {
+    for(auto& x : tofree) delete[] x;
+    tofree.clear();
+    delete cols_unset; cols_unset = nullptr;
+    delete cols_vals;  cols_vals  = nullptr;
+    delete tmp_col;    tmp_col    = nullptr;
+    delete tmp_col2;   tmp_col2   = nullptr;
+}
+
+void GaussElimEngine::create_temps() {
+    assert(tofree.empty());
+    uint32_t num_64b = num_cols/64 + (bool)(num_cols % 64);
+    if(num_64b == 0) num_64b = 1;
+    // PackedRow(size, mp): mp[-1] = rhs, mp[0..size-1] = data
+    // So we allocate num_64b+1 words: x[0] = rhs slot, x[1..num_64b] = data
+    // and pass x+1 so that (x+1)[-1] = x[0] is the rhs.
+    auto alloc = [&]() {
+        int64_t* x = new int64_t[num_64b + 1]();
+        tofree.push_back(x);
+        return new CMSat::PackedRow(num_64b, x + 1);
+    };
+    cols_unset = alloc(); cols_vals = alloc();
+    tmp_col    = alloc(); tmp_col2  = alloc();
+    cols_unset->rhs() = 0; cols_vals->rhs() = 0;
+    tmp_col->rhs()    = 0; tmp_col2->rhs()  = 0;
+}
+
+void GaussElimEngine::update_cols_vals_set(bool force) {
+    if(!force && !cancelled_since_val_update) {
+        return;
+    }
+    cols_vals->setZero();
+    cols_unset->setOne();
+    for(uint32_t col = 0; col < num_cols; col++) {
+        var_t var = col_to_var[col];
+        if(var >= assigns.size() || assigns[var] == l_Undef) continue;
+        cols_unset->clearBit(col);
+        if(assigns[var] == l_True)  // var=FALSE in XOR sense → set bit in cols_vals
+            cols_vals->setBit(col);
+    }
+    cancelled_since_val_update = false;
+}
+
+void GaussElimEngine::update_cols_vals_set_var(var_t var, bool val) {
+    if(var >= var_to_col.size() || var_to_col[var] == UNASSIGNED_COL) return;
+    uint32_t col = var_to_col[var];
+    cols_unset->clearBit(col);
+    if(!val) cols_vals->setBit(col);  // val=false → var=FALSE in XOR sense → set bit
+}
+
+void GaussElimEngine::init_adjust_matrix(const vec<bool3>&, std::list<lineral>& out_queue) {
+    satisfied_xors.assign(num_rows, 0);
+    row_to_var_non_resp.clear();
+    row_to_var_non_resp.reserve(num_rows);
+
+    uint32_t adjust_zero = 0;
+    vec<CMSat::Lit> tmp_clause;
+
+    for(uint32_t row_i = 0; row_i < num_rows; row_i++) {
+        uint32_t non_resp_var = UNASSIGNED_COL;
+        uint32_t popcnt = mat[row_i].find_watchVar(
+            tmp_clause, col_to_var, var_has_resp_row, non_resp_var);
+
+        switch(popcnt) {
+            case 0:
+                adjust_zero++;
+                if(mat[row_i].rhs()) {
+                    ok = false; confl_row = row_i; return;
+                }
+                satisfied_xors[row_i] = 1;
+                row_to_var_non_resp.push_back(UNASSIGNED_COL);
+                break;
+
+            case 1: {
+                // Unit row: propagate immediately
+                // rhs=1 → var=TRUE → val=true; rhs=0 → var=FALSE → val=false
+                bool val = (bool)mat[row_i].rhs();
+                var_t var = tmp_clause[0].var();
+                var_has_resp_row[var] = 0;
+                adjust_zero++;
+                satisfied_xors[row_i] = 1;
+                row_to_var_non_resp.push_back(UNASSIGNED_COL);
+                out_queue.push_back(row_to_lineral(row_i));
+                enqueue_internal(var, val, row_i, 0);
+                new_props.push_back({var, val});
+                break;
+            }
+
+            default:
+                assert(non_resp_var != UNASSIGNED_COL);
+                // tmp_clause[0].var() = pivot (responsible) var
+                gwatches[tmp_clause[0].var()].push_back(CMSat::GaussWatched(row_i, 0));
+                gwatches[non_resp_var].push_back(CMSat::GaussWatched(row_i, 0));
+                row_to_var_non_resp.push_back(non_resp_var);
+                break;
+        }
+    }
+
+    // Shrink to exclude zero/unit rows
+    num_rows -= adjust_zero;
+    mat.resizeNumRows(num_rows);
+}
+
+void GaussElimEngine::enqueue_internal(var_t var, bool val, uint32_t row_n, uint32_t level) {
+    assigns[var] = CMSat::boolToLBool(!val);  // inverted: val=TRUE → l_False
+    var_data[var] = {level, row_n, true, val};
+    trail.push_back({var, val, level});
+    update_cols_vals_set_var(var, val);
+}
+
 bool GaussElimEngine::find_truths(GaussWatched*&, GaussWatched*&, var_t, uint32_t,
                                    bool&, uint32_t&, uint32_t&) { return true; }
 void GaussElimEngine::eliminate_col(var_t, uint32_t, uint32_t) {}
@@ -102,7 +207,6 @@ void GaussElimEngine::prop_lit(var_t, bool, uint32_t, uint32_t) {}
 void GaussElimEngine::gauss_jordan_elim(var_t) {}
 void GaussElimEngine::clear_gwatches(var_t v) { if(v < gwatches.size()) gwatches[v].clear(); }
 void GaussElimEngine::delete_gausswatch(uint32_t) {}
-void GaussElimEngine::enqueue_internal(var_t, bool, uint32_t, uint32_t) {}
 bool GaussElimEngine::enqueue(var_t var, bool val, uint32_t dl_) {
     if(var >= assigns.size() || assigns[var] != l_Undef) return false;
     enqueue_internal(var, val, UNASSIGNED_COL, dl_);
