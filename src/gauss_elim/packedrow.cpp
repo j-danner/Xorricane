@@ -137,21 +137,6 @@ gret PackedRow::propGause(
     return gret::confl;
 }
 
-void PackedRow::collect_vars(const vector<uint32_t>& col_to_var, vector<uint32_t>& out) const {
-    for (int i = 0; i < size; i++) if (mp[i]) {
-        int64_t tmp = mp[i];
-        int at = scan_fwd_64b(tmp);
-        int extra = 0;
-        while (at != 0) {
-            out.push_back(col_to_var[extra + at - 1 + i*64]);
-            extra += at;
-            if (extra == 64) break;
-            tmp >>= at;
-            at = scan_fwd_64b(tmp);
-        }
-    }
-}
-
 void PackedRow::collect_vars(const vector<uint32_t>& col_to_var, vector<std::uint_fast32_t>& out) const {
     for (int i = 0; i < size; i++) if (mp[i]) {
         int64_t tmp = mp[i];

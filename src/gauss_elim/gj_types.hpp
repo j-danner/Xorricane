@@ -243,7 +243,6 @@ public:
         PackedRow& tmp_col2,
         Lit prop);
 
-    void collect_vars(const vector<uint32_t>& col_to_var, vector<uint32_t>& out) const;
     void collect_vars(const vector<uint32_t>& col_to_var, vector<std::uint_fast32_t>& out) const;
 
     uint32_t popcnt() const;
