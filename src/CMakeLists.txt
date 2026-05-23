@@ -38,7 +38,7 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.67 COMPONENTS container REQUIRED)
 message(STATUS "Boost version: ${Boost_VERSION}")
 
-target_include_directories(lineral PUBLIC ${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/../xorcle)
+target_include_directories(lineral PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(lineral PUBLIC ${EXTRA_LIBS})
 
 
@@ -123,5 +123,5 @@ add_library(
 
 #generate 
 target_link_libraries(solver PUBLIC ${EXTRA_LIBS} lineral_lazy impl_graph)
-target_include_directories(solver PUBLIC ${CMAKE_SOURCE_DIR}/../xorcle)
+target_include_directories(solver PUBLIC)
 
